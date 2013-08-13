@@ -1,0 +1,39 @@
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
+                      http://maven.apache.org/xsd/settings-1.0.0.xsd">
+ 
+  <pluginGroups>
+    <pluginGroup>org.openmrs.maven.plugins</pluginGroup>
+  </pluginGroups>
+  <profiles>
+    <profile>
+      <id>OpenMRS</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <properties>
+        <archetypeCatalog>http://mavenrepo.openmrs.org/nexus/content/repositories/public/archetype-catalog.xml</archetypeCatalog>
+        <archetypeRepository>http://mavenrepo.openmrs.org/nexus/content/repositories/public</archetypeRepository>
+      </properties>
+      <repositories>
+        <repository>
+          <id>openmrs-repo</id>
+          <name>OpenMRS Nexus Repository</name>
+          <url>http://mavenrepo.openmrs.org/nexus/content/repositories/public</url>
+        </repository>
+      </repositories>
+      <pluginRepositories>
+        <pluginRepository>
+          <id>openmrs-repo</id>
+          <name>OpenMRS Nexus Repository</name>
+          <url>http://mavenrepo.openmrs.org/nexus/content/repositories/public</url>
+          <snapshots>
+            <enabled>false</enabled>
+          </snapshots>
+        </pluginRepository>
+      </pluginRepositories>
+    </profile>
+  </profiles>
+ 
+</settings>
