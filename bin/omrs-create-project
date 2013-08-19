@@ -10,6 +10,10 @@ if [ $# -ge 1 ]; then
             echo "Creates an OpenMRS Project."
             echo
             echo
+            echo "These options are available:"
+                                                                                        echo "-i or --interactive"
+                                                                echo "    Turns on interactive mode."
+                    echo
                                         exit;;
                         
     esac
@@ -45,10 +49,23 @@ ARCHETYPE_FILE="${MAVEN_HOME}"/conf/pom.xml
 
 # increase maven allocated memory
 export MAVEN_OPTS="-Xmx768M -XX:MaxPermSize=256M"
-MVN_PARAMS="-s ${MAVEN_HOME}/conf/settings.xml "
+MVN_PARAMS="-s ${MAVEN_HOME}/conf/settings.xml -DinteractiveMode=false"
+
+# add maven paramters chosen by user
+# courtsey of atlassian sdk scripts
+while [ $# -gt 0 ]
+do
+    case "$1" in
+                     "-i" |  "--interactive")
+                                                    MVN_PARAMS="-s ${MAVEN_HOME}/conf/settings.xml -DinteractiveMode=true"
+                    shift 1;;
+                                *)
+                        MVN_PARAMS="${MVN_PARAMS} ${1}"
+            shift 1;;     esac
+done
 
 # execute maven
-echo "Executing: ${MAVEN_EXEC}/mvn archetype:generate -DarchetypeCatalog=local -DarchetypeGroupId=org.openmrs.sdk -DarchetypeArtifactId=devel-module-archetype-archetype -DarchetypeVersion=1.0  -DinteractiveMode=true"
+echo "Executing: ${MAVEN_EXEC}/mvn archetype:generate ${MVN_PARAMS} -DarchetypeCatalog=local -DarchetypeArtifactId=devel-module-archetype-archetype -DarchetypeGroupId=org.openmrs.sdk -DarchetypeVersion=1.0 -DartifactId=openmrs-project -DgroupId=org.openmrs -Dversion=1.0.0-SNAPSHOT -Dpackage=org.openmrs"
 
-sh -c "${MAVEN_EXEC}/mvn archetype:generate ${MVN_PARAMS} -DarchetypeCatalog=local -DarchetypeGroupId=org.openmrs.sdk -DarchetypeArtifactId=devel-module-archetype-archetype -DarchetypeVersion=1.0  -DinteractiveMode=true"
+sh -c "${MAVEN_EXEC}/mvn archetype:generate ${MVN_PARAMS} -DarchetypeCatalog=local -DarchetypeArtifactId=devel-module-archetype-archetype -DarchetypeGroupId=org.openmrs.sdk -DarchetypeVersion=1.0 -DartifactId=openmrs-project -DgroupId=org.openmrs -Dversion=1.0.0-SNAPSHOT -Dpackage=org.openmrs"
 
