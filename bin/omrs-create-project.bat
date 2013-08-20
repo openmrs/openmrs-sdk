@@ -83,7 +83,7 @@ call :getarg !ARGI! ARG
 call :getarg !ARGN! ARGNEXT
 
     if /I "%ARG%"=="--interactive" (
-                    set MVN_PARAMS=%MVN_PARAMS% -DinteractiveMode=true
+                    set MVN_PARAMS=-s "%MVN_HOME%\conf\settings.xml" -DinteractiveMode=true
             set /a ARGI = !ARGI! + 1
                 goto loopstart
     )  else (
@@ -124,8 +124,8 @@ rem ######
 rem Executing maven
 rem ######
 
-echo Executing: %MAVEN_EXECUTABLE% module-wizard:generate %MVN_PARAMS% -DarchetypeCatalog=local -DarchetypeArtifactId=devel-module-archetype-archetype -DarchetypeGroupId=org.openmrs.sdk -DarchetypeVersion=1.0 -DartifactId=openmrs-project -DgroupId=org.openmrs -Dversion=1.0.0-SNAPSHOT -Dpackage=org.openmrs
-%MAVEN_EXECUTABLE% module-wizard:generate %MVN_PARAMS% -DarchetypeCatalog=local -DarchetypeArtifactId=devel-module-archetype-archetype -DarchetypeGroupId=org.openmrs.sdk -DarchetypeVersion=1.0 -DartifactId=openmrs-project -DgroupId=org.openmrs -Dversion=1.0.0-SNAPSHOT -Dpackage=org.openmrs
+echo Executing: %MAVEN_EXECUTABLE% archetype:generate %MVN_PARAMS% -DarchetypeCatalog=local -DarchetypeArtifactId=maven-archetype-openmrs-project -DarchetypeGroupId=org.openmrs.maven.archetypes -DarchetypeVersion=1.0.0-SNAPSHOT -DartifactId=openmrs-project -DgroupId=org.openmrs -Dversion=1.0.0-SNAPSHOT -Dpackage=org.openmrs
+%MAVEN_EXECUTABLE% archetype:generate %MVN_PARAMS% -DarchetypeCatalog=local -DarchetypeArtifactId=maven-archetype-openmrs-project -DarchetypeGroupId=org.openmrs.maven.archetypes -DarchetypeVersion=1.0.0-SNAPSHOT -DartifactId=openmrs-project -DgroupId=org.openmrs -Dversion=1.0.0-SNAPSHOT -Dpackage=org.openmrs
 
 rem ---------------------------------------------------------------
 rem (AMPS-197) The batch routines below for correct handling 

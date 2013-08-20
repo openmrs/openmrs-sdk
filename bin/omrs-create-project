@@ -65,7 +65,7 @@ do
 done
 
 # execute maven
-echo "Executing: ${MAVEN_EXEC}/mvn archetype:generate ${MVN_PARAMS} -DarchetypeCatalog=local -DarchetypeArtifactId=devel-module-archetype-archetype -DarchetypeGroupId=org.openmrs.sdk -DarchetypeVersion=1.0 -DartifactId=openmrs-project -DgroupId=org.openmrs -Dversion=1.0.0-SNAPSHOT -Dpackage=org.openmrs"
+echo "Executing: ${MAVEN_EXEC}/mvn archetype:generate ${MVN_PARAMS} -DarchetypeCatalog=local -DarchetypeArtifactId=maven-archetype-openmrs-project -DarchetypeGroupId=org.openmrs.maven.archetypes -DarchetypeVersion=1.0.0-SNAPSHOT -DartifactId=openmrs-project -DgroupId=org.openmrs -Dversion=1.0.0-SNAPSHOT -Dpackage=org.openmrs"
 
-sh -c "${MAVEN_EXEC}/mvn archetype:generate ${MVN_PARAMS} -DarchetypeCatalog=local -DarchetypeArtifactId=devel-module-archetype-archetype -DarchetypeGroupId=org.openmrs.sdk -DarchetypeVersion=1.0 -DartifactId=openmrs-project -DgroupId=org.openmrs -Dversion=1.0.0-SNAPSHOT -Dpackage=org.openmrs"
+sh -c "${MAVEN_EXEC}/mvn archetype:generate ${MVN_PARAMS} -DarchetypeCatalog=local -DarchetypeArtifactId=maven-archetype-openmrs-project -DarchetypeGroupId=org.openmrs.maven.archetypes -DarchetypeVersion=1.0.0-SNAPSHOT -DartifactId=openmrs-project -DgroupId=org.openmrs -Dversion=1.0.0-SNAPSHOT -Dpackage=org.openmrs"
 
