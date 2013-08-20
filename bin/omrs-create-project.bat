@@ -55,8 +55,10 @@ rem Transform Parameters into Maven Parameters
 rem
 rem NOTE: in DOS, all the 'else' statements must be on the same
 rem line as the closing bracket for the 'if' statement.
+rem
 rem Courtesy of Atlassian
 rem ---------------------------------------------------------------
+
 
 set ARGV=.%*
 call :parse_argv
@@ -67,7 +69,7 @@ if ERRORLEVEL 1 (
 )
 
 set MAVEN_OPTS=-Xmx768M -XX:MaxPermSize=256M 
-set MVN_PARAMS=-s "%MVN_HOME%\conf\settings.xml"
+set MVN_PARAMS=-s "%MVN_HOME%\conf\settings.xml" -DinteractiveMode=false
 
 set ARGI = 0
 
@@ -80,20 +82,50 @@ if !ARGI! gtr %ARGC% goto loopend
 call :getarg !ARGI! ARG
 call :getarg !ARGN! ARGNEXT
 
+    if /I "%ARG%"=="--interactive" (
+                    set MVN_PARAMS=-s "%MVN_HOME%\conf\settings.xml" -DinteractiveMode=true
+            set /a ARGI = !ARGI! + 1
+                goto loopstart
+    )  else (
+            if /I "%ARG%"=="-i" (
+                                    set MVN_PARAMS=-s "%MVN_HOME%\conf\settings.xml" -DinteractiveMode=true
+                    set /a ARGI = !ARGI! + 1
+                                goto loopstart
+            )  
 
 set MVN_PARAMS=%MVN_PARAMS% %ARG%
 shift
 goto loopstart
 
-:loopend
+        )
+        )
+        )
+        )
+        )
+        )
+        )
+        )
+        )
+        )
+        )
+        )
+        )
+        )
+        )
+        )
+        )
+        )
+        )
+        )
+    :loopend
 
 
 rem ######
 rem Executing maven
 rem ######
 
-echo Executing: %MAVEN_EXECUTABLE% module-wizard:generate %MVN_PARAMS% -DarchetypeCatalog=local -DarchetypeGroupId=org.openmrs.sdk -DarchetypeArtifactId=devel-module-archetype-archetype -DarchetypeVersion=1.0  -DinteractiveMode=true
-%MAVEN_EXECUTABLE% module-wizard:generate %MVN_PARAMS% -DarchetypeCatalog=local -DarchetypeGroupId=org.openmrs.sdk -DarchetypeArtifactId=devel-module-archetype-archetype -DarchetypeVersion=1.0  -DinteractiveMode=true
+echo Executing: %MAVEN_EXECUTABLE% archetype:generate %MVN_PARAMS% -DarchetypeCatalog=local -DarchetypeArtifactId=maven-archetype-openmrs-project -DarchetypeGroupId=org.openmrs.maven.archetypes -DarchetypeVersion=1.0.0-SNAPSHOT -DartifactId=openmrs-project -DgroupId=org.openmrs -Dversion=1.0.0-SNAPSHOT -Dpackage=org.openmrs
+%MAVEN_EXECUTABLE% archetype:generate %MVN_PARAMS% -DarchetypeCatalog=local -DarchetypeArtifactId=maven-archetype-openmrs-project -DarchetypeGroupId=org.openmrs.maven.archetypes -DarchetypeVersion=1.0.0-SNAPSHOT -DartifactId=openmrs-project -DgroupId=org.openmrs -Dversion=1.0.0-SNAPSHOT -Dpackage=org.openmrs
 
 rem ---------------------------------------------------------------
 rem (AMPS-197) The batch routines below for correct handling 
