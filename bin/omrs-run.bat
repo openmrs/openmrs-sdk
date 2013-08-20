@@ -19,7 +19,7 @@ if /I "%1"=="/?" goto displayhelp
 if /I "%1"=="/h" goto displayhelp
 if /I "%1"=="-h" goto displayhelp
 
-goto continue
+goto checkpom
 
 :displayhelp
 echo.
@@ -32,6 +32,39 @@ echo Runs OpenMRS with your plugin installed.
                             echo     Version of OpenMRS. Default is the latest..
         echo.                              
     goto end
+
+rem ######
+rem Check if pom.xml is proper archetype
+rem If not create a new project
+rem ######
+
+:checkpom
+
+find /c "OPENMRS_INSTALLATION_SCRIPT" pom.xml 2> nul
+if %errorlevel% equ 1 goto checkdir
+echo Found proper pom.xml
+goto :continue
+
+:checkdir
+if exist openmrs-project (
+  cd openmrs-project
+  goto checkpom
+  )
+else
+goto notfound
+
+
+:notfound
+set /P c=Could not find proper pom.xml, do you want to create a project? (y/n)
+if /I "%c%" EQU "Y" goto createproject
+if /I "%c%" EQU "N" goto end
+goto :notfound
+
+:createproject
+CALL omrs-create-project
+cd openmrs-project
+goto continue
+
 
 :continue
 
