@@ -49,7 +49,7 @@ ARCHETYPE_FILE="${MAVEN_HOME}"/conf/pom.xml
 
 # increase maven allocated memory
 export MAVEN_OPTS="-Xmx768M -XX:MaxPermSize=256M"
-MVN_PARAMS="-s ${MAVEN_HOME}/conf/settings.xml -DinteractiveMode=false"
+MVN_PARAMS="-s ${MAVEN_HOME}/conf/settings.xml -DinteractiveMode=false -DartifactId=openmrs-project -DgroupId=org.openmrs -Dversion=1.0.0-SNAPSHOT"
 
 # add maven paramters chosen by user
 # courtsey of atlassian sdk scripts
@@ -65,7 +65,7 @@ do
 done
 
 # execute maven
-echo "Executing: ${MAVEN_EXEC}/mvn archetype:generate ${MVN_PARAMS} -DarchetypeCatalog=local -DarchetypeArtifactId=maven-archetype-openmrs-project -DarchetypeGroupId=org.openmrs.maven.archetypes -DarchetypeVersion=1.0.0-SNAPSHOT -DartifactId=openmrs-project -DgroupId=org.openmrs -Dversion=1.0.0-SNAPSHOT -Dpackage=org.openmrs"
+echo "Executing: ${MAVEN_EXEC}/mvn archetype:generate ${MVN_PARAMS} -DarchetypeCatalog=local -DarchetypeArtifactId=maven-archetype-openmrs-project -DarchetypeGroupId=org.openmrs.maven.archetypes -DarchetypeVersion=1.0.0-SNAPSHOT -Dpackage=org.openmrs"
 
-sh -c "${MAVEN_EXEC}/mvn archetype:generate ${MVN_PARAMS} -DarchetypeCatalog=local -DarchetypeArtifactId=maven-archetype-openmrs-project -DarchetypeGroupId=org.openmrs.maven.archetypes -DarchetypeVersion=1.0.0-SNAPSHOT -DartifactId=openmrs-project -DgroupId=org.openmrs -Dversion=1.0.0-SNAPSHOT -Dpackage=org.openmrs"
+sh -c "${MAVEN_EXEC}/mvn archetype:generate ${MVN_PARAMS} -DarchetypeCatalog=local -DarchetypeArtifactId=maven-archetype-openmrs-project -DarchetypeGroupId=org.openmrs.maven.archetypes -DarchetypeVersion=1.0.0-SNAPSHOT -Dpackage=org.openmrs"
 
