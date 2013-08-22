@@ -1,5 +1,4 @@
 
-
 @echo off
 rem Make sure we can set environment variables
 if "%OS%" == "Windows_NT" setlocal enableextensions enabledelayedexpansion
@@ -120,7 +119,7 @@ rem ---------------------------------------------------------------
 rem Executing Maven
 rem ---------------------------------------------------------------
 
-echo Executing: %MAVEN_EXECUTABLE% com.atlassian.maven.plugins:maven-amps-dispatcher-plugin:4.2.3:run %MVN_PARAMS%
+echo Executing: archetype:generate %MVN_PARAMS% -DarchetypeCatalog=local -DarchetypeArtifactId=maven-archetype-openmrs-project -DarchetypeGroupId=org.openmrs.maven.archetypes -DarchetypeVersion=1.0.0-SNAPSHOT -Dpackage=org.openmrs
 %MAVEN_EXECUTABLE% archetype:generate %MVN_PARAMS% -DarchetypeCatalog=local -DarchetypeArtifactId=maven-archetype-openmrs-project -DarchetypeGroupId=org.openmrs.maven.archetypes -DarchetypeVersion=1.0.0-SNAPSHOT -Dpackage=org.openmrs
 
 rem ---------------------------------------------------------------
