@@ -49,16 +49,12 @@ set MVN_HOME=%SDK_HOME%\apache-maven
 set MAVEN_EXECUTABLE="%MVN_HOME%\bin\mvn.bat"
 set SDK_VERSION="1.0.1"
 
-
 rem ---------------------------------------------------------------
 rem Transform Parameters into Maven Parameters
 rem
 rem NOTE: in DOS, all the 'else' statements must be on the same
 rem line as the closing bracket for the 'if' statement.
-rem
-rem Courtesy of Atlassian
 rem ---------------------------------------------------------------
-
 
 set ARGV=.%*
 call :parse_argv
@@ -68,7 +64,7 @@ if ERRORLEVEL 1 (
   exit /B 1
 )
 
-set MAVEN_OPTS=-Xmx768M -XX:MaxPermSize=256M 
+set MAVEN_OPTS=-Xmx768M -XX:MaxPermSize=256M
 set MVN_PARAMS=-s "%MVN_HOME%\conf\settings.xml" -DinteractiveMode=false -DartifactId=openmrs-project -DgroupId=org.openmrs -Dversion=1.0.0-SNAPSHOT
 
 set ARGI = 0
@@ -91,7 +87,7 @@ call :getarg !ARGN! ARGNEXT
                                     set MVN_PARAMS=-s "%MVN_HOME%\conf\settings.xml" -DinteractiveMode=true
                     set /a ARGI = !ARGI! + 1
                                 goto loopstart
-            )  
+            )  else (
 
 set MVN_PARAMS=%MVN_PARAMS% %ARG%
 shift
@@ -120,11 +116,11 @@ goto loopstart
     :loopend
 
 
-rem ######
-rem Executing maven
-rem ######
+rem ---------------------------------------------------------------
+rem Executing Maven
+rem ---------------------------------------------------------------
 
-echo Executing: %MAVEN_EXECUTABLE% archetype:generate %MVN_PARAMS% -DarchetypeCatalog=local -DarchetypeArtifactId=maven-archetype-openmrs-project -DarchetypeGroupId=org.openmrs.maven.archetypes -DarchetypeVersion=1.0.0-SNAPSHOT -Dpackage=org.openmrs
+echo Executing: %MAVEN_EXECUTABLE% com.atlassian.maven.plugins:maven-amps-dispatcher-plugin:4.2.3:run %MVN_PARAMS%
 %MAVEN_EXECUTABLE% archetype:generate %MVN_PARAMS% -DarchetypeCatalog=local -DarchetypeArtifactId=maven-archetype-openmrs-project -DarchetypeGroupId=org.openmrs.maven.archetypes -DarchetypeVersion=1.0.0-SNAPSHOT -Dpackage=org.openmrs
 
 rem ---------------------------------------------------------------
