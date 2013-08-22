@@ -15,6 +15,10 @@ if [ $# -ge 1 ]; then
                                                                                         echo "-v [value], --version [value]"
                                                                 echo "    Version of OpenMRS. Default is the latest."
                                                                                        
+
+                                                                                        echo "-Pinstall-wizard "
+                                                                echo "    Disable automatic install, starts OpenMRS with install wizard."
+                                                                                       
             echo
                                         exit;;
                         
@@ -57,10 +61,12 @@ MVN_PARAMS="-s ${MAVEN_HOME}/conf/settings.xml"
 while [ $# -gt 0 ]
 do
     case "$1" in
-                    
+                     "-Pinstall-wizard")
+                                                    MVN_PARAMS="${MVN_PARAMS} -Pinstall-wizard"
+                    shift 1;;                    
                                      "-v" |  "--version")
                                                     MVN_PARAMS="${MVN_PARAMS} -DopenMRSVersion='${2}'"
-                    shift 1;;
+                    shift 2;;
                                 *)
                         MVN_PARAMS="${MVN_PARAMS} ${1}"
             shift 1;;     esac
@@ -70,8 +76,8 @@ done
 if grep -qs "OPENMRS_INSTALLATION_SCRIPT" pom.xml; then
   echo "Found proper pom.xml"
   # execute maven 
-  echo "Executing ${MAVEN_EXEC}/mvn jetty:run-war -Pinstall-h2 ${MVN_PARAMS}"
-  sh -c "${MAVEN_EXEC}/mvn jetty:run-war -Pinstall-h2 ${MVN_PARAMS}"
+  echo "Executing ${MAVEN_EXEC}/mvn jetty:run-war ${MVN_PARAMS}"
+  sh -c "${MAVEN_EXEC}/mvn jetty:run-war ${MVN_PARAMS}"
 # check if default project exists
 elif [ -d "openmrs-project" ]; then
   echo "Found default project directory"
@@ -80,8 +86,8 @@ elif [ -d "openmrs-project" ]; then
   if grep -qs "OPENMRS_INSTALLATION_SCRIPT" pom.xml; then
     echo "Found proper pom.xml"
     # execute maven 
-    echo "Executing ${MAVEN_EXEC}/mvn jetty:run-war -Pinstall-h2 ${MVN_PARAMS}"
-    sh -c "${MAVEN_EXEC}/mvn jetty:run-war -Pinstall-h2 ${MVN_PARAMS}"
+    echo "Executing ${MAVEN_EXEC}/mvn jetty:run-war ${MVN_PARAMS}"
+    sh -c "${MAVEN_EXEC}/mvn jetty:run-war ${MVN_PARAMS}"
   else
     echo "Error: pom.xml does not exist."
   fi
@@ -89,7 +95,7 @@ else
   while true; do
     read -p "Could not find proper pom.xml, do you want to create a project? (y/n)" yn
     case $yn in
-        [Yy]* ) omrs-create-project && cd openmrs-project && sh -c "${MAVEN_EXEC}/mvn jetty:run-war -Pinstall-h2 ${MVN_PARAMS}"; break;;
+        [Yy]* ) omrs-create-project && cd openmrs-project && sh -c "${MAVEN_EXEC}/mvn jetty:run-war ${MVN_PARAMS}"; break;;
         [Nn]* ) exit;;
         * ) echo "Please answer yes or no.";;
     esac
