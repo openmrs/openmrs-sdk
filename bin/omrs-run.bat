@@ -40,7 +40,7 @@ rem ######
 
 :checkpom
 
-find /c "OPENMRS_INSTALLATION_SCRIPT" pom.xml 2> nul
+find /c "OPENMRS_INSTALLATION_SCRIPT" pom.xml 2>nul
 if %errorlevel% equ 1 goto checkdir
 echo Found proper pom.xml
 goto :continue
@@ -50,7 +50,6 @@ if exist openmrs-project (
   cd openmrs-project
   goto checkpom
   )
-else
 goto notfound
 
 
@@ -131,7 +130,7 @@ call :getarg !ARGN! ARGNEXT
                                     set MVN_PARAMS=%MVN_PARAMS% -DopenMRSVersion=%ARGNEXT%
                     set /a ARGI = !ARGI! + 1
                                 goto loopstart
-            )  
+            ) else (
 
 set MVN_PARAMS=%MVN_PARAMS% %ARG%
 shift
