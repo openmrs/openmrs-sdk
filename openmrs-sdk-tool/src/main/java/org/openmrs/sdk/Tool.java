@@ -54,7 +54,7 @@ public class Tool {
 
 	private static void usage(Options options) {
 		HelpFormatter formatter = new HelpFormatter();
-		formatter.printHelp("modify_pom.jar", options);
+		formatter.printHelp("tool.jar", options);
 	}
 
 	private static void addModule(String fileName) {
@@ -100,25 +100,54 @@ public class Tool {
 		namespaceUris.put("pom", "http://maven.apache.org/POM/4.0.0");
 		XPath xpath = DocumentHelper
 				.createXPath("//pom:project/pom:build/pom:plugins/pom:plugin[pom:artifactId='maven-dependency-plugin']//pom:configuration//pom:artifactItems");
+		XPath xpath2 = DocumentHelper.createXPath("//pom:project/pom:dependencies");
 		xpath.setNamespaceURIs(namespaceUris);
+		xpath2.setNamespaceURIs(namespaceUris);
 		Element e = (Element) xpath.selectSingleNode(projectPom);
 
 		if (!e.asXML().contains(artID)) {
 			System.out.println("Adding module to pom.xml");
-
+            /*
+            * Creates artifact element with all needed sub elements
+            * */
 			Element artifact = (Element) xpath.selectSingleNode(projectPom);
-			Element artifactItem = DocumentHelper.createElement("artifactItem");
-			Element groupId = artifactItem.addElement("groupId");
-			Element artifactId = artifactItem.addElement("artifactId");
-			Element ver = artifactItem.addElement("version");
-			Element type = artifactItem.addElement("type");
-			Element fName = artifactItem.addElement("destFileName");
-			groupId.setText(groupID);
-			artifactId.setText(artID);
-			ver.setText(version);
-			type.setText("omod");
-			fName.setText(artID + "-" + version + ".omod");
+            Element artifactItem = DocumentHelper.createElement("artifactItem");
+            Element groupId = artifactItem.addElement("groupId");
+            Element artifactId = artifactItem.addElement("artifactId");
+            Element ver = artifactItem.addElement("version");
+            Element type = artifactItem.addElement("type");
+            Element fName = artifactItem.addElement("destFileName");
+
+            groupId.setText(groupID);
+            artifactId.setText(artID);
+            ver.setText(version);
+            type.setText("omod");
+            fName.setText(artID + "-" + version + ".omod");
+
+            /*
+            * Creates dependency element with all needed sub elements
+            * Was going to use a copy of the artifact element, however
+            * I was unable to remove the sub elements.
+            * Therefore had to create a separate element.
+            * @TODO
+            * Possible solution:
+            * Create artifact element with elements (groupId, artifactId and version)
+            * then create a copy, afterwards add still needed elements to the artifact
+            * Element whilst keeping the dependency copy with the basics.
+            * */
+			Element dependencies = (Element) xpath2.selectSingleNode(projectPom);
+            Element dependency = DocumentHelper.createElement("dependency");
+            Element groupid = dependency.addElement("groupId");
+            Element artifactid = dependency.addElement("artifactId");
+            Element vers = dependency.addElement("version");
+
+            groupid.setText(groupID);
+            artifactid.setText(artID);
+            vers.setText(version);
+
+
 			artifact.add(artifactItem);
+            dependencies.add(dependency);
 
 			System.out.println("Saving file.");
 			// write output
