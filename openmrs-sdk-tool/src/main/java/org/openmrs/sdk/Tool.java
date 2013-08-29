@@ -8,11 +8,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import org.dom4j.Document;
-import org.dom4j.DocumentException;
-import org.dom4j.DocumentHelper;
-import org.dom4j.Element;
-import org.dom4j.XPath;
+import org.dom4j.*;
 import org.dom4j.io.OutputFormat;
 import org.dom4j.io.SAXReader;
 import org.dom4j.io.XMLWriter;
@@ -107,11 +103,12 @@ public class Tool {
 
 		if (!e.asXML().contains(artID)) {
 			System.out.println("Adding module to pom.xml");
+            Namespace ns = new Namespace("","http://maven.apache.org/POM/4.0.0");
             /*
             * Creates artifact element with all needed sub elements
             * */
 			Element artifact = (Element) xpath.selectSingleNode(projectPom);
-            Element artifactItem = DocumentHelper.createElement("artifactItem");
+            Element artifactItem = DocumentHelper.createElement(new QName("artifactItem",ns));
             Element groupId = artifactItem.addElement("groupId");
             Element artifactId = artifactItem.addElement("artifactId");
             Element ver = artifactItem.addElement("version");
@@ -136,7 +133,7 @@ public class Tool {
             * Element whilst keeping the dependency copy with the basics.
             * */
 			Element dependencies = (Element) xpath2.selectSingleNode(projectPom);
-            Element dependency = DocumentHelper.createElement("dependency");
+            Element dependency = DocumentHelper.createElement(new QName("dependency",ns));
             Element groupid = dependency.addElement("groupId");
             Element artifactid = dependency.addElement("artifactId");
             Element vers = dependency.addElement("version");
