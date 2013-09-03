@@ -29,7 +29,9 @@ echo Runs OpenMRS with your plugin installed.
     echo.
     echo The following options are available:
                                         echo -v [value], --version [value]
-                            echo     Version of OpenMRS. Default is the latest..
+                            echo     Version of OpenMRS. Default is the latest.
+                                        echo -Pinstall-wizard
+                            echo     Disable automatic install, starts OpenMRS with install wizard.
         echo.                              
     goto end
 
@@ -131,6 +133,11 @@ call :getarg !ARGN! ARGNEXT
                     set /a ARGI = !ARGI! + 1
                                 goto loopstart
             ) else (
+    if /I "%ARG%"=="-Pinstall-wizard" (
+                    set MVN_PARAMS=%MVN_PARAMS% -Pinstall-wizard
+            set /a ARGI = !ARGI! + 1
+                                goto loopstart
+            ) else (
 
 set MVN_PARAMS=%MVN_PARAMS% %ARG%
 shift
@@ -164,8 +171,8 @@ rem ######
 rem Executing maven
 rem ######
 
-echo Executing: %MAVEN_EXECUTABLE% jetty:run-war -Pinstall-h2 %MVN_PARAMS%
-%MAVEN_EXECUTABLE% jetty:run-war -Pinstall-h2 %MVN_PARAMS%
+echo Executing: %MAVEN_EXECUTABLE% jetty:run-war %MVN_PARAMS%
+%MAVEN_EXECUTABLE% jetty:run-war %MVN_PARAMS%
 
 rem ---------------------------------------------------------------
 rem (AMPS-197) The batch routines below for correct handling 
