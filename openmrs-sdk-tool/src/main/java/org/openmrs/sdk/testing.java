@@ -33,7 +33,7 @@ public class testing {
         try {
             modulePom = reader.read(fileName);
             root = modulePom.getRootElement();
-            List elements =  root.getParent().elements();
+
 
             for (Iterator i = root.elementIterator(); i.hasNext();) {
                 Element pElement = (Element) i.next();
@@ -44,6 +44,7 @@ public class testing {
                     Element module = e.addElement("module");
                     module.setText("testing");
                     System.out.println(pElement.getName());
+                    ((Element) i.next()).getParent().add(e);
                     pElement.getParent().add(e);
 
 
