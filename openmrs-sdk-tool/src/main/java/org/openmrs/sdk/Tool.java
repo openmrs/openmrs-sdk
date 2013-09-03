@@ -1,15 +1,11 @@
 package org.openmrs.sdk;
 
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.util.HashMap;
+import java.io.*;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.List;
 
 import org.apache.commons.cli.*;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.dom4j.*;
 import org.dom4j.io.OutputFormat;
 import org.dom4j.io.SAXReader;
@@ -18,39 +14,40 @@ import org.dom4j.io.XMLWriter;
 public class Tool {
 	
 	public static void main(String args[]) throws DocumentException {
-		// create Options object
 		Options options = new Options();
-		
-		// add t option
+
 		options.addOption("h", "help", false, "displays help");
-		options.addOption("a", "addModule", true, "adds module to pom.xml in openmrs-project");
+		options.addOption("a", "addModule", true, "adds module to project");
 		Option o = options.getOption("a");
 		o.setArgName("path");
 		
 		CommandLineParser parser = new BasicParser();
-		CommandLine cmd = null;
+		CommandLine cmd;
 		try {
 			cmd = parser.parse(options, args);
-			if (cmd.hasOption('h') | cmd.hasOption("help")) {
-				usage(options);
-			}
-			if (cmd.hasOption('a') | cmd.hasOption("addModule")) {
-				String filePath = cmd.getOptionValue('a');
-				if (filePath == null)
-					info("File Path missing.");
-				else
-					addModule(filePath);
-			}
-		}
-		catch (ParseException e) {
+		} catch (ParseException e) {
 			usage(options);
+			return;
 		}
-		
+
+		if (cmd.hasOption('h') | cmd.hasOption("help")) {
+			usage(options);
+			return;
+		}
+
+		if (cmd.hasOption('a') | cmd.hasOption("addModule")) {
+			String modulePath = cmd.getOptionValue('a');
+			if (modulePath == null) {
+				error("Path to module is missing.");
+			} else {
+				new Tool().addModule(modulePath);
+			}
+		}
 	}
 	
 	private static void usage(Options options) {
 		HelpFormatter formatter = new HelpFormatter();
-		formatter.printHelp("tool.jar", options);
+		formatter.printHelp("Tool.jar", options);
 	}
 	
 	private static void info(String s) {
@@ -60,122 +57,144 @@ public class Tool {
 	private static void error(String s) {
 		System.out.println("ERROR: " + s);
 	}
+
+	private static void error(String s, Exception e) {
+		System.out.println("ERROR: " + s + "\n\n" + ExceptionUtils.getStackTrace(e));
+	}
 	
-	public static void addModule(String fileName) {
-		SAXReader reader = new SAXReader();
-		Document modulePom = null;
-		Element root = null;
-		String groupID = null, artID = null, version = null;
+	public int addModule(String modulePath) {
+		File file = new File(modulePath, "pom.xml");
+		if (!file.exists()) {
+			error("Wrong path to module: " + file.getAbsolutePath());
+			return -1;
+		}
 		try {
-			modulePom = reader.read(fileName);
+			SAXReader reader = new SAXReader();
+			Document modulePom;
+			Element root;
+
+			modulePom = reader.read(file);
 			root = modulePom.getRootElement();
-			
+
+			String groupId = null, artifactId = null, version = null;
+
 			for (Iterator i = root.elementIterator(); i.hasNext();) {
-				Element pElement = (Element) i.next();
-				if (pElement.getName().equals("groupId")) {
-					System.out.println("GroupID: " + pElement.getText());
-					groupID = pElement.getText();
+				Element element = (Element) i.next();
+				if (element.getName().equals("groupId")) {
+					groupId = element.getText();
 				}
-				if (pElement.getName().equals("artifactId")) {
-					System.out.println("ArtifactID: " + pElement.getText());
-					artID = pElement.getText();
+				if (element.getName().equals("artifactId")) {
+					artifactId = element.getText();
 				}
-				if (pElement.getName().equals("version")) {
-					System.out.println("Version: " + pElement.getText());
-					version = pElement.getText();
+				if (element.getName().equals("version")) {
+					version = element.getText();
 				}
 			}
-            // once all info has been read, add it as artifact.
-            addArtifactItem(groupID,artID,version);
+            addArtifactItemAndModule(modulePath, groupId, artifactId, version);
+		} catch (Exception e) {
+			error(modulePath + " cannot be parsed.", e);
+			return -1;
 		}
 
-		catch (DocumentException e1) {
-			error("File: " + fileName + " does not exist.");
-		}
+		return 0;
 	}
 	
-	public static void addArtifactItem( String groupID, String artID, String version) {
-		// Time to modify next openmrs-project pom.xml
-        SAXReader reader = new SAXReader();
+	public void addArtifactItemAndModule(String modulePath, String groupId, String artifactId, String version) {
+		Document projectPom = readXml("pom.xml");
+
+		artifactId = artifactId + "-omod";
+
+		Element artifactItem = selectArtifactItem(projectPom, artifactId);
+
+		artifactItem.element("groupId").setText(groupId);
+		artifactItem.element("artifactId").setText(artifactId + "-omod");
+		artifactItem.element("version").setText(version);
+		artifactItem.element("type").setText("omod");
+		artifactItem.element("destFileName").setText(artifactId + "-" + version + ".omod");
+
+		Element modules = selectModules(projectPom);
+		if (modules == null) {
+			modules = projectPom.getRootElement().addElement("modules");
+		}
+
+		File file = new File(modulePath);
+		if (!modules.asXML().contains(file.getPath())) {
+			modules.addElement("module").addText(file.getPath());
+		} else {
+			info("Module is already added to modules");
+		}
+
+		writePom(projectPom);
+	}
+
+	Element selectModules(Document projectPom) {
+		XPath modules = DocumentHelper
+				.createXPath("/" + toLocalElement("project") + toLocalElement("modules"));
+		return (Element) modules.selectSingleNode(projectPom);
+	}
+
+	Document readXml(String file) {
+		SAXReader reader = new SAXReader();
 		Document projectPom = null;
 		try {
-			projectPom = reader.read("openmrs-project/pom.xml");
+			projectPom = reader.read(file);
 		}
-		catch (DocumentException e1) {
-			error("OpenMRS-Project pom.xml is missing.");
+		catch (DocumentException e) {
+			error("Xml configuration cannot be parsed.", e);
 		}
-		Map<String, String> namespaceUris = new HashMap<String, String>();
-		namespaceUris.put("pom", "http://maven.apache.org/POM/4.0.0");
+		return projectPom;
+	}
+
+	Element selectArtifactItem(Document projectPom, String artifactId) {
 		XPath artifactItemsPath = DocumentHelper
-		        .createXPath("//pom:project/pom:build/pom:plugins/pom:plugin[pom:artifactId='maven-dependency-plugin']//pom:configuration//pom:artifactItems");
-		XPath modulesPath = DocumentHelper.createXPath("//pom:project");
-		artifactItemsPath.setNamespaceURIs(namespaceUris);
-		modulesPath.setNamespaceURIs(namespaceUris);
-		Element e = (Element) artifactItemsPath.selectSingleNode(projectPom);
-		
-		if (!e.asXML().contains(artID)) {
-			System.out.println("Adding module to pom.xml");
-			Namespace ns = new Namespace("", "http://maven.apache.org/POM/4.0.0");
-			/*
-			* Creates artifact element with all needed sub elements
-			* */
-			Element artifact = (Element) artifactItemsPath.selectSingleNode(projectPom);
-			Element artifactItem = DocumentHelper.createElement(new QName("artifactItem", ns));
-			Element groupId = artifactItem.addElement("groupId");
-			Element artifactId = artifactItem.addElement("artifactId");
-			Element ver = artifactItem.addElement("version");
-			Element type = artifactItem.addElement("type");
-			Element fName = artifactItem.addElement("destFileName");
+		        .createXPath("/" + toLocalElement("project") + toLocalElement("build") + toLocalElement("plugins") +
+						toLocalElement("plugin") + toLocalElement("executions") + toLocalElement("execution") +
+				toLocalElement("configuration") + toLocalElement("artifactItems"));
+		Element artifactItems = (Element) artifactItemsPath.selectSingleNode(artifactItemsPath);
 
+		List<Element> existingArtifactItems = (List<Element>) artifactItems.elements();
+		for (Element artifactItem: existingArtifactItems) {
+			List<Element> items = (List<Element>) artifactItem.elements();
 
-			
-			groupId.setText(groupID);
-			artifactId.setText(artID);
-			ver.setText(version);
-			type.setText("omod");
-			fName.setText(artID + "-" + version + ".omod");
+			for (Element item: items) {
+				if (item.getName().equals("artifactId") && item.getText().equals(artifactId)) {
+					return artifactItem;
+				}
+			}
+		}
+		Element newArtifactItem = artifactItems.addElement("artifactItem");
 
+		newArtifactItem.addElement("groupId").addText("");
+		newArtifactItem.addElement("artifactId").addText("");
+		newArtifactItem.addElement("version").addText("");
+		newArtifactItem.addElement("type").addText("");
+		newArtifactItem.addElement("destFileName").addText("");
 
+		return newArtifactItem;
+	}
 
-
-			/*
-			* Creates module item.
-			* Will be compiled then added as artifact.
-			* */
-			Element modules = (Element) modulesPath.selectSingleNode(projectPom);
-			Element module = DocumentHelper.createElement(new QName("module", ns));
-
-			module.setText("../" + artID);
-			
-			artifact.add(artifactItem);
-			modules.add(module);
-
-            // Write to file
-            writePom(projectPom);
-		} else
-			info("Module is in present in pom.xml");
-		
+	private String toLocalElement(String name) {
+		return "/*[local-name()='" + name + "']";
 	}
 	
-	public static void writePom(Document document) {
+	public void writePom(Document document) {
 		info("Saving file.");
-		// write output
 		OutputFormat format = OutputFormat.createPrettyPrint();
 		format.setEncoding("utf-8");
 		XMLWriter writer;
 		try {
-			writer = new XMLWriter(new FileOutputStream("openmrs-project/pom.xml"), format);
+			writer = new XMLWriter(new FileOutputStream("pom.xml"), format);
 			writer.write(document);
 			writer.close();
 		}
-		catch (UnsupportedEncodingException e1) {
-			e1.printStackTrace();
+		catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
 		}
-		catch (FileNotFoundException e1) {
-			error("OpenMRS-Project pom.xml is missing.");
+		catch (FileNotFoundException e) {
+			error("Project configuration is missing.");
 		}
-		catch (IOException e1) {
-			error("Cannot write to OpenMRS-Project pom.xml");
+		catch (IOException e) {
+			error("Cannot write to project configuration.");
 		}
 		
 	}
