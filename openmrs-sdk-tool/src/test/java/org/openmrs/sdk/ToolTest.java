@@ -13,10 +13,10 @@ public class ToolTest {
 		Tool tool = new Tool();
 		Document document = tool.readXml(getClass().getResource("test-pom.xml").getPath());
 
-		Element element = tool.selectArtifactItem(document, "coreapps");
+		Element element = tool.selectArtifactItem(document, "core-apps");
 
 		Assert.assertThat(element, CoreMatchers.is(CoreMatchers.notNullValue()));
-		Assert.assertThat(element.getName(), CoreMatchers.is("coreapps"));
+		Assert.assertThat(element.asXML(), CoreMatchers.containsString("core-apps"));
 	}
 
 }

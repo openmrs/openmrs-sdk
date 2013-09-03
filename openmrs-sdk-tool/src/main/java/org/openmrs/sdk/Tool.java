@@ -15,7 +15,7 @@ public class Tool {
 	
 	public static void main(String args[]) throws DocumentException {
 		Options options = new Options();
-
+		
 		options.addOption("h", "help", false, "displays help");
 		options.addOption("a", "addModule", true, "adds module to project");
 		Option o = options.getOption("a");
@@ -25,16 +25,17 @@ public class Tool {
 		CommandLine cmd;
 		try {
 			cmd = parser.parse(options, args);
-		} catch (ParseException e) {
+		}
+		catch (ParseException e) {
 			usage(options);
 			return;
 		}
-
+		
 		if (cmd.hasOption('h') | cmd.hasOption("help")) {
 			usage(options);
 			return;
 		}
-
+		
 		if (cmd.hasOption('a') | cmd.hasOption("addModule")) {
 			String modulePath = cmd.getOptionValue('a');
 			if (modulePath == null) {
@@ -57,7 +58,7 @@ public class Tool {
 	private static void error(String s) {
 		System.out.println("ERROR: " + s);
 	}
-
+	
 	private static void error(String s, Exception e) {
 		System.out.println("ERROR: " + s + "\n\n" + ExceptionUtils.getStackTrace(e));
 	}
@@ -72,12 +73,12 @@ public class Tool {
 			SAXReader reader = new SAXReader();
 			Document modulePom;
 			Element root;
-
+			
 			modulePom = reader.read(file);
 			root = modulePom.getRootElement();
-
+			
 			String groupId = null, artifactId = null, version = null;
-
+			
 			for (Iterator i = root.elementIterator(); i.hasNext();) {
 				Element element = (Element) i.next();
 				if (element.getName().equals("groupId")) {
@@ -90,49 +91,49 @@ public class Tool {
 					version = element.getText();
 				}
 			}
-            addArtifactItemAndModule(modulePath, groupId, artifactId, version);
-		} catch (Exception e) {
+			addArtifactItemAndModule(modulePath, groupId, artifactId, version);
+		}
+		catch (Exception e) {
 			error(modulePath + " cannot be parsed.", e);
 			return -1;
 		}
-
+		
 		return 0;
 	}
 	
 	public void addArtifactItemAndModule(String modulePath, String groupId, String artifactId, String version) {
 		Document projectPom = readXml("pom.xml");
-
+		
 		artifactId = artifactId + "-omod";
-
+		
 		Element artifactItem = selectArtifactItem(projectPom, artifactId);
-
+		
 		artifactItem.element("groupId").setText(groupId);
 		artifactItem.element("artifactId").setText(artifactId + "-omod");
 		artifactItem.element("version").setText(version);
 		artifactItem.element("type").setText("omod");
 		artifactItem.element("destFileName").setText(artifactId + "-" + version + ".omod");
-
+		
 		Element modules = selectModules(projectPom);
 		if (modules == null) {
 			modules = projectPom.getRootElement().addElement("modules");
 		}
-
+		
 		File file = new File(modulePath);
 		if (!modules.asXML().contains(file.getPath())) {
 			modules.addElement("module").addText(file.getPath());
 		} else {
 			info("Module is already added to modules");
 		}
-
+		
 		writePom(projectPom);
 	}
-
+	
 	Element selectModules(Document projectPom) {
-		XPath modules = DocumentHelper
-				.createXPath("/" + toLocalElement("project") + toLocalElement("modules"));
+		XPath modules = DocumentHelper.createXPath("/" + toLocalElement("project") + toLocalElement("modules"));
 		return (Element) modules.selectSingleNode(projectPom);
 	}
-
+	
 	Document readXml(String file) {
 		SAXReader reader = new SAXReader();
 		Document projectPom = null;
@@ -144,35 +145,37 @@ public class Tool {
 		}
 		return projectPom;
 	}
-
+	
 	Element selectArtifactItem(Document projectPom, String artifactId) {
-		XPath artifactItemsPath = DocumentHelper
-		        .createXPath("/" + toLocalElement("project") + toLocalElement("build") + toLocalElement("plugins") +
-						toLocalElement("plugin") + toLocalElement("executions") + toLocalElement("execution") +
-				toLocalElement("configuration") + toLocalElement("artifactItems"));
-		Element artifactItems = (Element) artifactItemsPath.selectSingleNode(artifactItemsPath);
-
+		XPath artifactItemsPath = DocumentHelper.createXPath("/" + toLocalElement("project") + toLocalElement("build")
+                + toLocalElement("plugins") + toLocalElement("plugin") + toLocalElement("executions")
+                + toLocalElement("execution") + toLocalElement("configuration") + toLocalElement("artifactItems"));
+		Element artifactItems = (Element) artifactItemsPath.selectSingleNode(projectPom);
+		System.out.println(artifactItems.asXML());
+		
 		List<Element> existingArtifactItems = (List<Element>) artifactItems.elements();
-		for (Element artifactItem: existingArtifactItems) {
+		for (Element artifactItem : existingArtifactItems) {
 			List<Element> items = (List<Element>) artifactItem.elements();
-
-			for (Element item: items) {
+			
+			for (Element item : items) {
 				if (item.getName().equals("artifactId") && item.getText().equals(artifactId)) {
+					
 					return artifactItem;
+					
 				}
 			}
 		}
 		Element newArtifactItem = artifactItems.addElement("artifactItem");
-
+		
 		newArtifactItem.addElement("groupId").addText("");
 		newArtifactItem.addElement("artifactId").addText("");
 		newArtifactItem.addElement("version").addText("");
 		newArtifactItem.addElement("type").addText("");
 		newArtifactItem.addElement("destFileName").addText("");
-
+		
 		return newArtifactItem;
 	}
-
+	
 	private String toLocalElement(String name) {
 		return "/*[local-name()='" + name + "']";
 	}

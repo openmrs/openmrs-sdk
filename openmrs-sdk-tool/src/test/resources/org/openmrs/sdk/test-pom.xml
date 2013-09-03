@@ -58,7 +58,6 @@
                                     <outputDirectory>${project.build.directory}/db</outputDirectory>
                                     <destFileName>h2-${h2Version}.jar</destFileName>
                                 </artifactItem>
-
                                 <artifactItem>
                                     <groupId>org.openmrs.module</groupId>
                                     <artifactId>logic-omod</artifactId>
