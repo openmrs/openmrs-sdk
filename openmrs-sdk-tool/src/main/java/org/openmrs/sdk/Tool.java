@@ -91,7 +91,7 @@ public class Tool {
 					version = element.getText();
 				}
 			}
-			addArtifactItemAndModule(modulePath, groupId, artifactId, version);
+			addModuleToProjectConfiguration(modulePath, groupId, artifactId, version);
 		}
 		catch (Exception e) {
 			error(modulePath + " cannot be parsed.", e);
@@ -101,19 +101,11 @@ public class Tool {
 		return 0;
 	}
 	
-	public void addArtifactItemAndModule(String modulePath, String groupId, String artifactId, String version) {
+	public void addModuleToProjectConfiguration(String modulePath, String groupId, String artifactId, String version) {
 		Document projectPom = readXml("pom.xml");
 		
-		artifactId = artifactId + "-omod";
-		
-		Element artifactItem = selectArtifactItem(projectPom, artifactId);
-		
-		artifactItem.element("groupId").setText(groupId);
-		artifactItem.element("artifactId").setText(artifactId + "-omod");
-		artifactItem.element("version").setText(version);
-		artifactItem.element("type").setText("omod");
-		artifactItem.element("destFileName").setText(artifactId + "-" + version + ".omod");
-		
+		updateArtifactItem(projectPom, groupId, artifactId, version);
+
 		Element modules = selectModules(projectPom);
 		if (modules == null) {
 			modules = projectPom.getRootElement().addElement("modules");
@@ -126,19 +118,19 @@ public class Tool {
 			info("Module is already added to modules");
 		}
 		
-		writePom(projectPom);
+		writeXml("pom.xml", projectPom);
 	}
 	
 	Element selectModules(Document projectPom) {
-		XPath modules = DocumentHelper.createXPath("/" + toLocalElement("project") + toLocalElement("modules"));
-		return (Element) modules.selectSingleNode(projectPom);
+		XPath modulesPath = DocumentHelper.createXPath("/" + toLocalElement("project") + toLocalElement("modules"));
+		return (Element) modulesPath.selectSingleNode(projectPom);
 	}
 	
-	Document readXml(String file) {
+	Document readXml(String filePath) {
 		SAXReader reader = new SAXReader();
 		Document projectPom = null;
 		try {
-			projectPom = reader.read(file);
+			projectPom = reader.read(filePath);
 		}
 		catch (DocumentException e) {
 			error("Xml configuration cannot be parsed.", e);
@@ -146,32 +138,30 @@ public class Tool {
 		return projectPom;
 	}
 	
-	Element selectArtifactItem(Document projectPom, String artifactId) {
+	Element updateArtifactItem(Document projectPom, String groupId, String artifactId, String version) {
 		XPath artifactItemsPath = DocumentHelper.createXPath("/" + toLocalElement("project") + toLocalElement("build")
-                + toLocalElement("plugins") + toLocalElement("plugin") + toLocalElement("executions")
-                + toLocalElement("execution") + toLocalElement("configuration") + toLocalElement("artifactItems"));
+				+ toLocalElement("plugins") + toLocalElement("plugin") + toLocalElement("executions")
+				+ toLocalElement("execution") + toLocalElement("configuration") + toLocalElement("artifactItems"));
 		Element artifactItems = (Element) artifactItemsPath.selectSingleNode(projectPom);
-		System.out.println(artifactItems.asXML());
-		
+
 		List<Element> existingArtifactItems = (List<Element>) artifactItems.elements();
 		for (Element artifactItem : existingArtifactItems) {
-			List<Element> items = (List<Element>) artifactItem.elements();
-			
-			for (Element item : items) {
-				if (item.getName().equals("artifactId") && item.getText().equals(artifactId)) {
-					
-					return artifactItem;
-					
+			List<Element> artifactItemElements = (List<Element>) artifactItem.elements();
+
+			for (Element artifactItemElement : artifactItemElements) {
+				if (artifactItemElement.getName().equals("artifactId") && artifactItemElement.getText().equals(artifactId + "-omod")) {
+					artifactItems.remove(artifactItem);
+					break;
 				}
 			}
 		}
 		Element newArtifactItem = artifactItems.addElement("artifactItem");
-		
-		newArtifactItem.addElement("groupId").addText("");
-		newArtifactItem.addElement("artifactId").addText("");
-		newArtifactItem.addElement("version").addText("");
-		newArtifactItem.addElement("type").addText("");
-		newArtifactItem.addElement("destFileName").addText("");
+
+		newArtifactItem.addElement("groupId").addText(groupId);
+		newArtifactItem.addElement("artifactId").addText(artifactId + "-omod");
+		newArtifactItem.addElement("version").addText(version);
+		newArtifactItem.addElement("type").addText("omod");
+		newArtifactItem.addElement("destFileName").addText(artifactId + "-" + version + ".omod");
 		
 		return newArtifactItem;
 	}
@@ -180,13 +170,13 @@ public class Tool {
 		return "/*[local-name()='" + name + "']";
 	}
 	
-	public void writePom(Document document) {
+	void writeXml(String filePath, Document document) {
 		info("Saving file.");
 		OutputFormat format = OutputFormat.createPrettyPrint();
 		format.setEncoding("utf-8");
 		XMLWriter writer;
 		try {
-			writer = new XMLWriter(new FileOutputStream("pom.xml"), format);
+			writer = new XMLWriter(new FileOutputStream(filePath), format);
 			writer.write(document);
 			writer.close();
 		}
@@ -194,7 +184,7 @@ public class Tool {
 			e.printStackTrace();
 		}
 		catch (FileNotFoundException e) {
-			error("Project configuration is missing.");
+			error("Configuration is missing.");
 		}
 		catch (IOException e) {
 			error("Cannot write to project configuration.");
