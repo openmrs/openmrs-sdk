@@ -74,6 +74,10 @@
       <goals>
         <goal>single</goal>
       </goals>
+      <configuration>
+          <finalName>sdk-tool.jar</finalName>
+          <appendAssemblyId>false</appendAssemblyId>
+      </configuration>
     </execution>
   </executions>
   </plugin>

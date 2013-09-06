@@ -13,7 +13,7 @@ import org.dom4j.io.XMLWriter;
 
 public class Tool {
 	
-	public static void main(String args[]) throws DocumentException {
+	public static void main(String args[]) throws IOException {
 		Options options = new Options();
 		
 		options.addOption("h", "help", false, "displays help");
@@ -39,7 +39,7 @@ public class Tool {
 		if (cmd.hasOption('a') | cmd.hasOption("addModule")) {
 			String modulePath = cmd.getOptionValue('a');
 			if (modulePath == null) {
-				error("Path to module is missing.");
+				throw new IOException("Path to module is missing");
 			} else {
 				new Tool().addModule(modulePath);
 			}
@@ -48,77 +48,72 @@ public class Tool {
 	
 	private static void usage(Options options) {
 		HelpFormatter formatter = new HelpFormatter();
-		formatter.printHelp("Tool.jar", options);
+		formatter.printHelp("tool.jar", options);
 	}
 	
 	private static void info(String s) {
-		System.out.println("INFO: " + s);
+		System.out.println(s);
 	}
 	
-	private static void error(String s) {
-		System.out.println("ERROR: " + s);
-	}
-	
-	private static void error(String s, Exception e) {
-		System.out.println("ERROR: " + s + "\n\n" + ExceptionUtils.getStackTrace(e));
-	}
-	
-	public int addModule(String modulePath) {
+	public void addModule(String modulePath) throws IOException {
 		File file = new File(modulePath, "pom.xml");
 		if (!file.exists()) {
-			error("Wrong path to module: " + file.getAbsolutePath());
-			return -1;
+			throw new IOException("Wrong path to module: " + file.getAbsolutePath());
 		}
+
+		SAXReader reader = new SAXReader();
+		Document modulePom;
+		Element root;
+
+		info("Reading module configuration");
+
 		try {
-			SAXReader reader = new SAXReader();
-			Document modulePom;
-			Element root;
-			
 			modulePom = reader.read(file);
-			root = modulePom.getRootElement();
-			
-			String groupId = null, artifactId = null, version = null;
-			
-			for (Iterator i = root.elementIterator(); i.hasNext();) {
-				Element element = (Element) i.next();
-				if (element.getName().equals("groupId")) {
-					groupId = element.getText();
-				}
-				if (element.getName().equals("artifactId")) {
-					artifactId = element.getText();
-				}
-				if (element.getName().equals("version")) {
-					version = element.getText();
-				}
+		} catch (DocumentException e) {
+			throw new IOException(file + " cannot be parsed", e);
+		}
+
+		root = modulePom.getRootElement();
+		String groupId = null, artifactId = null, version = null;
+
+		for (Iterator i = root.elementIterator(); i.hasNext();) {
+			Element element = (Element) i.next();
+			if (element.getName().equals("groupId")) {
+				groupId = element.getText();
 			}
-			addModuleToProjectConfiguration(modulePath, groupId, artifactId, version);
+			if (element.getName().equals("artifactId")) {
+				artifactId = element.getText();
+			}
+			if (element.getName().equals("version")) {
+				version = element.getText();
+			}
 		}
-		catch (Exception e) {
-			error(modulePath + " cannot be parsed.", e);
-			return -1;
-		}
-		
-		return 0;
+
+		info("Updating project configuration");
+
+		addModuleToProjectConfiguration(modulePath, groupId, artifactId, version);
 	}
 	
-	public void addModuleToProjectConfiguration(String modulePath, String groupId, String artifactId, String version) {
+	public void addModuleToProjectConfiguration(String modulePath, String groupId, String artifactId, String version) throws IOException {
 		Document projectPom = readXml("pom.xml");
 		
 		updateArtifactItem(projectPom, groupId, artifactId, version);
 
-		Element modules = selectModules(projectPom);
-		if (modules == null) {
-			modules = projectPom.getRootElement().addElement("modules");
-		}
-		
 		File file = new File(modulePath);
-		if (!modules.asXML().contains(file.getPath())) {
-			modules.addElement("module").addText(file.getPath());
-		} else {
-			info("Module is already added to modules");
+		if (!file.getPath().equals("../")) {
+			Element modules = selectModules(projectPom);
+			if (modules == null) {
+				modules = projectPom.getRootElement().addElement("modules");
+			}
+
+			if (!modules.asXML().contains(file.getPath())) {
+				modules.addElement("module").addText(file.getPath());
+			}
 		}
-		
+
 		writeXml("pom.xml", projectPom);
+
+		info("Configuration updated");
 	}
 	
 	Element selectModules(Document projectPom) {
@@ -126,14 +121,14 @@ public class Tool {
 		return (Element) modulesPath.selectSingleNode(projectPom);
 	}
 	
-	Document readXml(String filePath) {
+	Document readXml(String filePath) throws IOException {
 		SAXReader reader = new SAXReader();
-		Document projectPom = null;
+		Document projectPom;
 		try {
 			projectPom = reader.read(filePath);
 		}
 		catch (DocumentException e) {
-			error("Xml configuration cannot be parsed.", e);
+			throw new IOException(filePath + " cannot be parsed", e);
 		}
 		return projectPom;
 	}
@@ -160,7 +155,7 @@ public class Tool {
 		newArtifactItem.addElement("groupId").addText(groupId);
 		newArtifactItem.addElement("artifactId").addText(artifactId + "-omod");
 		newArtifactItem.addElement("version").addText(version);
-		newArtifactItem.addElement("type").addText("omod");
+		newArtifactItem.addElement("type").addText("jar");
 		newArtifactItem.addElement("destFileName").addText(artifactId + "-" + version + ".omod");
 		
 		return newArtifactItem;
@@ -170,8 +165,7 @@ public class Tool {
 		return "/*[local-name()='" + name + "']";
 	}
 	
-	void writeXml(String filePath, Document document) {
-		info("Saving file.");
+	void writeXml(String filePath, Document document) throws IOException {
 		OutputFormat format = OutputFormat.createPrettyPrint();
 		format.setEncoding("utf-8");
 		XMLWriter writer;
@@ -180,14 +174,8 @@ public class Tool {
 			writer.write(document);
 			writer.close();
 		}
-		catch (UnsupportedEncodingException e) {
-			e.printStackTrace();
-		}
-		catch (FileNotFoundException e) {
-			error("Configuration is missing.");
-		}
-		catch (IOException e) {
-			error("Cannot write to project configuration.");
+		catch (Exception e) {
+			throw new IOException(filePath + " cannot be written", e);
 		}
 		
 	}
