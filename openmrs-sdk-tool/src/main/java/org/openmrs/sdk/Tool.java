@@ -112,7 +112,7 @@ public class Tool {
 
 		writeXml("pom.xml", projectPom);
 
-		info("Configuration updated");
+		info("Project configuration updated");
 	}
 
 	Element selectModules(Document projectPom) {
