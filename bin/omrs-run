@@ -73,9 +73,10 @@ do
 done
 
 # check if pom.xml is the proper archetype
-if grep -qs "OPENMRS_INSTALLATION_SCRIPT" pom.xml; then
+if grep -qs "deploy-to-server" pom.xml; then
   echo "Found proper pom.xml"
   # execute maven 
+  cd server
   echo "Executing ${MAVEN_EXEC}/mvn jetty:run-war ${MVN_PARAMS}"
   sh -c "${MAVEN_EXEC}/mvn jetty:run-war ${MVN_PARAMS}"
 # check if default project exists
@@ -83,9 +84,10 @@ elif [ -d "openmrs-project" ]; then
   echo "Found default project directory"
   cd openmrs-project
   # check if pom.xml exists in default directory
-  if grep -qs "OPENMRS_INSTALLATION_SCRIPT" pom.xml; then
+  if grep -qs "deploy-to-server" pom.xml; then
     echo "Found proper pom.xml"
-    # execute maven 
+    # execute maven
+    cd server 
     echo "Executing ${MAVEN_EXEC}/mvn jetty:run-war ${MVN_PARAMS}"
     sh -c "${MAVEN_EXEC}/mvn jetty:run-war ${MVN_PARAMS}"
   else
@@ -95,7 +97,7 @@ else
   while true; do
     read -p "Could not find proper pom.xml, do you want to create a project? (y/n)" yn
     case $yn in
-        [Yy]* ) omrs-create-project && cd openmrs-project && sh -c "${MAVEN_EXEC}/mvn jetty:run-war ${MVN_PARAMS}"; break;;
+        [Yy]* ) omrs-create-project && cd openmrs-project/server && sh -c "${MAVEN_EXEC}/mvn jetty:run-war ${MVN_PARAMS}"; break;;
         [Nn]* ) exit;;
         * ) echo "Please answer yes or no.";;
     esac
