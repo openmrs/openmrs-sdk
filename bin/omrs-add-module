@@ -1,0 +1,63 @@
+#!/bin/sh
+# check for help command
+
+if [ $# -ge 1 ]; then
+    case "$1" in
+        "-?" | "-h" | "--help" | "-help" | "help" )
+            echo
+            echo "Usage: omrs-add-module [options]"
+            echo
+            echo "Adds module to an openmrs-project."
+            echo
+
+            echo "These options are available:"
+                                                                                       
+                                                                                        echo "-a [path], --add [path]"
+                                                                echo "    Path to module directory, supports both relative and absolute."
+                                                                                       
+            echo
+                                        exit;;
+                        
+    esac
+fi
+
+# resolve symbolic links
+# courtsey of atlassian sdk scripts
+PRG="${0}"
+
+while [ -h "${PRG}" ] ; do
+  ls=`ls -ld "${PRG}"`
+  link=`expr "${ls}" : '.*-> \(.*\)$'`
+  if expr "${link}" : '/.*' > /dev/null; then
+    PRG="${link}"
+  else
+    PRG=`dirname "${PRG}"`/"${link}"
+  fi
+done
+
+PRGDIR=`dirname "${PRG}"`
+
+# sdk location
+
+SDK_HOME="${PRGDIR}"
+
+SDK_HOME=`dirname "${PRGDIR}"`
+export SDK_HOME
+SDK_VERSION=1.0.1
+export SDK_VERSION
+SDK_TOOL_HOME="${SDK_HOME}"/bin
+
+TOOL_PARAMS="-a"
+
+while [ $# -gt 0 ]
+do
+    case "$1" in
+                     "-a" | "--add")
+                                                    TOOL_PARAMS="${TOOL_PARAMS} ${2}"
+                    shift 1;;                    
+                                *)
+            shift 1;;     esac
+done
+echo "Executing: java -jar ${SDK_TOOL_HOME}/sdk-tool.jar ${TOOL_PARAMS}"
+sh -c "java -jar ${SDK_TOOL_HOME}/sdk-tool.jar ${TOOL_PARAMS}"
+
