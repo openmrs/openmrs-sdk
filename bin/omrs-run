@@ -75,6 +75,8 @@ done
 # check if pom.xml is the proper archetype
 if grep -qs "deploy-to-server" pom.xml; then
   echo "Found proper pom.xml"
+  echo "Getting dependencies."
+  omrs-install
   # execute maven 
   cd server
   echo "Executing ${MAVEN_EXEC}/mvn jetty:run-war ${MVN_PARAMS}"
@@ -86,6 +88,10 @@ elif [ -d "openmrs-project" ]; then
   # check if pom.xml exists in default directory
   if grep -qs "deploy-to-server" pom.xml; then
     echo "Found proper pom.xml"
+    echo "Getting dependencies."
+    omrs-install
+    echo "Installing module."
+    omrs-add-module -a ../
     # execute maven
     cd server 
     echo "Executing ${MAVEN_EXEC}/mvn jetty:run-war ${MVN_PARAMS}"

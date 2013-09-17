@@ -50,6 +50,7 @@ goto :continue
 :checkdir
 if exist openmrs-project (
   cd openmrs-project
+  omrs-add-module -a ../
   goto checkpom
   )
 goto notfound
@@ -170,7 +171,8 @@ goto loopstart
 rem ######
 rem Executing maven
 rem ######
-
+echo Getting dependencies
+omrs-install
 echo Executing: %MAVEN_EXECUTABLE% jetty:run-war %MVN_PARAMS%
 %MAVEN_EXECUTABLE% jetty:run-war %MVN_PARAMS%
 
