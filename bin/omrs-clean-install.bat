@@ -47,7 +47,7 @@ set SDK_VERSION="1.0.1"
 rem ######
 rem Executing maven
 rem ######
-echo Executing: %MVN_EXEC% clean
+echo Executing: %MVN_EXEC% clean install
 %MVN_EXEC% clean install
 
 :finish
