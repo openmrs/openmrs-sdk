@@ -1,0 +1,44 @@
+#!/bin/sh
+# check for help command
+
+if [ $# -ge 1 ]; then
+    case "$1" in
+        "-?" | "-h" | "--help" | "-help" | "help" )
+            echo
+            echo "Usage: omrs-clean [options]"
+            echo
+            echo "Cleans an OpenMRS SDK Project or Module Project of temporary files."
+            echo
+                        exit;;
+    esac
+fi
+
+# resolve symbolic links
+# courtsey of atlassian sdk scripts
+PRG="${0}"
+
+while [ -h "${PRG}" ] ; do
+  ls=`ls -ld "${PRG}"`
+  link=`expr "${ls}" : '.*-> \(.*\)$'`
+  if expr "${link}" : '/.*' > /dev/null; then
+    PRG="${link}"
+  else
+    PRG=`dirname "${PRG}"`/"${link}"
+  fi
+done
+
+PRGDIR=`dirname "${PRG}"`
+
+# get maven location
+
+SDK_HOME="${PRGDIR}"
+
+SDK_HOME=`dirname "${PRGDIR}"`
+export SDK_HOME
+SDK_VERSION=1.0.1
+export SDK_VERSION
+MAVEN_HOME="${SDK_HOME}"/apache-maven
+MAVEN_EXEC="${MAVEN_HOME}"/bin
+
+sh -c "${MAVEN_EXEC}/mvn clean"
+
