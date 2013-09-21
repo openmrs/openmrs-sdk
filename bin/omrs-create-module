@@ -15,7 +15,7 @@ if [ $# -ge 1 ]; then
                                                                 echo "    Name of the project (corresponds to the Maven artifactId)."
                     echo
                                                                                         echo "-g [value], --group-id [value]"
-                                                                echo "    Identifier for the logical group of artifacts assoceriated with the project (corresponds to the Maven groupId)."
+                                                                echo "    Identifier for the logical group of artifacts associated with the project (corresponds to the Maven groupId)."
                     echo
                                                                                         echo "-v [value], --version [value]"
                                                                 echo "    Version of the project (default is 1.0-SNAPSHOT)."
