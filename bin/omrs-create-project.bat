@@ -119,8 +119,8 @@ rem ---------------------------------------------------------------
 rem Executing Maven
 rem ---------------------------------------------------------------
 
-echo Executing: archetype:generate %MVN_PARAMS% -DarchetypeCatalog=local -DarchetypeArtifactId=maven-archetype-openmrs-project -DarchetypeGroupId=org.openmrs.maven.archetypes -DarchetypeVersion=1.0.0-SNAPSHOT -Dpackage=org.openmrs
-%MAVEN_EXECUTABLE% archetype:generate %MVN_PARAMS% -DarchetypeCatalog=local -DarchetypeArtifactId=maven-archetype-openmrs-project -DarchetypeGroupId=org.openmrs.maven.archetypes -DarchetypeVersion=1.0.0-SNAPSHOT -Dpackage=org.openmrs
+echo Executing: archetype:generate %MVN_PARAMS% -DarchetypeArtifactId=maven-archetype-openmrs-project -DarchetypeGroupId=org.openmrs.maven.archetypes -DarchetypeVersion=1.0.0-SNAPSHOT -Dpackage=org.openmrs
+%MAVEN_EXECUTABLE% archetype:generate %MVN_PARAMS% -DarchetypeArtifactId=maven-archetype-openmrs-project -DarchetypeGroupId=org.openmrs.maven.archetypes -DarchetypeVersion=1.0.0-SNAPSHOT -Dpackage=org.openmrs
 
 rem ---------------------------------------------------------------
 rem (AMPS-197) The batch routines below for correct handling 
