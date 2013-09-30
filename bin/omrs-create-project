@@ -65,7 +65,7 @@ do
 done
 
 # execute maven
-echo "Executing: ${MAVEN_EXEC}/mvn archetype:generate ${MVN_PARAMS} -DarchetypeCatalog=local -DarchetypeArtifactId=maven-archetype-openmrs-project -DarchetypeGroupId=org.openmrs.maven.archetypes -DarchetypeVersion=1.0.0-SNAPSHOT -Dpackage=org.openmrs"
+echo "Executing: ${MAVEN_EXEC}/mvn archetype:generate ${MVN_PARAMS} -DarchetypeArtifactId=maven-archetype-openmrs-project -DarchetypeGroupId=org.openmrs.maven.archetypes -DarchetypeVersion=1.0.0-SNAPSHOT -Dpackage=org.openmrs"
 
-sh -c "${MAVEN_EXEC}/mvn archetype:generate ${MVN_PARAMS} -DarchetypeCatalog=local -DarchetypeArtifactId=maven-archetype-openmrs-project -DarchetypeGroupId=org.openmrs.maven.archetypes -DarchetypeVersion=1.0.0-SNAPSHOT -Dpackage=org.openmrs"
+sh -c "${MAVEN_EXEC}/mvn archetype:generate ${MVN_PARAMS} -DarchetypeArtifactId=maven-archetype-openmrs-project -DarchetypeGroupId=org.openmrs.maven.archetypes -DarchetypeVersion=1.0.0-SNAPSHOT -Dpackage=org.openmrs"
 
