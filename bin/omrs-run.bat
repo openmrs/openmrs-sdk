@@ -51,6 +51,9 @@ goto :continue
 if exist openmrs-project (
   cd openmrs-project
   CALL omrs-add-module -a ../
+  cd ..
+  CALL omrs-install
+  cd openmrs-project
   goto checkpom
   )
 goto notfound
@@ -64,8 +67,7 @@ goto :notfound
 
 :createproject
 CALL omrs-create-project
-cd openmrs-project
-goto continue
+goto checkpom
 
 
 :continue
