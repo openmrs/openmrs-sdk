@@ -74,7 +74,7 @@ done
 
 # check if pom.xml is the proper archetype
 if grep -qs "deploy-to-server" pom.xml; then
-  echo "Found proper pom.xml"
+  echo "Found an existing configuration for OpenMRS"
   echo "Getting dependencies."
   omrs-install
   # execute maven 
@@ -101,7 +101,7 @@ elif [ -d "openmrs-project" ]; then
   fi
 else
   while true; do
-    read -p "Could not find proper pom.xml, do you want to create a project? (y/n)" yn
+    read -p "Could not find a configuration for OpenMRS, do you want to create one? (y/n)" yn
     case $yn in
         [Yy]* ) omrs-create-project && cd openmrs-project/server && sh -c "${MAVEN_EXEC}/mvn jetty:run-war ${MVN_PARAMS}"; break;;
         [Nn]* ) exit;;

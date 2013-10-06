@@ -42,22 +42,22 @@ rem ######
 
 :checkpom
 
-find /c "deploy-to-server" pom.xml 2>nul
-if %errorlevel% equ 1 goto checkdir
-echo Found proper pom.xml
+find /c "deploy-to-server" server/pom.xml 2>nul
+if %errorlevel% neq 0 goto checkdir
+echo Found an existing configuration for OpenMRS
 goto :continue
 
 :checkdir
 if exist openmrs-project (
   cd openmrs-project
-  omrs-add-module -a ../
+  CALL omrs-add-module -a ../
   goto checkpom
   )
 goto notfound
 
 
 :notfound
-set /P c=Could not find proper pom.xml, do you want to create a project? (y/n)
+set /P c=Could not find a configuration for OpenMRS, do you want to create one? (y/n)
 if /I "%c%" EQU "Y" goto createproject
 if /I "%c%" EQU "N" goto end
 goto :notfound
@@ -172,7 +172,8 @@ rem ######
 rem Executing maven
 rem ######
 echo Getting dependencies
-omrs-install
+CALL omrs-install
+cd server
 echo Executing: %MAVEN_EXECUTABLE% jetty:run-war %MVN_PARAMS%
 %MAVEN_EXECUTABLE% jetty:run-war %MVN_PARAMS%
 
