@@ -99,7 +99,7 @@ public class Tool {
 		updateArtifactItem(projectPom, groupId, artifactId, version);
 
 		File file = new File(modulePath);
-		if (!file.getPath().equals("../")) {
+		if (!modulePath.equals("../")) {
 			Element modules = selectModules(projectPom);
 			if (modules == null) {
 				modules = projectPom.getRootElement().addElement("modules");
