@@ -112,7 +112,7 @@ if ERRORLEVEL 1 (
   exit /B 1
 )
 
-set MAVEN_OPTS=-Xmx768M -XX:MaxPermSize=256M 
+set MAVEN_OPTS=-Xmx768M -XX:MaxPermSize=256M -Xdebug -Xrunjdwp:transport=dt_socket,address=8000,suspend=n,server=y 
 set MVN_PARAMS=-s "%MVN_HOME%\conf\settings.xml"
 
 set ARGI = 0
