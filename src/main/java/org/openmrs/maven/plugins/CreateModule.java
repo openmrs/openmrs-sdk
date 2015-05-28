@@ -11,9 +11,7 @@ import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
 /**
  * Goal which calls jetty:run.
  *
- * @goal run
- *
- * @requiresDependencyResolution test
+ * @goal create-module
  *
  * @phase process-sources
  */
