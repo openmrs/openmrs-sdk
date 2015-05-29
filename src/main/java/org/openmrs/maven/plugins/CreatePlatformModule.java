@@ -10,11 +10,12 @@ import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
 
 /**
  *
- * @goal create-module
+ * @goal create-platform-module
  *
  * @phase process-sources
  */
-public class CreateModule extends AbstractMojo {
+public class CreatePlatformModule extends AbstractMojo{
+
     /**
      * The project currently being build.
      *
@@ -41,7 +42,7 @@ public class CreateModule extends AbstractMojo {
 
     public void execute() throws MojoExecutionException {
         executeMojo(
-                plugin(groupId("org.apache.maven.plugins"), artifactId("maven-archetype-plugin"), version("2.3")),
+                plugin(groupId("org.openmrs.maven.plugins"), artifactId("module-wizard-plugin"), version("1.1.1")),
                 goal("generate"),
                 configuration(
                         element(name("archetypeCatalog"),

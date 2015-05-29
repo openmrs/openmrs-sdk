@@ -38,7 +38,6 @@
       <artifactId>log4j</artifactId>
       <version>1.2.17</version>
     </dependency>
-
     <!-- testing -->
     <dependency>
       <groupId>org.apache.camel</groupId>
@@ -57,10 +56,23 @@
       <version>3.8.1</version>
       <scope>test</scope>
     </dependency>
+    <!-- call other plugins -->
     <dependency>
       <groupId>org.twdata.maven</groupId>
       <artifactId>mojo-executor</artifactId>
       <version>2.2.0</version>
+    </dependency>
+    <!-- create-module depth -->
+    <dependency>
+      <groupId>org.apache.maven.plugins</groupId>
+      <artifactId>maven-archetype-plugin</artifactId>
+      <version>2.3</version>
+    </dependency>
+    <!-- create-platform-module depth -->
+    <dependency>
+      <groupId>org.openmrs.maven.plugins</groupId>
+      <artifactId>module-wizard-plugin</artifactId>
+      <version>1.1.1</version>
     </dependency>
   </dependencies>
 
@@ -75,6 +87,7 @@
           <target>1.7</target>
         </configuration>
       </plugin>
+      <!-- need to configure
       <plugin>
         <groupId>org.openmrs.maven.plugins</groupId>
         <artifactId>openmrs-sdk-maven-plugin</artifactId>
@@ -83,7 +96,7 @@
           <goalPrefix>omrs</goalPrefix>
           <skipErrorNoDescriptorsFound>true</skipErrorNoDescriptorsFound>
         </configuration>
-      </plugin>
+      </plugin> -->
     </plugins>
   </build>
 
