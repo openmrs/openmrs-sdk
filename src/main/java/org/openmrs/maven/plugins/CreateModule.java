@@ -11,8 +11,8 @@ import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
 /**
  *
  * @goal create-module
+ * @requiresProject false
  *
- * @phase process-sources
  */
 public class CreateModule extends AbstractMojo {
     /**
