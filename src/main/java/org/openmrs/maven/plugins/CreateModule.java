@@ -12,7 +12,6 @@ import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
  *
  * @goal create-module
  * @requiresProject false
- * @requiresDependencyResolution test
  *
  */
 public class CreateModule extends AbstractMojo {
