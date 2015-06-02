@@ -7,3 +7,4 @@ All commands can be executed by `mvn openmrs-sdk:<command>`
 
 * `create-module` - Create module for OpenMRS 2.x
 * `create-platform-module` - Create module for OpenMRS 1.x
+* `setup-platform` - 

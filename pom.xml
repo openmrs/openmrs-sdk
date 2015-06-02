@@ -70,6 +70,12 @@
       <artifactId>module-wizard-plugin</artifactId>
       <version>1.1.0</version>
     </dependency>
+    <!-- setup server depth -->
+    <dependency>
+      <groupId>org.openmrs.maven.archetypes</groupId>
+      <artifactId>maven-archetype-openmrs-project</artifactId>
+      <version>1.0.2</version>
+    </dependency>
   </dependencies>
 
   <build>
