@@ -74,7 +74,13 @@
     <dependency>
       <groupId>org.openmrs.maven.archetypes</groupId>
       <artifactId>maven-archetype-openmrs-project</artifactId>
-      <version>1.0.2</version>
+      <version>1.0.0</version>
+    </dependency>
+    <!-- prompt plugin -->
+    <dependency>
+      <groupId>org.codehaus.plexus</groupId>
+      <artifactId>plexus-interactivity-api</artifactId>
+      <version>1.0-alpha-6</version>
     </dependency>
   </dependencies>
 
