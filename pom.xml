@@ -74,7 +74,7 @@
     <dependency>
       <groupId>org.openmrs.maven.archetypes</groupId>
       <artifactId>maven-archetype-openmrs-project</artifactId>
-      <version>1.0.3</version>
+      <version>1.0.1</version>
     </dependency>
     <!-- prompt plugin -->
     <dependency>

@@ -8,8 +8,6 @@ import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.components.interactivity.Prompter;
 import org.codehaus.plexus.components.interactivity.PrompterException;
 
-import java.util.Properties;
-
 import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
 
 /**
@@ -110,14 +108,18 @@ public class SetupPlatform extends AbstractMojo {
         }
         //getLog().info(System.getProperty("user.home"));
         executeMojo(
-                plugin(groupId("org.openmrs.maven.archetypes"), artifactId("maven-archetype-openmrs-project"), version("1.0.3")),
+                plugin(groupId("org.apache.maven.plugins"), artifactId("maven-archetype-plugin"), version("2.3")),
                 goal("generate"),
                 configuration(
+                        element(name("archetypeCatalog"),
+                                "http://mavenrepo.openmrs.org/nexus/service/local/repositories/releases/content/archetype-catalog.xml"),
                         element(name("interactiveMode"), interactiveMode),
                         element(name("package"), "org.openmrs"),
                         element(name("archetypeGroupId"), "org.openmrs.maven.archetypes"),
                         element(name("archetypeArtifactId"), "maven-archetype-openmrs-project"),
-                        element(name("archetypeVersion"), "1.0.0-SNAPSHOT")
+                        element(name("archetypeVersion"), "1.0.1"),
+                        element(name("groupId"), "org.openmrs.distro"),
+                        element(name("artifactId"), serverId)
                 ),
                 executionEnvironment(mavenProject, mavenSession, pluginManager)
         );
