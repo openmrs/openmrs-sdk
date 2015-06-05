@@ -110,7 +110,7 @@ public class SetupPlatform extends AbstractMojo {
         }
         //getLog().info(System.getProperty("user.home"));
         executeMojo(
-                plugin(groupId("org.openmrs.maven.archetypes"), artifactId("maven-archetype-openmrs-project"), version("1.0.0")),
+                plugin(groupId("org.openmrs.maven.archetypes"), artifactId("maven-archetype-openmrs-project"), version("1.0.3")),
                 goal("generate"),
                 configuration(
                         element(name("interactiveMode"), interactiveMode),
