@@ -37,7 +37,7 @@ public class SetupPlatform extends AbstractMojo {
     /**
      * Interactive mode param
      *
-     * @parameter expression="${interactiveMode}" default-value="false"
+     * @parameter expression="${interactiveMode}" default-value="true"
      */
     private String interactiveMode;
 
@@ -102,7 +102,7 @@ public class SetupPlatform extends AbstractMojo {
         // check if user not set serverId parameter
         if (null == serverId) try {
             // prompt this param
-            serverId = prompter.prompt("Please specify server id:");
+            serverId = prompter.prompt("Please specify server id");
         } catch (PrompterException e) {
             e.printStackTrace();
         }
@@ -114,12 +114,12 @@ public class SetupPlatform extends AbstractMojo {
                         element(name("archetypeCatalog"),
                                 "http://mavenrepo.openmrs.org/nexus/service/local/repositories/releases/content/archetype-catalog.xml"),
                         element(name("interactiveMode"), interactiveMode),
-                        element(name("package"), "org.openmrs"),
+                        //element(name("package"), "org.openmrs"),
                         element(name("archetypeGroupId"), "org.openmrs.maven.archetypes"),
                         element(name("archetypeArtifactId"), "maven-archetype-openmrs-project"),
-                        element(name("archetypeVersion"), "1.0.1"),
-                        element(name("groupId"), "org.openmrs.distro"),
-                        element(name("artifactId"), serverId)
+                        element(name("archetypeVersion"), "1.0.1")
+                        //element(name("groupId"), "org.openmrs.distro"),
+                        //element(name("artifactId"), serverId)
                 ),
                 executionEnvironment(mavenProject, mavenSession, pluginManager)
         );
