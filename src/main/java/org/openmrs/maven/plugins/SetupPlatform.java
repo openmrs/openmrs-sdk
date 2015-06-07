@@ -1,5 +1,6 @@
 package org.openmrs.maven.plugins;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.BuildPluginManager;
@@ -8,6 +9,9 @@ import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.components.interactivity.Prompter;
 import org.codehaus.plexus.components.interactivity.PrompterException;
 import org.openmrs.maven.plugins.utility.SDKValues;
+
+import java.io.File;
+import java.io.IOException;
 
 import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
 
@@ -107,7 +111,16 @@ public class SetupPlatform extends AbstractMojo {
         } catch (PrompterException e) {
             e.printStackTrace();
         }
-        //getLog().info(System.getProperty("user.home"));
+        // path to omrs home
+        String omrsHome = System.getProperty("user.home") + File.separator + SDKValues.OPENMRS_SERVER_PATH;
+        // path to server with serverId
+        File serverPath = new File(omrsHome + File.separator + serverId);
+        // check existence
+        if (serverPath.exists()) {
+            // show massage and exit
+            getLog().error("Server with same id already created");
+            return;
+        }
         executeMojo(
                 plugin(
                         groupId(SDKValues.ARCH_GROUP_ID),
@@ -127,5 +140,14 @@ public class SetupPlatform extends AbstractMojo {
                 ),
                 executionEnvironment(mavenProject, mavenSession, pluginManager)
         );
+        // move server after creating
+        File currentProject = new File(System.getProperty("user.dir") + File.separator + serverId);
+        try {
+            // check if paths are not equal
+            if (!currentProject.equals(serverPath)) FileUtils.moveDirectory(currentProject, serverPath);
+            getLog().info("Server created successfully, path: " + serverPath.getPath());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

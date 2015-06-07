@@ -24,4 +24,6 @@ public class SDKValues {
     public static final String WIZARD_GROUP_ID = "org.openmrs.maven.plugins";
     public static final String WIZARD_ARTIFACT_ID = "module-wizard-plugin";
     public static final String WIZARD_VERSION = "1.1.1";
+    // default path to projects
+    public static final String OPENMRS_SERVER_PATH = "openmrs";
 }
