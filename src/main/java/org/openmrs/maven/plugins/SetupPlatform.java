@@ -8,6 +8,8 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.components.interactivity.Prompter;
 import org.codehaus.plexus.components.interactivity.PrompterException;
+import org.openmrs.maven.plugins.utility.ConfigurationManager;
+import org.openmrs.maven.plugins.utility.PropertyManager;
 import org.openmrs.maven.plugins.utility.SDKValues;
 
 import java.io.File;
@@ -148,6 +150,32 @@ public class SetupPlatform extends AbstractMojo {
             getLog().info("Server created successfully, path: " + serverPath.getPath());
         } catch (IOException e) {
             e.printStackTrace();
+        }
+        // check if any db parameter is set
+        if ((null != dbDriver) || (null != dbUser) || (null != dbPassword) || (null != dbUri)) {
+            // configure properties
+            String propertiesPath = serverPath.getPath() + File.separator + SDKValues.OPENMRS_SERVER_PROPERTIES;
+            PropertyManager properties = new PropertyManager(propertiesPath);
+            try {
+                // ask for option which not set
+                if (null == dbDriver) dbDriver = prompter.prompt("Please specify dbDriver option");
+                if (null == dbUser) dbUser = prompter.prompt("Please specify dbUser option");
+                if (null == dbPassword) dbPassword = prompter.prompt("Please specify dbPassword option");
+                if (null == dbUri) dbUri = prompter.prompt("Please specify dbUri option");
+                // set properties and write to file
+                // set dbDriver property
+                if (dbDriver.equals("postgresql")) properties.setParam("dbDriver", "org.postgresql.Driver");
+                // if "mysql" or something else - set mysql driver (default)
+                else properties.setParam("dbDriver", "com.mysql.jdbc.Driver");
+                // set other params
+                properties.setParam("dbDriver", dbDriver);
+                properties.setParam("dbUser", dbUser);
+                properties.setParam("dbPassword", dbPassword);
+                properties.setParam("dbUri", dbUri);
+                properties.apply();
+            } catch (PrompterException e) {
+                e.printStackTrace();
+            }
         }
     }
 }

@@ -1,5 +1,7 @@
 package org.openmrs.maven.plugins.utility;
 
+import java.io.File;
+
 /**
  * Class for handling static values
  */
@@ -26,4 +28,6 @@ public class SDKValues {
     public static final String WIZARD_VERSION = "1.1.1";
     // default path to projects
     public static final String OPENMRS_SERVER_PATH = "openmrs";
+    public static final String OPENMRS_SERVER_PROPERTIES = "server" + File.separator + "installation.h2.properties";
+    public static final String OPENMRS_SERVER_POM = "server" + File.separator + "pom.xml";
 }
