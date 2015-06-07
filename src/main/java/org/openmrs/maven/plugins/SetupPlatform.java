@@ -7,6 +7,7 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.components.interactivity.Prompter;
 import org.codehaus.plexus.components.interactivity.PrompterException;
+import org.openmrs.maven.plugins.utility.SDKValues;
 
 import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
 
@@ -108,17 +109,20 @@ public class SetupPlatform extends AbstractMojo {
         }
         //getLog().info(System.getProperty("user.home"));
         executeMojo(
-                plugin(groupId("org.apache.maven.plugins"), artifactId("maven-archetype-plugin"), version("2.3")),
+                plugin(
+                        groupId(SDKValues.ARCH_GROUP_ID),
+                        artifactId(SDKValues.ARCH_ARTIFACT_ID),
+                        version(SDKValues.ARCH_VERSION)
+                ),
                 goal("generate"),
                 configuration(
-                        element(name("archetypeCatalog"),
-                                "http://mavenrepo.openmrs.org/nexus/service/local/repositories/releases/content/archetype-catalog.xml"),
+                        element(name("archetypeCatalog"), SDKValues.ARCH_CATALOG),
                         element(name("interactiveMode"), interactiveMode),
-                        //element(name("package"), "org.openmrs"),
-                        element(name("archetypeGroupId"), "org.openmrs.maven.archetypes"),
-                        element(name("archetypeArtifactId"), "maven-archetype-openmrs-project"),
-                        element(name("archetypeVersion"), "1.0.1")
-                        //element(name("groupId"), "org.openmrs.distro"),
+                        //element(name("package"), SDKValues.PROJECT_PACKAGE),
+                        element(name("archetypeGroupId"), SDKValues.ARCH_PROJECT_GROUP_ID),
+                        element(name("archetypeArtifactId"), SDKValues.ARCH_PROJECT_ARTIFACT_ID),
+                        element(name("archetypeVersion"), SDKValues.ARCH_PROJECT_VERSION)
+                        //element(name("groupId"), SDKValues.PROJECT_GROUP_ID),
                         //element(name("artifactId"), serverId)
                 ),
                 executionEnvironment(mavenProject, mavenSession, pluginManager)
