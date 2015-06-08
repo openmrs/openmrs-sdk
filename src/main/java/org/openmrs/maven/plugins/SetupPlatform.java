@@ -117,11 +117,8 @@ public class SetupPlatform extends AbstractMojo {
         // path to server with serverId
         File serverPath = new File(omrsPath, serverId);
         // check existence
-        if (serverPath.exists()) {
-            // show massage and exit
-            getLog().error("Server with same id already created");
-            return;
-        }
+        if (serverPath.exists()) throw new MojoExecutionException("Server with same id already created");
+        // execute plugin for create server
         executeMojo(
                 plugin(
                         groupId(SDKValues.ARCH_GROUP_ID),
