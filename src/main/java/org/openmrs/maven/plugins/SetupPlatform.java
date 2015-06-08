@@ -162,10 +162,14 @@ public class SetupPlatform extends AbstractMojo {
                 if (dbPassword == null) dbPassword = prompter.prompt("Please specify dbPassword option");
                 if (dbUri == null) dbUri = prompter.prompt("Please specify dbUri option");
                 // set properties and write to file
-                // set dbDriver property
+                // postgres shortcut
                 if (dbDriver.equals("postgresql")) properties.setParam("dbDriver", "org.postgresql.Driver");
-                // if "mysql" or something else - set mysql driver (default)
-                else properties.setParam("dbDriver", "com.mysql.jdbc.Driver");
+                // mysql shortcut
+                else if (dbDriver.equals("mysql")) properties.setParam("dbDriver", "com.mysql.jdbc.Driver");
+                // h2 shortcut
+                else if (dbDriver.equals("h2")) properties.setParam("dbDriver", "org.h2.Driver");
+                // any other drivers
+                else properties.setParam("dbDriver", dbDriver);
                 // set other params
                 properties.setParam("dbDriver", dbDriver);
                 properties.setParam("dbUser", dbUser);
