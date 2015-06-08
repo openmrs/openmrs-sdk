@@ -113,9 +113,9 @@ public class SetupPlatform extends AbstractMojo {
             e.printStackTrace();
         }
         // path to omrs home
-        String omrsHome = System.getProperty("user.home") + File.separator + SDKValues.OPENMRS_SERVER_PATH;
+        File omrsPath = new File(System.getProperty("user.home"), SDKValues.OPENMRS_SERVER_PATH);
         // path to server with serverId
-        File serverPath = new File(omrsHome + File.separator + serverId);
+        File serverPath = new File(omrsPath, serverId);
         // check existence
         if (serverPath.exists()) {
             // show massage and exit
@@ -142,10 +142,10 @@ public class SetupPlatform extends AbstractMojo {
                 executionEnvironment(mavenProject, mavenSession, pluginManager)
         );
         // move server after creating
-        File currentProject = new File(System.getProperty("user.dir") + File.separator + serverId);
+        File currentPath = new File(System.getProperty("user.dir"), serverId);
         try {
             // check if paths are not equal
-            if (!currentProject.equals(serverPath)) FileUtils.moveDirectory(currentProject, serverPath);
+            if (!currentPath.equals(serverPath)) FileUtils.moveDirectory(currentPath, serverPath);
             getLog().info("Server created successfully, path: " + serverPath.getPath());
         } catch (IOException e) {
             e.printStackTrace();
@@ -153,8 +153,8 @@ public class SetupPlatform extends AbstractMojo {
         // check if any db parameter is set
         if ((dbDriver != null) || (dbUser != null) || (dbPassword != null) || (dbUri != null)) {
             // configure properties
-            String propertiesPath = serverPath.getPath() + File.separator + SDKValues.OPENMRS_SERVER_PROPERTIES;
-            PropertyManager properties = new PropertyManager(propertiesPath);
+            File propertiesFile = new File(serverPath.getPath(), SDKValues.OPENMRS_SERVER_PROPERTIES);
+            PropertyManager properties = new PropertyManager(propertiesFile.getPath());
             try {
                 // ask for option which not set
                 if (dbDriver == null) dbDriver = prompter.prompt("Please specify dbDriver option");

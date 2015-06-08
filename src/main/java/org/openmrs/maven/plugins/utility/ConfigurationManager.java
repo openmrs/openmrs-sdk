@@ -30,6 +30,7 @@ public class ConfigurationManager {
      * @param configPath - path to pom.xml
      */
     public ConfigurationManager(String configPath) {
+        this();
         path = configPath;
         File conf = new File(path);
         if (conf.exists()) {
