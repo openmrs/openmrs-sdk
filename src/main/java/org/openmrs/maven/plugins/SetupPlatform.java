@@ -108,7 +108,7 @@ public class SetupPlatform extends AbstractMojo {
         // check if user not set serverId parameter
         if (serverId == null) try {
             // prompt this param
-            serverId = prompter.prompt("Please specify server id");
+            serverId = prompter.prompt("Define value for property 'serverId'");
         } catch (PrompterException e) {
             e.printStackTrace();
         }
@@ -156,20 +156,40 @@ public class SetupPlatform extends AbstractMojo {
             File propertiesFile = new File(serverPath.getPath(), SDKValues.OPENMRS_SERVER_PROPERTIES);
             PropertyManager properties = new PropertyManager(propertiesFile.getPath());
             try {
-                // ask for option which not set
-                if (dbDriver == null) dbDriver = prompter.prompt("Please specify dbDriver option");
-                if (dbUser == null) dbUser = prompter.prompt("Please specify dbUser option");
-                if (dbPassword == null) dbPassword = prompter.prompt("Please specify dbPassword option");
-                if (dbUri == null) dbUri = prompter.prompt("Please specify dbUri option");
-                // set properties and write to file
+                // prompt dbDriver if not set
+                String defaultDriver = "mysql";
+                if (dbDriver == null) dbDriver = prompter.prompt("Define value for property 'dbDriver': (default: mysql)");
+                // check if default was set
+                if ((dbDriver == null) || (dbDriver.equals(""))) dbDriver = defaultDriver;
+                // get default uri for selected dbDriver
+                String defaultUri = SDKValues.URI_MYSQL;
                 // postgres shortcut
-                if (dbDriver.equals("postgresql")) properties.setParam("dbDriver", "org.postgresql.Driver");
-                // mysql shortcut
-                else if (dbDriver.equals("mysql")) properties.setParam("dbDriver", "com.mysql.jdbc.Driver");
+                if ((dbDriver.equals("postgresql")) || (dbDriver.equals(SDKValues.DRIVER_POSTGRESQL))) {
+                    properties.setParam("dbDriver", SDKValues.DRIVER_POSTGRESQL);
+                    // update default uri for postgres
+                    defaultUri = SDKValues.URI_POSTGRESQL;
+                }
                 // h2 shortcut
-                else if (dbDriver.equals("h2")) properties.setParam("dbDriver", "org.h2.Driver");
+                else if ((dbDriver.equals("h2")) || (dbDriver.equals(SDKValues.DRIVER_H2))) {
+                    properties.setParam("dbDriver", SDKValues.DRIVER_H2);
+                    // update default value for h2
+                    defaultUri = SDKValues.URI_H2;
+                }
+                // mysql shortcut
+                else if (dbDriver.equals("mysql")) properties.setParam("dbDriver", SDKValues.DRIVER_MYSQL);
                 // any other drivers
                 else properties.setParam("dbDriver", dbDriver);
+                // set dbUri if not set
+                if (dbUri == null) dbUri = prompter.prompt("Define value for property 'dbUri': (default: " + defaultUri + ")");
+                // check if user choose default uri ('enter' pressed)
+                if ((dbUri == null) || (dbUri.equals(""))) dbUri = defaultUri;
+                // set dbUser property
+                String defaultUser = "root";
+                if (dbUser == null) dbUser = prompter.prompt("Define value for property 'dbUser': (default: " + defaultUser + ")");
+                // check if default was set
+                if ((dbUser == null) || (dbUser.equals(""))) dbUser = defaultUser;
+                // set dbPassword value
+                if (dbPassword == null) dbPassword = prompter.prompt("Define value for property 'dbPassword'");
                 // set other params
                 properties.setParam("dbDriver", dbDriver);
                 properties.setParam("dbUser", dbUser);

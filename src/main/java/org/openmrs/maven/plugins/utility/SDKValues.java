@@ -30,4 +30,12 @@ public class SDKValues {
     public static final String OPENMRS_SERVER_PATH = "openmrs";
     public static final String OPENMRS_SERVER_PROPERTIES = "server" + File.separator + "installation.h2.properties";
     public static final String OPENMRS_SERVER_POM = "server" + File.separator + "pom.xml";
+    // dbUri for different db
+    public static final String URI_MYSQL = "jdbc:mysql://localhost:3131";
+    public static final String URI_POSTGRESQL = "jdbc:postgresql://localhost:5740";
+    public static final String URI_H2 = "jdbc:h2://localhost";
+    // dbDriver class for different db
+    public static final String DRIVER_MYSQL = "com.mysql.jdbc.Driver";
+    public static final String DRIVER_POSTGRESQL = "org.postgresql.Driver";
+    public static final String DRIVER_H2 = "org.h2.Driver";
 }
