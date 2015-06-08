@@ -25,6 +25,28 @@ import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
 public class SetupPlatform extends AbstractMojo {
 
     /**
+     * Default constructor
+     */
+    public SetupPlatform() {};
+
+    /**
+     * Constructor to use this class in other mojos
+     * @param mavenProject - outer project
+     * @param mavenSession - outer session
+     * @param prompter - outer prompter
+     * @param pluginManager - outer pluginManager
+     */
+    public SetupPlatform(MavenProject mavenProject,
+                         MavenSession mavenSession,
+                         Prompter prompter,
+                         BuildPluginManager pluginManager) {
+        this.mavenProject = mavenProject;
+        this.mavenSession = mavenSession;
+        this.prompter = prompter;
+        this.pluginManager = pluginManager;
+    }
+
+    /**
      * The project currently being build.
      *
      * @parameter expression="${project}"
@@ -104,7 +126,24 @@ public class SetupPlatform extends AbstractMojo {
      */
     private BuildPluginManager pluginManager;
 
-    public void execute() throws MojoExecutionException {
+    /**
+     * Create and setup server with following parameters
+     * @param serverId
+     * @param version
+     * @param dbDriver
+     * @param dbUri
+     * @param dbUser
+     * @param dbPassword
+     * @param interactiveMode
+     * @throws MojoExecutionException
+     */
+    public void setup(String serverId,
+                      String version,
+                      String dbDriver,
+                      String dbUri,
+                      String dbUser,
+                      String dbPassword,
+                      String interactiveMode) throws MojoExecutionException {
         // check if user not set serverId parameter
         if (serverId == null) try {
             // prompt this param
@@ -134,7 +173,8 @@ public class SetupPlatform extends AbstractMojo {
                         element(name("archetypeArtifactId"), SDKValues.ARCH_PROJECT_ARTIFACT_ID),
                         element(name("archetypeVersion"), SDKValues.ARCH_PROJECT_VERSION)
                         //element(name("groupId"), SDKValues.PROJECT_GROUP_ID),
-                        //element(name("artifactId"), serverId)
+                        //element(name("artifactId"), serverId),
+                        //element(name("version"), version)
                 ),
                 executionEnvironment(mavenProject, mavenSession, pluginManager)
         );
@@ -174,7 +214,7 @@ public class SetupPlatform extends AbstractMojo {
                 }
                 // mysql shortcut
                 else if (dbDriver.equals("mysql")) properties.setParam("dbDriver", SDKValues.DRIVER_MYSQL);
-                // any other drivers
+                    // any other drivers
                 else properties.setParam("dbDriver", dbDriver);
                 // set dbUri if not set
                 if (dbUri == null) dbUri = prompter.prompt("Define value for property 'dbUri': (default: " + defaultUri + ")");
@@ -197,5 +237,10 @@ public class SetupPlatform extends AbstractMojo {
                 e.printStackTrace();
             }
         }
+    }
+
+    public void execute() throws MojoExecutionException {
+        // create and configure server
+        setup(serverId, version, dbDriver, dbUri, dbUser, dbPassword, interactiveMode);
     }
 }
