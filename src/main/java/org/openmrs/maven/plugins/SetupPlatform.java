@@ -8,7 +8,6 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.components.interactivity.Prompter;
 import org.codehaus.plexus.components.interactivity.PrompterException;
-import org.openmrs.maven.plugins.utility.ConfigurationManager;
 import org.openmrs.maven.plugins.utility.PropertyManager;
 import org.openmrs.maven.plugins.utility.SDKValues;
 
@@ -107,7 +106,7 @@ public class SetupPlatform extends AbstractMojo {
 
     public void execute() throws MojoExecutionException {
         // check if user not set serverId parameter
-        if (null == serverId) try {
+        if (serverId == null) try {
             // prompt this param
             serverId = prompter.prompt("Please specify server id");
         } catch (PrompterException e) {
@@ -152,16 +151,16 @@ public class SetupPlatform extends AbstractMojo {
             e.printStackTrace();
         }
         // check if any db parameter is set
-        if ((null != dbDriver) || (null != dbUser) || (null != dbPassword) || (null != dbUri)) {
+        if ((dbDriver != null) || (dbUser != null) || (dbPassword != null) || (dbUri != null)) {
             // configure properties
             String propertiesPath = serverPath.getPath() + File.separator + SDKValues.OPENMRS_SERVER_PROPERTIES;
             PropertyManager properties = new PropertyManager(propertiesPath);
             try {
                 // ask for option which not set
-                if (null == dbDriver) dbDriver = prompter.prompt("Please specify dbDriver option");
-                if (null == dbUser) dbUser = prompter.prompt("Please specify dbUser option");
-                if (null == dbPassword) dbPassword = prompter.prompt("Please specify dbPassword option");
-                if (null == dbUri) dbUri = prompter.prompt("Please specify dbUri option");
+                if (dbDriver == null) dbDriver = prompter.prompt("Please specify dbDriver option");
+                if (dbUser == null) dbUser = prompter.prompt("Please specify dbUser option");
+                if (dbPassword == null) dbPassword = prompter.prompt("Please specify dbPassword option");
+                if (dbUri == null) dbUri = prompter.prompt("Please specify dbUri option");
                 // set properties and write to file
                 // set dbDriver property
                 if (dbDriver.equals("postgresql")) properties.setParam("dbDriver", "org.postgresql.Driver");
