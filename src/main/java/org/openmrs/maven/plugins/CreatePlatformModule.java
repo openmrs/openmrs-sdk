@@ -5,7 +5,7 @@ import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
-import org.openmrs.maven.plugins.utility.SDKValues;
+import org.openmrs.maven.plugins.utility.SDKConstants;
 
 import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
 
@@ -44,16 +44,16 @@ public class CreatePlatformModule extends AbstractMojo{
     public void execute() throws MojoExecutionException {
         executeMojo(
                 plugin(
-                        groupId(SDKValues.WIZARD_GROUP_ID),
-                        artifactId(SDKValues.WIZARD_ARTIFACT_ID),
-                        version(SDKValues.WIZARD_VERSION)
+                        groupId(SDKConstants.WIZARD_GROUP_ID),
+                        artifactId(SDKConstants.WIZARD_ARTIFACT_ID),
+                        version(SDKConstants.WIZARD_VERSION)
                 ),
                 goal("generate"),
                 configuration(
-                        element(name("archetypeCatalog"), SDKValues.ARCH_CATALOG),
-                        element(name("archetypeGroupId"), SDKValues.ARCH_MODULE_GROUP_ID),
-                        element(name("archetypeArtifactId"), SDKValues.ARCH_MODULE_ARTIFACT_ID),
-                        element(name("archetypeVersion"), SDKValues.ARCH_MODULE_VERSION)
+                        element(name("archetypeCatalog"), SDKConstants.ARCH_CATALOG),
+                        element(name("archetypeGroupId"), SDKConstants.ARCH_MODULE_GROUP_ID),
+                        element(name("archetypeArtifactId"), SDKConstants.ARCH_MODULE_ARTIFACT_ID),
+                        element(name("archetypeVersion"), SDKConstants.ARCH_MODULE_VERSION)
                 ),
                 executionEnvironment(mavenProject, mavenSession, pluginManager)
         );

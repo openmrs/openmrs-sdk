@@ -5,7 +5,7 @@ import java.io.File;
 /**
  * Class for handling static values
  */
-public class SDKValues {
+public class SDKConstants {
     // archetype
     public static final String ARCH_CATALOG = "http://mavenrepo.openmrs.org/nexus/service/local/repositories/releases/content/archetype-catalog.xml";
     public static final String ARCH_GROUP_ID = "org.apache.maven.plugins";

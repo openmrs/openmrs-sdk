@@ -9,7 +9,7 @@ import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.components.interactivity.Prompter;
 import org.codehaus.plexus.components.interactivity.PrompterException;
 import org.openmrs.maven.plugins.utility.PropertyManager;
-import org.openmrs.maven.plugins.utility.SDKValues;
+import org.openmrs.maven.plugins.utility.SDKConstants;
 
 import java.io.File;
 import java.io.IOException;
@@ -145,7 +145,7 @@ public class SetupPlatform extends AbstractMojo {
                       String dbPassword,
                       String interactiveMode) throws MojoExecutionException {
         // path to omrs home
-        File omrsPath = new File(System.getProperty("user.home"), SDKValues.OPENMRS_SERVER_PATH);
+        File omrsPath = new File(System.getProperty("user.home"), SDKConstants.OPENMRS_SERVER_PATH);
         // check if user not set serverId parameter
         if (serverId == null) try {
             // default server name
@@ -171,19 +171,19 @@ public class SetupPlatform extends AbstractMojo {
         // execute plugin for create server
         executeMojo(
                 plugin(
-                        groupId(SDKValues.ARCH_GROUP_ID),
-                        artifactId(SDKValues.ARCH_ARTIFACT_ID),
-                        version(SDKValues.ARCH_VERSION)
+                        groupId(SDKConstants.ARCH_GROUP_ID),
+                        artifactId(SDKConstants.ARCH_ARTIFACT_ID),
+                        version(SDKConstants.ARCH_VERSION)
                 ),
                 goal("generate"),
                 configuration(
-                        element(name("archetypeCatalog"), SDKValues.ARCH_CATALOG),
+                        element(name("archetypeCatalog"), SDKConstants.ARCH_CATALOG),
                         element(name("interactiveMode"), interactiveMode),
-                        //element(name("package"), SDKValues.PROJECT_PACKAGE),
-                        element(name("archetypeGroupId"), SDKValues.ARCH_PROJECT_GROUP_ID),
-                        element(name("archetypeArtifactId"), SDKValues.ARCH_PROJECT_ARTIFACT_ID),
-                        element(name("archetypeVersion"), SDKValues.ARCH_PROJECT_VERSION)
-                        //element(name("groupId"), SDKValues.PROJECT_GROUP_ID),
+                        //element(name("package"), SDKConstants.PROJECT_PACKAGE),
+                        element(name("archetypeGroupId"), SDKConstants.ARCH_PROJECT_GROUP_ID),
+                        element(name("archetypeArtifactId"), SDKConstants.ARCH_PROJECT_ARTIFACT_ID),
+                        element(name("archetypeVersion"), SDKConstants.ARCH_PROJECT_VERSION)
+                        //element(name("groupId"), SDKConstants.PROJECT_GROUP_ID),
                         //element(name("artifactId"), serverId),
                         //element(name("version"), version)
                 ),
@@ -201,7 +201,7 @@ public class SetupPlatform extends AbstractMojo {
         // check if any db parameter is set
         if ((dbDriver != null) || (dbUser != null) || (dbPassword != null) || (dbUri != null)) {
             // configure properties
-            File propertiesFile = new File(serverPath.getPath(), SDKValues.OPENMRS_SERVER_PROPERTIES);
+            File propertiesFile = new File(serverPath.getPath(), SDKConstants.OPENMRS_SERVER_PROPERTIES);
             PropertyManager properties = new PropertyManager(propertiesFile.getPath());
             try {
                 // prompt dbDriver if not set
@@ -210,21 +210,21 @@ public class SetupPlatform extends AbstractMojo {
                 // check if default was set
                 if ((dbDriver == null) || (dbDriver.equals(""))) dbDriver = defaultDriver;
                 // get default uri for selected dbDriver
-                String defaultUri = SDKValues.URI_MYSQL;
+                String defaultUri = SDKConstants.URI_MYSQL;
                 // postgres shortcut
-                if ((dbDriver.equals("postgresql")) || (dbDriver.equals(SDKValues.DRIVER_POSTGRESQL))) {
-                    properties.setParam("dbDriver", SDKValues.DRIVER_POSTGRESQL);
+                if ((dbDriver.equals("postgresql")) || (dbDriver.equals(SDKConstants.DRIVER_POSTGRESQL))) {
+                    properties.setParam("dbDriver", SDKConstants.DRIVER_POSTGRESQL);
                     // update default uri for postgres
-                    defaultUri = SDKValues.URI_POSTGRESQL;
+                    defaultUri = SDKConstants.URI_POSTGRESQL;
                 }
                 // h2 shortcut
-                else if ((dbDriver.equals("h2")) || (dbDriver.equals(SDKValues.DRIVER_H2))) {
-                    properties.setParam("dbDriver", SDKValues.DRIVER_H2);
+                else if ((dbDriver.equals("h2")) || (dbDriver.equals(SDKConstants.DRIVER_H2))) {
+                    properties.setParam("dbDriver", SDKConstants.DRIVER_H2);
                     // update default value for h2
-                    defaultUri = SDKValues.URI_H2;
+                    defaultUri = SDKConstants.URI_H2;
                 }
                 // mysql shortcut
-                else if (dbDriver.equals("mysql")) properties.setParam("dbDriver", SDKValues.DRIVER_MYSQL);
+                else if (dbDriver.equals("mysql")) properties.setParam("dbDriver", SDKConstants.DRIVER_MYSQL);
                     // any other drivers
                 else properties.setParam("dbDriver", dbDriver);
                 // set dbUri if not set
