@@ -144,15 +144,26 @@ public class SetupPlatform extends AbstractMojo {
                       String dbUser,
                       String dbPassword,
                       String interactiveMode) throws MojoExecutionException {
+        // path to omrs home
+        File omrsPath = new File(System.getProperty("user.home"), SDKValues.OPENMRS_SERVER_PATH);
         // check if user not set serverId parameter
         if (serverId == null) try {
+            // default server name
+            String defaultId = "server";
+            // index for search unused server name
+            int indx = 0;
+            // find unused name for server
+            while (new File(omrsPath, defaultId).exists()) {
+                indx++;
+                defaultId = "server" + String.valueOf(indx);
+            }
             // prompt this param
-            serverId = prompter.prompt("Define value for property 'serverId'");
+            serverId = prompter.prompt("Define value for property 'serverId': (default: '" + defaultId + "')");
+            // check if user pressed 'enter' (default value)
+            if (serverId.equals("")) serverId = defaultId;
         } catch (PrompterException e) {
             e.printStackTrace();
         }
-        // path to omrs home
-        File omrsPath = new File(System.getProperty("user.home"), SDKValues.OPENMRS_SERVER_PATH);
         // path to server with serverId
         File serverPath = new File(omrsPath, serverId);
         // check existence
@@ -195,7 +206,7 @@ public class SetupPlatform extends AbstractMojo {
             try {
                 // prompt dbDriver if not set
                 String defaultDriver = "mysql";
-                if (dbDriver == null) dbDriver = prompter.prompt("Define value for property 'dbDriver': (default: mysql)");
+                if (dbDriver == null) dbDriver = prompter.prompt("Define value for property 'dbDriver': (default: 'mysql')");
                 // check if default was set
                 if ((dbDriver == null) || (dbDriver.equals(""))) dbDriver = defaultDriver;
                 // get default uri for selected dbDriver
@@ -217,12 +228,12 @@ public class SetupPlatform extends AbstractMojo {
                     // any other drivers
                 else properties.setParam("dbDriver", dbDriver);
                 // set dbUri if not set
-                if (dbUri == null) dbUri = prompter.prompt("Define value for property 'dbUri': (default: " + defaultUri + ")");
+                if (dbUri == null) dbUri = prompter.prompt("Define value for property 'dbUri': (default: '" + defaultUri + "')");
                 // check if user choose default uri ('enter' pressed)
                 if ((dbUri == null) || (dbUri.equals(""))) dbUri = defaultUri;
                 // set dbUser property
                 String defaultUser = "root";
-                if (dbUser == null) dbUser = prompter.prompt("Define value for property 'dbUser': (default: " + defaultUser + ")");
+                if (dbUser == null) dbUser = prompter.prompt("Define value for property 'dbUser': (default: '" + defaultUser + "')");
                 // check if default was set
                 if ((dbUser == null) || (dbUser.equals(""))) dbUser = defaultUser;
                 // set dbPassword value
