@@ -113,8 +113,6 @@ public class Setup extends AbstractMojo {
         Server server = configurator.setup(serverId, version, dbDriver, dbUri, dbUser, dbPassword, interactiveMode);
         // configure modules
         ConfigurationManager manager = new ConfigurationManager(server.getDbPath());
-        // update version
-        manager.setVersion(version);
         // get list if artifacts for current server version
         List<Artifact> artifacts = SDKConstants.ARTIFACTS.get(version);
         // add artifacts to POM
