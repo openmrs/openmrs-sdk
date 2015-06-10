@@ -87,11 +87,9 @@ public class ConfigurationManager {
         for (Artifact artifact: list) {
             Xpp3Dom item = new Xpp3Dom("artifactItem");
             // create groupId
-            if (artifact.getGroupId() != null) {
-                Xpp3Dom groupId = new Xpp3Dom("groupId");
-                groupId.setValue(artifact.getGroupId());
-                item.addChild(groupId);
-            }
+            Xpp3Dom groupId = new Xpp3Dom("groupId");
+            groupId.setValue(artifact.getGroupId());
+            item.addChild(groupId);
             // create artifactId
             Xpp3Dom artifactId = new Xpp3Dom("artifactId");
             artifactId.setValue(artifact.getArtifactId());
@@ -100,6 +98,10 @@ public class ConfigurationManager {
             Xpp3Dom destFileName = new Xpp3Dom("destFileName");
             destFileName.setValue(artifact.getDestFileName());
             item.addChild(destFileName);
+            // create version
+            Xpp3Dom version = new Xpp3Dom("version");
+            version.setValue(artifact.getVersion());
+            item.addChild(version);
             // create type (if it set)
             if (artifact.getType() != null) {
                 Xpp3Dom type = new Xpp3Dom("type");
