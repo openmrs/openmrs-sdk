@@ -7,6 +7,7 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.components.interactivity.Prompter;
 import org.openmrs.maven.plugins.model.Artifact;
+import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.utility.ConfigurationManager;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 
@@ -109,13 +110,18 @@ public class Setup extends AbstractMojo {
         // create configurator instance
         SetupPlatform configurator = new SetupPlatform(mavenProject, mavenSession, prompter, pluginManager);
         // setup and configure server
-        String serverPath = configurator.setup(serverId, version, dbDriver, dbUri, dbUser, dbPassword, interactiveMode);
+        Server server = configurator.setup(serverId, version, dbDriver, dbUri, dbUser, dbPassword, interactiveMode);
         // configure modules
-        ConfigurationManager manager = new ConfigurationManager(serverPath);
+        ConfigurationManager manager = new ConfigurationManager(server.getDbPath());
+        // update version
+        manager.setVersion(version);
         // get list if artifacts for current server version
         List<Artifact> artifacts = SDKConstants.ARTIFACTS.get(version);
         // add artifacts to POM
         if (artifacts != null) manager.addArtifactsToConfiguration(artifacts);
         else getLog().error("There are no modules for selected OpenMRS version");
+        // write pom model to file
+        manager.apply();
+        getLog().info("Server configured successfully");
     }
 }

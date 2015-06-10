@@ -8,8 +8,7 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.components.interactivity.Prompter;
 import org.codehaus.plexus.components.interactivity.PrompterException;
-import org.openmrs.maven.plugins.model.Artifact;
-import org.openmrs.maven.plugins.utility.ConfigurationManager;
+import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.utility.PropertyManager;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 
@@ -140,7 +139,7 @@ public class SetupPlatform extends AbstractMojo {
      * @param interactiveMode
      * @throws MojoExecutionException
      */
-    public String setup(String serverId,
+    public Server setup(String serverId,
                       String version,
                       String dbDriver,
                       String dbUri,
@@ -251,7 +250,7 @@ public class SetupPlatform extends AbstractMojo {
                 e.printStackTrace();
             }
         }
-        return serverPath.getPath();
+        return new Server(serverId, serverPath.getPath(), dbDriver, dbUri, dbUser, dbPassword);
     }
 
     public void execute() throws MojoExecutionException {

@@ -109,8 +109,14 @@ public class ConfigurationManager {
         }
         // set config to POM
         execution.setConfiguration(config);
-        // write model to POM
-        apply();
+    }
+
+    /**
+     * Set pom version
+     * @param version
+     */
+    public void setVersion(String version) {
+        model.setVersion(version);
     }
 
     /**
