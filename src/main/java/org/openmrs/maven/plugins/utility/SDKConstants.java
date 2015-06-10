@@ -63,7 +63,7 @@ public class SDKConstants {
         add(new Artifact("reporting-omod", "reporting-${reportingModuleVersion}.omod"));
         add(new Artifact("metadatasharing-omod", "metadatasharing-${metadatasharingModuleVersion}.omod"));
         add(new Artifact("metadatamapping-omod", "metadatamapping-${metadatamappingModuleVersion}.omod"));
-        add(new Artifact("serialization.xstream-omod", "serialization.xstream-${serialization.xstreamModuleVersion}.omod", "org.openmrs.web", "omod"));
+        add(new Artifact("serialization.xstream-omod", "serialization.xstream-${serialization.xstreamModuleVersion}.omod", "org.openmrs.module", "omod"));
         add(new Artifact("htmlwidgets-omod", "htmlwidgets-${htmlwidgetsModuleVersion}.omod"));
         add(new Artifact("htmlformentry-omod", "htmlformentry-${htmlformentryModuleVersion}.omod"));
         add(new Artifact("htmlformentry19ext-omod", "htmlformentry19ext-${htmlformentry19extModuleVersion}.omod"));
@@ -77,10 +77,101 @@ public class SDKConstants {
         add(new Artifact("dataexchange-omod", "dataexchange-${dataexchangeModuleVersion}.omod"));
     }};
     public static final List<Artifact> ARTIFACTS_2_1 = new ArrayList<Artifact>() {{
-
+        add(new Artifact("openmrs-webapp", "openmrs-${openMRSVersion}.war", "org.openmrs.web", "war"));
+        add(new Artifact("referencemetadata-omod", "referencemetadata-${referencemetadataModuleVersion}.omod"));
+        add(new Artifact("appframework-omod", "appframework-${appframeworkModuleVersion}.omod"));
+        add(new Artifact("uiframework-omod", "uiframework-${uiframeworkModuleVersion}.omod"));
+        // removed for v2.1
+        //add(new Artifact("logic-omod", "logic-${logicModuleVersion}.omod", "omod"));
+        // ----
+        add(new Artifact("registrationcore-omod", "registrationcore-${registrationcoreModuleVersion}.omod"));
+        add(new Artifact("registrationapp-omod", "registrationapp-${registrationappModuleVersion}.omod"));
+        add(new Artifact("idgen-omod", "idgen-${idgenModuleVersion}.omod"));
+        add(new Artifact("emrapi-omod", "emrapi-${emrapiModuleVersion}.omod"));
+        add(new Artifact("providermanagement-omod", "providermanagement-${providermanagementModuleVersion}.omod"));
+        add(new Artifact("uilibrary-omod", "uilibrary-${uilibraryModuleVersion}.omod"));
+        add(new Artifact("uicommons-omod", "uicommons-${uicommonsModuleVersion}.omod"));
+        add(new Artifact("referenceapplication-omod", "referenceapplication-${referenceapplicationModuleVersion}.omod"));
+        add(new Artifact("calculation-omod", "calculation-${calculationModuleVersion}.omod"));
+        add(new Artifact("reporting-omod", "reporting-${reportingModuleVersion}.omod"));
+        // added for v2.1
+        add(new Artifact("metadatadeploy-omod", "metadatadeploy-${metadatadeployVersion}.omod"));
+        // ----
+        add(new Artifact("metadatasharing-omod", "metadatasharing-${metadatasharingModuleVersion}.omod"));
+        add(new Artifact("metadatamapping-omod", "metadatamapping-${metadatamappingModuleVersion}.omod"));
+        add(new Artifact("serialization.xstream-omod", "serialization.xstream-${serialization.xstreamModuleVersion}.omod", "org.openmrs.module", "omod"));
+        add(new Artifact("htmlwidgets-omod", "htmlwidgets-${htmlwidgetsModuleVersion}.omod"));
+        add(new Artifact("htmlformentry-omod", "htmlformentry-${htmlformentryModuleVersion}.omod"));
+        add(new Artifact("htmlformentry19ext-omod", "htmlformentry19ext-${htmlformentry19extModuleVersion}.omod"));
+        add(new Artifact("htmlformentryui-omod", "htmlformentryui-${htmlformentryuiModuleVersion}.omod"));
+        add(new Artifact("appui-omod", "appui-${appuiModuleVersion}.omod"));
+        add(new Artifact("event-omod", "event-${eventModuleVersion}.omod", "org.openmrs"));
+        add(new Artifact("coreapps-omod", "coreapps-${coreappsModuleVersion}.omod"));
+        add(new Artifact("webservices.rest-omod", "webservices.rest-${webservices.restModuleVersion}.omod"));
+        add(new Artifact("referencedemodata-omod", "referencedemodata-${referencedemodataModuleVersion}.omod"));
+        // added for v2.1
+        add(new Artifact("reportingrest-omod", "namephonetics-${namephoneticsModuleVersion}.omod"));
+        // ----
+        add(new Artifact("namephonetics-omod", "reportingrest-${reportingRestVersion}.omod"));
+        add(new Artifact("dataexchange-omod", "dataexchange-${dataexchangeModuleVersion}.omod"));
+        // added for v2.1
+        add(new Artifact("allergyapi-omod", "allergyapi-${allergyapiVersion}.omod"));
+        add(new Artifact("allergyui-omod", "allergyui-${allergyuiVersion}.omod"));
+        add(new Artifact("formentryapp-omod", "formentryapp-${formentryappVersion}.omod"));
+        add(new Artifact("atlas-omod", "atlas-${atlasVersion}.omod", "org.openmrs.web", "omod"));
+        // ----
     }};
     public static final List<Artifact> ARTIFACTS_2_2 = new ArrayList<Artifact>() {{
-
+        add(new Artifact("openmrs-webapp", "openmrs-${openMRSVersion}.war", "org.openmrs.web", "war"));
+        add(new Artifact("referencemetadata-omod", "referencemetadata-${referencemetadataModuleVersion}.omod"));
+        add(new Artifact("appframework-omod", "appframework-${appframeworkModuleVersion}.omod"));
+        add(new Artifact("uiframework-omod", "uiframework-${uiframeworkModuleVersion}.omod"));
+        // removed for v2.1
+        //add(new Artifact("logic-omod", "logic-${logicModuleVersion}.omod", "omod"));
+        // ----
+        add(new Artifact("registrationcore-omod", "registrationcore-${registrationcoreModuleVersion}.omod"));
+        add(new Artifact("registrationapp-omod", "registrationapp-${registrationappModuleVersion}.omod"));
+        add(new Artifact("idgen-omod", "idgen-${idgenModuleVersion}.omod"));
+        add(new Artifact("emrapi-omod", "emrapi-${emrapiModuleVersion}.omod"));
+        add(new Artifact("providermanagement-omod", "providermanagement-${providermanagementModuleVersion}.omod"));
+        add(new Artifact("uilibrary-omod", "uilibrary-${uilibraryModuleVersion}.omod"));
+        add(new Artifact("uicommons-omod", "uicommons-${uicommonsModuleVersion}.omod"));
+        add(new Artifact("referenceapplication-omod", "referenceapplication-${referenceapplicationModuleVersion}.omod"));
+        add(new Artifact("calculation-omod", "calculation-${calculationModuleVersion}.omod"));
+        add(new Artifact("reporting-omod", "reporting-${reportingModuleVersion}.omod"));
+        // added for v2.1
+        add(new Artifact("metadatadeploy-omod", "metadatadeploy-${metadatadeployVersion}.omod"));
+        // ----
+        add(new Artifact("metadatasharing-omod", "metadatasharing-${metadatasharingModuleVersion}.omod"));
+        add(new Artifact("metadatamapping-omod", "metadatamapping-${metadatamappingModuleVersion}.omod"));
+        add(new Artifact("serialization.xstream-omod", "serialization.xstream-${serialization.xstreamModuleVersion}.omod", "org.openmrs.module", "omod"));
+        add(new Artifact("htmlwidgets-omod", "htmlwidgets-${htmlwidgetsModuleVersion}.omod"));
+        add(new Artifact("htmlformentry-omod", "htmlformentry-${htmlformentryModuleVersion}.omod"));
+        add(new Artifact("htmlformentry19ext-omod", "htmlformentry19ext-${htmlformentry19extModuleVersion}.omod"));
+        add(new Artifact("htmlformentryui-omod", "htmlformentryui-${htmlformentryuiModuleVersion}.omod"));
+        add(new Artifact("appui-omod", "appui-${appuiModuleVersion}.omod"));
+        add(new Artifact("event-omod", "event-${eventModuleVersion}.omod", "org.openmrs"));
+        add(new Artifact("coreapps-omod", "coreapps-${coreappsModuleVersion}.omod"));
+        add(new Artifact("webservices.rest-omod", "webservices.rest-${webservices.restModuleVersion}.omod"));
+        add(new Artifact("referencedemodata-omod", "referencedemodata-${referencedemodataModuleVersion}.omod"));
+        // added for v2.1
+        add(new Artifact("reportingrest-omod", "namephonetics-${namephoneticsModuleVersion}.omod"));
+        // ----
+        // removed in v2.2
+        //add(new Artifact("namephonetics-omod", "reportingrest-${reportingRestVersion}.omod"));
+        // ----
+        add(new Artifact("dataexchange-omod", "dataexchange-${dataexchangeModuleVersion}.omod"));
+        // added for v2.1
+        add(new Artifact("allergyapi-omod", "allergyapi-${allergyapiVersion}.omod"));
+        add(new Artifact("allergyui-omod", "allergyui-${allergyuiVersion}.omod"));
+        add(new Artifact("formentryapp-omod", "formentryapp-${formentryappVersion}.omod"));
+        add(new Artifact("atlas-omod", "atlas-${atlasVersion}.omod", "org.openmrs.web", "omod"));
+        // ----
+        // added for v2.2
+        add(new Artifact("appointmentscheduling-omod", "appointmentscheduling-${appointmentschedulingVersion}.omod"));
+        add(new Artifact("appointmentschedulingui-omod", "appointmentschedulingui-${appointmentschedulinguiVersion}.omod"));
+        add(new Artifact("chartsearch-omod", "chartsearch-${chartsearchVersion}.omod", null));
+        // ----
     }};
     // final module base
     public static final HashMap<String, List<Artifact>> ARTIFACTS = new HashMap<String, List<Artifact>>() {{

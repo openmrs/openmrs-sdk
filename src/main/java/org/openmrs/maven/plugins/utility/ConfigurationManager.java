@@ -87,9 +87,11 @@ public class ConfigurationManager {
         for (Artifact artifact: list) {
             Xpp3Dom item = new Xpp3Dom("artifactItem");
             // create groupId
-            Xpp3Dom groupId = new Xpp3Dom("groupId");
-            groupId.setValue(artifact.getGroupId());
-            item.addChild(groupId);
+            if (artifact.getGroupId() != null) {
+                Xpp3Dom groupId = new Xpp3Dom("groupId");
+                groupId.setValue(artifact.getGroupId());
+                item.addChild(groupId);
+            }
             // create artifactId
             Xpp3Dom artifactId = new Xpp3Dom("artifactId");
             artifactId.setValue(artifact.getArtifactId());
@@ -113,7 +115,7 @@ public class ConfigurationManager {
 
     /**
      * Set pom version
-     * @param version
+     * @param version - server version
      */
     public void setVersion(String version) {
         model.setVersion(version);
