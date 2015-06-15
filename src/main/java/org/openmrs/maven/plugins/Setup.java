@@ -107,19 +107,25 @@ public class Setup extends AbstractMojo {
     private BuildPluginManager pluginManager;
 
     public void execute() throws MojoExecutionException {
-        // create configurator instance
         SetupPlatform configurator = new SetupPlatform(mavenProject, mavenSession, prompter, pluginManager);
-        // setup and configure server
-        Server server = configurator.setup(serverId, version, dbDriver, dbUri, dbUser, dbPassword, interactiveMode);
-        // configure modules
-        ConfigurationManager manager = new ConfigurationManager(server.getDbPath());
-        // get list if artifacts for current server version
+        Server server = new Server.ServerBuilder()
+                        .setNestedServerId(serverId)
+                        .setNestedVersion(version)
+                        .setNestedDbDriver(dbDriver)
+                        .setNestedDbUri(dbUri)
+                        .setNestedDbUser(dbUser)
+                        .setNestedDbPassword(dbPassword)
+                        .setNestedInteractiveMode(interactiveMode)
+                        .build();
+        String serverPath = configurator.setup(server);
+        ConfigurationManager manager = new ConfigurationManager(serverPath);
         List<Artifact> artifacts = SDKConstants.ARTIFACTS.get(version);
-        // add artifacts to POM
-        if (artifacts != null) manager.addArtifactsToConfiguration(artifacts);
-        else getLog().error("There are no modules for selected OpenMRS version");
-        // write pom model to file
-        manager.apply();
+        if (artifacts != null) {
+            manager.addArtifactsToConfiguration(artifacts);
+            manager.apply();
+            getLog().info("Modules for version " + version + " configured successfully");
+        }
+        else getLog().info("There are no modules for selected OpenMRS version");
         getLog().info("Server configured successfully");
     }
 }

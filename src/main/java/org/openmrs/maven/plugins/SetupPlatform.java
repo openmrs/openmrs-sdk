@@ -128,42 +128,30 @@ public class SetupPlatform extends AbstractMojo {
 
     /**
      * Create and setup server with following parameters
-     * @param serverId
-     * @param version
-     * @param dbDriver
-     * @param dbUri
-     * @param dbUser
-     * @param dbPassword
-     * @param interactiveMode
+     * @param server
      * @throws MojoExecutionException
      */
-    public Server setup(String serverId,
-                      String version,
-                      String dbDriver,
-                      String dbUri,
-                      String dbUser,
-                      String dbPassword,
-                      String interactiveMode) throws MojoExecutionException {
+    public String setup(Server server) throws MojoExecutionException {
         File omrsPath = new File(System.getProperty("user.home"), SDKConstants.OPENMRS_SERVER_PATH);
-        if (serverId == null) try {
+        if (server.getServerId() == null) try {
             String defaultId = "server";
             int indx = 0;
             while (new File(omrsPath, defaultId).exists()) {
                 indx++;
                 defaultId = "server" + String.valueOf(indx);
             }
-            serverId = prompter.prompt("Define value for property 'serverId': (default: '" + defaultId + "')");
-            if (serverId.equals("")) serverId = defaultId;
+            server.setServerId(prompter.prompt("Define value for property 'serverId': (default: '" + defaultId + "')"));
+            if (server.getServerId().equals("")) server.setServerId(defaultId);
         } catch (PrompterException e) {
-            e.printStackTrace();
+            getLog().error(e.getMessage());
         }
-        File serverPath = new File(omrsPath, serverId);
+        File serverPath = new File(omrsPath, server.getServerId());
         if (serverPath.exists()) throw new MojoExecutionException("Server with same id already created");
         Properties executionProps = mavenSession.getExecutionProperties();
         executionProps.put("groupId", SDKConstants.PROJECT_GROUP_ID);
-        executionProps.put("artifactId", serverId);
+        executionProps.put("artifactId", server.getServerId());
         executionProps.put("package", SDKConstants.PROJECT_PACKAGE);
-        executionProps.put("version", version);
+        executionProps.put("version", server.getVersion());
         executeMojo(
                 plugin(
                         groupId(SDKConstants.ARCH_GROUP_ID),
@@ -173,7 +161,7 @@ public class SetupPlatform extends AbstractMojo {
                 goal("generate"),
                 configuration(
                         element(name("archetypeCatalog"), SDKConstants.ARCH_CATALOG),
-                        element(name("interactiveMode"), interactiveMode),
+                        element(name("interactiveMode"), server.getInteractiveMode()),
                         element(name("archetypeGroupId"), SDKConstants.ARCH_PROJECT_GROUP_ID),
                         element(name("archetypeArtifactId"), SDKConstants.ARCH_PROJECT_ARTIFACT_ID),
                         element(name("archetypeVersion"), SDKConstants.ARCH_PROJECT_VERSION),
@@ -182,46 +170,59 @@ public class SetupPlatform extends AbstractMojo {
                 executionEnvironment(mavenProject, mavenSession, pluginManager)
         );
         getLog().info("Server created successfully, path: " + serverPath.getPath());
-        if ((dbDriver != null) || (dbUser != null) || (dbPassword != null) || (dbUri != null)) {
+        if ((server.getDbDriver() != null) ||
+                (server.getDbUser() != null) ||
+                (server.getDbPassword() != null) ||
+                (server.getDbUri() != null)) {
             File propertiesFile = new File(serverPath.getPath(), SDKConstants.OPENMRS_SERVER_PROPERTIES);
             PropertyManager properties = new PropertyManager(propertiesFile.getPath());
             try {
                 String defaultDriver = "mysql";
-                if (dbDriver == null) dbDriver = prompter.prompt("Define value for property 'dbDriver': (default: 'mysql')");
-                if ((dbDriver == null) || (dbDriver.equals(""))) dbDriver = defaultDriver;
+                if (server.getDbDriver() == null) server.setDbDriver(prompter.prompt("Define value for property 'dbDriver': (default: 'mysql')"));
+                if ((server.getDbDriver() == null) || (server.getDbDriver().equals(""))) server.setDbDriver(defaultDriver);
                 String defaultUri = SDKConstants.URI_MYSQL;
-                if ((dbDriver.equals("postgresql")) || (dbDriver.equals(SDKConstants.DRIVER_POSTGRESQL))) {
+                if ((server.getDbDriver().equals("postgresql")) || (server.getDbDriver().equals(SDKConstants.DRIVER_POSTGRESQL))) {
                     properties.setParam("dbDriver", SDKConstants.DRIVER_POSTGRESQL);
                     defaultUri = SDKConstants.URI_POSTGRESQL;
                 }
-                else if ((dbDriver.equals("h2")) || (dbDriver.equals(SDKConstants.DRIVER_H2))) {
+                else if ((server.getDbDriver().equals("h2")) || (server.getDbDriver().equals(SDKConstants.DRIVER_H2))) {
                     properties.setParam("dbDriver", SDKConstants.DRIVER_H2);
                     defaultUri = SDKConstants.URI_H2;
                 }
-                else if (dbDriver.equals("mysql")) properties.setParam("dbDriver", SDKConstants.DRIVER_MYSQL);
-                else properties.setParam("dbDriver", dbDriver);
+                else if (server.getDbDriver().equals("mysql")) properties.setParam("dbDriver", SDKConstants.DRIVER_MYSQL);
+                else properties.setParam("dbDriver", server.getDbDriver());
 
-                if (dbUri == null) dbUri = prompter.prompt("Define value for property 'dbUri': (default: '" + defaultUri + "')");
-                if ((dbUri == null) || (dbUri.equals(""))) dbUri = defaultUri;
+                if (server.getDbUri() == null) server.setDbUri(prompter.prompt("Define value for property 'dbUri': (default: '" + defaultUri + "')"));
+                if ((server.getDbUri() == null) || (server.getDbUri().equals(""))) server.setDbUri(defaultUri);
 
                 String defaultUser = "root";
-                if (dbUser == null) dbUser = prompter.prompt("Define value for property 'dbUser': (default: '" + defaultUser + "')");
-                if ((dbUser == null) || (dbUser.equals(""))) dbUser = defaultUser;
-                if (dbPassword == null) dbPassword = prompter.prompt("Define value for property 'dbPassword'");
+                if (server.getDbUser() == null) server.setDbUser(prompter.prompt("Define value for property 'dbUser': (default: '" + defaultUser + "')"));
+                if ((server.getDbUser() == null) || (server.getDbUser().equals(""))) server.setDbUser(defaultUser);
+                if (server.getDbPassword() == null) server.setDbPassword(prompter.prompt("Define value for property 'dbPassword'"));
 
-                properties.setParam("dbDriver", dbDriver);
-                properties.setParam("dbUser", dbUser);
-                properties.setParam("dbPassword", dbPassword);
-                properties.setParam("dbUri", dbUri);
+                properties.setParam("dbDriver", server.getDbDriver());
+                properties.setParam("dbUser", server.getDbUser());
+                properties.setParam("dbPassword", server.getDbPassword());
+                properties.setParam("dbUri", server.getDbUri());
                 properties.apply();
             } catch (PrompterException e) {
-                e.printStackTrace();
+                getLog().error(e.getMessage());
             }
         }
-        return new Server(serverId, serverPath.getPath(), dbDriver, dbUri, dbUser, dbPassword);
+        return serverPath.getPath();
     }
 
     public void execute() throws MojoExecutionException {
-        setup(serverId, version, dbDriver, dbUri, dbUser, dbPassword, interactiveMode);
+        Server server = new Server.ServerBuilder()
+                .setNestedServerId(serverId)
+                .setNestedVersion(version)
+                .setNestedDbDriver(dbDriver)
+                .setNestedDbUser(dbUser)
+                .setNestedDbUri(dbUri)
+                .setNestedDbPassword(dbPassword)
+                .setNestedInteractiveMode(interactiveMode)
+                .build();
+        setup(server);
+        //setup(serverId, version, dbDriver, dbUri, dbUser, dbPassword, interactiveMode);
     }
 }
