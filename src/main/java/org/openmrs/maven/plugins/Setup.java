@@ -40,7 +40,7 @@ public class Setup extends AbstractMojo {
     /**
      * Interactive mode param
      *
-     * @parameter expression="${interactiveMode}" default-value="true"
+     * @parameter expression="${interactiveMode}" default-value="false"
      */
     private String interactiveMode;
 
@@ -48,7 +48,6 @@ public class Setup extends AbstractMojo {
      * Server id (folder name)
      *
      * @parameter expression="${serverId}"
-     * @required
      *
      */
     private String serverId;
@@ -56,38 +55,35 @@ public class Setup extends AbstractMojo {
     /**
      * Platform version
      *
-     * @parameter expression="${version} default-value="2.2"
+     * @parameter expression="${version}" default-value="2.2"
      */
     private String version;
 
     /**
      * DB Driver type
      *
-     * @parameter expression="${dbDriver} default-value="mysql"
+     * @parameter expression="${dbDriver}" default-value="mysql"
      */
     private String dbDriver;
 
     /**
      * DB Uri
      *
-     * @parameter expression="${dbUri}
-     * @required
+     * @parameter expression="${dbUri}"
      */
     private String dbUri;
 
     /**
      * DB User
      *
-     * @parameter expression="${dbUser}
-     * @required
+     * @parameter expression="${dbUser}"
      */
     private String dbUser;
 
     /**
      * DB Pass
      *
-     * @parameter expression="${dbPassword}
-     * @required
+     * @parameter expression="${dbPassword}"
      */
     private String dbPassword;
 
@@ -117,7 +113,8 @@ public class Setup extends AbstractMojo {
                         .setNestedDbPassword(dbPassword)
                         .setNestedInteractiveMode(interactiveMode)
                         .build();
-        String serverPath = configurator.setup(server);
+        // configure server ,and prompt params if not set
+        String serverPath = configurator.setup(server, true);
         ConfigurationManager manager = new ConfigurationManager(serverPath);
         List<Artifact> artifacts = SDKConstants.ARTIFACTS.get(version);
         if (artifacts != null) {

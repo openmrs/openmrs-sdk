@@ -128,10 +128,11 @@ public class SetupPlatform extends AbstractMojo {
 
     /**
      * Create and setup server with following parameters
-     * @param server
+     * @param server - server instance
+     * @param requireDbParams - require db params if not selected
      * @throws MojoExecutionException
      */
-    public String setup(Server server) throws MojoExecutionException {
+    public String setup(Server server, Boolean requireDbParams) throws MojoExecutionException {
         File omrsPath = new File(System.getProperty("user.home"), SDKConstants.OPENMRS_SERVER_PATH);
         if (server.getServerId() == null) try {
             String defaultId = "server";
@@ -173,13 +174,14 @@ public class SetupPlatform extends AbstractMojo {
         if ((server.getDbDriver() != null) ||
                 (server.getDbUser() != null) ||
                 (server.getDbPassword() != null) ||
-                (server.getDbUri() != null)) {
+                (server.getDbUri() != null) ||
+                requireDbParams) {
             File propertiesFile = new File(serverPath.getPath(), SDKConstants.OPENMRS_SERVER_PROPERTIES);
             PropertyManager properties = new PropertyManager(propertiesFile.getPath());
             try {
                 String defaultDriver = "mysql";
                 if (server.getDbDriver() == null) server.setDbDriver(prompter.prompt("Define value for property 'dbDriver': (default: 'mysql')"));
-                if ((server.getDbDriver() == null) || (server.getDbDriver().equals(""))) server.setDbDriver(defaultDriver);
+                if (server.getDbDriver().equals("")) server.setDbDriver(defaultDriver);
                 String defaultUri = SDKConstants.URI_MYSQL;
                 if ((server.getDbDriver().equals("postgresql")) || (server.getDbDriver().equals(SDKConstants.DRIVER_POSTGRESQL))) {
                     properties.setParam("dbDriver", SDKConstants.DRIVER_POSTGRESQL);
@@ -193,11 +195,11 @@ public class SetupPlatform extends AbstractMojo {
                 else properties.setParam("dbDriver", server.getDbDriver());
 
                 if (server.getDbUri() == null) server.setDbUri(prompter.prompt("Define value for property 'dbUri': (default: '" + defaultUri + "')"));
-                if ((server.getDbUri() == null) || (server.getDbUri().equals(""))) server.setDbUri(defaultUri);
+                if (server.getDbUri().equals("")) server.setDbUri(defaultUri);
 
                 String defaultUser = "root";
                 if (server.getDbUser() == null) server.setDbUser(prompter.prompt("Define value for property 'dbUser': (default: '" + defaultUser + "')"));
-                if ((server.getDbUser() == null) || (server.getDbUser().equals(""))) server.setDbUser(defaultUser);
+                if (server.getDbUser().equals("")) server.setDbUser(defaultUser);
                 if (server.getDbPassword() == null) server.setDbPassword(prompter.prompt("Define value for property 'dbPassword'"));
 
                 properties.setParam("dbDriver", server.getDbDriver());
@@ -222,7 +224,6 @@ public class SetupPlatform extends AbstractMojo {
                 .setNestedDbPassword(dbPassword)
                 .setNestedInteractiveMode(interactiveMode)
                 .build();
-        setup(server);
-        //setup(serverId, version, dbDriver, dbUri, dbUser, dbPassword, interactiveMode);
+        setup(server, false);
     }
 }
