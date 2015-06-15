@@ -12,6 +12,7 @@ import org.openmrs.maven.plugins.utility.PropertyManager;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 
 import java.io.File;
+import java.util.Properties;
 
 import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
 
@@ -64,7 +65,7 @@ public class SetupPlatform extends AbstractMojo {
     /**
      * Interactive mode param
      *
-     * @parameter expression="${interactiveMode}" default-value="true"
+     * @parameter expression="${interactiveMode}" default-value=false
      */
     private String interactiveMode;
 
@@ -78,35 +79,35 @@ public class SetupPlatform extends AbstractMojo {
     /**
      * Platform version
      *
-     * @parameter expression="${version} default-value="1.11.2"
+     * @parameter expression="${version}" default-value="1.11.2"
      */
     private String version;
 
     /**
      * DB Driver type
      *
-     * @parameter expression="${dbDriver}
+     * @parameter expression="${dbDriver}"
      */
     private String dbDriver;
 
     /**
      * DB Uri
      *
-     * @parameter expression="${dbUri}
+     * @parameter expression="${dbUri}"
      */
     private String dbUri;
 
     /**
      * DB User
      *
-     * @parameter expression="${dbUser}
+     * @parameter expression="${dbUser}"
      */
     private String dbUser;
 
     /**
      * DB Pass
      *
-     * @parameter expression="${dbPassword}
+     * @parameter expression="${dbPassword}"
      */
     private String dbPassword;
 
@@ -158,6 +159,11 @@ public class SetupPlatform extends AbstractMojo {
         }
         File serverPath = new File(omrsPath, serverId);
         if (serverPath.exists()) throw new MojoExecutionException("Server with same id already created");
+        Properties executionProps = mavenSession.getExecutionProperties();
+        executionProps.put("groupId", SDKConstants.PROJECT_GROUP_ID);
+        executionProps.put("artifactId", serverId);
+        executionProps.put("package", SDKConstants.PROJECT_PACKAGE);
+        executionProps.put("version", version);
         executeMojo(
                 plugin(
                         groupId(SDKConstants.ARCH_GROUP_ID),
@@ -168,14 +174,10 @@ public class SetupPlatform extends AbstractMojo {
                 configuration(
                         element(name("archetypeCatalog"), SDKConstants.ARCH_CATALOG),
                         element(name("interactiveMode"), interactiveMode),
-                        //element(name("package"), SDKConstants.PROJECT_PACKAGE),
                         element(name("archetypeGroupId"), SDKConstants.ARCH_PROJECT_GROUP_ID),
                         element(name("archetypeArtifactId"), SDKConstants.ARCH_PROJECT_ARTIFACT_ID),
                         element(name("archetypeVersion"), SDKConstants.ARCH_PROJECT_VERSION),
                         element(name("basedir"), omrsPath.getPath())
-                        //element(name("groupId"), SDKConstants.PROJECT_GROUP_ID),
-                        //element(name("artifactId"), serverId),
-                        //element(name("version"), version)
                 ),
                 executionEnvironment(mavenProject, mavenSession, pluginManager)
         );
