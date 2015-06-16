@@ -1,5 +1,8 @@
 package org.openmrs.maven.plugins.utility;
 
+import org.apache.commons.io.IOUtils;
+import org.apache.log4j.Logger;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -12,6 +15,8 @@ import java.util.Properties;
 public class PropertyManager {
     private Properties properties;
     private String path;
+
+    private static final Logger log = Logger.getLogger(PropertyManager.class);
 
     public PropertyManager() { properties = new Properties(); }
 
@@ -30,7 +35,9 @@ public class PropertyManager {
                 properties.load(in);
                 in.close();
             } catch (IOException e) {
-                e.printStackTrace();
+                log.error("Error while reading properties");
+            } finally {
+                IOUtils.closeQuietly(in);
             }
         }
     }
@@ -63,7 +70,9 @@ public class PropertyManager {
             properties.store(out, null);
             out.close();
         } catch (IOException e) {
-            e.printStackTrace();
+            log.error(e.getMessage());
+        } finally {
+            IOUtils.closeQuietly(out);
         }
     }
 

@@ -1,5 +1,6 @@
 package org.openmrs.maven.plugins.utility;
 
+import org.apache.log4j.Logger;
 import org.apache.maven.model.*;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 import org.apache.maven.model.io.xpp3.MavenXpp3Writer;
@@ -20,6 +21,8 @@ public class ConfigurationManager {
     private String path;
     private Model model;
 
+    private static final Logger log = Logger.getLogger(ConfigurationManager.class);
+
     /**
      * Default constructor
      */
@@ -39,9 +42,9 @@ public class ConfigurationManager {
             try {
                 model = new MavenXpp3Reader().read(new FileReader(path));
             } catch (IOException e) {
-                e.printStackTrace();
+                log.error(e.getMessage());
             } catch (XmlPullParserException e) {
-                e.printStackTrace();
+                log.error(e.getMessage());
             }
         }
     }
@@ -131,7 +134,7 @@ public class ConfigurationManager {
         try {
             writer.write(new FileWriter(path), model);
         } catch (IOException e) {
-            e.printStackTrace();
+            log.error(e.getMessage());
         }
     }
 }
