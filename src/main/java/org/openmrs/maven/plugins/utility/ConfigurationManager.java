@@ -1,10 +1,10 @@
 package org.openmrs.maven.plugins.utility;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.log4j.Logger;
 import org.apache.maven.model.*;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 import org.apache.maven.model.io.xpp3.MavenXpp3Writer;
+import org.apache.maven.plugin.logging.Log;
 import org.codehaus.plexus.util.xml.Xpp3Dom;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 import org.openmrs.maven.plugins.model.Artifact;
@@ -21,13 +21,12 @@ import java.util.List;
 public class ConfigurationManager {
     private String path;
     private Model model;
-
-    private static final Logger log = Logger.getLogger(ConfigurationManager.class);
+    private Log log;
 
     /**
      * Default constructor
      */
-    public ConfigurationManager() {
+    private ConfigurationManager() {
         model = new Model();
     }
 
@@ -35,9 +34,10 @@ public class ConfigurationManager {
      * Create new configuration object by the path
      * @param projectPath - path to project
      */
-    public ConfigurationManager(String projectPath) {
+    public ConfigurationManager(String projectPath, Log log) {
         this();
-        path = new File(projectPath, SDKConstants.OPENMRS_SERVER_POM).getPath();
+        this.log = log;
+        this.path = new File(projectPath, SDKConstants.OPENMRS_SERVER_POM).getPath();
         File conf = new File(path);
         FileReader reader = null;
         if (conf.exists()) {

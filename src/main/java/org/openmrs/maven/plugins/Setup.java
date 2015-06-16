@@ -115,7 +115,7 @@ public class Setup extends AbstractMojo {
                         .build();
         // configure server ,and prompt params if not set
         String serverPath = configurator.setup(server, true);
-        ConfigurationManager manager = new ConfigurationManager(serverPath);
+        ConfigurationManager manager = new ConfigurationManager(serverPath, getLog());
         List<Artifact> artifacts = SDKConstants.ARTIFACTS.get(version);
         if (artifacts != null) {
             manager.addArtifactsToConfiguration(artifacts);

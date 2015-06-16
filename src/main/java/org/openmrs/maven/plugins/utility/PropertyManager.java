@@ -1,7 +1,7 @@
 package org.openmrs.maven.plugins.utility;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.log4j.Logger;
+import org.apache.maven.plugin.logging.Log;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -15,18 +15,18 @@ import java.util.Properties;
 public class PropertyManager {
     private Properties properties;
     private String path;
+    private Log log;
 
-    private static final Logger log = Logger.getLogger(PropertyManager.class);
-
-    public PropertyManager() { properties = new Properties(); }
+    private PropertyManager() { properties = new Properties(); }
 
     /**
      * Initialize
      * @param filePath - .properties file path
      */
-    public PropertyManager(String filePath) {
+    public PropertyManager(String filePath, Log log) {
         this();
-        path = filePath;
+        this.log = log;
+        this.path = filePath;
         File config = new File(path);
         if (config.exists()) {
             FileInputStream in = null;

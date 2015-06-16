@@ -177,7 +177,7 @@ public class SetupPlatform extends AbstractMojo {
                 (server.getDbUri() != null) ||
                 requireDbParams) {
             File propertiesFile = new File(serverPath.getPath(), SDKConstants.OPENMRS_SERVER_PROPERTIES);
-            PropertyManager properties = new PropertyManager(propertiesFile.getPath());
+            PropertyManager properties = new PropertyManager(propertiesFile.getPath(), getLog());
             try {
                 String defaultDriver = "mysql";
                 if (server.getDbDriver() == null) server.setDbDriver(prompter.prompt("Define value for property 'dbDriver': (default: 'mysql')"));
