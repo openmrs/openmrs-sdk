@@ -5,6 +5,7 @@ import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
+import org.openmrs.maven.plugins.utility.SDKConstants;
 
 import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
 
@@ -41,14 +42,17 @@ public class CreateModule extends AbstractMojo {
 
     public void execute() throws MojoExecutionException {
         executeMojo(
-                plugin(groupId("org.apache.maven.plugins"), artifactId("maven-archetype-plugin"), version("2.3")),
+                plugin(
+                        groupId(SDKConstants.ARCH_GROUP_ID),
+                        artifactId(SDKConstants.ARCH_ARTIFACT_ID),
+                        version(SDKConstants.ARCH_VERSION)
+                ),
                 goal("generate"),
                 configuration(
-                        element(name("archetypeCatalog"),
-                                "http://mavenrepo.openmrs.org/nexus/service/local/repositories/releases/content/archetype-catalog.xml"),
-                        element(name("archetypeGroupId"),"org.openmrs.maven.archetypes"),
-                        element(name("archetypeArtifactId"), "maven-archetype-openmrs-module-2.x"),
-                        element(name("archetypeVersion"), "1.1")
+                        element(name("archetypeCatalog"), SDKConstants.ARCH_CATALOG),
+                        element(name("archetypeGroupId"), SDKConstants.ARCH_MODULE_GROUP_ID),
+                        element(name("archetypeArtifactId"), SDKConstants.ARCH_MODULE_ARTIFACT_ID),
+                        element(name("archetypeVersion"), SDKConstants.ARCH_MODULE_VERSION)
                 ),
                 executionEnvironment(mavenProject, mavenSession, pluginManager)
         );

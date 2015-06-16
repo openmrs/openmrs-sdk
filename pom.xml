@@ -70,6 +70,18 @@
       <artifactId>module-wizard-plugin</artifactId>
       <version>1.1.0</version>
     </dependency>
+    <!-- setup server depth -->
+    <dependency>
+      <groupId>org.openmrs.maven.archetypes</groupId>
+      <artifactId>maven-archetype-openmrs-project</artifactId>
+      <version>1.0.1</version>
+    </dependency>
+    <!-- prompt plugin -->
+    <dependency>
+      <groupId>org.codehaus.plexus</groupId>
+      <artifactId>plexus-interactivity-api</artifactId>
+      <version>1.0-alpha-6</version>
+    </dependency>
   </dependencies>
 
   <build>
@@ -79,8 +91,8 @@
         <artifactId>maven-compiler-plugin</artifactId>
         <version>2.5.1</version>
         <configuration>
-          <source>1.7</source>
-          <target>1.7</target>
+          <source>1.6</source>
+          <target>1.6</target>
         </configuration>
       </plugin>
     </plugins>
