@@ -44,6 +44,7 @@ public class ConfigurationManager {
             try {
                 reader = new FileReader(path);
                 model = new MavenXpp3Reader().read(reader);
+                reader.close();
             } catch (IOException e) {
                 log.error(e.getMessage());
             } catch (XmlPullParserException e) {
@@ -140,6 +141,7 @@ public class ConfigurationManager {
         try {
             fileWrite = new FileWriter(path);
             writer.write(fileWrite, model);
+            fileWrite.close();
         } catch (IOException e) {
             log.error(e.getMessage());
         } finally {

@@ -105,13 +105,13 @@ public class Setup extends AbstractMojo {
     public void execute() throws MojoExecutionException {
         SetupPlatform configurator = new SetupPlatform(mavenProject, mavenSession, prompter, pluginManager);
         Server server = new Server.ServerBuilder()
-                        .setNestedServerId(serverId)
-                        .setNestedVersion(version)
-                        .setNestedDbDriver(dbDriver)
-                        .setNestedDbUri(dbUri)
-                        .setNestedDbUser(dbUser)
-                        .setNestedDbPassword(dbPassword)
-                        .setNestedInteractiveMode(interactiveMode)
+                        .setServerId(serverId)
+                        .setVersion(version)
+                        .setDbDriver(dbDriver)
+                        .setDbUri(dbUri)
+                        .setDbUser(dbUser)
+                        .setDbPassword(dbPassword)
+                        .setInteractiveMode(interactiveMode)
                         .build();
         // configure server ,and prompt params if not set
         String serverPath = configurator.setup(server, true);

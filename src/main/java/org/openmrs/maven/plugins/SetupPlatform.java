@@ -216,13 +216,13 @@ public class SetupPlatform extends AbstractMojo {
 
     public void execute() throws MojoExecutionException {
         Server server = new Server.ServerBuilder()
-                .setNestedServerId(serverId)
-                .setNestedVersion(version)
-                .setNestedDbDriver(dbDriver)
-                .setNestedDbUser(dbUser)
-                .setNestedDbUri(dbUri)
-                .setNestedDbPassword(dbPassword)
-                .setNestedInteractiveMode(interactiveMode)
+                .setServerId(serverId)
+                .setVersion(version)
+                .setDbDriver(dbDriver)
+                .setDbUser(dbUser)
+                .setDbUri(dbUri)
+                .setDbPassword(dbPassword)
+                .setInteractiveMode(interactiveMode)
                 .build();
         setup(server, false);
     }

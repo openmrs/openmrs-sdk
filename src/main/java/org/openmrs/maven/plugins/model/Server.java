@@ -22,37 +22,37 @@ public class Server {
         private String nestedInteractiveMode;
         private String nestedVersion;
 
-        public ServerBuilder setNestedInteractiveMode(String nestedInteractiveMode) {
+        public ServerBuilder setInteractiveMode(String nestedInteractiveMode) {
             this.nestedInteractiveMode = nestedInteractiveMode;
             return this;
         }
 
-        public ServerBuilder setNestedVersion(String nestedVersion) {
+        public ServerBuilder setVersion(String nestedVersion) {
             this.nestedVersion = nestedVersion;
             return this;
         }
 
-        public ServerBuilder setNestedServerId(String nestedServerId) {
+        public ServerBuilder setServerId(String nestedServerId) {
             this.nestedServerId = nestedServerId;
             return this;
         }
 
-        public ServerBuilder setNestedDbDriver(String nestedDbDriver) {
+        public ServerBuilder setDbDriver(String nestedDbDriver) {
             this.nestedDbDriver = nestedDbDriver;
             return this;
         }
 
-        public ServerBuilder setNestedDbUri(String nestedDbUri) {
+        public ServerBuilder setDbUri(String nestedDbUri) {
             this.nestedDbUri = nestedDbUri;
             return this;
         }
 
-        public ServerBuilder setNestedDbUser(String nestedDbUser) {
+        public ServerBuilder setDbUser(String nestedDbUser) {
             this.nestedDbUser = nestedDbUser;
             return this;
         }
 
-        public ServerBuilder setNestedDbPassword(String nestedDbPassword) {
+        public ServerBuilder setDbPassword(String nestedDbPassword) {
             this.nestedDbPassword = nestedDbPassword;
             return this;
         }
@@ -62,9 +62,9 @@ public class Server {
         }
     }
 
-    public Server() {};
+    private Server() {};
 
-    public Server(String serverId, String version, String dbDriver, String dbUri, String dbUser, String dbPassword, String interactiveMode) {
+    private Server(String serverId, String version, String dbDriver, String dbUri, String dbUser, String dbPassword, String interactiveMode) {
         this.serverId = serverId;
         this.version = version;
         this.dbDriver = dbDriver;
