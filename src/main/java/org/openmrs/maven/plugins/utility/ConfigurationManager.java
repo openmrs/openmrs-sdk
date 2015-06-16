@@ -1,5 +1,6 @@
 package org.openmrs.maven.plugins.utility;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.apache.maven.model.*;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
@@ -38,13 +39,17 @@ public class ConfigurationManager {
         this();
         path = new File(projectPath, SDKConstants.OPENMRS_SERVER_POM).getPath();
         File conf = new File(path);
+        FileReader reader = null;
         if (conf.exists()) {
             try {
-                model = new MavenXpp3Reader().read(new FileReader(path));
+                reader = new FileReader(path);
+                model = new MavenXpp3Reader().read(reader);
             } catch (IOException e) {
                 log.error(e.getMessage());
             } catch (XmlPullParserException e) {
                 log.error(e.getMessage());
+            } finally {
+                IOUtils.closeQuietly(reader);
             }
         }
     }
@@ -131,10 +136,14 @@ public class ConfigurationManager {
      */
     public void apply() {
         MavenXpp3Writer writer = new MavenXpp3Writer();
+        FileWriter fileWrite = null;
         try {
-            writer.write(new FileWriter(path), model);
+            fileWrite = new FileWriter(path);
+            writer.write(fileWrite, model);
         } catch (IOException e) {
             log.error(e.getMessage());
+        } finally {
+            IOUtils.closeQuietly(fileWrite);
         }
     }
 }
