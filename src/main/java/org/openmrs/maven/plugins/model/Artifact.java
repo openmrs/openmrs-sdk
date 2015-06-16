@@ -1,5 +1,7 @@
 package org.openmrs.maven.plugins.model;
 
+import org.codehaus.plexus.util.xml.Xpp3Dom;
+
 /**
  * Class for Artifact model
  */
@@ -96,5 +98,53 @@ public class Artifact {
 
     public void setDestFileName(String destFileName) {
         this.destFileName = destFileName;
+    }
+
+    /**
+     * Convert object to Xpp3Dom model
+     * @return
+     */
+    public Xpp3Dom toArtifactItem() {
+        Xpp3Dom item = new Xpp3Dom("artifactItem");
+        // create groupId
+        Xpp3Dom domGroupId = new Xpp3Dom("groupId");
+        domGroupId.setValue(groupId);
+        item.addChild(domGroupId);
+        // create artifactId
+        Xpp3Dom domArtifactId = new Xpp3Dom("artifactId");
+        domArtifactId.setValue(artifactId);
+        item.addChild(domArtifactId);
+        // create destFileName
+        Xpp3Dom domDestFileName = new Xpp3Dom("destFileName");
+        domDestFileName.setValue(destFileName);
+        item.addChild(domDestFileName);
+        // create version
+        Xpp3Dom domVersion = new Xpp3Dom("version");
+        domVersion.setValue(version);
+        item.addChild(domVersion);
+        // create type (if it set)
+        if (type != null) {
+            Xpp3Dom domType = new Xpp3Dom("type");
+            domType.setValue(type);
+            item.addChild(domType);
+        }
+        return item;
+    }
+
+    /**
+     * create object from Xpp3Dom model
+     * @param artifactItem
+     * @return
+     */
+    public static final Artifact fromArtifactItem(Xpp3Dom artifactItem) {
+        Artifact result = null;
+        Xpp3Dom domArtifactId = artifactItem.getChild("artifactId");
+        Xpp3Dom domGroupId = artifactItem.getChild("groupId");
+        Xpp3Dom domVersion = artifactItem.getChild("version");
+        Xpp3Dom domType = artifactItem.getChild("type");
+        if ((domArtifactId != null) && (domGroupId != null) && (domVersion != null)) {
+            result = new Artifact(domArtifactId.getValue(), domVersion.getValue(), domGroupId.getValue(), domType.getValue());
+        }
+        return result;
     }
 }

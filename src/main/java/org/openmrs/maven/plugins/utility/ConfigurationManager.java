@@ -32,12 +32,12 @@ public class ConfigurationManager {
 
     /**
      * Create new configuration object by the path
-     * @param projectPath - path to project
+     * @param pomFile - path to pom
      */
-    public ConfigurationManager(String projectPath, Log log) {
+    public ConfigurationManager(String pomFile, Log log) {
         this();
         this.log = log;
-        this.path = new File(projectPath, SDKConstants.OPENMRS_SERVER_POM).getPath();
+        this.path = pomFile;
         File conf = new File(path);
         FileReader reader = null;
         if (conf.exists()) {
@@ -87,41 +87,83 @@ public class ConfigurationManager {
      * Check if configuration exists, and add artifact list to configuration
      * @param list - artifact list
      */
-    public void addArtifactsToConfiguration(List<Artifact> list) {
+    public void addArtifactListToConfiguration(List<Artifact> list) {
         PluginExecution execution = model.getBuild().getPlugins().get(0).getExecutions().get(0);
         Xpp3Dom config = (Xpp3Dom) execution.getConfiguration();
         if (config == null) config = new Xpp3Dom("configuration");
         if (config.getChild("artifactItems") == null) config.addChild(new Xpp3Dom("artifactItems"));
         Xpp3Dom artifactItems = config.getChild("artifactItems");
         for (Artifact artifact: list) {
-            Xpp3Dom item = new Xpp3Dom("artifactItem");
-            // create groupId
-            Xpp3Dom groupId = new Xpp3Dom("groupId");
-            groupId.setValue(artifact.getGroupId());
-            item.addChild(groupId);
-            // create artifactId
-            Xpp3Dom artifactId = new Xpp3Dom("artifactId");
-            artifactId.setValue(artifact.getArtifactId());
-            item.addChild(artifactId);
-            // create destFileName
-            Xpp3Dom destFileName = new Xpp3Dom("destFileName");
-            destFileName.setValue(artifact.getDestFileName());
-            item.addChild(destFileName);
-            // create version
-            Xpp3Dom version = new Xpp3Dom("version");
-            version.setValue(artifact.getVersion());
-            item.addChild(version);
-            // create type (if it set)
-            if (artifact.getType() != null) {
-                Xpp3Dom type = new Xpp3Dom("type");
-                type.setValue(artifact.getType());
-                item.addChild(type);
-            }
-            // add artifact to list
-            artifactItems.addChild(item);
+            Xpp3Dom artifactItem = artifact.toArtifactItem();
+            artifactItems.addChild(artifactItem);
         }
         // set config to POM
         execution.setConfiguration(config);
+    }
+
+    /**
+     * Get artifactItem by groupId, artifactId
+     * @param groupId
+     * @param artifactId
+     * @return
+     */
+    public Xpp3Dom getArtifactItem(String groupId, String artifactId) {
+        PluginExecution execution = model.getBuild().getPlugins().get(0).getExecutions().get(0);
+        Xpp3Dom config = (Xpp3Dom) execution.getConfiguration();
+        if ((config != null) && (config.getChild("artifactItems") != null)) {
+            Xpp3Dom artifactItems = config.getChild("artifactItems");
+            for (int x=0;x<artifactItems.getChildCount();x++) {
+                Xpp3Dom artifactItem = artifactItems.getChild(x);
+                Xpp3Dom id = artifactItem.getChild("artifactId");
+                Xpp3Dom group = artifactItem.getChild("groupId");
+                if ((id != null) && (id.getValue().equals(artifactId)) && (group.getValue().equals(groupId)))
+                    return artifactItems.getChild(x);
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Get parent property
+     * @return
+     */
+    public Parent getParent() {
+       return model.getParent();
+    }
+
+    /**
+     * Get artifactId
+     * @return
+     */
+    public String getArtifactId() {
+        return model.getArtifactId();
+    }
+
+    /**
+     * Get groupId
+     * @return
+     */
+    public String getGroupId() {
+        return model.getGroupId();
+    }
+
+    /**
+     * Get version
+     * @return
+     */
+    public String getVersion() {
+        return model.getVersion();
+    }
+
+    /**
+     * Update version of selected artifactItem
+     * @param groupId
+     * @param artifactId
+     * @param version
+     */
+    public void updateArtifactItem(String groupId, String artifactId, String version) {
+        Xpp3Dom artifactItem = getArtifactItem(groupId, artifactId);
+        if (artifactItem != null) artifactItem.getChild("version").setValue(version);
     }
 
     /**

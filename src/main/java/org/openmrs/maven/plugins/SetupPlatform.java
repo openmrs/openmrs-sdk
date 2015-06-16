@@ -8,6 +8,7 @@ import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.components.interactivity.Prompter;
 import org.codehaus.plexus.components.interactivity.PrompterException;
 import org.openmrs.maven.plugins.model.Server;
+import org.openmrs.maven.plugins.utility.AttributeHelper;
 import org.openmrs.maven.plugins.utility.PropertyManager;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 
@@ -134,15 +135,8 @@ public class SetupPlatform extends AbstractMojo {
      */
     public String setup(Server server, Boolean requireDbParams) throws MojoExecutionException {
         File omrsPath = new File(System.getProperty("user.home"), SDKConstants.OPENMRS_SERVER_PATH);
-        if (server.getServerId() == null) try {
-            String defaultId = "server";
-            int indx = 0;
-            while (new File(omrsPath, defaultId).exists()) {
-                indx++;
-                defaultId = "server" + String.valueOf(indx);
-            }
-            server.setServerId(prompter.prompt("Define value for property 'serverId': (default: '" + defaultId + "')"));
-            if (server.getServerId().equals("")) server.setServerId(defaultId);
+        try {
+            server.setServerId(AttributeHelper.makeServerId(prompter, omrsPath.getPath(), server.getServerId()));
         } catch (PrompterException e) {
             getLog().error(e.getMessage());
         }
