@@ -57,19 +57,7 @@ public class ModuleInstall extends AbstractMojo {
 
     public void execute() throws MojoExecutionException, MojoFailureException {
         AttributeHelper helper = new AttributeHelper(prompter);
-        File omrsHome = new File(System.getProperty("user.home"), SDKConstants.OPENMRS_SERVER_PATH);
-        String resultServerId = null;
-        try {
-            resultServerId = helper.promptForServerIfMissing(serverId);
-        } catch (PrompterException e) {
-            getLog().error(e.getMessage());
-        }
-        File serverPath = new File(omrsHome, resultServerId);
-        if (!serverPath.exists()) {
-            throw new MojoFailureException("Server with such serverId is not exists");
-            //getLog().error("Server with such serverId is not exists");
-            //return;
-        }
+        File serverPath = getServerPath(helper, serverId);
         Artifact artifact = getArtifactForSelectedParameters(helper, groupId, artifactId, version);
         ConfigurationManager manager = new ConfigurationManager(new File(serverPath, SDKConstants.OPENMRS_SERVER_POM).getPath(), getLog());
         Xpp3Dom item = manager.getArtifactItem(artifact);
@@ -127,5 +115,28 @@ public class ModuleInstall extends AbstractMojo {
         }
         // update server pom
         return new Artifact(moduleArtifactId, moduleVersion, moduleGroupId);
+    }
+
+    /**
+     * Get path to server by serverId and prompt if missing
+     * @param helper
+     * @return
+     * @throws MojoFailureException
+     */
+    public File getServerPath(AttributeHelper helper, String serverId) throws MojoFailureException {
+        File omrsHome = new File(System.getProperty("user.home"), SDKConstants.OPENMRS_SERVER_PATH);
+        String resultServerId = null;
+        try {
+            resultServerId = helper.promptForServerIfMissing(serverId);
+        } catch (PrompterException e) {
+            getLog().error(e.getMessage());
+        }
+        File serverPath = new File(omrsHome, resultServerId);
+        if (!serverPath.exists()) {
+            throw new MojoFailureException("Server with such serverId is not exists");
+            //getLog().error("Server with such serverId is not exists");
+            //return;
+        }
+        return serverPath;
     }
 }

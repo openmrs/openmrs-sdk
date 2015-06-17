@@ -108,10 +108,8 @@ public class ConfigurationManager {
      * @return
      */
     public Xpp3Dom getArtifactItem(String groupId, String artifactId) {
-        PluginExecution execution = model.getBuild().getPlugins().get(0).getExecutions().get(0);
-        Xpp3Dom config = (Xpp3Dom) execution.getConfiguration();
-        if ((config != null) && (config.getChild("artifactItems") != null)) {
-            Xpp3Dom artifactItems = config.getChild("artifactItems");
+        Xpp3Dom artifactItems = getArtifactItems();
+        if (artifactItems != null) {
             for (int x=0;x<artifactItems.getChildCount();x++) {
                 Xpp3Dom artifactItem = artifactItems.getChild(x);
                 Xpp3Dom id = artifactItem.getChild("artifactId");
@@ -124,12 +122,43 @@ public class ConfigurationManager {
     }
 
     /**
+     * Get all artifact items from config
+     * @return array
+     */
+    public Xpp3Dom getArtifactItems() {
+        PluginExecution execution = model.getBuild().getPlugins().get(0).getExecutions().get(0);
+        Xpp3Dom config = (Xpp3Dom) execution.getConfiguration();
+        if ((config != null) && (config.getChild("artifactItems") != null)) return config.getChild("artifactItems");
+        return null;
+    }
+
+    /**
      * Get artifactItem by Artifact
      * @param artifact
      * @return
      */
     public Xpp3Dom getArtifactItem(Artifact artifact) {
         return getArtifactItem(artifact.getGroupId(), artifact.getArtifactId());
+    }
+
+    /**
+     * Remove item from config
+     * @param artifact
+     * @return
+     */
+    public boolean removeArtifactItem(Artifact artifact) {
+        Xpp3Dom artifactItems = getArtifactItems();
+        if (artifactItems == null) return false;
+        for (int x=0;x<artifactItems.getChildCount();x++) {
+            Xpp3Dom artifactItem = artifactItems.getChild(x);
+            Xpp3Dom id = artifactItem.getChild("artifactId");
+            Xpp3Dom group = artifactItem.getChild("groupId");
+            if ((id != null) && (id.getValue().equals(artifact.getArtifactId())) && (group.getValue().equals(artifact.getGroupId()))) {
+                artifactItems.removeChild(x);
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
