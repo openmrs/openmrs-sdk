@@ -11,8 +11,8 @@ import java.io.File;
 public class AttributeHelper {
     private static final String EMPTY_STRING = "";
     private static final String DEFAULT_SERVER_NAME = "server";
-    private static final String DEFAULT_SERVER_NAME_TMPL = "Define value for property 'serverId'";
-    private static final String DEFAULT_SERVER_NAME_NEW_TMPL = "Define value for property 'serverId': (default: '%s')";
+    private static final String DEFAULT_VALUE_TMPL = "Define value for property '%s'";
+    private static final String DEFAULT_VALUE_TMPL_WITH_DEFAULT = "Define value for property '%s': (default: '%s')";
 
     private Prompter prompter;
 
@@ -27,11 +27,19 @@ public class AttributeHelper {
             indx++;
             defaultServerId = DEFAULT_SERVER_NAME + String.valueOf(indx);
         }
-        return promptForValueIfMissing(serverId, String.format(DEFAULT_SERVER_NAME_NEW_TMPL, defaultServerId), defaultServerId);
+        return promptForValueIfMissing(serverId, String.format(DEFAULT_VALUE_TMPL_WITH_DEFAULT, "serverId", defaultServerId), defaultServerId);
     }
 
     public String promptForServerIfMissing(String serverId) throws PrompterException {
-        return promptForValueIfMissing(serverId, DEFAULT_SERVER_NAME_TMPL, "");
+        return promptForValueIfMissing(serverId, String.format(DEFAULT_VALUE_TMPL, "serverId"), EMPTY_STRING);
+    }
+
+    public String promptFotArtifactIfMissing(String artifactId) throws PrompterException {
+        return promptForValueIfMissing(artifactId, String.format(DEFAULT_VALUE_TMPL, "artifactId"), EMPTY_STRING);
+    }
+
+    public String promptForVersionIfMissing(String version) throws PrompterException {
+        return promptForValueIfMissing(version, String.format(DEFAULT_VALUE_TMPL, "version"), EMPTY_STRING);
     }
 
     /**

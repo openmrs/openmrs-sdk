@@ -124,6 +124,15 @@ public class ConfigurationManager {
     }
 
     /**
+     * Get artifactItem by Artifact
+     * @param artifact
+     * @return
+     */
+    public Xpp3Dom getArtifactItem(Artifact artifact) {
+        return getArtifactItem(artifact.getGroupId(), artifact.getArtifactId());
+    }
+
+    /**
      * Get parent property
      * @return
      */
@@ -164,6 +173,14 @@ public class ConfigurationManager {
     public void updateArtifactItem(String groupId, String artifactId, String version) {
         Xpp3Dom artifactItem = getArtifactItem(groupId, artifactId);
         if (artifactItem != null) artifactItem.getChild("version").setValue(version);
+    }
+
+    /**
+     * Update artifact from artifactItems with version
+     * @param artifact
+     */
+    public void updateArtifactItem(Artifact artifact) {
+        updateArtifactItem(artifact.getGroupId(), artifact.getArtifactId(), artifact.getVersion());
     }
 
     /**
