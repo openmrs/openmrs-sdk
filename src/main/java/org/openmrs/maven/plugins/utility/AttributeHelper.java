@@ -11,16 +11,21 @@ import java.io.File;
 public class AttributeHelper {
     private static final String EMPTY_STRING = "";
     private static final String DEFAULT_SERVER_NAME = "server";
-    private static final String DEFAULT_SERVER_NAME_TMPL = "Define value for property 'serverId': (default: '%s')";
+    private static final String DEFAULT_SERVER_NAME_TMPL = "Define value for property 'serverId'";
+    private static final String DEFAULT_SERVER_NAME_NEW_TMPL = "Define value for property 'serverId': (default: '%s')";
 
-    public static String makeServerId(Prompter prompter, String omrsPath, String serverId) throws PrompterException {
+    public static String makeNewServerId(Prompter prompter, String omrsPath, String serverId) throws PrompterException {
         String defaultServerId = DEFAULT_SERVER_NAME;
         int indx = 0;
         while (new File(omrsPath, defaultServerId).exists()) {
             indx++;
             defaultServerId = DEFAULT_SERVER_NAME + String.valueOf(indx);
         }
-        return AttributeHelper.makeValue(prompter, serverId, String.format(DEFAULT_SERVER_NAME_TMPL, defaultServerId), defaultServerId);
+        return AttributeHelper.makeValue(prompter, serverId, String.format(DEFAULT_SERVER_NAME_NEW_TMPL, defaultServerId), defaultServerId);
+    }
+
+    public static String makeServerId(Prompter prompter, String serverId) throws PrompterException {
+        return makeValue(prompter, serverId, DEFAULT_SERVER_NAME_TMPL, "");
     }
 
     private static String makeValue(Prompter prompter, String value, String text, String defValue) throws PrompterException {

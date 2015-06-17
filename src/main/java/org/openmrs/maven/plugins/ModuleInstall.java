@@ -44,15 +44,16 @@ public class ModuleInstall extends AbstractMojo {
 
     public void execute() throws MojoExecutionException, MojoFailureException {
         File omrsHome = new File(System.getProperty("user.home"), SDKConstants.OPENMRS_SERVER_PATH);
-        String resultServerId;
+        String resultServerId = null;
         try {
-            resultServerId = AttributeHelper.makeServerId(prompter, omrsHome.getPath(), serverId);
+            resultServerId = AttributeHelper.makeServerId(prompter, serverId);
         } catch (PrompterException e) {
             getLog().error(e.getMessage());
         }
+        if (!new File(omrsHome, resultServerId).exists()) throw new MojoExecutionException("Server with such serverId is not exists");
         File pomFile = new File(System.getProperty("user.dir"), "pom.xml");
         String moduleGroupId, moduleArtifactId, moduleVersion;
-        if (pomFile.exists()) {
+        if (pomFile.exists() && (artifactId == null)) {
             ConfigurationManager manager = new ConfigurationManager(pomFile.getPath(), getLog());
             if (manager.getParent() != null) {
                 moduleGroupId = manager.getParent().getGroupId();
