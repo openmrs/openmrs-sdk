@@ -134,9 +134,10 @@ public class SetupPlatform extends AbstractMojo {
      * @throws MojoExecutionException
      */
     public String setup(Server server, Boolean requireDbParams) throws MojoExecutionException {
+        AttributeHelper helper = new AttributeHelper(prompter);
         File omrsPath = new File(System.getProperty("user.home"), SDKConstants.OPENMRS_SERVER_PATH);
         try {
-            server.setServerId(AttributeHelper.makeNewServerId(prompter, omrsPath.getPath(), server.getServerId()));
+            server.setServerId(helper.promptForNewServerIfMissing(omrsPath.getPath(), server.getServerId()));
         } catch (PrompterException e) {
             getLog().error(e.getMessage());
         }

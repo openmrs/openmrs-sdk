@@ -43,10 +43,11 @@ public class ModuleInstall extends AbstractMojo {
     private Prompter prompter;
 
     public void execute() throws MojoExecutionException, MojoFailureException {
+        AttributeHelper helper = new AttributeHelper(prompter);
         File omrsHome = new File(System.getProperty("user.home"), SDKConstants.OPENMRS_SERVER_PATH);
         String resultServerId = null;
         try {
-            resultServerId = AttributeHelper.makeServerId(prompter, serverId);
+            resultServerId = helper.promptForServerIfMissing(serverId);
         } catch (PrompterException e) {
             getLog().error(e.getMessage());
         }

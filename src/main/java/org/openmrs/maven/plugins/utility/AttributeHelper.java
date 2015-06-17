@@ -6,7 +6,7 @@ import org.codehaus.plexus.components.interactivity.PrompterException;
 import java.io.File;
 
 /**
- * Class for static attribute helper functions
+ * Class for attribute helper functions
  */
 public class AttributeHelper {
     private static final String EMPTY_STRING = "";
@@ -14,21 +14,35 @@ public class AttributeHelper {
     private static final String DEFAULT_SERVER_NAME_TMPL = "Define value for property 'serverId'";
     private static final String DEFAULT_SERVER_NAME_NEW_TMPL = "Define value for property 'serverId': (default: '%s')";
 
-    public static String makeNewServerId(Prompter prompter, String omrsPath, String serverId) throws PrompterException {
+    private Prompter prompter;
+
+    public AttributeHelper(Prompter prompter) {
+        this.prompter = prompter;
+    }
+
+    public String promptForNewServerIfMissing(String omrsPath, String serverId) throws PrompterException {
         String defaultServerId = DEFAULT_SERVER_NAME;
         int indx = 0;
         while (new File(omrsPath, defaultServerId).exists()) {
             indx++;
             defaultServerId = DEFAULT_SERVER_NAME + String.valueOf(indx);
         }
-        return AttributeHelper.makeValue(prompter, serverId, String.format(DEFAULT_SERVER_NAME_NEW_TMPL, defaultServerId), defaultServerId);
+        return promptForValueIfMissing(serverId, String.format(DEFAULT_SERVER_NAME_NEW_TMPL, defaultServerId), defaultServerId);
     }
 
-    public static String makeServerId(Prompter prompter, String serverId) throws PrompterException {
-        return makeValue(prompter, serverId, DEFAULT_SERVER_NAME_TMPL, "");
+    public String promptForServerIfMissing(String serverId) throws PrompterException {
+        return promptForValueIfMissing(serverId, DEFAULT_SERVER_NAME_TMPL, "");
     }
 
-    private static String makeValue(Prompter prompter, String value, String text, String defValue) throws PrompterException {
+    /**
+     * Prompt for a value if it not set
+     * @param value
+     * @param text
+     * @param defValue
+     * @return value
+     * @throws PrompterException
+     */
+    private String promptForValueIfMissing(String value, String text, String defValue) throws PrompterException {
         if (value != null) return value;
         String val = prompter.prompt(text);
         if (val.equals(EMPTY_STRING)) val = defValue;
