@@ -107,8 +107,8 @@ public class ModuleInstall extends AbstractMojo {
         else {
             moduleGroupId = groupId;
             try {
-                moduleArtifactId = helper.promptFotArtifactIfMissing(artifactId);
-                moduleVersion = helper.promptForVersionIfMissing(version);
+                moduleArtifactId = helper.promptForValueIfMissing(artifactId, "artifactId");
+                moduleVersion = helper.promptForValueIfMissing(version, "version");
             } catch (PrompterException e) {
                 getLog().error(e.getMessage());
             }
@@ -127,7 +127,7 @@ public class ModuleInstall extends AbstractMojo {
         File omrsHome = new File(System.getProperty("user.home"), SDKConstants.OPENMRS_SERVER_PATH);
         String resultServerId = null;
         try {
-            resultServerId = helper.promptForServerIfMissing(serverId);
+            resultServerId = helper.promptForValueIfMissing(serverId, "serverId");
         } catch (PrompterException e) {
             getLog().error(e.getMessage());
         }

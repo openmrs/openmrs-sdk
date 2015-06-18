@@ -20,6 +20,14 @@ public class AttributeHelper {
         this.prompter = prompter;
     }
 
+    /**
+     * Prompt for serverId, and get default serverId which is not exists,
+     * if serverId is not set before
+     * @param omrsPath
+     * @param serverId
+     * @return
+     * @throws PrompterException
+     */
     public String promptForNewServerIfMissing(String omrsPath, String serverId) throws PrompterException {
         String defaultServerId = DEFAULT_SERVER_NAME;
         int indx = 0;
@@ -27,33 +35,36 @@ public class AttributeHelper {
             indx++;
             defaultServerId = DEFAULT_SERVER_NAME + String.valueOf(indx);
         }
-        return promptForValueIfMissing(serverId, String.format(DEFAULT_VALUE_TMPL_WITH_DEFAULT, "serverId", defaultServerId), defaultServerId);
-    }
-
-    public String promptForServerIfMissing(String serverId) throws PrompterException {
-        return promptForValueIfMissing(serverId, String.format(DEFAULT_VALUE_TMPL, "serverId"), EMPTY_STRING);
-    }
-
-    public String promptFotArtifactIfMissing(String artifactId) throws PrompterException {
-        return promptForValueIfMissing(artifactId, String.format(DEFAULT_VALUE_TMPL, "artifactId"), EMPTY_STRING);
-    }
-
-    public String promptForVersionIfMissing(String version) throws PrompterException {
-        return promptForValueIfMissing(version, String.format(DEFAULT_VALUE_TMPL, "version"), EMPTY_STRING);
+        return promptForValueIfMissingWithDefault(serverId, "serverId", defaultServerId);
     }
 
     /**
-     * Prompt for a value if it not set
+     * Prompt for a value if it not set, and default value is set
      * @param value
-     * @param text
+     * @param parameterName
      * @param defValue
      * @return value
      * @throws PrompterException
      */
-    private String promptForValueIfMissing(String value, String text, String defValue) throws PrompterException {
+    public String promptForValueIfMissingWithDefault(String value, String parameterName, String defValue) throws PrompterException {
         if (value != null) return value;
-        String val = prompter.prompt(text);
+        String textToShow = null;
+        // check if there no default value
+        if (defValue.equals(EMPTY_STRING)) textToShow = String.format(DEFAULT_VALUE_TMPL, parameterName);
+        else textToShow = String.format(DEFAULT_VALUE_TMPL_WITH_DEFAULT, parameterName, defValue);
+        String val = prompter.prompt(textToShow);
         if (val.equals(EMPTY_STRING)) val = defValue;
         return val;
+    }
+
+    /**
+     * Prompt for a value if it not set, and default value is NOT set
+     * @param value
+     * @param parameterName
+     * @return
+     * @throws PrompterException
+     */
+    public String promptForValueIfMissing(String value, String parameterName) throws PrompterException {
+        return promptForValueIfMissingWithDefault(value, parameterName, EMPTY_STRING);
     }
 }
