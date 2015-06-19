@@ -24,6 +24,8 @@ import java.util.List;
  */
 public class ModuleInstall extends AbstractMojo {
 
+    private static final String DEFAULT_FAIL_MESSAGE = "Server with such serverId is not exists";
+
     /**
      * @parameter expression="${serverId}"
      */
@@ -123,7 +125,7 @@ public class ModuleInstall extends AbstractMojo {
      * @return
      * @throws MojoFailureException
      */
-    public File getServerPath(AttributeHelper helper, String serverId) throws MojoFailureException {
+    public File getServerPath(AttributeHelper helper, String serverId, String failureMessage) throws MojoFailureException {
         File omrsHome = new File(System.getProperty("user.home"), SDKConstants.OPENMRS_SERVER_PATH);
         String resultServerId = null;
         try {
@@ -133,10 +135,19 @@ public class ModuleInstall extends AbstractMojo {
         }
         File serverPath = new File(omrsHome, resultServerId);
         if (!serverPath.exists()) {
-            throw new MojoFailureException("Server with such serverId is not exists");
-            //getLog().error("Server with such serverId is not exists");
-            //return;
+            throw new MojoFailureException(failureMessage);
         }
         return serverPath;
+    }
+
+    /**
+     * Get server with default failure message
+     * @param helper
+     * @param serverId
+     * @return
+     * @throws MojoFailureException
+     */
+    public File getServerPath(AttributeHelper helper, String serverId) throws MojoFailureException {
+        return getServerPath(helper, serverId, DEFAULT_FAIL_MESSAGE);
     }
 }
