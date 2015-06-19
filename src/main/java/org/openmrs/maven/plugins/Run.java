@@ -7,16 +7,15 @@ import org.codehaus.plexus.components.interactivity.Prompter;
 import org.openmrs.maven.plugins.utility.AttributeHelper;
 import org.openmrs.maven.plugins.utility.OS;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
 
 /**
  * @goal run
  * @requiresProject false
  */
 public class Run extends AbstractMojo {
+
+    private static final String NO_SERVER_TEXT = "There no server with given serverId. Please create it using omrs:setup first";
 
     /**
      * @parameter expression="${serverId}"
@@ -31,7 +30,7 @@ public class Run extends AbstractMojo {
     public void execute() throws MojoExecutionException, MojoFailureException {
         AttributeHelper helper = new AttributeHelper(prompter);
         ModuleInstall installer = new ModuleInstall(prompter);
-        File serverPath = installer.getServerPath(helper, serverId);
+        File serverPath = installer.getServerPath(helper, serverId, NO_SERVER_TEXT);
         OS os = new OS();
         String task = String.format("cd %s && mvn clean install && cd server && mvn jetty:run && echo", serverPath.getPath());
         try {
