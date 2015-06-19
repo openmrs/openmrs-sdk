@@ -54,7 +54,7 @@ public class ModuleUninstall extends AbstractMojo {
                 getLog().info(String.format("Module with groupId: '%s', artifactId: '%s' was successfully removed from server.",
                         artifact.getGroupId(), artifact.getArtifactId()));
             }
-            else getLog().info(String.format("Error during removing Module with groupId: '%s', artifactId: '%s'.",
+            else getLog().error(String.format("Error during removing Module with groupId: '%s', artifactId: '%s'.",
                     artifact.getGroupId(), artifact.getArtifactId()));
         }
     }
