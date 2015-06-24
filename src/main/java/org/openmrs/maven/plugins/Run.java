@@ -37,28 +37,26 @@ public class Run extends AbstractMojo {
             pb.directory(serverPath);
             pb.redirectErrorStream(true);
             Process p = pb.start();
+            BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
+            String s = null;
+            while ((s = stdInput.readLine()) != null) {
+                getLog().info(s);
+            }
             p.waitFor();
             int exitCode = p.exitValue();
             if (exitCode == 0) {
-                BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
-                String s = null;
-                while ((s = stdInput.readLine()) != null) {
-                    getLog().info(s);
-                }
                 File server = new File(serverPath, "server");
                 ProcessBuilder pb2 = new ProcessBuilder("mvn", "jetty:run");
                 pb2.directory(server);
                 pb2.redirectErrorStream(true);
                 Process p2 = pb2.start();
+                BufferedReader stdInput2 = new BufferedReader(new InputStreamReader(p2.getInputStream()));
+                while ((s = stdInput2.readLine()) != null) {
+                    getLog().info(s);
+                }
                 p2.waitFor();
                 int exitCode2 = p2.exitValue();
-                if (exitCode2 == 0) {
-                    BufferedReader stdInput2 = new BufferedReader(new InputStreamReader(p2.getInputStream()));
-                    while ((s = stdInput2.readLine()) != null) {
-                        getLog().info(s);
-                    }
-                }
-                else {
+                if (exitCode2 != 0) {
                     throw new MojoExecutionException("There are error during starting server");
                 }
             }
@@ -67,7 +65,7 @@ public class Run extends AbstractMojo {
             }
 
         } catch (Exception e) {
-            getLog().error(e.getMessage());
+            throw new MojoExecutionException(e.getMessage());
         }
     }
 }
