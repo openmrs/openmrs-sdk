@@ -35,40 +35,34 @@ public class Run extends AbstractMojo {
         try {
             ProcessBuilder pb = new ProcessBuilder("mvn", "clean", "install");
             pb.directory(serverPath);
+            pb.redirectErrorStream(true);
             Process p = pb.start();
-            BufferedReader errInput = new BufferedReader(new InputStreamReader(p.getErrorStream()));
-            // if there are not errors, run next task
-            String error = null;
-            if ((error = errInput.readLine()) == null) {
+            p.waitFor();
+            int exitCode = p.exitValue();
+            if (exitCode == 0) {
                 BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
                 String s = null;
                 while ((s = stdInput.readLine()) != null) {
-                    System.out.println(s);
+                    getLog().info(s);
                 }
                 File server = new File(serverPath, "server");
                 ProcessBuilder pb2 = new ProcessBuilder("mvn", "jetty:run");
                 pb2.directory(server);
+                pb2.redirectErrorStream(true);
                 Process p2 = pb2.start();
-                BufferedReader errInput2 = new BufferedReader(new InputStreamReader(p2.getErrorStream()));
-                if ((error = errInput2.readLine()) == null) {
+                p2.waitFor();
+                int exitCode2 = p2.exitValue();
+                if (exitCode2 == 0) {
                     BufferedReader stdInput2 = new BufferedReader(new InputStreamReader(p2.getInputStream()));
                     while ((s = stdInput2.readLine()) != null) {
-                        System.out.println(s);
+                        getLog().info(s);
                     }
                 }
                 else {
-                    System.out.println(error);
-                    while ((error = errInput2.readLine()) != null) {
-                        System.out.println(error);
-                    }
                     throw new MojoExecutionException("There are error during starting server");
                 }
             }
             else {
-                System.out.println(error);
-                while ((error = errInput.readLine()) != null) {
-                    System.out.println(error);
-                }
                 throw new MojoExecutionException("There are error during installing server");
             }
 

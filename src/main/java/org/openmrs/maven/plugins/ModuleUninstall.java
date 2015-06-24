@@ -45,8 +45,10 @@ public class ModuleUninstall extends AbstractMojo {
         Artifact artifact = installer.getArtifactForSelectedParameters(helper, groupId, artifactId, "default");
         ConfigurationManager manager = new ConfigurationManager(new File(serverPath, SDKConstants.OPENMRS_SERVER_POM).getPath(), getLog());
         Xpp3Dom item = manager.getArtifactItem(artifact);
-        if (item == null) getLog().error(String.format("There no module with groupId: '%s', artifactId: '%s' on server.",
-                artifact.getGroupId(), artifact.getArtifactId()));
+        if (item == null) {
+            getLog().error(String.format("There no module with groupId: '%s', artifactId: '%s' on server.",
+                    artifact.getGroupId(), artifact.getArtifactId()));
+        }
         else {
             boolean removed = manager.removeArtifactItem(artifact);
             if (removed) {
@@ -54,8 +56,10 @@ public class ModuleUninstall extends AbstractMojo {
                 getLog().info(String.format("Module with groupId: '%s', artifactId: '%s' was successfully removed from server.",
                         artifact.getGroupId(), artifact.getArtifactId()));
             }
-            else getLog().error(String.format("Error during removing Module with groupId: '%s', artifactId: '%s'.",
-                    artifact.getGroupId(), artifact.getArtifactId()));
+            else {
+                getLog().error(String.format("Error during removing Module with groupId: '%s', artifactId: '%s'.",
+                        artifact.getGroupId(), artifact.getArtifactId()));
+            }
         }
     }
 }
