@@ -94,8 +94,13 @@ public class ConfigurationManager {
         if (config.getChild("artifactItems") == null) config.addChild(new Xpp3Dom("artifactItems"));
         Xpp3Dom artifactItems = config.getChild("artifactItems");
         for (Artifact artifact: list) {
-            Xpp3Dom artifactItem = artifact.toArtifactItem();
-            artifactItems.addChild(artifactItem);
+            if (this.getArtifactItem(artifact) != null) {
+                this.updateArtifactItem(artifact);
+            }
+            else {
+                Xpp3Dom artifactItem = artifact.toArtifactItem();
+                artifactItems.addChild(artifactItem);
+            }
         }
         // set config to POM
         execution.setConfiguration(config);
@@ -198,10 +203,14 @@ public class ConfigurationManager {
      * @param groupId
      * @param artifactId
      * @param version
+     * @param destFileName
      */
-    public void updateArtifactItem(String groupId, String artifactId, String version) {
+    public void updateArtifactItem(String groupId, String artifactId, String version, String destFileName) {
         Xpp3Dom artifactItem = getArtifactItem(groupId, artifactId);
-        if (artifactItem != null) artifactItem.getChild("version").setValue(version);
+        if (artifactItem != null) {
+            artifactItem.getChild("version").setValue(version);
+            artifactItem.getChild("destFileName").setValue(destFileName);
+        }
     }
 
     /**
@@ -209,7 +218,7 @@ public class ConfigurationManager {
      * @param artifact
      */
     public void updateArtifactItem(Artifact artifact) {
-        updateArtifactItem(artifact.getGroupId(), artifact.getArtifactId(), artifact.getVersion());
+        updateArtifactItem(artifact.getGroupId(), artifact.getArtifactId(), artifact.getVersion(), artifact.getDestFileName());
     }
 
     /**
