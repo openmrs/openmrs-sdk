@@ -8,11 +8,8 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.components.interactivity.Prompter;
 import org.openmrs.maven.plugins.utility.AttributeHelper;
-import org.openmrs.maven.plugins.utility.SDKConstants;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.InputStreamReader;
 
 import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
 
@@ -62,48 +59,17 @@ public class Run extends AbstractMojo {
         AttributeHelper helper = new AttributeHelper(prompter);
         ModuleInstall installer = new ModuleInstall(prompter);
         File serverPath = installer.getServerPath(helper, serverId, NO_SERVER_TEXT);
-        /*
-        try {
-            ProcessBuilder pb = new ProcessBuilder("mvn", "clean", "install");
-            pb.directory(serverPath);
-            pb.redirectErrorStream(true);
-            Process p = pb.start();
-            BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
-            String s = null;
-            while ((s = stdInput.readLine()) != null) {
-                getLog().info(s);
-            }
-            p.waitFor();
-            int exitCode = p.exitValue();
-            if (exitCode == 0) {
-                File server = new File(serverPath, "server");
-                ProcessBuilder pb2 = new ProcessBuilder("mvn", "jetty:run");
-                pb2.directory(server);
-                pb2.redirectErrorStream(true);
-                Process p2 = pb2.start();
-                BufferedReader stdInput2 = new BufferedReader(new InputStreamReader(p2.getInputStream()));
-                while ((s = stdInput2.readLine()) != null) {
-                    getLog().info(s);
-                }
-                p2.waitFor();
-                int exitCode2 = p2.exitValue();
-                if (exitCode2 != 0) {
-                    throw new MojoExecutionException("There are error during starting server");
-                }
-            }
-            else {
-                throw new MojoExecutionException("There are error during installing server");
-            }
-
-        } catch (Exception e) {
-            throw new MojoExecutionException(e.getMessage());
-        }*/
-        File openmrsPath = new File(System.getProperty("user.home"), SDKConstants.OPENMRS_SERVER_PATH);
-        openmrsPath.mkdirs();
-
-
-        File tempDirectory = new File(openmrsPath, "tmp");
+        serverPath.mkdirs();
+        File tempDirectory = new File(serverPath, "tmp");
         tempDirectory.mkdirs();
+        String warFile = null;
+        for(File file: serverPath.listFiles()) {
+            if (file.getName().startsWith("openmrs") && (file.getName().endsWith(".war"))) {
+                warFile = file.getName();
+                break;
+            }
+        };
+        if (warFile == null) throw new MojoExecutionException("Error during running server: war file was not found");
         executeMojo(
                 plugin(
                         groupId("org.eclipse.jetty"),
@@ -112,18 +78,18 @@ public class Run extends AbstractMojo {
                 ),
                 goal("run-war"),
                 configuration(
-                        element(name("war"), new File(openmrsPath, "openmrs.war").getAbsolutePath()),
+                        element(name("war"), new File(serverPath, warFile).getAbsolutePath()),
                         element(name("webApp"),
                                 element("contextPath", "/openmrs"),
                                 element("tempDirectory", tempDirectory.getAbsolutePath()),
-                                element("extraClasspath", new File(openmrsPath, "h2-1.2.135.jar").getAbsolutePath())),
+                                element("extraClasspath", new File(serverPath, "h2-1.2.135.jar").getAbsolutePath())),
                         element(name("systemProperties"),
                                 element("systemProperty",
                                         element("name", "OPENMRS_INSTALLATION_SCRIPT"),
                                         element("value", "classpath:installation.h2.properties")),
                                 element("systemProperty",
                                         element("name", "OPENMRS_APPLICATION_DATA_DIRECTORY"),
-                                        element("value", openmrsPath.getAbsolutePath())))
+                                        element("value", serverPath.getAbsolutePath())))
                 ),
                 executionEnvironment(mavenProject, mavenSession, pluginManager)
         );
