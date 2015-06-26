@@ -26,8 +26,6 @@ import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
  */
 public class SetupPlatform extends AbstractMojo {
 
-    public static final String VERSION = "1.x";
-
     /**
      * Default constructor
      */
@@ -148,7 +146,7 @@ public class SetupPlatform extends AbstractMojo {
         if (serverPath.exists()) throw new MojoExecutionException("Server with same id already created");
         File dependencies = new File (serverPath, "dependencies");
         dependencies.mkdirs();
-        List<Artifact> artifacts = SDKConstants.ARTIFACTS.get(VERSION);
+        List<Artifact> artifacts = SDKConstants.ARTIFACTS.get(server.getVersion());
         Element[] artifactItems = new Element[artifacts.size()];
         for (Artifact artifact: artifacts) {
             artifactItems[artifacts.indexOf(artifact)] =
@@ -218,5 +216,6 @@ public class SetupPlatform extends AbstractMojo {
                 .setInteractiveMode(interactiveMode)
                 .build();
         setup(server, false);
+        getLog().info("Server configured successfully");
     }
 }

@@ -115,17 +115,7 @@ public class Setup extends AbstractMojo {
                         .setInteractiveMode(interactiveMode)
                         .build();
         // configure server ,and prompt params if not set
-        /*String serverPath = configurator.setup(server, true);
-        File pomPath = new File(serverPath, "pom.xml");
-        ConfigurationManager manager = new ConfigurationManager(pomPath.getPath(), getLog());
-        List<Artifact> artifacts = SDKConstants.ARTIFACTS.get(version);
-        if (artifacts != null) {
-            manager.addArtifactListToConfiguration(artifacts);
-            manager.apply();
-            getLog().info("Modules for version " + version + " configured successfully");
-        }
-        else getLog().info("There are no modules for selected OpenMRS version");
-        */
+        String serverPath = configurator.setup(server, true);
         getLog().info("Server configured successfully");
     }
 }

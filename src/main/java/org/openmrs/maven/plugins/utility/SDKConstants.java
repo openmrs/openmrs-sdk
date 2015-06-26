@@ -194,7 +194,7 @@ public class SDKConstants {
     }};
     // final module base
     public static final HashMap<String, List<Artifact>> ARTIFACTS = new HashMap<String, List<Artifact>>() {{
-        put("1.x", ARTIFACTS_1_X);
+        put("1.11.2", ARTIFACTS_1_X);
         put("2.0", ARTIFACTS_2_0);
         put("2.1", ARTIFACTS_2_1);
         put("2.2", ARTIFACTS_2_2);
