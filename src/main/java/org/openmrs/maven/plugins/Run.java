@@ -100,32 +100,7 @@ public class Run extends AbstractMojo {
         }*/
         File openmrsPath = new File(System.getProperty("user.home"), SDKConstants.OPENMRS_SERVER_PATH);
         openmrsPath.mkdirs();
-        executeMojo(
-                plugin(
-                        groupId("org.apache.maven.plugins"),
-                        artifactId("maven-dependency-plugin"),
-                        version("2.8")
-                ),
-                goal("copy"),
-                configuration(
-                        element(name("artifactItems"),
-                                element("artifactItem",
-                                        element("groupId", "org.openmrs.web"),
-                                        element("artifactId", "openmrs-webapp"),
-                                        element("version", "1.11.3"),
-                                        element("type", "war"),
-                                        element("outputDirectory", openmrsPath.getAbsolutePath()),
-                                        element("destFileName", "openmrs.war")),
-                                element("artifactItem",
-                                        element("groupId", "com.h2database"),
-                                        element("artifactId", "h2"),
-                                        element("version", "1.2.135"),
-                                        element("type", "jar"),
-                                        element("outputDirectory", openmrsPath.getAbsolutePath()),
-                                        element("destFileName", "h2-1.2.135.jar")))
-                ),
-                executionEnvironment(mavenProject, mavenSession, pluginManager)
-        );
+
 
         File tempDirectory = new File(openmrsPath, "tmp");
         tempDirectory.mkdirs();

@@ -2,6 +2,11 @@ package org.openmrs.maven.plugins.model;
 
 import org.codehaus.plexus.util.xml.Xpp3Dom;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
+
 /**
  * Class for Artifact model
  */
@@ -11,12 +16,15 @@ public class Artifact {
     private String artifactId;
     private String type;
     private String destFileName;
+    private String outputDirectory;
 
     public static final String GROUP_MODULE = "org.openmrs.module";
     public static final String GROUP_WEB = "org.openmrs.web";
     public static final String GROUP_OPENMRS = "org.openmrs";
+    public static final String GROUP_H2 = "com.h2database";
     public static final String TYPE_OMOD = "omod";
     public static final String TYPE_WAR = "war";
+    public static final String TYPE_JAR = "jar";
     public static final String DEST_TEMPLATE = "%s-%s.%s";
 
     public Artifact() {};
@@ -60,6 +68,11 @@ public class Artifact {
         if (type != null) this.type = type;
     }
 
+    public Artifact setOutputDirectory(String outputDirectory) {
+        this.outputDirectory = outputDirectory;
+        return this;
+    }
+
     public String getVersion() {
         return version;
     }
@@ -96,9 +109,7 @@ public class Artifact {
         return destFileName;
     }
 
-    public void setDestFileName(String destFileName) {
-        this.destFileName = destFileName;
-    }
+    public void setDestFileName(String destFileName) { this.destFileName = destFileName; }
 
     /**
      * Convert object to Xpp3Dom model
@@ -146,5 +157,25 @@ public class Artifact {
             result = new Artifact(domArtifactId.getValue(), domVersion.getValue(), domGroupId.getValue(), domType.getValue());
         }
         return result;
+    }
+
+    /**
+     * Convert Artifact to Element
+     * @return
+     */
+    public Element toElement() {
+        List<Element> attributes = new ArrayList<Element>();
+        attributes.add(element("groupId", groupId));
+        attributes.add(element("artifactId", artifactId));
+        attributes.add(element("version", version));
+        attributes.add(element("destFileName", destFileName));
+        if (type != null) {
+            attributes.add(element("type", type));
+        }
+        if (outputDirectory != null) {
+            attributes.add(element("outputDirectory", outputDirectory));
+        }
+        Element[] arrayElements = attributes.toArray(new Element[0]);
+        return element("artifactItem", arrayElements);
     }
 }
