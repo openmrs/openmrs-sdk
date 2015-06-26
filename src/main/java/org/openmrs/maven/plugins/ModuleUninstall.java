@@ -43,23 +43,22 @@ public class ModuleUninstall extends AbstractMojo {
         AttributeHelper helper = new AttributeHelper(prompter);
         File serverPath = installer.getServerPath(helper, serverId);
         Artifact artifact = installer.getArtifactForSelectedParameters(helper, groupId, artifactId, "default");
-        ConfigurationManager manager = new ConfigurationManager(new File(serverPath, SDKConstants.OPENMRS_SERVER_POM).getPath(), getLog());
-        Xpp3Dom item = manager.getArtifactItem(artifact);
-        if (item == null) {
-            getLog().error(String.format("There no module with groupId: '%s', artifactId: '%s' on server.",
-                    artifact.getGroupId(), artifact.getArtifactId()));
-        }
-        else {
-            boolean removed = manager.removeArtifactItem(artifact);
-            if (removed) {
-                manager.apply();
-                getLog().info(String.format("Module with groupId: '%s', artifactId: '%s' was successfully removed from server.",
-                        artifact.getGroupId(), artifact.getArtifactId()));
-            }
-            else {
-                getLog().error(String.format("Error during removing Module with groupId: '%s', artifactId: '%s'.",
-                        artifact.getGroupId(), artifact.getArtifactId()));
+        File modules = new File(serverPath, "modules");
+        File[] listOfModules = modules.listFiles();
+        for (File mod : listOfModules) {
+            if (mod.getName().startsWith(artifact.getArtifactId())) {
+                boolean deleted = mod.delete();
+                if (deleted) {
+                    getLog().info(String.format("Module with groupId: '%s', artifactId: '%s' was successfully removed from server.",
+                            artifact.getGroupId(), artifact.getArtifactId()));
+                    return;
+                }
+                else {
+                    throw new MojoExecutionException(String.format("Error during removing Module with groupId: '%s', artifactId: '%s'.",
+                            artifact.getGroupId(), artifact.getArtifactId()));
+                }
             }
         }
+        throw new MojoExecutionException(String.format("There no module with groupId: '%s', artifactId: '%s' on server."));
     }
 }

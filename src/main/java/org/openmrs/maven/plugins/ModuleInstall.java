@@ -88,6 +88,7 @@ public class ModuleInstall extends AbstractMojo {
         AttributeHelper helper = new AttributeHelper(prompter);
         File serverPath = getServerPath(helper, serverId);
         Artifact artifact = getArtifactForSelectedParameters(helper, groupId, artifactId, version);
+        artifact.setArtifactId(artifact.getArtifactId() + "-omod");
         File modules = new File(serverPath, "modules");
         artifact.setOutputDirectory(modules.getPath());
         Element[] artifactItems = new Element[1];
@@ -154,7 +155,6 @@ public class ModuleInstall extends AbstractMojo {
                 getLog().error(e.getMessage());
             }
         }
-        moduleArtifactId += "-omod";
         // update server pom
         return new Artifact(moduleArtifactId, moduleVersion, moduleGroupId);
     }
