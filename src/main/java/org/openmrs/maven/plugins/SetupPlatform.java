@@ -144,13 +144,27 @@ public class SetupPlatform extends AbstractMojo {
         }
         File serverPath = new File(openMRSPath, server.getServerId());
         if (serverPath.exists()) throw new MojoExecutionException("Server with same id already created");
-        File dependencies = new File (serverPath, "dependencies");
-        dependencies.mkdirs();
-        List<Artifact> artifacts = SDKConstants.ARTIFACTS.get(server.getVersion());
+        File modules = new File (serverPath, "modules");
+        modules.mkdirs();
+        // get modules version
+        String openMRSVersion = server.getVersion().startsWith("1.") ? "1.x": server.getVersion();
+        List<Artifact> artifacts = SDKConstants.ARTIFACTS.get(openMRSVersion);
         Element[] artifactItems = new Element[artifacts.size()];
         for (Artifact artifact: artifacts) {
-            artifactItems[artifacts.indexOf(artifact)] =
-                    artifact.setOutputDirectory(dependencies.getAbsolutePath()).toElement();
+            int index = artifacts.indexOf(artifact);
+            // some hack for webapp and h2
+            if (index < 2) {
+                // web app version for 1.x modules should be equal OpenMRS version
+                if ((index == 0) && (server.getVersion().startsWith("1."))) artifact.setVersion(server.getVersion());
+                // put to server root
+                artifactItems[index] =
+                        artifact.setOutputDirectory(serverPath.getAbsolutePath()).toElement();
+            }
+            else {
+                // put to "modules"
+                artifactItems[index] =
+                        artifact.setOutputDirectory(modules.getAbsolutePath()).toElement();
+            }
         }
         executeMojo(
                 plugin(

@@ -79,6 +79,10 @@ public class Artifact {
 
     public void setVersion(String version) {
         this.version = version;
+        String artifactType = (type != null) ? type : TYPE_OMOD;
+        String id = artifactId.split("-")[0];
+        // update file name
+        this.destFileName = String.format(DEST_TEMPLATE, id, version, artifactType);
     }
 
     public String getGroupId() {

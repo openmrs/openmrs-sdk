@@ -62,7 +62,7 @@ public class SDKConstants {
     // module base for each version
     public static final List<Artifact> ARTIFACTS_2_0 = new ArrayList<Artifact>() {{
         // each item in constructor: artifactId,version,groupId,type
-        add(new Artifact("openmrs-webapp", "1.9.7", Artifact.GROUP_WEB, Artifact.TYPE_WAR));
+        add(new Artifact("openmrs-webapp", "1.11.2", Artifact.GROUP_WEB, Artifact.TYPE_WAR));
         add(new Artifact("h2", "1.2.135", Artifact.GROUP_H2, Artifact.TYPE_JAR));
         add(new Artifact("referencemetadata-omod", "1.1"));
         add(new Artifact("appframework-omod", "2.1"));
@@ -194,7 +194,7 @@ public class SDKConstants {
     }};
     // final module base
     public static final HashMap<String, List<Artifact>> ARTIFACTS = new HashMap<String, List<Artifact>>() {{
-        put("1.11.2", ARTIFACTS_1_X);
+        put("1.x", ARTIFACTS_1_X);
         put("2.0", ARTIFACTS_2_0);
         put("2.1", ARTIFACTS_2_1);
         put("2.2", ARTIFACTS_2_2);

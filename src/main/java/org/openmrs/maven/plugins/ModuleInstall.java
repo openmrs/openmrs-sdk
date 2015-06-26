@@ -1,8 +1,11 @@
 package org.openmrs.maven.plugins;
 
+import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
+import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.components.interactivity.Prompter;
 import org.codehaus.plexus.components.interactivity.PrompterException;
 import org.codehaus.plexus.util.xml.Xpp3Dom;
@@ -15,6 +18,8 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
+
 /**
  * @goal install-module
  * @requiresProject false
@@ -22,6 +27,31 @@ import java.util.List;
 public class ModuleInstall extends AbstractMojo {
 
     private static final String DEFAULT_FAIL_MESSAGE = "Server with such serverId is not exists";
+    private static final String DEFAULT_OK_MESSAGE = "Module installed successfully";
+
+    /**
+     * The project currently being build.
+     *
+     * @parameter expression="${project}"
+     * @required
+     */
+    private MavenProject mavenProject;
+
+    /**
+     * The current Maven session.
+     *
+     * @parameter expression="${session}"
+     * @required
+     */
+    private MavenSession mavenSession;
+
+    /**
+     * The Maven BuildPluginManager component.
+     *
+     * @component
+     * @required
+     */
+    private BuildPluginManager pluginManager;
 
     /**
      * @parameter expression="${serverId}"
@@ -58,22 +88,22 @@ public class ModuleInstall extends AbstractMojo {
         AttributeHelper helper = new AttributeHelper(prompter);
         File serverPath = getServerPath(helper, serverId);
         Artifact artifact = getArtifactForSelectedParameters(helper, groupId, artifactId, version);
-        ConfigurationManager manager = new ConfigurationManager(new File(serverPath, SDKConstants.OPENMRS_SERVER_POM).getPath(), getLog());
-        Xpp3Dom item = manager.getArtifactItem(artifact);
-        if (item == null) {
-            List<Artifact> list = new ArrayList<Artifact>();
-            list.add(artifact);
-            manager.addArtifactListToConfiguration(list);
-            getLog().info(String.format("Module with groupId: '%s', artifactId: '%s', version: '%s' was added to server config.",
-                    artifact.getGroupId(), artifact.getArtifactId(), artifact.getVersion()));
-        }
-        else {
-            String oldVersion = item.getChild("version").getValue();
-            manager.updateArtifactItem(artifact);
-            getLog().info(String.format("Module version for groupId: '%s', artifactId: '%s' was updated from '%s' to '%s'",
-                    artifact.getGroupId(), artifact.getArtifactId(), oldVersion, artifact.getVersion()));
-        }
-        manager.apply();
+        artifact.setOutputDirectory(new File(serverPath, "dependencies").toString());
+        Element[] artifactItems = new Element[1];
+        artifactItems[0] = artifact.toElement();
+        executeMojo(
+                plugin(
+                        groupId(SDKConstants.PLUGIN_DEPENDENCIES_GROUP_ID),
+                        artifactId(SDKConstants.PLUGIN_DEPENDENCIES_ARTIFACT_ID),
+                        version(SDKConstants.PLUGIN_DEPENDENCIES_VERSION)
+                ),
+                goal("copy"),
+                configuration(
+                        element(name("artifactItems"), artifactItems)
+                ),
+                executionEnvironment(mavenProject, mavenSession, pluginManager)
+        );
+        getLog().info(DEFAULT_OK_MESSAGE);
     }
 
     /**
@@ -112,6 +142,7 @@ public class ModuleInstall extends AbstractMojo {
                 getLog().error(e.getMessage());
             }
         }
+        moduleArtifactId += "-omod";
         // update server pom
         return new Artifact(moduleArtifactId, moduleVersion, moduleGroupId);
     }
