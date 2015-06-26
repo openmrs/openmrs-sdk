@@ -88,7 +88,8 @@ public class ModuleInstall extends AbstractMojo {
         AttributeHelper helper = new AttributeHelper(prompter);
         File serverPath = getServerPath(helper, serverId);
         Artifact artifact = getArtifactForSelectedParameters(helper, groupId, artifactId, version);
-        artifact.setOutputDirectory(new File(serverPath, "dependencies").toString());
+        File modules = new File(serverPath, "modules");
+        artifact.setOutputDirectory(modules.getPath());
         Element[] artifactItems = new Element[1];
         artifactItems[0] = artifact.toElement();
         executeMojo(
@@ -103,6 +104,17 @@ public class ModuleInstall extends AbstractMojo {
                 ),
                 executionEnvironment(mavenProject, mavenSession, pluginManager)
         );
+
+        File[] listOfModules = modules.listFiles();
+        for (int i=0;i<listOfModules.length;i++) {
+            if (listOfModules[i].getName().startsWith(artifact.getArtifactId()) && (!listOfModules[i].getName().equals(artifact.getDestFileName()))) {
+                // remove previous version
+                listOfModules[i].delete();
+                break;
+            }
+        }
+        // todo
+        // add message for version update
         getLog().info(DEFAULT_OK_MESSAGE);
     }
 

@@ -82,7 +82,18 @@ public class Artifact {
         String artifactType = (type != null) ? type : TYPE_OMOD;
         String id = artifactId.split("-")[0];
         // update file name
-        this.destFileName = String.format(DEST_TEMPLATE, id, version, artifactType);
+        this.destFileName = Artifact.getFileName(id, version, artifactType);
+    }
+
+    /**
+     * Generate dest file name for artifact
+     * @param id
+     * @param version
+     * @param type
+     * @return
+     */
+    public static String getFileName(String id, String version, String type) {
+        return String.format(DEST_TEMPLATE, id, version, type);
     }
 
     public String getGroupId() {
