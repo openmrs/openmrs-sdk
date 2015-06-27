@@ -17,6 +17,8 @@ public class Artifact {
     private String type;
     private String destFileName;
     private String outputDirectory;
+    private boolean isCoreModule = false;
+    private boolean isWar = false;
 
     public static final String GROUP_MODULE = "org.openmrs.module";
     public static final String GROUP_WEB = "org.openmrs.web";
@@ -100,9 +102,7 @@ public class Artifact {
         return groupId;
     }
 
-    public void setGroupId(String groupId) {
-        this.groupId = groupId;
-    }
+    public void setGroupId(String groupId) { this.groupId = groupId; }
 
     public String getArtifactId() {
         return artifactId;
@@ -116,15 +116,28 @@ public class Artifact {
         return type;
     }
 
-    public void setType(String type) {
-        this.type = type;
-    }
+    public void setType(String type) { this.type = type; }
 
     public String getDestFileName() {
         return destFileName;
     }
 
     public void setDestFileName(String destFileName) { this.destFileName = destFileName; }
+
+    public boolean isCoreModule() { return isCoreModule; }
+
+    public boolean isWar() { return isWar; }
+
+    public Artifact setCore() {
+        this.isCoreModule = true;
+        return this;
+    }
+
+    public Artifact setWar() {
+        this.isCoreModule = true;
+        this.isWar = true;
+        return this;
+    }
 
     /**
      * Convert object to Xpp3Dom model

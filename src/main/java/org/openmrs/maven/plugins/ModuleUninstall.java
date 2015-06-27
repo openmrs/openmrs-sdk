@@ -4,11 +4,8 @@ import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.codehaus.plexus.components.interactivity.Prompter;
-import org.codehaus.plexus.util.xml.Xpp3Dom;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.utility.AttributeHelper;
-import org.openmrs.maven.plugins.utility.ConfigurationManager;
-import org.openmrs.maven.plugins.utility.SDKConstants;
 
 import java.io.File;
 
@@ -59,6 +56,6 @@ public class ModuleUninstall extends AbstractMojo {
                 }
             }
         }
-        throw new MojoExecutionException(String.format("There no module with groupId: '%s', artifactId: '%s' on server."));
+        throw new MojoExecutionException(String.format("There no module with groupId: '%s', artifactId: '%s' on server.", artifact.getGroupId(), artifact.getArtifactId()));
     }
 }

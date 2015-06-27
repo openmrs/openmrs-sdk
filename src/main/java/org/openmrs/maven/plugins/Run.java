@@ -8,6 +8,7 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.components.interactivity.Prompter;
 import org.openmrs.maven.plugins.utility.AttributeHelper;
+import org.openmrs.maven.plugins.utility.SDKConstants;
 
 import java.io.File;
 
@@ -63,18 +64,27 @@ public class Run extends AbstractMojo {
         File tempDirectory = new File(serverPath, "tmp");
         tempDirectory.mkdirs();
         String warFile = null;
+        String h2File = null;
         for(File file: serverPath.listFiles()) {
-            if (file.getName().startsWith("openmrs") && (file.getName().endsWith(".war"))) {
+            if (file.getName().startsWith("openmrs-") && (file.getName().endsWith(".war"))) {
                 warFile = file.getName();
-                break;
             }
+            else if (file.getName().startsWith("h2-") && (file.getName().endsWith(".jar"))) {
+                h2File = file.getName();
+            }
+            if ((warFile != null) && (h2File != null)) break;
         };
-        if (warFile == null) throw new MojoExecutionException("Error during running server: war file was not found");
+        if (warFile == null) {
+            throw new MojoExecutionException("Error during running server: war file was not found");
+        }
+        else if (h2File == null) {
+            throw new MojoExecutionException("Error during running server: h2 file was not found");
+        }
         executeMojo(
                 plugin(
-                        groupId("org.eclipse.jetty"),
-                        artifactId("jetty-maven-plugin"),
-                        version("9.0.4.v20130625")
+                        groupId(SDKConstants.PLUGIN_JETTY_GROUP_ID),
+                        artifactId(SDKConstants.PLUGIN_JETTY_ARTIFACT_ID),
+                        version(SDKConstants.PLUGIN_JETTY_VERSION)
                 ),
                 goal("run-war"),
                 configuration(
@@ -82,7 +92,7 @@ public class Run extends AbstractMojo {
                         element(name("webApp"),
                                 element("contextPath", "/openmrs"),
                                 element("tempDirectory", tempDirectory.getAbsolutePath()),
-                                element("extraClasspath", new File(serverPath, "h2-1.2.135.jar").getAbsolutePath())),
+                                element("extraClasspath", new File(serverPath, h2File).getAbsolutePath())),
                         element(name("systemProperties"),
                                 element("systemProperty",
                                         element("name", "OPENMRS_INSTALLATION_SCRIPT"),

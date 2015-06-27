@@ -6,13 +6,7 @@ import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.components.interactivity.Prompter;
-import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.Server;
-import org.openmrs.maven.plugins.utility.ConfigurationManager;
-import org.openmrs.maven.plugins.utility.SDKConstants;
-
-import java.io.File;
-import java.util.List;
 
 /**
  *
@@ -114,8 +108,7 @@ public class Setup extends AbstractMojo {
                         .setDbPassword(dbPassword)
                         .setInteractiveMode(interactiveMode)
                         .build();
-        // configure server ,and prompt params if not set
         String serverPath = configurator.setup(server, true);
-        getLog().info("Server configured successfully");
+        getLog().info("Server configured successfully, path: " + serverPath);
     }
 }

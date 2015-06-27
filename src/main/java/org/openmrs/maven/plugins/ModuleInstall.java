@@ -8,15 +8,12 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.components.interactivity.Prompter;
 import org.codehaus.plexus.components.interactivity.PrompterException;
-import org.codehaus.plexus.util.xml.Xpp3Dom;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.utility.AttributeHelper;
 import org.openmrs.maven.plugins.utility.ConfigurationManager;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
 
 import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
 
@@ -27,7 +24,8 @@ import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
 public class ModuleInstall extends AbstractMojo {
 
     private static final String DEFAULT_FAIL_MESSAGE = "Server with such serverId is not exists";
-    private static final String DEFAULT_OK_MESSAGE = "Module installed successfully";
+    private static final String DEFAULT_OK_MESSAGE = "Module '%s' installed successfully";
+    private static final String DEFAULT_UPDATE_MESSAGE = "Module '%s' was updated to version '%s'";
 
     /**
      * The project currently being build.
@@ -107,16 +105,19 @@ public class ModuleInstall extends AbstractMojo {
         );
 
         File[] listOfModules = modules.listFiles();
-        for (int i=0;i<listOfModules.length;i++) {
-            if (listOfModules[i].getName().startsWith(artifact.getArtifactId()) && (!listOfModules[i].getName().equals(artifact.getDestFileName()))) {
-                // remove previous version
-                listOfModules[i].delete();
+        boolean versionUpdated = false;
+        boolean removed = false;
+        for (File listOfModule : listOfModules) {
+            if (listOfModule.getName().startsWith(artifact.getArtifactId()) && (!listOfModule.getName().equals(artifact.getDestFileName()))) {
+                versionUpdated = true;
+                removed = listOfModule.delete();
                 break;
             }
         }
-        // todo
-        // add message for version update
-        getLog().info(DEFAULT_OK_MESSAGE);
+        if (versionUpdated) {
+            if (removed) getLog().info(String.format(DEFAULT_UPDATE_MESSAGE, artifact.getArtifactId(), artifact.getVersion()));
+        }
+        else getLog().info(String.format(DEFAULT_OK_MESSAGE, artifact.getArtifactId()));
     }
 
     /**
@@ -145,7 +146,6 @@ public class ModuleInstall extends AbstractMojo {
                 moduleVersion = manager.getVersion();
             }
         }
-        // prompt all unset values
         else {
             moduleGroupId = groupId;
             try {
@@ -155,7 +155,6 @@ public class ModuleInstall extends AbstractMojo {
                 getLog().error(e.getMessage());
             }
         }
-        // update server pom
         return new Artifact(moduleArtifactId, moduleVersion, moduleGroupId);
     }
 

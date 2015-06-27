@@ -16,7 +16,9 @@ public class SDKConstants {
     public static final String PLUGIN_DEPENDENCIES_ARTIFACT_ID = "maven-dependency-plugin";
     public static final String PLUGIN_DEPENDENCIES_VERSION = "2.8";
     // run plugin
-    // ----- to do
+    public static final String PLUGIN_JETTY_GROUP_ID = "org.eclipse.jetty";
+    public static final String PLUGIN_JETTY_ARTIFACT_ID = "jetty-maven-plugin";
+    public static final String PLUGIN_JETTY_VERSION = "9.0.4.v20130625";
     // attributes
     public static final String PROPERTY_DB_DRIVER = "connection.driver_class";
     public static final String PROPERTY_DB_USER = "connection.username";
@@ -27,13 +29,6 @@ public class SDKConstants {
     public static final String ARCH_GROUP_ID = "org.apache.maven.plugins";
     public static final String ARCH_ARTIFACT_ID = "maven-archetype-plugin";
     public static final String ARCH_VERSION = "2.3";
-    // archetype project options
-    public static final String ARCH_PROJECT_GROUP_ID = "org.openmrs.maven.archetypes";
-    public static final String ARCH_PROJECT_ARTIFACT_ID = "maven-archetype-openmrs-project";
-    public static final String ARCH_PROJECT_VERSION = "1.0.1";
-    // project options
-    public static final String PROJECT_GROUP_ID = "org.openmrs.distro";
-    public static final String PROJECT_PACKAGE = "org.openmrs";
     // archetype module options
     public static final String ARCH_MODULE_GROUP_ID = "org.openmrs.maven.archetypes";
     public static final String ARCH_MODULE_ARTIFACT_ID = "maven-archetype-openmrs-module-2.x";
@@ -54,16 +49,14 @@ public class SDKConstants {
     public static final String DRIVER_MYSQL = "com.mysql.jdbc.Driver";
     public static final String DRIVER_POSTGRESQL = "org.postgresql.Driver";
     public static final String DRIVER_H2 = "org.h2.Driver";
-
-    public static final List<Artifact> ARTIFACTS_1_X = new ArrayList<Artifact>() {{
-        add(new Artifact("openmrs-webapp", "1.9.7", Artifact.GROUP_WEB, Artifact.TYPE_WAR));
-        add(new Artifact("h2", "1.2.135", Artifact.GROUP_H2, Artifact.TYPE_JAR));
-    }};
     // module base for each version
+    public static final List<Artifact> ARTIFACTS_1_X = new ArrayList<Artifact>() {{
+        add(new Artifact("openmrs-webapp", "1.9.7", Artifact.GROUP_WEB, Artifact.TYPE_WAR).setWar());
+        add(new Artifact("h2", "1.2.135", Artifact.GROUP_H2, Artifact.TYPE_JAR).setCore());
+    }};
     public static final List<Artifact> ARTIFACTS_2_0 = new ArrayList<Artifact>() {{
-        // each item in constructor: artifactId,version,groupId,type
-        add(new Artifact("openmrs-webapp", "1.11.2", Artifact.GROUP_WEB, Artifact.TYPE_WAR));
-        add(new Artifact("h2", "1.2.135", Artifact.GROUP_H2, Artifact.TYPE_JAR));
+        add(new Artifact("openmrs-webapp", "1.11.2", Artifact.GROUP_WEB, Artifact.TYPE_WAR).setWar());
+        add(new Artifact("h2", "1.2.135", Artifact.GROUP_H2, Artifact.TYPE_JAR).setCore());
         add(new Artifact("referencemetadata-omod", "1.1"));
         add(new Artifact("appframework-omod", "2.1"));
         add(new Artifact("uiframework-omod", "3.2.1"));
@@ -94,8 +87,8 @@ public class SDKConstants {
         add(new Artifact("dataexchange-omod", "1.1"));
     }};
     public static final List<Artifact> ARTIFACTS_2_1 = new ArrayList<Artifact>() {{
-        add(new Artifact("openmrs-webapp", "1.10.0", Artifact.GROUP_WEB, Artifact.TYPE_WAR));
-        add(new Artifact("h2", "1.2.135", Artifact.GROUP_H2, Artifact.TYPE_JAR));
+        add(new Artifact("openmrs-webapp", "1.10.0", Artifact.GROUP_WEB, Artifact.TYPE_WAR).setWar());
+        add(new Artifact("h2", "1.2.135", Artifact.GROUP_H2, Artifact.TYPE_JAR).setCore());
         add(new Artifact("referencemetadata-omod", "2.1.1"));
         add(new Artifact("appframework-omod", "2.2.1"));
         add(new Artifact("uiframework-omod", "3.2.1"));
@@ -140,8 +133,8 @@ public class SDKConstants {
         // ----
     }};
     public static final List<Artifact> ARTIFACTS_2_2 = new ArrayList<Artifact>() {{
-        add(new Artifact("openmrs-webapp", "1.11.2", Artifact.GROUP_WEB, Artifact.TYPE_WAR));
-        add(new Artifact("h2", "1.2.135", Artifact.GROUP_H2, Artifact.TYPE_JAR));
+        add(new Artifact("openmrs-webapp", "1.11.2", Artifact.GROUP_WEB, Artifact.TYPE_WAR).setWar());
+        add(new Artifact("h2", "1.2.135", Artifact.GROUP_H2, Artifact.TYPE_JAR).setCore());
         add(new Artifact("referencemetadata-omod", "2.3"));
         add(new Artifact("appframework-omod", "2.3"));
         add(new Artifact("uiframework-omod", "3.3.1"));

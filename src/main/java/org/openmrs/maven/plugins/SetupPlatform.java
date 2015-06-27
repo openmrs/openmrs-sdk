@@ -144,24 +144,18 @@ public class SetupPlatform extends AbstractMojo {
         }
         File serverPath = new File(openMRSPath, server.getServerId());
         if (serverPath.exists()) throw new MojoExecutionException("Server with same id already created");
-        File modules = new File (serverPath, "modules");
+        File modules = new File (serverPath, Server.MODULE_FOLDER);
         modules.mkdirs();
-        // get modules version
-        String openMRSVersion = server.getVersion().startsWith("1.") ? "1.x": server.getVersion();
-        List<Artifact> artifacts = SDKConstants.ARTIFACTS.get(openMRSVersion);
+        List<Artifact> artifacts = SDKConstants.ARTIFACTS.get(server.getPlatformVersion());
         Element[] artifactItems = new Element[artifacts.size()];
         for (Artifact artifact: artifacts) {
             int index = artifacts.indexOf(artifact);
-            // some hack for webapp and h2
-            if (index < 2) {
-                // web app version for 1.x modules should be equal OpenMRS version
-                if ((index == 0) && (server.getVersion().startsWith("1."))) artifact.setVersion(server.getVersion());
-                // put to server root
+            if (artifact.isCoreModule()) {
+                if ((artifact.isWar()) && (server.isOld())) artifact.setVersion(server.getVersion());
                 artifactItems[index] =
                         artifact.setOutputDirectory(serverPath.getAbsolutePath()).toElement();
             }
             else {
-                // put to "modules"
                 artifactItems[index] =
                         artifact.setOutputDirectory(modules.getAbsolutePath()).toElement();
             }
@@ -207,7 +201,6 @@ public class SetupPlatform extends AbstractMojo {
                 String defaultUser = "root";
                 server.setDbUser(helper.promptForValueIfMissingWithDefault(dbUser, "dbUser", defaultUser));
                 server.setDbPassword(helper.promptForValueIfMissing(dbPassword, "dbPassword"));
-                //properties.setParam("dbDriver", server.getDbDriver());
                 properties.setParam(SDKConstants.PROPERTY_DB_USER, server.getDbUser());
                 properties.setParam(SDKConstants.PROPERTY_DB_PASS, server.getDbPassword());
                 properties.setParam(SDKConstants.PROPERTY_DB_URI, server.getDbUri());
@@ -229,7 +222,7 @@ public class SetupPlatform extends AbstractMojo {
                 .setDbPassword(dbPassword)
                 .setInteractiveMode(interactiveMode)
                 .build();
-        setup(server, false);
-        getLog().info("Server configured successfully");
+        String path = setup(server, false);
+        getLog().info("Server configured successfully, path: " + path);
     }
 }
