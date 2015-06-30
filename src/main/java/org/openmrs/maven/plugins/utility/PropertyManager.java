@@ -43,6 +43,25 @@ public class PropertyManager {
     }
 
     /**
+     * Set default properties
+     */
+    public void setDefaults() {
+        properties.setProperty("install_method", "auto");
+        properties.setProperty("connection.url", "jdbc:h2:@APPLICATIONDATADIR@/database/@DBNAME@;AUTO_RECONNECT=TRUE;DB_CLOSE_DELAY=-1");
+        properties.setProperty("connection.driver_class", "");
+        properties.setProperty("connection.username", "sa");
+        properties.setProperty("connection.password", "sa");
+        properties.setProperty("database_name", "openmrs");
+        properties.setProperty("has_current_openmrs_database", "true");
+        properties.setProperty("create_database_user", "false");
+        properties.setProperty("create_tables", "true");
+        properties.setProperty("add_demo_data", "false");
+        properties.setProperty("module_web_admin", "true");
+        properties.setProperty("auto_update_database", "false");
+        properties.setProperty("admin_user_password", "Admin123");
+    }
+
+    /**
      * Get param from properties
      * @param key - property key
      * @return - property value

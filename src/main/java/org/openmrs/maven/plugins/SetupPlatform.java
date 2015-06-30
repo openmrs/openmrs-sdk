@@ -7,12 +7,14 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.components.interactivity.Prompter;
 import org.codehaus.plexus.components.interactivity.PrompterException;
+import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.Server;
+import org.openmrs.maven.plugins.utility.AttributeHelper;
 import org.openmrs.maven.plugins.utility.PropertyManager;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 
 import java.io.File;
-import java.util.Properties;
+import java.util.List;
 
 import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
 
@@ -133,40 +135,40 @@ public class SetupPlatform extends AbstractMojo {
      * @throws MojoExecutionException
      */
     public String setup(Server server, Boolean requireDbParams) throws MojoExecutionException {
-        File omrsPath = new File(System.getProperty("user.home"), SDKConstants.OPENMRS_SERVER_PATH);
-        if (server.getServerId() == null) try {
-            String defaultId = "server";
-            int indx = 0;
-            while (new File(omrsPath, defaultId).exists()) {
-                indx++;
-                defaultId = "server" + String.valueOf(indx);
-            }
-            server.setServerId(prompter.prompt("Define value for property 'serverId': (default: '" + defaultId + "')"));
-            if (server.getServerId().equals("")) server.setServerId(defaultId);
+        AttributeHelper helper = new AttributeHelper(prompter);
+        File openMRSPath = new File(System.getProperty("user.home"), SDKConstants.OPENMRS_SERVER_PATH);
+        try {
+            server.setServerId(helper.promptForNewServerIfMissing(openMRSPath.getPath(), server.getServerId()));
         } catch (PrompterException e) {
             getLog().error(e.getMessage());
         }
-        File serverPath = new File(omrsPath, server.getServerId());
+        File serverPath = new File(openMRSPath, server.getServerId());
         if (serverPath.exists()) throw new MojoExecutionException("Server with same id already created");
-        Properties executionProps = mavenSession.getExecutionProperties();
-        executionProps.put("groupId", SDKConstants.PROJECT_GROUP_ID);
-        executionProps.put("artifactId", server.getServerId());
-        executionProps.put("package", SDKConstants.PROJECT_PACKAGE);
-        executionProps.put("version", server.getVersion());
+        File modules = new File (serverPath, Server.MODULE_FOLDER);
+        modules.mkdirs();
+        List<Artifact> artifacts = SDKConstants.ARTIFACTS.get(server.getPlatformVersion());
+        Element[] artifactItems = new Element[artifacts.size()];
+        for (Artifact artifact: artifacts) {
+            int index = artifacts.indexOf(artifact);
+            if (artifact.isCoreModule()) {
+                if ((artifact.isWar()) && (server.isOld())) artifact.setVersion(server.getVersion());
+                artifactItems[index] =
+                        artifact.setOutputDirectory(serverPath.getAbsolutePath()).toElement();
+            }
+            else {
+                artifactItems[index] =
+                        artifact.setOutputDirectory(modules.getAbsolutePath()).toElement();
+            }
+        }
         executeMojo(
                 plugin(
-                        groupId(SDKConstants.ARCH_GROUP_ID),
-                        artifactId(SDKConstants.ARCH_ARTIFACT_ID),
-                        version(SDKConstants.ARCH_VERSION)
+                        groupId(SDKConstants.PLUGIN_DEPENDENCIES_GROUP_ID),
+                        artifactId(SDKConstants.PLUGIN_DEPENDENCIES_ARTIFACT_ID),
+                        version(SDKConstants.PLUGIN_DEPENDENCIES_VERSION)
                 ),
-                goal("generate"),
+                goal("copy"),
                 configuration(
-                        element(name("archetypeCatalog"), SDKConstants.ARCH_CATALOG),
-                        element(name("interactiveMode"), server.getInteractiveMode()),
-                        element(name("archetypeGroupId"), SDKConstants.ARCH_PROJECT_GROUP_ID),
-                        element(name("archetypeArtifactId"), SDKConstants.ARCH_PROJECT_ARTIFACT_ID),
-                        element(name("archetypeVersion"), SDKConstants.ARCH_PROJECT_VERSION),
-                        element(name("basedir"), omrsPath.getPath())
+                        element(name("artifactItems"), artifactItems)
                 ),
                 executionEnvironment(mavenProject, mavenSession, pluginManager)
         );
@@ -178,34 +180,30 @@ public class SetupPlatform extends AbstractMojo {
                 requireDbParams) {
             File propertiesFile = new File(serverPath.getPath(), SDKConstants.OPENMRS_SERVER_PROPERTIES);
             PropertyManager properties = new PropertyManager(propertiesFile.getPath(), getLog());
+            properties.setDefaults();
             try {
-                String defaultDriver = "mysql";
-                if (server.getDbDriver() == null) server.setDbDriver(prompter.prompt("Define value for property 'dbDriver': (default: 'mysql')"));
-                if (server.getDbDriver().equals("")) server.setDbDriver(defaultDriver);
+                server.setDbDriver(helper.promptForValueIfMissingWithDefault(dbDriver, "dbDriver", "mysql"));
                 String defaultUri = SDKConstants.URI_MYSQL;
                 if ((server.getDbDriver().equals("postgresql")) || (server.getDbDriver().equals(SDKConstants.DRIVER_POSTGRESQL))) {
-                    properties.setParam("dbDriver", SDKConstants.DRIVER_POSTGRESQL);
+                    properties.setParam(SDKConstants.PROPERTY_DB_DRIVER, SDKConstants.DRIVER_POSTGRESQL);
                     defaultUri = SDKConstants.URI_POSTGRESQL;
                 }
                 else if ((server.getDbDriver().equals("h2")) || (server.getDbDriver().equals(SDKConstants.DRIVER_H2))) {
-                    properties.setParam("dbDriver", SDKConstants.DRIVER_H2);
+                    properties.setParam(SDKConstants.PROPERTY_DB_DRIVER, SDKConstants.DRIVER_H2);
                     defaultUri = SDKConstants.URI_H2;
                 }
-                else if (server.getDbDriver().equals("mysql")) properties.setParam("dbDriver", SDKConstants.DRIVER_MYSQL);
-                else properties.setParam("dbDriver", server.getDbDriver());
+                else if (server.getDbDriver().equals("mysql")) {
+                    properties.setParam(SDKConstants.PROPERTY_DB_DRIVER, SDKConstants.DRIVER_MYSQL);
+                }
+                else properties.setParam(SDKConstants.PROPERTY_DB_DRIVER, server.getDbDriver());
 
-                if (server.getDbUri() == null) server.setDbUri(prompter.prompt("Define value for property 'dbUri': (default: '" + defaultUri + "')"));
-                if (server.getDbUri().equals("")) server.setDbUri(defaultUri);
-
+                server.setDbUri(helper.promptForValueIfMissingWithDefault(dbUri, "dbUri", defaultUri));
                 String defaultUser = "root";
-                if (server.getDbUser() == null) server.setDbUser(prompter.prompt("Define value for property 'dbUser': (default: '" + defaultUser + "')"));
-                if (server.getDbUser().equals("")) server.setDbUser(defaultUser);
-                if (server.getDbPassword() == null) server.setDbPassword(prompter.prompt("Define value for property 'dbPassword'"));
-
-                properties.setParam("dbDriver", server.getDbDriver());
-                properties.setParam("dbUser", server.getDbUser());
-                properties.setParam("dbPassword", server.getDbPassword());
-                properties.setParam("dbUri", server.getDbUri());
+                server.setDbUser(helper.promptForValueIfMissingWithDefault(dbUser, "dbUser", defaultUser));
+                server.setDbPassword(helper.promptForValueIfMissing(dbPassword, "dbPassword"));
+                properties.setParam(SDKConstants.PROPERTY_DB_USER, server.getDbUser());
+                properties.setParam(SDKConstants.PROPERTY_DB_PASS, server.getDbPassword());
+                properties.setParam(SDKConstants.PROPERTY_DB_URI, server.getDbUri());
                 properties.apply();
             } catch (PrompterException e) {
                 getLog().error(e.getMessage());
@@ -224,6 +222,7 @@ public class SetupPlatform extends AbstractMojo {
                 .setDbPassword(dbPassword)
                 .setInteractiveMode(interactiveMode)
                 .build();
-        setup(server, false);
+        String path = setup(server, false);
+        getLog().info("Server configured successfully, path: " + path);
     }
 }

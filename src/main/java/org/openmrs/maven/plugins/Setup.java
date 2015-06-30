@@ -6,12 +6,7 @@ import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.components.interactivity.Prompter;
-import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.Server;
-import org.openmrs.maven.plugins.utility.ConfigurationManager;
-import org.openmrs.maven.plugins.utility.SDKConstants;
-
-import java.util.List;
 
 /**
  *
@@ -113,16 +108,7 @@ public class Setup extends AbstractMojo {
                         .setDbPassword(dbPassword)
                         .setInteractiveMode(interactiveMode)
                         .build();
-        // configure server ,and prompt params if not set
         String serverPath = configurator.setup(server, true);
-        ConfigurationManager manager = new ConfigurationManager(serverPath, getLog());
-        List<Artifact> artifacts = SDKConstants.ARTIFACTS.get(version);
-        if (artifacts != null) {
-            manager.addArtifactsToConfiguration(artifacts);
-            manager.apply();
-            getLog().info("Modules for version " + version + " configured successfully");
-        }
-        else getLog().info("There are no modules for selected OpenMRS version");
-        getLog().info("Server configured successfully");
+        getLog().info("Server configured successfully, path: " + serverPath);
     }
 }
