@@ -85,6 +85,22 @@
   </dependencies>
 
   <build>
+    <resources>
+			<resource>
+				<directory>src/main/resources</directory>
+				<filtering>true</filtering>
+				<includes>
+					<include>**/*.yaml</include>
+				</includes>
+			</resource>
+			<resource>
+				<directory>src/main/resources</directory>
+				<filtering>false</filtering>
+				<excludes>
+					<exclude>**/*.yaml</exclude>
+				</excludes>
+			</resource>
+		</resources>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
