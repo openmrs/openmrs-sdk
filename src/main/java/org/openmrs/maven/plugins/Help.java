@@ -28,7 +28,8 @@ public class Help extends AbstractMojo {
         YamlDecoder dec = new YamlDecoder(stream);
         HelpFormatter formatter = new HelpFormatter();
         try {
-            List l = (List) dec.readObject();
+            Map keys = (Map) dec.readObject();
+            List l = (List) keys.get("help");
             if (l == null) {
                 throw new MojoExecutionException("Error during reading help data");
             }
