@@ -30,6 +30,8 @@ public class Help extends AbstractMojo {
         try {
             Map keys = (Map) dec.readObject();
             List l = (List) keys.get("help");
+            String printVersion = String.format("OpenMRS SDK plugin version %s", keys.get("version"));
+            getLog().info(printVersion);
             if (l == null) {
                 throw new MojoExecutionException("Error during reading help data");
             }
