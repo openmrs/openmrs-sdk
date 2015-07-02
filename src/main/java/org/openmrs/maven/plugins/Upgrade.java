@@ -83,13 +83,16 @@ public class Upgrade extends AbstractMojo{
         String resultVersion = null;
         String resultServer = null;
         // check if we are inside the some server folder
-        File currentPath = new File(System.getProperty("user.dir"));
-        File currentPathProperties = new File(currentPath, SDKConstants.OPENMRS_SERVER_PROPERTIES);
-        File currentParentProperties = new File(currentPath.getParentFile(), SDKConstants.OPENMRS_SERVER_PROPERTIES);
-        if (currentPathProperties.exists() || currentParentProperties.exists()) {
-            if (currentPathProperties.exists()) serverId = currentPath.getName();
-            else serverId = currentPath.getParent();
+        if (serverId == null) {
+            File currentPath = new File(System.getProperty("user.dir"));
+            File currentPathProperties = new File(currentPath, SDKConstants.OPENMRS_SERVER_PROPERTIES);
+            File currentParentProperties = new File(currentPath.getParentFile(), SDKConstants.OPENMRS_SERVER_PROPERTIES);
+            if (currentPathProperties.exists() || currentParentProperties.exists()) {
+                if (currentPathProperties.exists()) serverId = currentPath.getName();
+                else serverId = currentPath.getParent();
+            }
         }
+
         try {
             resultServer = helper.promptForValueIfMissing(serverId, "serverId");
             resultVersion = helper.promptForValueIfMissing(version, "version");
