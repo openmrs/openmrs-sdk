@@ -143,8 +143,9 @@ public class SetupPlatform extends AbstractMojo {
             getLog().error(e.getMessage());
         }
         File serverPath = new File(openMRSPath, server.getServerId());
-        if (serverPath.exists()) throw new MojoExecutionException("Server with same id already created");
-        File modules = new File (serverPath, Server.MODULE_FOLDER);
+        File propertyPath = new File(serverPath, SDKConstants.OPENMRS_SERVER_PROPERTIES);
+        if (propertyPath.exists()) throw new MojoExecutionException("Server with same id already created");
+        File modules = new File (serverPath, SDKConstants.OPENMRS_SERVER_MODULES);
         modules.mkdirs();
         List<Artifact> artifacts = SDKConstants.ARTIFACTS.get(server.getPlatformVersion());
         Element[] artifactItems = new Element[artifacts.size()];
@@ -173,16 +174,16 @@ public class SetupPlatform extends AbstractMojo {
                 executionEnvironment(mavenProject, mavenSession, pluginManager)
         );
         getLog().info("Server created successfully, path: " + serverPath.getPath());
+        File propertiesFile = new File(serverPath.getPath(), SDKConstants.OPENMRS_SERVER_PROPERTIES);
+        PropertyManager properties = new PropertyManager(propertiesFile.getPath(), getLog());
+        properties.setDefaults();
         if ((server.getDbDriver() != null) ||
                 (server.getDbUser() != null) ||
                 (server.getDbPassword() != null) ||
                 (server.getDbUri() != null) ||
                 requireDbParams) {
-            File propertiesFile = new File(serverPath.getPath(), SDKConstants.OPENMRS_SERVER_PROPERTIES);
-            PropertyManager properties = new PropertyManager(propertiesFile.getPath(), getLog());
-            properties.setDefaults();
             try {
-                server.setDbDriver(helper.promptForValueIfMissingWithDefault(dbDriver, "dbDriver", "mysql"));
+                server.setDbDriver(helper.promptForValueIfMissingWithDefault(server.getDbDriver(), "dbDriver", "mysql"));
                 String defaultUri = SDKConstants.URI_MYSQL;
                 if ((server.getDbDriver().equals("postgresql")) || (server.getDbDriver().equals(SDKConstants.DRIVER_POSTGRESQL))) {
                     properties.setParam(SDKConstants.PROPERTY_DB_DRIVER, SDKConstants.DRIVER_POSTGRESQL);
@@ -197,18 +198,19 @@ public class SetupPlatform extends AbstractMojo {
                 }
                 else properties.setParam(SDKConstants.PROPERTY_DB_DRIVER, server.getDbDriver());
 
-                server.setDbUri(helper.promptForValueIfMissingWithDefault(dbUri, "dbUri", defaultUri));
+                server.setDbUri(helper.promptForValueIfMissingWithDefault(server.getDbUri(), "dbUri", defaultUri));
                 String defaultUser = "root";
-                server.setDbUser(helper.promptForValueIfMissingWithDefault(dbUser, "dbUser", defaultUser));
-                server.setDbPassword(helper.promptForValueIfMissing(dbPassword, "dbPassword"));
+                server.setDbUser(helper.promptForValueIfMissingWithDefault(server.getDbUser(), "dbUser", defaultUser));
+                server.setDbPassword(helper.promptForValueIfMissing(server.getDbPassword(), "dbPassword"));
                 properties.setParam(SDKConstants.PROPERTY_DB_USER, server.getDbUser());
                 properties.setParam(SDKConstants.PROPERTY_DB_PASS, server.getDbPassword());
                 properties.setParam(SDKConstants.PROPERTY_DB_URI, server.getDbUri());
-                properties.apply();
             } catch (PrompterException e) {
                 getLog().error(e.getMessage());
             }
         }
+        properties.setParam(SDKConstants.PROPERTY_VERSION, server.getVersion());
+        properties.apply();
         return serverPath.getPath();
     }
 

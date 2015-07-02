@@ -24,6 +24,7 @@ public class SDKConstants {
     public static final String PROPERTY_DB_USER = "connection.username";
     public static final String PROPERTY_DB_PASS = "connection.password";
     public static final String PROPERTY_DB_URI = "connection.url";
+    public static final String PROPERTY_VERSION = "version";
     // archetype
     public static final String ARCH_CATALOG = "http://mavenrepo.openmrs.org/nexus/service/local/repositories/releases/content/archetype-catalog.xml";
     public static final String ARCH_GROUP_ID = "org.apache.maven.plugins";
@@ -40,6 +41,7 @@ public class SDKConstants {
     // default path to projects
     public static final String OPENMRS_SERVER_PATH = "openmrs";
     public static final String OPENMRS_SERVER_PROPERTIES = "installation.h2.properties";
+    public static final String OPENMRS_SERVER_MODULES = "modules";
     // dbUri for different db
     public static final String URI_MYSQL = "jdbc:mysql://localhost:3131";
     public static final String URI_POSTGRESQL = "jdbc:postgresql://localhost:5740";

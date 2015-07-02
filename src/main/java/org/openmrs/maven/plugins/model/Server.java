@@ -13,8 +13,6 @@ public class Server {
     private String interactiveMode;
     private String version;
 
-    public static final String MODULE_FOLDER = "modules";
-
     public static class ServerBuilder {
         private String nestedServerId;
         private String nestedDbDriver;

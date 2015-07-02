@@ -83,11 +83,24 @@ public class ModuleInstall extends AbstractMojo {
     }
 
     public void execute() throws MojoExecutionException, MojoFailureException {
+        installModule(serverId, groupId, artifactId, version);
+    }
+
+    /**
+     * Install module to selected server
+     * @param serverId
+     * @param groupId
+     * @param artifactId
+     * @param version
+     * @throws MojoExecutionException
+     * @throws MojoFailureException
+     */
+    public void installModule(String serverId, String groupId, String artifactId, String version) throws MojoExecutionException, MojoFailureException {
         AttributeHelper helper = new AttributeHelper(prompter);
         File serverPath = getServerPath(helper, serverId);
         Artifact artifact = getArtifactForSelectedParameters(helper, groupId, artifactId, version);
         artifact.setArtifactId(artifact.getArtifactId() + "-omod");
-        File modules = new File(serverPath, "modules");
+        File modules = new File(serverPath, SDKConstants.OPENMRS_SERVER_MODULES);
         artifact.setOutputDirectory(modules.getPath());
         Element[] artifactItems = new Element[1];
         artifactItems[0] = artifact.toElement();
@@ -176,6 +189,7 @@ public class ModuleInstall extends AbstractMojo {
         if (!serverPath.exists()) {
             throw new MojoFailureException(failureMessage);
         }
+        serverId = resultServerId;
         return serverPath;
     }
 

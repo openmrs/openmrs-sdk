@@ -6,6 +6,7 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.codehaus.plexus.components.interactivity.Prompter;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.utility.AttributeHelper;
+import org.openmrs.maven.plugins.utility.SDKConstants;
 
 import java.io.File;
 
@@ -40,7 +41,7 @@ public class ModuleUninstall extends AbstractMojo {
         AttributeHelper helper = new AttributeHelper(prompter);
         File serverPath = installer.getServerPath(helper, serverId);
         Artifact artifact = installer.getArtifactForSelectedParameters(helper, groupId, artifactId, "default");
-        File modules = new File(serverPath, "modules");
+        File modules = new File(serverPath, SDKConstants.OPENMRS_SERVER_MODULES);
         File[] listOfModules = modules.listFiles();
         for (File mod : listOfModules) {
             if (mod.getName().startsWith(artifact.getArtifactId())) {
