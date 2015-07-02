@@ -133,6 +133,7 @@ public class Server {
     public String getPlatformVersion() {
         return (isOld()) ? "1.x": version;
     }
+
     public boolean isOld() {
         return version.startsWith("1.");
     }

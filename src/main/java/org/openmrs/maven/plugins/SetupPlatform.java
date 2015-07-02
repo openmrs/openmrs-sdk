@@ -131,10 +131,10 @@ public class SetupPlatform extends AbstractMojo {
     /**
      * Create and setup server with following parameters
      * @param server - server instance
-     * @param isPlatform - flag for platform setup
+     * @param isCreatePlatform - flag for platform setup
      * @throws MojoExecutionException
      */
-    public String setup(Server server, Boolean isPlatform) throws MojoExecutionException {
+    public String setup(Server server, Boolean isCreatePlatform) throws MojoExecutionException {
         AttributeHelper helper = new AttributeHelper(prompter);
         File openMRSPath = new File(System.getProperty("user.home"), SDKConstants.OPENMRS_SERVER_PATH);
         try {
@@ -144,18 +144,25 @@ public class SetupPlatform extends AbstractMojo {
         }
         File serverPath = new File(openMRSPath, server.getServerId());
         File propertyPath = new File(serverPath, SDKConstants.OPENMRS_SERVER_PROPERTIES);
-        if (propertyPath.exists()) throw new MojoExecutionException("Server with same id already created");
-        // install platform
-        installModules(SDKConstants.PLATFORM, serverPath.getPath(), server.getVersion(), isPlatform);
-        // install modules
-        if (!isPlatform) {
+        if (propertyPath.exists()) {
+            throw new MojoExecutionException("Server with same id already created");
+        }
+        // install core modules
+        List<Artifact> coreModules = SDKConstants.getCoreModules(server.getVersion(), isCreatePlatform);
+        if (coreModules == null) {
+            throw new MojoExecutionException(String.format("Invalid version: '%s'", server.getVersion()));
+        }
+        installModules(coreModules, serverPath.getPath());
+        // install other modules
+        if (!isCreatePlatform) {
             File modules = new File(serverPath, SDKConstants.OPENMRS_SERVER_MODULES);
             modules.mkdirs();
             List<Artifact> artifacts = SDKConstants.ARTIFACTS.get(server.getVersion());
             // install modules for each version
-            installModules(artifacts, modules.getPath(), server.getVersion(), isPlatform);
+            installModules(artifacts, modules.getPath());
         }
         getLog().info("Server created successfully, path: " + serverPath.getPath());
+
         File propertiesFile = new File(serverPath.getPath(), SDKConstants.OPENMRS_SERVER_PROPERTIES);
         PropertyManager properties = new PropertyManager(propertiesFile.getPath(), getLog());
         properties.setDefaults();
@@ -164,7 +171,7 @@ public class SetupPlatform extends AbstractMojo {
                 (server.getDbUser() != null) ||
                 (server.getDbPassword() != null) ||
                 (server.getDbUri() != null) ||
-                !isPlatform) {
+                !isCreatePlatform) {
             try {
                 server.setDbDriver(helper.promptForValueIfMissingWithDefault(server.getDbDriver(), "dbDriver", "mysql"));
                 String defaultUri = SDKConstants.URI_MYSQL;
@@ -192,8 +199,10 @@ public class SetupPlatform extends AbstractMojo {
                 getLog().error(e.getMessage());
             }
         }
-        properties.setParam(SDKConstants.PROPERTY_VERSION, server.getVersion());
-        properties.setParam(SDKConstants.PROPERTY_PLATFORM, String.valueOf(isPlatform));
+        properties.setParam(SDKConstants.PROPERTY_PLATFORM, server.getVersion());
+        if (!isCreatePlatform) {
+            properties.setParam(SDKConstants.PROPERTY_VERSION, SDKConstants.WEBAPP_VERSIONS.get(server.getVersion()));
+        }
         properties.apply();
         return serverPath.getPath();
     }
@@ -202,25 +211,12 @@ public class SetupPlatform extends AbstractMojo {
      * Install modules from Artifact list
      * @param artifacts
      * @param outputDir
-     * @param version
-     * @param isPlatform
      */
-    private void installModules(List<Artifact> artifacts, String outputDir, String version, boolean isPlatform) throws MojoExecutionException{
+    private void installModules(List<Artifact> artifacts, String outputDir) throws MojoExecutionException{
         Element[] artifactItems = new Element[artifacts.size()];
         for (Artifact artifact: artifacts) {
             int index = artifacts.indexOf(artifact);
-            if (artifact.isWar()) {
-                if (isPlatform) {
-                    artifactItems[index] = artifact.toElement(outputDir, version);
-                }
-                else {
-                    String webAppVersion = SDKConstants.WEBAPP_VERSIONS.get(version);
-                    artifactItems[index] = artifact.toElement(outputDir, webAppVersion);
-                }
-            }
-            else {
-                artifactItems[index] = artifact.toElement(outputDir);
-            }
+            artifactItems[index] = artifact.toElement(outputDir);
         }
         executeMojo(
                 plugin(

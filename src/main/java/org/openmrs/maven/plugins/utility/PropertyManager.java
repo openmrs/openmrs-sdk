@@ -80,9 +80,10 @@ public class PropertyManager {
     }
 
     /**
-     * Write properties to .property file
+     * Write properties to file
+     * @param path
      */
-    public void apply() {
+    public void apply(String path) {
         FileOutputStream out = null;
         try {
             out = new FileOutputStream(path);
@@ -93,6 +94,13 @@ public class PropertyManager {
         } finally {
             IOUtils.closeQuietly(out);
         }
+    }
+
+    /**
+     * Save properties
+     */
+    public void apply() {
+        apply(path);
     }
 
     /**

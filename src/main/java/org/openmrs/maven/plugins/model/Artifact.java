@@ -87,9 +87,7 @@ public class Artifact {
         return String.format(DEST_TEMPLATE, id, version, type);
     }
 
-    public String getGroupId() {
-        return groupId;
-    }
+    public String getGroupId() { return groupId; }
 
     public void setGroupId(String groupId) { this.groupId = groupId; }
 
@@ -97,46 +95,15 @@ public class Artifact {
         return artifactId;
     }
 
-    public void setArtifactId(String artifactId) {
-        this.artifactId = artifactId;
-    }
+    public void setArtifactId(String artifactId) { this.artifactId = artifactId; }
 
-    public String getType() {
-        return type;
-    }
+    public String getType() { return type; }
 
     public void setType(String type) { this.type = type; }
 
-    public String getDestFileName() {
-        return destFileName;
-    }
+    public String getDestFileName() { return destFileName; }
 
     public void setDestFileName(String destFileName) { this.destFileName = destFileName; }
-
-    public boolean isWar() { return type != null && type.equals(TYPE_WAR); }
-
-    /**
-     * Convert Artifact to Element with selected version
-     * String outputDir
-     * String version
-     * @return
-     */
-    public Element toElement(String outputDir, String version) {
-        List<Element> attributes = new ArrayList<Element>();
-        attributes.add(element("groupId", groupId));
-        attributes.add(element("artifactId", artifactId));
-        attributes.add(element("version", version));
-        // update destination fileName for version
-        String artifactType = (type != null) ? type : TYPE_OMOD;
-        String id = artifactId.split("-")[0];
-        attributes.add(element("destFileName", Artifact.getFileName(id, version, artifactType)));
-        if (type != null) {
-            attributes.add(element("type", type));
-        }
-        attributes.add(element("outputDirectory", outputDir));
-        Element[] arrayElements = attributes.toArray(new Element[0]);
-        return element("artifactItem", arrayElements);
-    }
 
     /**
      * Convert Artifact to Element
@@ -144,6 +111,16 @@ public class Artifact {
      * @return
      */
     public Element toElement(String outputDir) {
-        return toElement(outputDir, version);
+        List<Element> attributes = new ArrayList<Element>();
+        attributes.add(element("groupId", groupId));
+        attributes.add(element("artifactId", artifactId));
+        attributes.add(element("version", version));
+        attributes.add(element("destFileName", destFileName));
+        if (type != null) {
+            attributes.add(element("type", type));
+        }
+        attributes.add(element("outputDirectory", outputDir));
+        Element[] arrayElements = attributes.toArray(new Element[0]);
+        return element("artifactItem", arrayElements);
     }
 }

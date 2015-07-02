@@ -5,17 +5,21 @@ A maven plugin for the OpenMRS SDK
 
 All commands can be executed by `mvn openmrs-sdk:<command>`
 
-* `create-module` - Create module for OpenMRS 2.x <br/>
+* `create-module` - Create OpenMRS module <br/>
 Options: none (only interactive mode)
-* `create-platform-module` - Create module for OpenMRS 1.x <br/>
+* `create-platform-module` - Create OpenMRS platform module <br/>
 Options: none (only interactive mode)
-* `setup-platform` - Setup server OpenMRS 1.x <br/>
+* `setup-platform` - Setup platform server <br/>
 Options: serverId, version, dbDriver, dbUri, dbUser, dbPassword
-* `setup` - Setup server OpenMRS 2.x with modules <br/>
+* `setup` - Setup server with modules <br/>
 Options: serverId, version, dbDriver, dbUri, dbUser, dbPassword
 * `install-module` - Install selected module to server <br/>
 Options: serverId, groupId, artifactId, version
 * `uninstall-module` - Uninstall selected module from server <br/>
 Options: serverId, groupId, artifactId
+* `upgrade` - Upgrade server or platform server to selected version <br/>
+Options: serverId, version
+* `upgrade-platform` - Upgrade platform server to selected version <br/>
+Options: serverId, version
 * `run` - Start server <br/>
 Options: serverId
