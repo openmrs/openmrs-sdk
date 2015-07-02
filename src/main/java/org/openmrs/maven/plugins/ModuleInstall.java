@@ -101,9 +101,8 @@ public class ModuleInstall extends AbstractMojo {
         Artifact artifact = getArtifactForSelectedParameters(helper, groupId, artifactId, version);
         artifact.setArtifactId(artifact.getArtifactId() + "-omod");
         File modules = new File(serverPath, SDKConstants.OPENMRS_SERVER_MODULES);
-        artifact.setOutputDirectory(modules.getPath());
         Element[] artifactItems = new Element[1];
-        artifactItems[0] = artifact.toElement();
+        artifactItems[0] = artifact.toElement(modules.getPath());
         executeMojo(
                 plugin(
                         groupId(SDKConstants.PLUGIN_DEPENDENCIES_GROUP_ID),
@@ -120,10 +119,10 @@ public class ModuleInstall extends AbstractMojo {
         File[] listOfModules = modules.listFiles();
         boolean versionUpdated = false;
         boolean removed = false;
-        for (File listOfModule : listOfModules) {
-            if (listOfModule.getName().startsWith(artifact.getArtifactId()) && (!listOfModule.getName().equals(artifact.getDestFileName()))) {
+        for (File itemModule : listOfModules) {
+            if (itemModule.getName().startsWith(artifact.getArtifactId()) && (!itemModule.getName().equals(artifact.getDestFileName()))) {
                 versionUpdated = true;
-                removed = listOfModule.delete();
+                removed = itemModule.delete();
                 break;
             }
         }

@@ -131,10 +131,10 @@ public class SetupPlatform extends AbstractMojo {
     /**
      * Create and setup server with following parameters
      * @param server - server instance
-     * @param requireDbParams - require db params if not selected
+     * @param isPlatform - flag for platform setup
      * @throws MojoExecutionException
      */
-    public String setup(Server server, Boolean requireDbParams) throws MojoExecutionException {
+    public String setup(Server server, Boolean isPlatform) throws MojoExecutionException {
         AttributeHelper helper = new AttributeHelper(prompter);
         File openMRSPath = new File(System.getProperty("user.home"), SDKConstants.OPENMRS_SERVER_PATH);
         try {
@@ -145,43 +145,26 @@ public class SetupPlatform extends AbstractMojo {
         File serverPath = new File(openMRSPath, server.getServerId());
         File propertyPath = new File(serverPath, SDKConstants.OPENMRS_SERVER_PROPERTIES);
         if (propertyPath.exists()) throw new MojoExecutionException("Server with same id already created");
-        File modules = new File (serverPath, SDKConstants.OPENMRS_SERVER_MODULES);
-        modules.mkdirs();
-        List<Artifact> artifacts = SDKConstants.ARTIFACTS.get(server.getPlatformVersion());
-        Element[] artifactItems = new Element[artifacts.size()];
-        for (Artifact artifact: artifacts) {
-            int index = artifacts.indexOf(artifact);
-            if (artifact.isCoreModule()) {
-                if ((artifact.isWar()) && (server.isOld())) artifact.setVersion(server.getVersion());
-                artifactItems[index] =
-                        artifact.setOutputDirectory(serverPath.getAbsolutePath()).toElement();
-            }
-            else {
-                artifactItems[index] =
-                        artifact.setOutputDirectory(modules.getAbsolutePath()).toElement();
-            }
+        // install platform
+        installModules(SDKConstants.PLATFORM, serverPath.getPath(), server.getVersion(), isPlatform);
+        // install modules
+        if (!isPlatform) {
+            File modules = new File(serverPath, SDKConstants.OPENMRS_SERVER_MODULES);
+            modules.mkdirs();
+            List<Artifact> artifacts = SDKConstants.ARTIFACTS.get(server.getVersion());
+            // install modules for each version
+            installModules(artifacts, modules.getPath(), server.getVersion(), isPlatform);
         }
-        executeMojo(
-                plugin(
-                        groupId(SDKConstants.PLUGIN_DEPENDENCIES_GROUP_ID),
-                        artifactId(SDKConstants.PLUGIN_DEPENDENCIES_ARTIFACT_ID),
-                        version(SDKConstants.PLUGIN_DEPENDENCIES_VERSION)
-                ),
-                goal("copy"),
-                configuration(
-                        element(name("artifactItems"), artifactItems)
-                ),
-                executionEnvironment(mavenProject, mavenSession, pluginManager)
-        );
         getLog().info("Server created successfully, path: " + serverPath.getPath());
         File propertiesFile = new File(serverPath.getPath(), SDKConstants.OPENMRS_SERVER_PROPERTIES);
         PropertyManager properties = new PropertyManager(propertiesFile.getPath(), getLog());
         properties.setDefaults();
+        // configure db properties
         if ((server.getDbDriver() != null) ||
                 (server.getDbUser() != null) ||
                 (server.getDbPassword() != null) ||
                 (server.getDbUri() != null) ||
-                requireDbParams) {
+                !isPlatform) {
             try {
                 server.setDbDriver(helper.promptForValueIfMissingWithDefault(server.getDbDriver(), "dbDriver", "mysql"));
                 String defaultUri = SDKConstants.URI_MYSQL;
@@ -210,8 +193,47 @@ public class SetupPlatform extends AbstractMojo {
             }
         }
         properties.setParam(SDKConstants.PROPERTY_VERSION, server.getVersion());
+        properties.setParam(SDKConstants.PROPERTY_PLATFORM, String.valueOf(isPlatform));
         properties.apply();
         return serverPath.getPath();
+    }
+
+    /**
+     * Install modules from Artifact list
+     * @param artifacts
+     * @param outputDir
+     * @param version
+     * @param isPlatform
+     */
+    private void installModules(List<Artifact> artifacts, String outputDir, String version, boolean isPlatform) throws MojoExecutionException{
+        Element[] artifactItems = new Element[artifacts.size()];
+        for (Artifact artifact: artifacts) {
+            int index = artifacts.indexOf(artifact);
+            if (artifact.isWar()) {
+                if (isPlatform) {
+                    artifactItems[index] = artifact.toElement(outputDir, version);
+                }
+                else {
+                    String webAppVersion = SDKConstants.WEBAPP_VERSIONS.get(version);
+                    artifactItems[index] = artifact.toElement(outputDir, webAppVersion);
+                }
+            }
+            else {
+                artifactItems[index] = artifact.toElement(outputDir);
+            }
+        }
+        executeMojo(
+                plugin(
+                        groupId(SDKConstants.PLUGIN_DEPENDENCIES_GROUP_ID),
+                        artifactId(SDKConstants.PLUGIN_DEPENDENCIES_ARTIFACT_ID),
+                        version(SDKConstants.PLUGIN_DEPENDENCIES_VERSION)
+                ),
+                goal("copy"),
+                configuration(
+                        element(name("artifactItems"), artifactItems)
+                ),
+                executionEnvironment(mavenProject, mavenSession, pluginManager)
+        );
     }
 
     public void execute() throws MojoExecutionException {
@@ -224,7 +246,8 @@ public class SetupPlatform extends AbstractMojo {
                 .setDbPassword(dbPassword)
                 .setInteractiveMode(interactiveMode)
                 .build();
-        String path = setup(server, false);
+        // setup platform server
+        String path = setup(server, true);
         getLog().info("Server configured successfully, path: " + path);
     }
 }

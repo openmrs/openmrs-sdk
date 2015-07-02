@@ -14,9 +14,6 @@ public class Artifact {
     private String artifactId;
     private String type;
     private String destFileName;
-    private String outputDirectory;
-    private boolean isCoreModule = false;
-    private boolean isWar = false;
 
     public static final String GROUP_MODULE = "org.openmrs.module";
     public static final String GROUP_WEB = "org.openmrs.web";
@@ -59,20 +56,14 @@ public class Artifact {
         this.groupId = groupId;
         this.artifactId = artifactId;
         this.version = version;
-        // get values for destFileName
+        // get values for destination FileName
         String artifactType = (type != null) ? type : TYPE_OMOD;
         String id = artifactId.split("-")[0];
-        // make destFileName
+        // make destination FileName
         this.destFileName = String.format(DEST_TEMPLATE, id, version, artifactType);
         // set type if not null
         if (type != null) this.type = type;
     }
-
-    public Artifact setOutputDirectory(String outputDirectory) {
-        this.outputDirectory = outputDirectory;
-        return this;
-    }
-
     public String getVersion() {
         return version;
     }
@@ -122,38 +113,37 @@ public class Artifact {
 
     public void setDestFileName(String destFileName) { this.destFileName = destFileName; }
 
-    public boolean isCoreModule() { return isCoreModule; }
-
-    public boolean isWar() { return isWar; }
-
-    public Artifact setCore() {
-        this.isCoreModule = true;
-        return this;
-    }
-
-    public Artifact setWar() {
-        this.isCoreModule = true;
-        this.isWar = true;
-        return this;
-    }
+    public boolean isWar() { return type != null && type.equals(TYPE_WAR); }
 
     /**
-     * Convert Artifact to Element
+     * Convert Artifact to Element with selected version
+     * String outputDir
+     * String version
      * @return
      */
-    public Element toElement() {
+    public Element toElement(String outputDir, String version) {
         List<Element> attributes = new ArrayList<Element>();
         attributes.add(element("groupId", groupId));
         attributes.add(element("artifactId", artifactId));
         attributes.add(element("version", version));
-        attributes.add(element("destFileName", destFileName));
+        // update destination fileName for version
+        String artifactType = (type != null) ? type : TYPE_OMOD;
+        String id = artifactId.split("-")[0];
+        attributes.add(element("destFileName", Artifact.getFileName(id, version, artifactType)));
         if (type != null) {
             attributes.add(element("type", type));
         }
-        if (outputDirectory != null) {
-            attributes.add(element("outputDirectory", outputDirectory));
-        }
+        attributes.add(element("outputDirectory", outputDir));
         Element[] arrayElements = attributes.toArray(new Element[0]);
         return element("artifactItem", arrayElements);
+    }
+
+    /**
+     * Convert Artifact to Element
+     * String outputDir
+     * @return
+     */
+    public Element toElement(String outputDir) {
+        return toElement(outputDir, version);
     }
 }

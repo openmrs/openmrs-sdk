@@ -13,6 +13,7 @@ public class AttributeHelper {
     private static final String DEFAULT_SERVER_NAME = "server";
     private static final String DEFAULT_VALUE_TMPL = "Define value for property '%s'";
     private static final String DEFAULT_VALUE_TMPL_WITH_DEFAULT = "Define value for property '%s': (default: '%s')";
+    private static final String YESNO = " [Y/N]";
 
     private Prompter prompter;
 
@@ -66,5 +67,15 @@ public class AttributeHelper {
      */
     public String promptForValueIfMissing(String value, String parameterName) throws PrompterException {
         return promptForValueIfMissingWithDefault(value, parameterName, EMPTY_STRING);
+    }
+
+    /**
+     * Print dialog Yes/No
+     * @param text - text to display
+     * @return
+     */
+    public boolean dialogYesNo(String text) throws PrompterException {
+        String yesNo = prompter.prompt(text.concat(YESNO));
+        return yesNo.equals("") || yesNo.toLowerCase().equals("y");
     }
 }
