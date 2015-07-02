@@ -229,14 +229,14 @@ public class UpgradePlatform extends AbstractMojo{
      */
     private List<File> getFileListToRemove(File serverPath, String oldVersion, String targetVersion, boolean isPlatform) throws MojoExecutionException, MojoFailureException {
         List<File> list = new ArrayList<File>();
-        String oldPlatformVersion = oldVersion.startsWith("1.") ? "1.x" : oldVersion;
+        boolean oldPlatformVersion = SDKConstants.WEBAPP_VERSIONS.get(targetVersion) == null;
         // remove modules first
         if (!isPlatform) {
             File modulePath = new File(serverPath, SDKConstants.OPENMRS_SERVER_MODULES);
-            if (modulePath.exists()) {
+            if (modulePath.exists() && !oldPlatformVersion) {
                 Map<String, Artifact> oldModules = new HashMap<String, Artifact>();
                 Map<String, Artifact> targetModules = new HashMap<String, Artifact>();
-                List<Artifact> artifactList = SDKConstants.ARTIFACTS.get(oldPlatformVersion);
+                List<Artifact> artifactList = SDKConstants.ARTIFACTS.get(oldVersion);
                 List<Artifact> targerArtifactList = SDKConstants.ARTIFACTS.get(targetVersion);
                 if (artifactList != null) {
                     for (Artifact artifact: artifactList) {
@@ -276,6 +276,7 @@ public class UpgradePlatform extends AbstractMojo{
             Artifact targetMod = targetCoreModules.get(getId(coreModule.getName()));
             if (oldMod != null) {
                 if ((targetMod == null) || (!oldMod.getDestFileName().equals(targetMod.getDestFileName()))) {
+                    getLog().info("ADD " + oldMod.getArtifactId());
                     list.add(coreModule);
                 }
             }
