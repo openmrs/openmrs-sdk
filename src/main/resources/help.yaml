@@ -1,13 +1,13 @@
 version: ${version}
 help:
   - name: create-module
-    desc: Create module for OpenMRS 2.x
+    desc: Create OpenMRS module
 
   - name: create-platform-module
-    desc: Create module for OpenMRS 1.x
+    desc: Create OpenMRS platform module
 
   - name: setup
-    desc: Setup OpenMRS 2.x server with modules
+    desc: Setup server with modules
     options:
       - name: DserverId
         desc: Id (server name) for server
@@ -23,7 +23,7 @@ help:
         desc: Password for dbUser
 
   - name: setup-platform
-    desc: Setup OpenMRS 1.x server
+    desc: Setup platform server
     options:
       - name: DserverId
         desc: Id (server name) for server
@@ -59,6 +59,21 @@ help:
         desc: GroupId of module which will be removed (default value 'org.openmrs.module')
       - name: DartifactId
         desc: ArtifactId of module which will be removed
+  - name: upgrade
+    desc: Upgrade server or platform server to selected version
+    options:
+      - name: DserverId
+        desc: Server if of selected server
+      - name: Dversion
+        desc: Target version to upgrade
+
+  - name: upgrade-platform
+    desc: Upgrade platform server to selected version
+    options:
+      - name: DserverId
+        desc: Server if of selected server
+      - name: Dversion
+        desc: Target version to upgrade
 
   - name: run
     desc: Start selected server

@@ -83,14 +83,26 @@ public class ModuleInstall extends AbstractMojo {
     }
 
     public void execute() throws MojoExecutionException, MojoFailureException {
+        installModule(serverId, groupId, artifactId, version);
+    }
+
+    /**
+     * Install module to selected server
+     * @param serverId
+     * @param groupId
+     * @param artifactId
+     * @param version
+     * @throws MojoExecutionException
+     * @throws MojoFailureException
+     */
+    public void installModule(String serverId, String groupId, String artifactId, String version) throws MojoExecutionException, MojoFailureException {
         AttributeHelper helper = new AttributeHelper(prompter);
         File serverPath = getServerPath(helper, serverId);
         Artifact artifact = getArtifactForSelectedParameters(helper, groupId, artifactId, version);
         artifact.setArtifactId(artifact.getArtifactId() + "-omod");
-        File modules = new File(serverPath, "modules");
-        artifact.setOutputDirectory(modules.getPath());
+        File modules = new File(serverPath, SDKConstants.OPENMRS_SERVER_MODULES);
         Element[] artifactItems = new Element[1];
-        artifactItems[0] = artifact.toElement();
+        artifactItems[0] = artifact.toElement(modules.getPath());
         executeMojo(
                 plugin(
                         groupId(SDKConstants.PLUGIN_DEPENDENCIES_GROUP_ID),
@@ -107,10 +119,10 @@ public class ModuleInstall extends AbstractMojo {
         File[] listOfModules = modules.listFiles();
         boolean versionUpdated = false;
         boolean removed = false;
-        for (File listOfModule : listOfModules) {
-            if (listOfModule.getName().startsWith(artifact.getArtifactId()) && (!listOfModule.getName().equals(artifact.getDestFileName()))) {
+        for (File itemModule : listOfModules) {
+            if (itemModule.getName().startsWith(artifact.getArtifactId()) && (!itemModule.getName().equals(artifact.getDestFileName()))) {
                 versionUpdated = true;
-                removed = listOfModule.delete();
+                removed = itemModule.delete();
                 break;
             }
         }
@@ -176,6 +188,7 @@ public class ModuleInstall extends AbstractMojo {
         if (!serverPath.exists()) {
             throw new MojoFailureException(failureMessage);
         }
+        serverId = resultServerId;
         return serverPath;
     }
 

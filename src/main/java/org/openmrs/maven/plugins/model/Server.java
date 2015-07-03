@@ -13,8 +13,6 @@ public class Server {
     private String interactiveMode;
     private String version;
 
-    public static final String MODULE_FOLDER = "modules";
-
     public static class ServerBuilder {
         private String nestedServerId;
         private String nestedDbDriver;
@@ -135,6 +133,7 @@ public class Server {
     public String getPlatformVersion() {
         return (isOld()) ? "1.x": version;
     }
+
     public boolean isOld() {
         return version.startsWith("1.");
     }

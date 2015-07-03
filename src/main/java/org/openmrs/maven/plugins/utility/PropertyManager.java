@@ -48,7 +48,7 @@ public class PropertyManager {
     public void setDefaults() {
         properties.setProperty("install_method", "auto");
         properties.setProperty("connection.url", "jdbc:h2:@APPLICATIONDATADIR@/database/@DBNAME@;AUTO_RECONNECT=TRUE;DB_CLOSE_DELAY=-1");
-        properties.setProperty("connection.driver_class", "");
+        properties.setProperty("connection.driver_class", "org.h2.Driver");
         properties.setProperty("connection.username", "sa");
         properties.setProperty("connection.password", "sa");
         properties.setProperty("database_name", "openmrs");
@@ -80,9 +80,10 @@ public class PropertyManager {
     }
 
     /**
-     * Write properties to .property file
+     * Write properties to file
+     * @param path
      */
-    public void apply() {
+    public void apply(String path) {
         FileOutputStream out = null;
         try {
             out = new FileOutputStream(path);
@@ -93,6 +94,13 @@ public class PropertyManager {
         } finally {
             IOUtils.closeQuietly(out);
         }
+    }
+
+    /**
+     * Save properties
+     */
+    public void apply() {
+        apply(path);
     }
 
     /**

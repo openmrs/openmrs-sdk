@@ -131,10 +131,10 @@ public class SetupPlatform extends AbstractMojo {
     /**
      * Create and setup server with following parameters
      * @param server - server instance
-     * @param requireDbParams - require db params if not selected
+     * @param isCreatePlatform - flag for platform setup
      * @throws MojoExecutionException
      */
-    public String setup(Server server, Boolean requireDbParams) throws MojoExecutionException {
+    public String setup(Server server, Boolean isCreatePlatform) throws MojoExecutionException {
         AttributeHelper helper = new AttributeHelper(prompter);
         File openMRSPath = new File(System.getProperty("user.home"), SDKConstants.OPENMRS_SERVER_PATH);
         try {
@@ -143,46 +143,37 @@ public class SetupPlatform extends AbstractMojo {
             getLog().error(e.getMessage());
         }
         File serverPath = new File(openMRSPath, server.getServerId());
-        if (serverPath.exists()) throw new MojoExecutionException("Server with same id already created");
-        File modules = new File (serverPath, Server.MODULE_FOLDER);
-        modules.mkdirs();
-        List<Artifact> artifacts = SDKConstants.ARTIFACTS.get(server.getPlatformVersion());
-        Element[] artifactItems = new Element[artifacts.size()];
-        for (Artifact artifact: artifacts) {
-            int index = artifacts.indexOf(artifact);
-            if (artifact.isCoreModule()) {
-                if ((artifact.isWar()) && (server.isOld())) artifact.setVersion(server.getVersion());
-                artifactItems[index] =
-                        artifact.setOutputDirectory(serverPath.getAbsolutePath()).toElement();
-            }
-            else {
-                artifactItems[index] =
-                        artifact.setOutputDirectory(modules.getAbsolutePath()).toElement();
-            }
+        File propertyPath = new File(serverPath, SDKConstants.OPENMRS_SERVER_PROPERTIES);
+        if (propertyPath.exists()) {
+            throw new MojoExecutionException("Server with same id already created");
         }
-        executeMojo(
-                plugin(
-                        groupId(SDKConstants.PLUGIN_DEPENDENCIES_GROUP_ID),
-                        artifactId(SDKConstants.PLUGIN_DEPENDENCIES_ARTIFACT_ID),
-                        version(SDKConstants.PLUGIN_DEPENDENCIES_VERSION)
-                ),
-                goal("copy"),
-                configuration(
-                        element(name("artifactItems"), artifactItems)
-                ),
-                executionEnvironment(mavenProject, mavenSession, pluginManager)
-        );
+        // install core modules
+        List<Artifact> coreModules = SDKConstants.getCoreModules(server.getVersion(), isCreatePlatform);
+        if (coreModules == null) {
+            throw new MojoExecutionException(String.format("Invalid version: '%s'", server.getVersion()));
+        }
+        installModules(coreModules, serverPath.getPath());
+        // install other modules
+        if (!isCreatePlatform) {
+            File modules = new File(serverPath, SDKConstants.OPENMRS_SERVER_MODULES);
+            modules.mkdirs();
+            List<Artifact> artifacts = SDKConstants.ARTIFACTS.get(server.getVersion());
+            // install modules for each version
+            installModules(artifacts, modules.getPath());
+        }
         getLog().info("Server created successfully, path: " + serverPath.getPath());
+
+        File propertiesFile = new File(serverPath.getPath(), SDKConstants.OPENMRS_SERVER_PROPERTIES);
+        PropertyManager properties = new PropertyManager(propertiesFile.getPath(), getLog());
+        properties.setDefaults();
+        // configure db properties
         if ((server.getDbDriver() != null) ||
                 (server.getDbUser() != null) ||
                 (server.getDbPassword() != null) ||
                 (server.getDbUri() != null) ||
-                requireDbParams) {
-            File propertiesFile = new File(serverPath.getPath(), SDKConstants.OPENMRS_SERVER_PROPERTIES);
-            PropertyManager properties = new PropertyManager(propertiesFile.getPath(), getLog());
-            properties.setDefaults();
+                !isCreatePlatform) {
             try {
-                server.setDbDriver(helper.promptForValueIfMissingWithDefault(dbDriver, "dbDriver", "mysql"));
+                server.setDbDriver(helper.promptForValueIfMissingWithDefault(server.getDbDriver(), "dbDriver", "mysql"));
                 String defaultUri = SDKConstants.URI_MYSQL;
                 if ((server.getDbDriver().equals("postgresql")) || (server.getDbDriver().equals(SDKConstants.DRIVER_POSTGRESQL))) {
                     properties.setParam(SDKConstants.PROPERTY_DB_DRIVER, SDKConstants.DRIVER_POSTGRESQL);
@@ -197,19 +188,48 @@ public class SetupPlatform extends AbstractMojo {
                 }
                 else properties.setParam(SDKConstants.PROPERTY_DB_DRIVER, server.getDbDriver());
 
-                server.setDbUri(helper.promptForValueIfMissingWithDefault(dbUri, "dbUri", defaultUri));
+                server.setDbUri(helper.promptForValueIfMissingWithDefault(server.getDbUri(), "dbUri", defaultUri));
                 String defaultUser = "root";
-                server.setDbUser(helper.promptForValueIfMissingWithDefault(dbUser, "dbUser", defaultUser));
-                server.setDbPassword(helper.promptForValueIfMissing(dbPassword, "dbPassword"));
+                server.setDbUser(helper.promptForValueIfMissingWithDefault(server.getDbUser(), "dbUser", defaultUser));
+                server.setDbPassword(helper.promptForValueIfMissing(server.getDbPassword(), "dbPassword"));
                 properties.setParam(SDKConstants.PROPERTY_DB_USER, server.getDbUser());
                 properties.setParam(SDKConstants.PROPERTY_DB_PASS, server.getDbPassword());
                 properties.setParam(SDKConstants.PROPERTY_DB_URI, server.getDbUri());
-                properties.apply();
             } catch (PrompterException e) {
                 getLog().error(e.getMessage());
             }
         }
+        properties.setParam(SDKConstants.PROPERTY_PLATFORM, server.getVersion());
+        if (!isCreatePlatform) {
+            properties.setParam(SDKConstants.PROPERTY_VERSION, SDKConstants.WEBAPP_VERSIONS.get(server.getVersion()));
+        }
+        properties.apply();
         return serverPath.getPath();
+    }
+
+    /**
+     * Install modules from Artifact list
+     * @param artifacts
+     * @param outputDir
+     */
+    private void installModules(List<Artifact> artifacts, String outputDir) throws MojoExecutionException{
+        Element[] artifactItems = new Element[artifacts.size()];
+        for (Artifact artifact: artifacts) {
+            int index = artifacts.indexOf(artifact);
+            artifactItems[index] = artifact.toElement(outputDir);
+        }
+        executeMojo(
+                plugin(
+                        groupId(SDKConstants.PLUGIN_DEPENDENCIES_GROUP_ID),
+                        artifactId(SDKConstants.PLUGIN_DEPENDENCIES_ARTIFACT_ID),
+                        version(SDKConstants.PLUGIN_DEPENDENCIES_VERSION)
+                ),
+                goal("copy"),
+                configuration(
+                        element(name("artifactItems"), artifactItems)
+                ),
+                executionEnvironment(mavenProject, mavenSession, pluginManager)
+        );
     }
 
     public void execute() throws MojoExecutionException {
@@ -222,7 +242,8 @@ public class SetupPlatform extends AbstractMojo {
                 .setDbPassword(dbPassword)
                 .setInteractiveMode(interactiveMode)
                 .build();
-        String path = setup(server, false);
+        // setup platform server
+        String path = setup(server, true);
         getLog().info("Server configured successfully, path: " + path);
     }
 }

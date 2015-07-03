@@ -2,10 +2,10 @@ package org.openmrs.maven.plugins.utility;
 
 import org.openmrs.maven.plugins.model.Artifact;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Class for handling static values
@@ -24,6 +24,8 @@ public class SDKConstants {
     public static final String PROPERTY_DB_USER = "connection.username";
     public static final String PROPERTY_DB_PASS = "connection.password";
     public static final String PROPERTY_DB_URI = "connection.url";
+    public static final String PROPERTY_VERSION = "openmrs.version";
+    public static final String PROPERTY_PLATFORM = "openmrs.platform.version";
     // archetype
     public static final String ARCH_CATALOG = "http://mavenrepo.openmrs.org/nexus/service/local/repositories/releases/content/archetype-catalog.xml";
     public static final String ARCH_GROUP_ID = "org.apache.maven.plugins";
@@ -40,6 +42,7 @@ public class SDKConstants {
     // default path to projects
     public static final String OPENMRS_SERVER_PATH = "openmrs";
     public static final String OPENMRS_SERVER_PROPERTIES = "installation.h2.properties";
+    public static final String OPENMRS_SERVER_MODULES = "modules";
     // dbUri for different db
     public static final String URI_MYSQL = "jdbc:mysql://localhost:3131";
     public static final String URI_POSTGRESQL = "jdbc:postgresql://localhost:5740";
@@ -48,14 +51,15 @@ public class SDKConstants {
     public static final String DRIVER_MYSQL = "com.mysql.jdbc.Driver";
     public static final String DRIVER_POSTGRESQL = "org.postgresql.Driver";
     public static final String DRIVER_H2 = "org.h2.Driver";
-    // module base for each version
-    public static final List<Artifact> ARTIFACTS_1_X = new ArrayList<Artifact>() {{
-        add(new Artifact("openmrs-webapp", "1.9.7", Artifact.GROUP_WEB, Artifact.TYPE_WAR).setWar());
-        add(new Artifact("h2", "1.2.135", Artifact.GROUP_H2, Artifact.TYPE_JAR).setCore());
+    // non-platform web app versions
+    public static final Map<String,String> WEBAPP_VERSIONS = new HashMap<String, String>() {{
+        put("2.0", "1.9.7");
+        put("2.1", "1.10.0");
+        put("2.2", "1.11.2");
     }};
+
+    // modules 2.x
     public static final List<Artifact> ARTIFACTS_2_0 = new ArrayList<Artifact>() {{
-        add(new Artifact("openmrs-webapp", "1.11.2", Artifact.GROUP_WEB, Artifact.TYPE_WAR).setWar());
-        add(new Artifact("h2", "1.2.135", Artifact.GROUP_H2, Artifact.TYPE_JAR).setCore());
         add(new Artifact("referencemetadata-omod", "1.1"));
         add(new Artifact("appframework-omod", "2.1"));
         add(new Artifact("uiframework-omod", "3.2.1"));
@@ -86,8 +90,6 @@ public class SDKConstants {
         add(new Artifact("dataexchange-omod", "1.1"));
     }};
     public static final List<Artifact> ARTIFACTS_2_1 = new ArrayList<Artifact>() {{
-        add(new Artifact("openmrs-webapp", "1.10.0", Artifact.GROUP_WEB, Artifact.TYPE_WAR).setWar());
-        add(new Artifact("h2", "1.2.135", Artifact.GROUP_H2, Artifact.TYPE_JAR).setCore());
         add(new Artifact("referencemetadata-omod", "2.1.1"));
         add(new Artifact("appframework-omod", "2.2.1"));
         add(new Artifact("uiframework-omod", "3.2.1"));
@@ -132,8 +134,6 @@ public class SDKConstants {
         // ----
     }};
     public static final List<Artifact> ARTIFACTS_2_2 = new ArrayList<Artifact>() {{
-        add(new Artifact("openmrs-webapp", "1.11.2", Artifact.GROUP_WEB, Artifact.TYPE_WAR).setWar());
-        add(new Artifact("h2", "1.2.135", Artifact.GROUP_H2, Artifact.TYPE_JAR).setCore());
         add(new Artifact("referencemetadata-omod", "2.3"));
         add(new Artifact("appframework-omod", "2.3"));
         add(new Artifact("uiframework-omod", "3.3.1"));
@@ -185,10 +185,24 @@ public class SDKConstants {
         // ----
     }};
     // final module base
-    public static final HashMap<String, List<Artifact>> ARTIFACTS = new HashMap<String, List<Artifact>>() {{
-        put("1.x", ARTIFACTS_1_X);
+    public static final Map<String, List<Artifact>> ARTIFACTS = new HashMap<String, List<Artifact>>() {{
         put("2.0", ARTIFACTS_2_0);
         put("2.1", ARTIFACTS_2_1);
         put("2.2", ARTIFACTS_2_2);
     }};
+
+    /**
+     * Get core modules with required versions
+     * @param version - openmrs version
+     * @param isPlatform - is platform server
+     * @return
+     */
+    public static List<Artifact> getCoreModules(String version, boolean isPlatform) {
+        final String webAppVersion = isPlatform ? version : WEBAPP_VERSIONS.get(version);
+        if (webAppVersion == null) return null;
+        return new ArrayList<Artifact>() {{
+            add(new Artifact("openmrs-webapp", webAppVersion, Artifact.GROUP_WEB, Artifact.TYPE_WAR));
+            add(new Artifact("h2", "1.2.135", Artifact.GROUP_H2, Artifact.TYPE_JAR));
+        }};
+    }
 }

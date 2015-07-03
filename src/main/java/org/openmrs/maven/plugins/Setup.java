@@ -108,7 +108,8 @@ public class Setup extends AbstractMojo {
                         .setDbPassword(dbPassword)
                         .setInteractiveMode(interactiveMode)
                         .build();
-        String serverPath = configurator.setup(server, true);
+        // setup non-platform server
+        String serverPath = configurator.setup(server, false);
         getLog().info("Server configured successfully, path: " + serverPath);
     }
 }
