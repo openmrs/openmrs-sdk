@@ -12,6 +12,7 @@ import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.utility.AttributeHelper;
 import org.openmrs.maven.plugins.utility.ConfigurationManager;
 import org.openmrs.maven.plugins.utility.SDKConstants;
+import org.openmrs.maven.plugins.utility.Version;
 
 import java.io.File;
 
@@ -26,6 +27,8 @@ public class ModuleInstall extends AbstractMojo {
     private static final String DEFAULT_FAIL_MESSAGE = "Server with such serverId is not exists";
     private static final String DEFAULT_OK_MESSAGE = "Module '%s' installed successfully";
     private static final String DEFAULT_UPDATE_MESSAGE = "Module '%s' was updated to version '%s'";
+    private static final String TEMPLATE_UPDATE = "Module is installed already. Do you want to upgrade it to version '%s'?";
+    private static final String TEMPLATE_DOWNGRADE = "Installed version '%s' of module higher than target '%s'";
 
     /**
      * The project currently being build.
@@ -99,10 +102,40 @@ public class ModuleInstall extends AbstractMojo {
         AttributeHelper helper = new AttributeHelper(prompter);
         File serverPath = getServerPath(helper, serverId);
         Artifact artifact = getArtifactForSelectedParameters(helper, groupId, artifactId, version);
+        String originalId = artifact.getArtifactId();
         artifact.setArtifactId(artifact.getArtifactId() + "-omod");
         File modules = new File(serverPath, SDKConstants.OPENMRS_SERVER_MODULES);
         Element[] artifactItems = new Element[1];
         artifactItems[0] = artifact.toElement(modules.getPath());
+
+        File[] listOfModules = modules.listFiles();
+        boolean versionUpdated = false;
+        boolean removed = false;
+        for (File itemModule : listOfModules) {
+            String[] parts = itemModule.getName().split("-");
+            if (originalId.equals(parts[0])) {
+                try {
+                    Version oldVersion = new Version(parts[1].substring(0, parts[1].lastIndexOf('.')));
+                    Version newVersion = new Version(artifact.getVersion());
+                    if (oldVersion.higher(newVersion)) {
+                        throw new MojoExecutionException(String.format(TEMPLATE_DOWNGRADE, oldVersion.toString(), newVersion.toString()));
+                    }
+                    else if (oldVersion.lower(newVersion)) {
+                        boolean agree = helper.dialogYesNo(String.format(TEMPLATE_UPDATE, artifact.getVersion()));
+                        if (!agree) {
+                            return;
+                        }
+                    }
+                    versionUpdated = true;
+                    removed = itemModule.delete();
+                    break;
+
+                } catch (PrompterException e) {
+                    throw new MojoExecutionException(e.getMessage());
+                }
+
+            }
+        }
         executeMojo(
                 plugin(
                         groupId(SDKConstants.PLUGIN_DEPENDENCIES_GROUP_ID),
@@ -115,21 +148,10 @@ public class ModuleInstall extends AbstractMojo {
                 ),
                 executionEnvironment(mavenProject, mavenSession, pluginManager)
         );
-
-        File[] listOfModules = modules.listFiles();
-        boolean versionUpdated = false;
-        boolean removed = false;
-        for (File itemModule : listOfModules) {
-            if (itemModule.getName().startsWith(artifact.getArtifactId()) && (!itemModule.getName().equals(artifact.getDestFileName()))) {
-                versionUpdated = true;
-                removed = itemModule.delete();
-                break;
-            }
-        }
         if (versionUpdated) {
-            if (removed) getLog().info(String.format(DEFAULT_UPDATE_MESSAGE, artifact.getArtifactId(), artifact.getVersion()));
+            if (removed) getLog().info(String.format(DEFAULT_UPDATE_MESSAGE, originalId, artifact.getVersion()));
         }
-        else getLog().info(String.format(DEFAULT_OK_MESSAGE, artifact.getArtifactId()));
+        else getLog().info(String.format(DEFAULT_OK_MESSAGE, originalId));
     }
 
     /**
@@ -145,17 +167,17 @@ public class ModuleInstall extends AbstractMojo {
         String moduleGroupId = null;
         String moduleArtifactId = null;
         String moduleVersion = null;
-        if (pomFile.exists() && (artifactId == null) && (version == null)) {
+        if (pomFile.exists() && (artifactId == null)) {
             ConfigurationManager manager = new ConfigurationManager(pomFile.getPath(), getLog());
             if (manager.getParent() != null) {
                 moduleGroupId = manager.getParent().getGroupId();
                 moduleArtifactId = manager.getParent().getArtifactId();
-                moduleVersion = manager.getParent().getVersion();
+                moduleVersion = (version != null) ? version : manager.getParent().getVersion();
             }
             else {
                 moduleGroupId = manager.getGroupId();
                 moduleArtifactId = manager.getArtifactId();
-                moduleVersion = manager.getVersion();
+                moduleVersion = (version != null) ? version: manager.getVersion();
             }
         }
         else {
