@@ -3,6 +3,7 @@ package org.openmrs.maven.plugins;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.BuildPluginManager;
+import org.apache.maven.plugin.Mojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.components.interactivity.Prompter;
@@ -25,6 +26,9 @@ import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
  *
  */
 public class SetupPlatform extends AbstractMojo {
+
+    private static final String DEFAULT_VERSION = "2.2";
+    private static final String DEFAULT_PLATFORM_VERSION = "1.11.2";
 
     /**
      * Default constructor
@@ -81,7 +85,7 @@ public class SetupPlatform extends AbstractMojo {
     /**
      * Platform version
      *
-     * @parameter expression="${version}" default-value="1.11.2"
+     * @parameter expression="${version}"
      */
     private String version;
 
@@ -146,6 +150,12 @@ public class SetupPlatform extends AbstractMojo {
         File propertyPath = new File(serverPath, SDKConstants.OPENMRS_SERVER_PROPERTIES);
         if (propertyPath.exists()) {
             throw new MojoExecutionException("Server with same id already created");
+        }
+        try {
+            String defaultV = isCreatePlatform ? DEFAULT_PLATFORM_VERSION : DEFAULT_VERSION;
+            server.setVersion(helper.promptForValueIfMissingWithDefault(server.getVersion(), "version", defaultV));
+        } catch (PrompterException e) {
+            throw new MojoExecutionException(e.getMessage());
         }
         // install core modules
         List<Artifact> coreModules = SDKConstants.getCoreModules(server.getVersion(), isCreatePlatform);
