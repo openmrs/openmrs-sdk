@@ -210,7 +210,6 @@ public class ModuleInstall extends AbstractMojo {
         if (!serverPath.exists()) {
             throw new MojoFailureException(failureMessage);
         }
-        serverId = resultServerId;
         return serverPath;
     }
 
