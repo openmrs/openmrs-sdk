@@ -17,7 +17,6 @@ import java.io.IOException;
 public class Delete extends AbstractMojo{
 
     private static final String TEMPLATE_SUCCESS = "Server '%s' removed successfully";
-    private static final String TEMPLATE_ERROR = "Unable to remove server '%s'";
 
     /**
      * @parameter expression="${serverId}"

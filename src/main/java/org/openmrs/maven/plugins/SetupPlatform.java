@@ -214,13 +214,14 @@ public class SetupPlatform extends AbstractMojo {
         if (!isCreatePlatform) {
             properties.setParam(SDKConstants.PROPERTY_VERSION, SDKConstants.WEBAPP_VERSIONS.get(server.getVersion()));
         }
+        String dbName = String.format(SDKConstants.DB_NAME_TEMPLATE, server.getServerId());
+        properties.setParam(SDKConstants.PROPERTY_DB_NAME, dbName);
         properties.apply();
         String dbType = properties.getParam(SDKConstants.PROPERTY_DB_DRIVER);
         if (dbType.equals(SDKConstants.DRIVER_MYSQL)) {
             String uri = properties.getParam(SDKConstants.PROPERTY_DB_URI);
             String user = properties.getParam(SDKConstants.PROPERTY_DB_USER);
             String pass = properties.getParam(SDKConstants.PROPERTY_DB_PASS);
-            String dbName = String.format(SDKConstants.DB_NAME_TEMPLATE, server.getServerId());
             try {
                 DBConnector connector = new DBConnector(uri, user, pass, dbName);
                 connector.checkAndCreate();
