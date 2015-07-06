@@ -10,10 +10,12 @@ import org.codehaus.plexus.components.interactivity.PrompterException;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.utility.AttributeHelper;
+import org.openmrs.maven.plugins.utility.DBConnector;
 import org.openmrs.maven.plugins.utility.PropertyManager;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 
 import java.io.File;
+import java.sql.SQLException;
 import java.util.List;
 
 import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
@@ -213,6 +215,21 @@ public class SetupPlatform extends AbstractMojo {
             properties.setParam(SDKConstants.PROPERTY_VERSION, SDKConstants.WEBAPP_VERSIONS.get(server.getVersion()));
         }
         properties.apply();
+        String dbType = properties.getParam(SDKConstants.PROPERTY_DB_DRIVER);
+        if (dbType.equals(SDKConstants.DRIVER_MYSQL)) {
+            String uri = properties.getParam(SDKConstants.PROPERTY_DB_URI);
+            String user = properties.getParam(SDKConstants.PROPERTY_DB_USER);
+            String pass = properties.getParam(SDKConstants.PROPERTY_DB_PASS);
+            String dbName = String.format(SDKConstants.DB_NAME_TEMPLATE, server.getServerId());
+            try {
+                DBConnector connector = new DBConnector(uri, user, pass, dbName);
+                connector.checkAndCreate();
+                getLog().info("Database configured successfully");
+            } catch (SQLException e) {
+                getLog().error(e.getMessage());
+            }
+        }
+
         return serverPath.getPath();
     }
 

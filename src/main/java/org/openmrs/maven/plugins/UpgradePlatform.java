@@ -13,7 +13,7 @@ import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.utility.AttributeHelper;
 import org.openmrs.maven.plugins.utility.PropertyManager;
 import org.openmrs.maven.plugins.utility.SDKConstants;
-import org.openmrs.maven.plugins.utility.Version;
+import org.openmrs.maven.plugins.model.Version;
 
 import java.io.File;
 import java.util.ArrayList;

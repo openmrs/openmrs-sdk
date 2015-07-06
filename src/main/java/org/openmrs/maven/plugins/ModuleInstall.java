@@ -12,7 +12,7 @@ import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.utility.AttributeHelper;
 import org.openmrs.maven.plugins.utility.ConfigurationManager;
 import org.openmrs.maven.plugins.utility.SDKConstants;
-import org.openmrs.maven.plugins.utility.Version;
+import org.openmrs.maven.plugins.model.Version;
 
 import java.io.File;
 

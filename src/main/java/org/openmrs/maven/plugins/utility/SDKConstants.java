@@ -26,6 +26,8 @@ public class SDKConstants {
     public static final String PROPERTY_DB_URI = "connection.url";
     public static final String PROPERTY_VERSION = "openmrs.version";
     public static final String PROPERTY_PLATFORM = "openmrs.platform.version";
+    public static final String PROPERTY_DB_NAME = "database_name";
+    public static final String DB_NAME_TEMPLATE = "openmrs-%s";
     // archetype
     public static final String ARCH_CATALOG = "http://mavenrepo.openmrs.org/nexus/service/local/repositories/releases/content/archetype-catalog.xml";
     public static final String ARCH_GROUP_ID = "org.apache.maven.plugins";

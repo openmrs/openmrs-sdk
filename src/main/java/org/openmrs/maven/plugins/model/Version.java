@@ -1,4 +1,4 @@
-package org.openmrs.maven.plugins.utility;
+package org.openmrs.maven.plugins.model;
 
 public class Version implements Comparable<Version> {
 
