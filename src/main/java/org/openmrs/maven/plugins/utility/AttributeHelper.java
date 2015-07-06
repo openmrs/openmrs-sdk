@@ -1,5 +1,6 @@
 package org.openmrs.maven.plugins.utility;
 
+import org.apache.maven.plugin.MojoFailureException;
 import org.codehaus.plexus.components.interactivity.Prompter;
 import org.codehaus.plexus.components.interactivity.PrompterException;
 
@@ -13,6 +14,7 @@ public class AttributeHelper {
     private static final String DEFAULT_SERVER_NAME = "server";
     private static final String DEFAULT_VALUE_TMPL = "Define value for property '%s'";
     private static final String DEFAULT_VALUE_TMPL_WITH_DEFAULT = "Define value for property '%s': (default: '%s')";
+    private static final String DEFAULT_FAIL_MESSAGE = "Server with such serverId is not exists";
     private static final String YESNO = " [Y/N]";
 
     private Prompter prompter;
@@ -77,5 +79,35 @@ public class AttributeHelper {
     public boolean dialogYesNo(String text) throws PrompterException {
         String yesNo = prompter.prompt(text.concat(YESNO));
         return yesNo.equals("") || yesNo.toLowerCase().equals("y");
+    }
+
+    /**
+     * Get path to server by serverId and prompt if missing
+     * @return
+     * @throws MojoFailureException
+     */
+    public File getServerPath(String serverId, String failureMessage) throws MojoFailureException {
+        File omrsHome = new File(System.getProperty("user.home"), SDKConstants.OPENMRS_SERVER_PATH);
+        String resultServerId = null;
+        try {
+            resultServerId = promptForValueIfMissing(serverId, "serverId");
+        } catch (PrompterException e) {
+            throw new MojoFailureException(e.getMessage());
+        }
+        File serverPath = new File(omrsHome, resultServerId);
+        if (!serverPath.exists()) {
+            throw new MojoFailureException(failureMessage);
+        }
+        return serverPath;
+    }
+
+    /**
+     * Get server with default failure message
+     * @param serverId
+     * @return
+     * @throws MojoFailureException
+     */
+    public File getServerPath(String serverId) throws MojoFailureException {
+        return getServerPath(serverId, DEFAULT_FAIL_MESSAGE);
     }
 }

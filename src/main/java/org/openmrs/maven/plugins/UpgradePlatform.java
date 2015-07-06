@@ -107,7 +107,6 @@ public class UpgradePlatform extends AbstractMojo{
      * @throws MojoFailureException
      */
     public void upgradeServer(String serverId, String version, boolean isUpdateToPlatform) throws MojoExecutionException, MojoFailureException {
-        ModuleInstall moduleInstall = new ModuleInstall(prompter);
         AttributeHelper helper = new AttributeHelper(prompter);
         String resultVersion = null;
         String resultServer = null;
@@ -128,7 +127,7 @@ public class UpgradePlatform extends AbstractMojo{
             throw new MojoExecutionException(e.getMessage());
         }
 
-        File serverPath = moduleInstall.getServerPath(helper, resultServer);
+        File serverPath = helper.getServerPath(resultServer);
         File propertyFile = new File(serverPath, SDKConstants.OPENMRS_SERVER_PROPERTIES);
         PropertyManager properties = new PropertyManager(propertyFile.getPath(), getLog());
         String webapp = properties.getParam(SDKConstants.PROPERTY_VERSION);
