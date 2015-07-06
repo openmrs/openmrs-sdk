@@ -50,7 +50,7 @@ public class Setup extends AbstractMojo {
     /**
      * Platform version
      *
-     * @parameter expression="${version}" default-value="2.2"
+     * @parameter expression="${version}"
      */
     private String version;
 

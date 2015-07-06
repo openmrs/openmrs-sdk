@@ -219,7 +219,7 @@ public class UpgradePlatform extends AbstractMojo{
     }
 
     /**
-     * Remove files from "modules" folder
+     * Calculate list of files to remove
      * @param serverPath
      * @param oldVersion
      * @param targetVersion
