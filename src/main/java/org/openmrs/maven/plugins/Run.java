@@ -99,7 +99,7 @@ public class Run extends AbstractMojo {
                         element(name("systemProperties"),
                                 element("systemProperty",
                                         element("name", "OPENMRS_INSTALLATION_SCRIPT"),
-                                        element("value", "classpath:installation.h2.properties")),
+                                        element("value", new File(serverPath, SDKConstants.OPENMRS_SERVER_PROPERTIES).getAbsolutePath())),
                                 element("systemProperty",
                                         element("name", "OPENMRS_APPLICATION_DATA_DIRECTORY"),
                                         element("value", serverPath.getAbsolutePath())))

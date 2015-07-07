@@ -84,6 +84,8 @@ public class PropertyManager {
      * @param path
      */
     public void apply(String path) {
+    	replaceDbNameInDbUri();
+    	
         FileOutputStream out = null;
         try {
             out = new FileOutputStream(path);
@@ -94,6 +96,16 @@ public class PropertyManager {
         } finally {
             IOUtils.closeQuietly(out);
         }
+    }
+
+    /**
+     * It's a quick fix for OpenMRS, which doesn't pick up the database_name property correctly
+     * and doesn't replace DBNAME with the specified value.
+     */
+	private void replaceDbNameInDbUri() {
+	    String dbUri = getParam(SDKConstants.PROPERTY_DB_URI);
+    	dbUri = dbUri.replace("@DBNAME@", getParam(SDKConstants.PROPERTY_DB_NAME));
+    	setParam(SDKConstants.PROPERTY_DB_URI, dbUri);
     }
 
     /**

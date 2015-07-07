@@ -45,12 +45,12 @@ public class SDKConstants {
     // default path to projects
     public static final String OPENMRS_MODULE_POM = "pom.xml";
     public static final String OPENMRS_SERVER_PATH = "openmrs";
-    public static final String OPENMRS_SERVER_PROPERTIES = "installation.h2.properties";
+    public static final String OPENMRS_SERVER_PROPERTIES = "installation.properties";
     public static final String OPENMRS_SERVER_MODULES = "modules";
     // dbUri for different db
-    public static final String URI_MYSQL = "jdbc:mysql://localhost:3306";
-    public static final String URI_POSTGRESQL = "jdbc:postgresql://localhost:5740";
-    public static final String URI_H2 = "jdbc:h2://localhost";
+    public static final String URI_MYSQL = "jdbc:mysql://localhost:3306/@DBNAME@?autoReconnect=true&sessionVariables=storage_engine=InnoDB&useUnicode=true&characterEncoding=UTF-8";
+    public static final String URI_POSTGRESQL = "jdbc:postgresql://localhost:5740/@DBNAME@";
+    public static final String URI_H2 = "jdbc:h2:@APPLICATIONDATADIR@/database/@DBNAME@;AUTO_RECONNECT=TRUE;DB_CLOSE_DELAY=-1";
     // dbDriver class for different db
     public static final String DRIVER_MYSQL = "com.mysql.jdbc.Driver";
     public static final String DRIVER_POSTGRESQL = "org.postgresql.Driver";

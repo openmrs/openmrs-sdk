@@ -77,10 +77,11 @@ public class Reset extends AbstractMojo{
         DBConnector connector = null;
         try {
             String dbName = String.format(SDKConstants.DB_NAME_TEMPLATE, serverPath.getName());
-            connector = new DBConnector(properties.getParam(SDKConstants.PROPERTY_DB_URI),
-                                                    properties.getParam(SDKConstants.PROPERTY_DB_USER),
-                                                    properties.getParam(SDKConstants.PROPERTY_DB_PASS),
-                                                    dbName);
+            String uri = properties.getParam(SDKConstants.PROPERTY_DB_URI);
+            uri = uri.substring(0, uri.lastIndexOf("/"));
+            connector = new DBConnector(uri, properties.getParam(SDKConstants.PROPERTY_DB_USER),
+                                          properties.getParam(SDKConstants.PROPERTY_DB_PASS),
+                                          dbName);
             connector.dropDatabase();
             connector.close();
         } catch (SQLException e) {

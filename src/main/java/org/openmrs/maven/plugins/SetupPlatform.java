@@ -224,6 +224,7 @@ public class SetupPlatform extends AbstractMojo {
         String dbType = properties.getParam(SDKConstants.PROPERTY_DB_DRIVER);
         if (dbType.equals(SDKConstants.DRIVER_MYSQL)) {
             String uri = properties.getParam(SDKConstants.PROPERTY_DB_URI);
+            uri = uri.substring(0, uri.lastIndexOf("/"));
             String user = properties.getParam(SDKConstants.PROPERTY_DB_USER);
             String pass = properties.getParam(SDKConstants.PROPERTY_DB_PASS);
             DBConnector connector = null;
