@@ -58,8 +58,11 @@ public class Run extends AbstractMojo {
 
     public void execute() throws MojoExecutionException, MojoFailureException {
         AttributeHelper helper = new AttributeHelper(prompter);
-        ModuleInstall installer = new ModuleInstall(prompter);
-        File serverPath = installer.getServerPath(helper, serverId, NO_SERVER_TEXT);
+        if (serverId == null) {
+            File currentProperties = helper.getCurrentServerPath(getLog());
+            if (currentProperties != null) serverId = currentProperties.getName();
+        }
+        File serverPath = helper.getServerPath(serverId, NO_SERVER_TEXT);
         serverPath.mkdirs();
         File tempDirectory = new File(serverPath, "tmp");
         tempDirectory.mkdirs();

@@ -10,10 +10,12 @@ import org.codehaus.plexus.components.interactivity.PrompterException;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.utility.AttributeHelper;
+import org.openmrs.maven.plugins.utility.DBConnector;
 import org.openmrs.maven.plugins.utility.PropertyManager;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 
 import java.io.File;
+import java.sql.SQLException;
 import java.util.List;
 
 import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
@@ -148,7 +150,10 @@ public class SetupPlatform extends AbstractMojo {
         File serverPath = new File(openMRSPath, server.getServerId());
         File propertyPath = new File(serverPath, SDKConstants.OPENMRS_SERVER_PROPERTIES);
         if (propertyPath.exists()) {
-            throw new MojoExecutionException("Server with same id already created");
+            PropertyManager props = new PropertyManager(propertyPath.getPath(), getLog());
+            if (props.getParam(SDKConstants.PROPERTY_SERVER_ID) != null) {
+                throw new MojoExecutionException("Server with same id already created");
+            }
         }
         try {
             String defaultV = isCreatePlatform ? DEFAULT_PLATFORM_VERSION : DEFAULT_VERSION;
@@ -175,6 +180,7 @@ public class SetupPlatform extends AbstractMojo {
         File propertiesFile = new File(serverPath.getPath(), SDKConstants.OPENMRS_SERVER_PROPERTIES);
         PropertyManager properties = new PropertyManager(propertiesFile.getPath(), getLog());
         properties.setDefaults();
+        properties.setParam(SDKConstants.PROPERTY_SERVER_ID, server.getServerId());
         // configure db properties
         if ((server.getDbDriver() != null) ||
                 (server.getDbUser() != null) ||
@@ -212,7 +218,31 @@ public class SetupPlatform extends AbstractMojo {
         if (!isCreatePlatform) {
             properties.setParam(SDKConstants.PROPERTY_VERSION, SDKConstants.WEBAPP_VERSIONS.get(server.getVersion()));
         }
+        String dbName = String.format(SDKConstants.DB_NAME_TEMPLATE, server.getServerId());
+        properties.setParam(SDKConstants.PROPERTY_DB_NAME, dbName);
         properties.apply();
+        String dbType = properties.getParam(SDKConstants.PROPERTY_DB_DRIVER);
+        if (dbType.equals(SDKConstants.DRIVER_MYSQL)) {
+            String uri = properties.getParam(SDKConstants.PROPERTY_DB_URI);
+            String user = properties.getParam(SDKConstants.PROPERTY_DB_USER);
+            String pass = properties.getParam(SDKConstants.PROPERTY_DB_PASS);
+            DBConnector connector = null;
+            try {
+                connector = new DBConnector(uri, user, pass, dbName);
+                connector.checkAndCreate();
+                connector.close();
+                getLog().info("Database configured successfully");
+            } catch (SQLException e) {
+                throw new MojoExecutionException(e.getMessage());
+            } finally {
+                if (connector != null) try {
+                    connector.close();
+                } catch (SQLException e) {
+                    getLog().error(e.getMessage());
+                }
+            }
+        }
+
         return serverPath.getPath();
     }
 

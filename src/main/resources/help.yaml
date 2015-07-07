@@ -75,6 +75,20 @@ help:
       - name: Dversion
         desc: Target version to upgrade
 
+  - name: reset
+    desc: Reset server to default state
+    options:
+      - name: Dserverid
+        desc: Server if of selected server
+      - name: Dfull
+        desc: Remove user modules if "true" or "yes" (default value - "false")
+
+  - name: delete
+    desc: Delete selected server
+    options:
+      - name: DserverId
+        desc: Server if of selected server
+
   - name: run
     desc: Start selected server
     options:

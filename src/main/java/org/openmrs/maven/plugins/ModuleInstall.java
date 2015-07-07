@@ -12,7 +12,7 @@ import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.utility.AttributeHelper;
 import org.openmrs.maven.plugins.utility.ConfigurationManager;
 import org.openmrs.maven.plugins.utility.SDKConstants;
-import org.openmrs.maven.plugins.utility.Version;
+import org.openmrs.maven.plugins.model.Version;
 
 import java.io.File;
 
@@ -24,7 +24,6 @@ import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
  */
 public class ModuleInstall extends AbstractMojo {
 
-    private static final String DEFAULT_FAIL_MESSAGE = "Server with such serverId is not exists";
     private static final String DEFAULT_OK_MESSAGE = "Module '%s' installed successfully";
     private static final String DEFAULT_UPDATE_MESSAGE = "Module '%s' was updated to version '%s'";
     private static final String TEMPLATE_UPDATE = "Module is installed already. Do you want to upgrade it to version '%s'?";
@@ -100,14 +99,18 @@ public class ModuleInstall extends AbstractMojo {
      */
     public void installModule(String serverId, String groupId, String artifactId, String version) throws MojoExecutionException, MojoFailureException {
         AttributeHelper helper = new AttributeHelper(prompter);
-        File serverPath = getServerPath(helper, serverId);
+        if (serverId == null) {
+            File currentProperties = helper.getCurrentServerPath(getLog());
+            if (currentProperties != null) serverId = currentProperties.getName();
+        }
+        File serverPath = helper.getServerPath(serverId);
         Artifact artifact = getArtifactForSelectedParameters(helper, groupId, artifactId, version);
         String originalId = artifact.getArtifactId();
         artifact.setArtifactId(artifact.getArtifactId() + "-omod");
         File modules = new File(serverPath, SDKConstants.OPENMRS_SERVER_MODULES);
+        modules.mkdirs();
         Element[] artifactItems = new Element[1];
         artifactItems[0] = artifact.toElement(modules.getPath());
-
         File[] listOfModules = modules.listFiles();
         boolean versionUpdated = false;
         boolean removed = false;
@@ -163,7 +166,7 @@ public class ModuleInstall extends AbstractMojo {
      * @return
      */
     public Artifact getArtifactForSelectedParameters(AttributeHelper helper, String groupId, String artifactId, String version) {
-        File pomFile = new File(System.getProperty("user.dir"), "pom.xml");
+        File pomFile = new File(System.getProperty("user.dir"), SDKConstants.OPENMRS_MODULE_POM);
         String moduleGroupId = null;
         String moduleArtifactId = null;
         String moduleVersion = null;
@@ -190,37 +193,5 @@ public class ModuleInstall extends AbstractMojo {
             }
         }
         return new Artifact(moduleArtifactId, moduleVersion, moduleGroupId);
-    }
-
-    /**
-     * Get path to server by serverId and prompt if missing
-     * @param helper
-     * @return
-     * @throws MojoFailureException
-     */
-    public File getServerPath(AttributeHelper helper, String serverId, String failureMessage) throws MojoFailureException {
-        File omrsHome = new File(System.getProperty("user.home"), SDKConstants.OPENMRS_SERVER_PATH);
-        String resultServerId = null;
-        try {
-            resultServerId = helper.promptForValueIfMissing(serverId, "serverId");
-        } catch (PrompterException e) {
-            getLog().error(e.getMessage());
-        }
-        File serverPath = new File(omrsHome, resultServerId);
-        if (!serverPath.exists()) {
-            throw new MojoFailureException(failureMessage);
-        }
-        return serverPath;
-    }
-
-    /**
-     * Get server with default failure message
-     * @param helper
-     * @param serverId
-     * @return
-     * @throws MojoFailureException
-     */
-    public File getServerPath(AttributeHelper helper, String serverId) throws MojoFailureException {
-        return getServerPath(helper, serverId, DEFAULT_FAIL_MESSAGE);
     }
 }

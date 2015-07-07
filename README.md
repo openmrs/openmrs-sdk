@@ -21,5 +21,9 @@ Options: serverId, groupId, artifactId
 Options: serverId, version
 * `upgrade-platform` - Upgrade platform server to selected version <br/>
 Options: serverId, version
+* `reset` - Reset server to default state (and drop db data) <br/>
+Options: serverId, full
+* `delete` - Delete server <br/>
+Options: serverId
 * `run` - Start server <br/>
 Options: serverId
