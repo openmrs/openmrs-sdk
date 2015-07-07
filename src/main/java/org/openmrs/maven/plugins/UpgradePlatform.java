@@ -95,7 +95,9 @@ public class UpgradePlatform extends AbstractMojo{
     private BuildPluginManager pluginManager;
 
     public void execute() throws MojoExecutionException, MojoFailureException {
-        upgradeServer(serverId, version, true);
+        final boolean isUpdatePlatform = true;
+        final boolean allowEqualVersion = false;
+        upgradeServer(serverId, version, isUpdatePlatform, allowEqualVersion);
     }
 
     /**
@@ -103,10 +105,11 @@ public class UpgradePlatform extends AbstractMojo{
      * @param serverId
      * @param version
      * @param isUpdateToPlatform
+     * @param allowEqualVersion
      * @throws MojoExecutionException
      * @throws MojoFailureException
      */
-    public void upgradeServer(String serverId, String version, boolean isUpdateToPlatform) throws MojoExecutionException, MojoFailureException {
+    public void upgradeServer(String serverId, String version, boolean isUpdateToPlatform, boolean allowEqualVersion) throws MojoExecutionException, MojoFailureException {
         AttributeHelper helper = new AttributeHelper(prompter);
         String resultVersion = null;
         String resultServer = null;
@@ -141,7 +144,7 @@ public class UpgradePlatform extends AbstractMojo{
             else if (platformVersion.higher(nextVersion)) {
                 throw new MojoExecutionException(String.format(TEMPLATE_DOWNGRADE, resultServer));
             }
-            else if (platformVersion.equal(nextVersion)) {
+            else if (platformVersion.equal(nextVersion) && (!allowEqualVersion)) {
                 getLog().info(String.format(TEMPLATE_SAME_VERSION, resultServer, resultVersion));
                 return;
             }
@@ -170,7 +173,7 @@ public class UpgradePlatform extends AbstractMojo{
                 else if (new Version(webapp).higher(new Version(targetWebApp)) || (platformVersion.higher(nextVersion))) {
                     throw new MojoExecutionException(String.format(TEMPLATE_DOWNGRADE, resultServer));
                 }
-                else if (new Version(webapp).equal(new Version(targetWebApp)) || (platformVersion.equal(nextVersion))) {
+                else if ((!allowEqualVersion) && ((new Version(webapp).equal(new Version(targetWebApp)) || (platformVersion.equal(nextVersion))))) {
                     getLog().info(String.format(TEMPLATE_SAME_VERSION, resultServer, resultVersion));
                     return;
                 }
@@ -198,7 +201,10 @@ public class UpgradePlatform extends AbstractMojo{
                 .build();
         setupPlatform.setup(server, isUpdateToPlatform);
         removeFiles(listFilesToRemove);
-        getLog().info(String.format(TEMPLATE_SUCCESS, resultServer, platform, resultVersion));
+        // if this is not "reset" server
+        if (!allowEqualVersion) {
+            getLog().info(String.format(TEMPLATE_SUCCESS, resultServer, platform, resultVersion));
+        }
     }
 
     /**

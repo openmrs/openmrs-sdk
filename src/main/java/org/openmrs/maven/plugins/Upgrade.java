@@ -63,7 +63,9 @@ public class Upgrade extends AbstractMojo{
 
     public void execute() throws MojoExecutionException, MojoFailureException {
         UpgradePlatform upgrader = new UpgradePlatform(mavenProject, mavenSession, pluginManager, prompter);
-        upgrader.upgradeServer(serverId, version, false);
+        final boolean isUpdateToPlatform = false;
+        final boolean allowEqualVersion = false;
+        upgrader.upgradeServer(serverId, version, isUpdateToPlatform, allowEqualVersion);
     }
 
 
