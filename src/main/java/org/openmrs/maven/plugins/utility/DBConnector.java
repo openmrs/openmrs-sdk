@@ -16,9 +16,31 @@ public class DBConnector {
         this.dbName = dbName;
     }
 
+    /**
+     * Create db if not exists
+     * @throws SQLException
+     */
     public void checkAndCreate() throws SQLException {
         Statement stmt = conn.createStatement();
         String query = String.format("create database if not exists `%s` default character set utf8", dbName);
-        stmt.executeQuery(query);
+        stmt.executeUpdate(query);
+    }
+
+    /**
+     * Drop database
+     * @throws SQLException
+     */
+    public void dropDatabase() throws SQLException {
+        Statement stmt = conn.createStatement();
+        String query = String.format("drop database if exists `%s`", dbName);
+        stmt.executeUpdate(query);
+    }
+
+    /**
+     * Close connection
+     * @throws SQLException
+     */
+    public void close() throws SQLException {
+        if (conn != null) conn.close();
     }
 }

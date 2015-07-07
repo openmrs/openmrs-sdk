@@ -112,13 +112,8 @@ public class UpgradePlatform extends AbstractMojo{
         String resultServer = null;
         // check if we are inside the some server folder
         if (serverId == null) {
-            File currentPath = new File(System.getProperty("user.dir"));
-            File currentPathProperties = new File(currentPath, SDKConstants.OPENMRS_SERVER_PROPERTIES);
-            File currentParentProperties = new File(currentPath.getParentFile(), SDKConstants.OPENMRS_SERVER_PROPERTIES);
-            if (currentPathProperties.exists() || currentParentProperties.exists()) {
-                if (currentPathProperties.exists()) serverId = currentPath.getName();
-                else serverId = currentPath.getParent();
-            }
+            File currentProperties = helper.getCurrentServerPath(getLog());
+            if (currentProperties != null) serverId = currentProperties.getName();
         }
         try {
             resultServer = helper.promptForValueIfMissing(serverId, "serverId");

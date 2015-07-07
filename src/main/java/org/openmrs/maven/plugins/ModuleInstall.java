@@ -99,14 +99,18 @@ public class ModuleInstall extends AbstractMojo {
      */
     public void installModule(String serverId, String groupId, String artifactId, String version) throws MojoExecutionException, MojoFailureException {
         AttributeHelper helper = new AttributeHelper(prompter);
+        if (serverId == null) {
+            File currentProperties = helper.getCurrentServerPath(getLog());
+            if (currentProperties != null) serverId = currentProperties.getName();
+        }
         File serverPath = helper.getServerPath(serverId);
         Artifact artifact = getArtifactForSelectedParameters(helper, groupId, artifactId, version);
         String originalId = artifact.getArtifactId();
         artifact.setArtifactId(artifact.getArtifactId() + "-omod");
         File modules = new File(serverPath, SDKConstants.OPENMRS_SERVER_MODULES);
+        modules.mkdirs();
         Element[] artifactItems = new Element[1];
         artifactItems[0] = artifact.toElement(modules.getPath());
-
         File[] listOfModules = modules.listFiles();
         boolean versionUpdated = false;
         boolean removed = false;
@@ -162,7 +166,7 @@ public class ModuleInstall extends AbstractMojo {
      * @return
      */
     public Artifact getArtifactForSelectedParameters(AttributeHelper helper, String groupId, String artifactId, String version) {
-        File pomFile = new File(System.getProperty("user.dir"), "pom.xml");
+        File pomFile = new File(System.getProperty("user.dir"), SDKConstants.OPENMRS_MODULE_POM);
         String moduleGroupId = null;
         String moduleArtifactId = null;
         String moduleVersion = null;

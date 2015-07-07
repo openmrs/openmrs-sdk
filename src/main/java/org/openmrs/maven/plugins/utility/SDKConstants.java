@@ -20,6 +20,7 @@ public class SDKConstants {
     public static final String PLUGIN_JETTY_ARTIFACT_ID = "jetty-maven-plugin";
     public static final String PLUGIN_JETTY_VERSION = "9.0.4.v20130625";
     // attributes
+    public static final String PROPERTY_SERVER_ID = "server.id";
     public static final String PROPERTY_DB_DRIVER = "connection.driver_class";
     public static final String PROPERTY_DB_USER = "connection.username";
     public static final String PROPERTY_DB_PASS = "connection.password";
@@ -42,11 +43,12 @@ public class SDKConstants {
     public static final String WIZARD_ARTIFACT_ID = "module-wizard-plugin";
     public static final String WIZARD_VERSION = "1.1.1";
     // default path to projects
+    public static final String OPENMRS_MODULE_POM = "pom.xml";
     public static final String OPENMRS_SERVER_PATH = "openmrs";
     public static final String OPENMRS_SERVER_PROPERTIES = "installation.h2.properties";
     public static final String OPENMRS_SERVER_MODULES = "modules";
     // dbUri for different db
-    public static final String URI_MYSQL = "jdbc:mysql://localhost:3131";
+    public static final String URI_MYSQL = "jdbc:mysql://localhost:3306";
     public static final String URI_POSTGRESQL = "jdbc:postgresql://localhost:5740";
     public static final String URI_H2 = "jdbc:h2://localhost";
     // dbDriver class for different db

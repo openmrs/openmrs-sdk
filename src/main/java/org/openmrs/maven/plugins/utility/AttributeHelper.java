@@ -1,6 +1,7 @@
 package org.openmrs.maven.plugins.utility;
 
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugin.logging.Log;
 import org.codehaus.plexus.components.interactivity.Prompter;
 import org.codehaus.plexus.components.interactivity.PrompterException;
 
@@ -82,6 +83,16 @@ public class AttributeHelper {
     }
 
     /**
+     * Check if value is submit
+     * @param value
+     * @return
+     */
+    public boolean checkYes(String value) {
+        String val = value.toLowerCase();
+        return val.equals("true") || val.equals("yes");
+    }
+
+    /**
      * Get path to server by serverId and prompt if missing
      * @return
      * @throws MojoFailureException
@@ -99,6 +110,25 @@ public class AttributeHelper {
             throw new MojoFailureException(failureMessage);
         }
         return serverPath;
+    }
+
+    /**
+     * Check if we are currenly inside "server" folder and get path
+     * @param log
+     * @return
+     */
+    public File getCurrentServerPath(Log log) {
+        File currentFolder = new File(System.getProperty("user.dir"));
+        File current = new File(currentFolder, SDKConstants.OPENMRS_SERVER_PROPERTIES);
+        File parent = new File(currentFolder.getParent(), SDKConstants.OPENMRS_SERVER_PROPERTIES);
+        File propertiesFile = null;
+        if (current.exists()) propertiesFile = current;
+        else if (parent.exists()) propertiesFile = parent;
+        if (propertiesFile != null) {
+            PropertyManager properties = new PropertyManager(propertiesFile.getPath(), log);
+            if (properties.getParam(SDKConstants.PROPERTY_SERVER_ID) != null) return propertiesFile.getParentFile();
+        }
+        return null;
     }
 
     /**

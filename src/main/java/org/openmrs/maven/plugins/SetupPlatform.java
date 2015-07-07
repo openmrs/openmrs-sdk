@@ -150,7 +150,10 @@ public class SetupPlatform extends AbstractMojo {
         File serverPath = new File(openMRSPath, server.getServerId());
         File propertyPath = new File(serverPath, SDKConstants.OPENMRS_SERVER_PROPERTIES);
         if (propertyPath.exists()) {
-            throw new MojoExecutionException("Server with same id already created");
+            PropertyManager props = new PropertyManager(propertyPath.getPath(), getLog());
+            if (props.getParam(SDKConstants.PROPERTY_SERVER_ID) != null) {
+                throw new MojoExecutionException("Server with same id already created");
+            }
         }
         try {
             String defaultV = isCreatePlatform ? DEFAULT_PLATFORM_VERSION : DEFAULT_VERSION;
@@ -177,6 +180,7 @@ public class SetupPlatform extends AbstractMojo {
         File propertiesFile = new File(serverPath.getPath(), SDKConstants.OPENMRS_SERVER_PROPERTIES);
         PropertyManager properties = new PropertyManager(propertiesFile.getPath(), getLog());
         properties.setDefaults();
+        properties.setParam(SDKConstants.PROPERTY_SERVER_ID, server.getServerId());
         // configure db properties
         if ((server.getDbDriver() != null) ||
                 (server.getDbUser() != null) ||
@@ -222,12 +226,20 @@ public class SetupPlatform extends AbstractMojo {
             String uri = properties.getParam(SDKConstants.PROPERTY_DB_URI);
             String user = properties.getParam(SDKConstants.PROPERTY_DB_USER);
             String pass = properties.getParam(SDKConstants.PROPERTY_DB_PASS);
+            DBConnector connector = null;
             try {
-                DBConnector connector = new DBConnector(uri, user, pass, dbName);
+                connector = new DBConnector(uri, user, pass, dbName);
                 connector.checkAndCreate();
+                connector.close();
                 getLog().info("Database configured successfully");
             } catch (SQLException e) {
-                getLog().error(e.getMessage());
+                throw new MojoExecutionException(e.getMessage());
+            } finally {
+                if (connector != null) try {
+                    connector.close();
+                } catch (SQLException e) {
+                    getLog().error(e.getMessage());
+                }
             }
         }
 
