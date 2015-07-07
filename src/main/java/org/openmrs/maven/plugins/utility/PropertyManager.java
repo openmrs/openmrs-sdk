@@ -1,6 +1,7 @@
 package org.openmrs.maven.plugins.utility;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 
 import java.io.File;
@@ -15,7 +16,6 @@ import java.util.Properties;
 public class PropertyManager {
     private Properties properties;
     private String path;
-    private Log log;
 
     private PropertyManager() { properties = new Properties(); }
 
@@ -23,9 +23,8 @@ public class PropertyManager {
      * Initialize
      * @param filePath - .properties file path
      */
-    public PropertyManager(String filePath, Log log) {
+    public PropertyManager(String filePath) throws MojoExecutionException {
         this();
-        this.log = log;
         this.path = filePath;
         File config = new File(path);
         if (config.exists()) {
@@ -35,7 +34,7 @@ public class PropertyManager {
                 properties.load(in);
                 in.close();
             } catch (IOException e) {
-                log.error("Error while reading properties");
+                throw new MojoExecutionException(e.getMessage());
             } finally {
                 IOUtils.closeQuietly(in);
             }
@@ -83,16 +82,15 @@ public class PropertyManager {
      * Write properties to file
      * @param path
      */
-    public void apply(String path) {
+    public void apply(String path) throws MojoExecutionException {
     	replaceDbNameInDbUri();
-    	
         FileOutputStream out = null;
         try {
             out = new FileOutputStream(path);
             properties.store(out, null);
             out.close();
         } catch (IOException e) {
-            log.error(e.getMessage());
+            throw new MojoExecutionException(e.getMessage());
         } finally {
             IOUtils.closeQuietly(out);
         }
@@ -111,7 +109,7 @@ public class PropertyManager {
     /**
      * Save properties
      */
-    public void apply() {
+    public void apply() throws MojoExecutionException {
         apply(path);
     }
 
@@ -120,7 +118,7 @@ public class PropertyManager {
      * @param key - property key
      * @param value - value to set
      */
-    public void applyParam(String key, String value) {
+    public void applyParam(String key, String value) throws MojoExecutionException {
         setParam(key, value);
         apply();
     }

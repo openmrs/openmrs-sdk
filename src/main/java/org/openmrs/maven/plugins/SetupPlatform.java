@@ -150,7 +150,7 @@ public class SetupPlatform extends AbstractMojo {
         File serverPath = new File(openMRSPath, server.getServerId());
         File propertyPath = new File(serverPath, SDKConstants.OPENMRS_SERVER_PROPERTIES);
         if (propertyPath.exists()) {
-            PropertyManager props = new PropertyManager(propertyPath.getPath(), getLog());
+            PropertyManager props = new PropertyManager(propertyPath.getPath());
             if (props.getParam(SDKConstants.PROPERTY_SERVER_ID) != null) {
                 throw new MojoExecutionException("Server with same id already created");
             }
@@ -178,7 +178,7 @@ public class SetupPlatform extends AbstractMojo {
         getLog().info("Server created successfully, path: " + serverPath.getPath());
 
         File propertiesFile = new File(serverPath.getPath(), SDKConstants.OPENMRS_SERVER_PROPERTIES);
-        PropertyManager properties = new PropertyManager(propertiesFile.getPath(), getLog());
+        PropertyManager properties = new PropertyManager(propertiesFile.getPath());
         properties.setDefaults();
         properties.setParam(SDKConstants.PROPERTY_SERVER_ID, server.getServerId());
         // configure db properties

@@ -3,6 +3,7 @@ package org.openmrs.maven.plugins.utility;
 import org.apache.commons.io.IOUtils;
 import org.apache.maven.model.*;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
+import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 
@@ -27,7 +28,7 @@ public class ConfigurationManager {
      * Create new configuration object by the path
      * @param pomFile - path to pom
      */
-    public ConfigurationManager(String pomFile, Log log) {
+    public ConfigurationManager(String pomFile) throws MojoExecutionException {
         this();
         File conf = new File(pomFile);
         FileReader reader = null;
@@ -37,9 +38,9 @@ public class ConfigurationManager {
                 model = new MavenXpp3Reader().read(reader);
                 reader.close();
             } catch (IOException e) {
-                log.error(e.getMessage());
+                throw new MojoExecutionException(e.getMessage());
             } catch (XmlPullParserException e) {
-                log.error(e.getMessage());
+                throw new MojoExecutionException(e.getMessage());
             } finally {
                 IOUtils.closeQuietly(reader);
             }
