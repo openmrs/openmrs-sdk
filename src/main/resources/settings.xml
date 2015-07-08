@@ -12,26 +12,26 @@
         <profile>
             <id>openmrs</id>
             <properties>
-                <archetypeCatalog>%s/archetype-catalog.xml</archetypeCatalog>
-                <archetypeRepository>%s</archetypeRepository>
+                <archetypeCatalog>http://mavenrepo.openmrs.org/nexus/content/repositories/public/archetype-catalog.xml</archetypeCatalog>
+                <archetypeRepository>http://mavenrepo.openmrs.org/nexus/content/repositories/public</archetypeRepository>
             </properties>
             <repositories>
                 <repository>
                     <id>openmrs-repo</id>
                     <name>OpenMRS Nexus Repository</name>
-                    <url>%s</url>
+                    <url>http://mavenrepo.openmrs.org/nexus/content/repositories/public</url>
                 </repository>
                 <repository>
                     <id>openmrs-repo-thirdparty</id>
                     <name>OpenMRS Thirdparty Nexus Repository</name>
-                    <url>%s/thirdparty</url>
+                    <url>http://mavenrepo.openmrs.org/nexus/content/repositories/thirdparty</url>
                 </repository>
             </repositories>
             <pluginRepositories>
                 <pluginRepository>
                     <id>openmrs-repo</id>
                     <name>OpenMRS Nexus Repository</name>
-                    <url>%s</url>
+                    <url>http://mavenrepo.openmrs.org/nexus/content/repositories/public</url>
                     <snapshots>
                         <enabled>false</enabled>
                     </snapshots>
