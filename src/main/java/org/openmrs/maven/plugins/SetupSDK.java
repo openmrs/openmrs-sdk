@@ -1,5 +1,6 @@
 package org.openmrs.maven.plugins;
 
+import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -19,8 +20,17 @@ public class SetupSDK extends AbstractMojo{
     private static final String SUCCESS_TEMPLATE = "SDK installed successfully, settings file: %s";
     private static final String SDK_INFO = "Now you can use sdk: mvn openmrs-sdk:<task_name>";
 
+    /**
+     * The current Maven session.
+     *
+     * @parameter expression="${session}"
+     * @required
+     */
+    private MavenSession mavenSession;
+
     public void execute() throws MojoExecutionException, MojoFailureException {
-        File mavenHome = new File(System.getProperty("user.home"), SDKConstants.MAVEN_SETTINGS_FOLDER);
+        String localRepository = mavenSession.getSettings().getLocalRepository();
+        File mavenHome = new File(localRepository).getParentFile();
         mavenHome.mkdirs();
         File mavenSettings = new File(mavenHome, SDKConstants.MAVEN_SETTINGS);
         try {
