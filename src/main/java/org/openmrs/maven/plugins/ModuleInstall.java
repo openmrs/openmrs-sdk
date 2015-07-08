@@ -100,7 +100,7 @@ public class ModuleInstall extends AbstractMojo {
     public void installModule(String serverId, String groupId, String artifactId, String version) throws MojoExecutionException, MojoFailureException {
         AttributeHelper helper = new AttributeHelper(prompter);
         if (serverId == null) {
-            File currentProperties = helper.getCurrentServerPath(getLog());
+            File currentProperties = helper.getCurrentServerPath();
             if (currentProperties != null) serverId = currentProperties.getName();
         }
         File serverPath = helper.getServerPath(serverId);

@@ -3,6 +3,7 @@ package org.openmrs.maven.plugins.utility;
 import org.apache.commons.io.IOUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.settings.Profile;
+import org.apache.maven.settings.Repository;
 import org.apache.maven.settings.Settings;
 import org.apache.maven.settings.io.xpp3.SettingsXpp3Reader;
 import org.apache.maven.settings.io.xpp3.SettingsXpp3Writer;
@@ -43,8 +44,9 @@ public class SettingsManager {
     /**
      * Update settings to default settings
      * @param other
+     * @param repo
      */
-    public void updateSettings(Settings other) {
+    public void updateSettings(Settings other, String repo) {
         if (settings == null) {
             settings = new Settings();
         }
@@ -62,7 +64,7 @@ public class SettingsManager {
         if (!settings.getActiveProfiles().contains(activeProfile)) {
             settings.addActiveProfile(activeProfile);
         }
-        Profile profile = other.getProfiles().get(0);
+        Profile profile = configureProfile(other.getProfiles().get(0), repo);
         if (settings.getProfiles() == null) {
             settings.setProfiles(new ArrayList<Profile>());
         }
@@ -103,5 +105,35 @@ public class SettingsManager {
                 IOUtils.closeQuietly(stream);
             }
         }
+    }
+
+    /**
+     * Configure profile template
+     * @param p
+     * @return
+     */
+    private Profile configureProfile(Profile p, String url) {
+        final String archetypeCatalog = "archetypeCatalog";
+        final String archetypeRepo = "archetypeRepository";
+        p.getProperties().setProperty(archetypeCatalog, String.format(p.getProperties().getProperty(archetypeCatalog), url));
+        p.getProperties().setProperty(archetypeRepo, String.format(p.getProperties().getProperty(archetypeRepo), url));
+        final String openmrsRepoId = "openmrs-repo";
+        final String openmrsThirdpartyId = "openmrs-repo-thirdparty";
+        List<Repository> repos = p.getRepositories();
+        for (Repository r: repos) {
+            if (r.getId().equals(openmrsRepoId)) {
+                r.setUrl(String.format(r.getUrl(), url));
+            }
+            else if (r.getId().equals(openmrsThirdpartyId)) {
+                String root = url.substring(0, url.lastIndexOf("/"));
+                r.setUrl(String.format(r.getUrl(), root));
+            }
+        }
+        for (Repository r: p.getPluginRepositories()) {
+            if (r.getId().equals(openmrsRepoId)) {
+                r.setUrl(String.format(r.getUrl(), url));
+            }
+        }
+        return p;
     }
 }

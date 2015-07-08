@@ -40,7 +40,7 @@ public class ModuleUninstall extends AbstractMojo {
         ModuleInstall installer = new ModuleInstall(prompter);
         AttributeHelper helper = new AttributeHelper(prompter);
         if (serverId == null) {
-            File currentProperties = helper.getCurrentServerPath(getLog());
+            File currentProperties = helper.getCurrentServerPath();
             if (currentProperties != null) serverId = currentProperties.getName();
         }
         File serverPath = helper.getServerPath(serverId);
