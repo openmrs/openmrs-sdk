@@ -50,10 +50,7 @@ public class CreatePlatformModule extends AbstractMojo{
                 ),
                 goal("generate"),
                 configuration(
-                        element(name("archetypeCatalog"), SDKConstants.ARCH_CATALOG),
-                        element(name("archetypeGroupId"), SDKConstants.ARCH_MODULE_GROUP_ID),
-                        element(name("archetypeArtifactId"), SDKConstants.ARCH_MODULE_ARTIFACT_ID),
-                        element(name("archetypeVersion"), SDKConstants.ARCH_MODULE_VERSION)
+                        element(name("archetypeCatalog"), SDKConstants.ARCH_CATALOG)
                 ),
                 executionEnvironment(mavenProject, mavenSession, pluginManager)
         );
