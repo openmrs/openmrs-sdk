@@ -1,5 +1,6 @@
 package org.openmrs.maven.plugins;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.BuildPluginManager;
@@ -15,6 +16,7 @@ import org.openmrs.maven.plugins.utility.SDKConstants;
 import org.openmrs.maven.plugins.model.Version;
 
 import java.io.File;
+import java.util.Arrays;
 
 import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
 
@@ -116,9 +118,10 @@ public class ModuleInstall extends AbstractMojo {
         boolean removed = false;
         for (File itemModule : listOfModules) {
             String[] parts = itemModule.getName().split("-");
+            String oldV = StringUtils.join(Arrays.copyOfRange(parts, 1, parts.length), "-");
             if (originalId.equals(parts[0])) {
                 try {
-                    Version oldVersion = new Version(parts[1].substring(0, parts[1].lastIndexOf('.')));
+                    Version oldVersion = new Version(oldV.substring(0, oldV.lastIndexOf('.')));
                     Version newVersion = new Version(artifact.getVersion());
                     if (oldVersion.higher(newVersion)) {
                         throw new MojoExecutionException(String.format(TEMPLATE_DOWNGRADE, oldVersion.toString(), newVersion.toString()));
