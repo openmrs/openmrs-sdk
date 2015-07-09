@@ -37,7 +37,7 @@ public class SDKConstants {
     // archetype module options
     public static final String ARCH_MODULE_GROUP_ID = "org.openmrs.maven.archetypes";
     public static final String ARCH_MODULE_ARTIFACT_ID = "maven-archetype-openmrs-module-2.x";
-    public static final String ARCH_MODULE_VERSION = "1.1";
+    public static final String ARCH_MODULE_VERSION = "1.2";
     // plugin module wizard
     public static final String WIZARD_GROUP_ID = "org.openmrs.maven.plugins";
     public static final String WIZARD_ARTIFACT_ID = "module-wizard-plugin";
