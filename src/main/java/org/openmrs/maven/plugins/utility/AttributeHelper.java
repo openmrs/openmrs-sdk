@@ -1,5 +1,6 @@
 package org.openmrs.maven.plugins.utility;
 
+import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugin.logging.Log;
 import org.codehaus.plexus.components.interactivity.Prompter;
@@ -114,10 +115,9 @@ public class AttributeHelper {
 
     /**
      * Check if we are currenly inside "server" folder and get path
-     * @param log
      * @return
      */
-    public File getCurrentServerPath(Log log) {
+    public File getCurrentServerPath() throws MojoExecutionException {
         File currentFolder = new File(System.getProperty("user.dir"));
         File current = new File(currentFolder, SDKConstants.OPENMRS_SERVER_PROPERTIES);
         File parent = new File(currentFolder.getParent(), SDKConstants.OPENMRS_SERVER_PROPERTIES);
@@ -125,7 +125,7 @@ public class AttributeHelper {
         if (current.exists()) propertiesFile = current;
         else if (parent.exists()) propertiesFile = parent;
         if (propertiesFile != null) {
-            PropertyManager properties = new PropertyManager(propertiesFile.getPath(), log);
+            PropertyManager properties = new PropertyManager(propertiesFile.getPath());
             if (properties.getParam(SDKConstants.PROPERTY_SERVER_ID) != null) return propertiesFile.getParentFile();
         }
         return null;

@@ -115,7 +115,7 @@ public class UpgradePlatform extends AbstractMojo{
         String resultServer = null;
         // check if we are inside the some server folder
         if (serverId == null) {
-            File currentProperties = helper.getCurrentServerPath(getLog());
+            File currentProperties = helper.getCurrentServerPath();
             if (currentProperties != null) serverId = currentProperties.getName();
         }
         try {
@@ -127,7 +127,7 @@ public class UpgradePlatform extends AbstractMojo{
 
         File serverPath = helper.getServerPath(resultServer);
         File propertyFile = new File(serverPath, SDKConstants.OPENMRS_SERVER_PROPERTIES);
-        PropertyManager properties = new PropertyManager(propertyFile.getPath(), getLog());
+        PropertyManager properties = new PropertyManager(propertyFile.getPath());
         String webapp = properties.getParam(SDKConstants.PROPERTY_VERSION);
         String platform = properties.getParam(SDKConstants.PROPERTY_PLATFORM);
 

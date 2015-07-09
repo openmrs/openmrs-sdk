@@ -1,8 +1,15 @@
 # openmrs-contrib-sdk-maven-plugin
-A maven plugin for the OpenMRS SDK
+A maven plugin for the OpenMRS 2.x SDK
+
+## Requirements
+ * Maven 3.x
+ 
+## Installation
+For installing sdk, just run: <br/>
+
+    mvn org.openmrs.maven.plugins:openmrs-sdk-maven-plugin:setup-sdk -Dmaven.remote.repo=http://mavenrepo.openmrs.org/nexus/content/repositories/public
 
 ## List of supported commands:
-
 All commands can be executed by `mvn openmrs-sdk:<command>`
 
 * `create-module` - Create OpenMRS module <br/>

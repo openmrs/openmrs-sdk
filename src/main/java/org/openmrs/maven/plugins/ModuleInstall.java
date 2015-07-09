@@ -100,7 +100,7 @@ public class ModuleInstall extends AbstractMojo {
     public void installModule(String serverId, String groupId, String artifactId, String version) throws MojoExecutionException, MojoFailureException {
         AttributeHelper helper = new AttributeHelper(prompter);
         if (serverId == null) {
-            File currentProperties = helper.getCurrentServerPath(getLog());
+            File currentProperties = helper.getCurrentServerPath();
             if (currentProperties != null) serverId = currentProperties.getName();
         }
         File serverPath = helper.getServerPath(serverId);
@@ -165,13 +165,13 @@ public class ModuleInstall extends AbstractMojo {
      * @param version
      * @return
      */
-    public Artifact getArtifactForSelectedParameters(AttributeHelper helper, String groupId, String artifactId, String version) {
+    public Artifact getArtifactForSelectedParameters(AttributeHelper helper, String groupId, String artifactId, String version) throws MojoExecutionException {
         File pomFile = new File(System.getProperty("user.dir"), SDKConstants.OPENMRS_MODULE_POM);
         String moduleGroupId = null;
         String moduleArtifactId = null;
         String moduleVersion = null;
         if (pomFile.exists() && (artifactId == null)) {
-            ConfigurationManager manager = new ConfigurationManager(pomFile.getPath(), getLog());
+            ConfigurationManager manager = new ConfigurationManager(pomFile.getPath());
             if (manager.getParent() != null) {
                 moduleGroupId = manager.getParent().getGroupId();
                 moduleArtifactId = manager.getParent().getArtifactId();

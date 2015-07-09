@@ -55,6 +55,8 @@ public class SDKConstants {
     public static final String DRIVER_MYSQL = "com.mysql.jdbc.Driver";
     public static final String DRIVER_POSTGRESQL = "org.postgresql.Driver";
     public static final String DRIVER_H2 = "org.h2.Driver";
+    // default settings path
+    public static final String MAVEN_SETTINGS = "settings.xml";
     // non-platform web app versions
     public static final Map<String,String> WEBAPP_VERSIONS = new HashMap<String, String>() {{
         put("2.0", "1.9.7");
