@@ -22,6 +22,7 @@ public class Help extends AbstractMojo {
 
     private static final String HELP_FILE = "help.yaml";
     private static final String DESC_MESSAGE = "Description: ";
+    private static final String INFO = "OpenMRS SDK %s";
 
     public void execute() throws MojoExecutionException, MojoFailureException {
         InputStream stream = getClass().getClassLoader().getResourceAsStream(HELP_FILE);
@@ -30,8 +31,10 @@ public class Help extends AbstractMojo {
         try {
             Map keys = (Map) dec.readObject();
             List l = (List) keys.get("help");
-            String printVersion = String.format("OpenMRS SDK plugin version %s", keys.get("version"));
-            getLog().info(printVersion);
+            String printVersion = String.format(INFO, keys.get("version"));
+            PrintWriter writer = new PrintWriter(System.out);
+            writer.println(printVersion);
+            writer.flush();
             if (l == null) {
                 throw new MojoExecutionException("Error during reading help data");
             }
