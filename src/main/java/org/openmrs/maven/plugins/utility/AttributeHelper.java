@@ -1,5 +1,6 @@
 package org.openmrs.maven.plugins.utility;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugin.logging.Log;
@@ -7,16 +8,19 @@ import org.codehaus.plexus.components.interactivity.Prompter;
 import org.codehaus.plexus.components.interactivity.PrompterException;
 
 import java.io.File;
+import java.util.*;
 
 /**
  * Class for attribute helper functions
  */
 public class AttributeHelper {
     private static final String EMPTY_STRING = "";
+    private static final String NONE = "(none)";
     private static final String DEFAULT_SERVER_NAME = "server";
     private static final String DEFAULT_VALUE_TMPL = "Define value for property '%s'";
     private static final String DEFAULT_VALUE_TMPL_WITH_DEFAULT = "Define value for property '%s': (default: '%s')";
     private static final String DEFAULT_FAIL_MESSAGE = "Server with such serverId is not exists";
+    private static final String INVALID_SERVER = "Invalid server Id";
     private static final String YESNO = " [Y/N]";
 
     private Prompter prompter;
@@ -63,6 +67,23 @@ public class AttributeHelper {
     }
 
     /**
+     * Prompt for a value with list of proposed values
+     * @param value
+     * @param parameterName
+     * @param values
+     * @return value
+     * @throws PrompterException
+     */
+    public String promptForValueWithDefaultList(String value, String parameterName, List<String> values) throws PrompterException {
+        if (value != null) return value;
+        String defaultValue = values.size() > 0 ? values.get(0) : NONE;
+        final String text = DEFAULT_VALUE_TMPL_WITH_DEFAULT + " (possible: %s)";
+        String val = prompter.prompt(String.format(text, parameterName, defaultValue, StringUtils.join(values.toArray(), ", ")));
+        if (val.equals(EMPTY_STRING)) val = defaultValue;
+        return val;
+    }
+
+    /**
      * Prompt for a value if it not set, and default value is NOT set
      * @param value
      * @param parameterName
@@ -102,9 +123,13 @@ public class AttributeHelper {
         File omrsHome = new File(System.getProperty("user.home"), SDKConstants.OPENMRS_SERVER_PATH);
         String resultServerId = null;
         try {
-            resultServerId = promptForValueIfMissing(serverId, "serverId");
+            List<String> servers = getListOf5RecentServers();
+            resultServerId = promptForValueWithDefaultList(serverId, "serverId", servers);
         } catch (PrompterException e) {
             throw new MojoFailureException(e.getMessage());
+        }
+        if (resultServerId.equals(NONE)) {
+            throw new MojoFailureException(INVALID_SERVER);
         }
         File serverPath = new File(omrsHome, resultServerId);
         if (!serverPath.exists()) {
@@ -139,5 +164,22 @@ public class AttributeHelper {
      */
     public File getServerPath(String serverId) throws MojoFailureException {
         return getServerPath(serverId, DEFAULT_FAIL_MESSAGE);
+    }
+
+    /**
+     * Get 5 last modified servers
+     * @return
+     */
+    public List<String> getListOf5RecentServers() {
+        final int count = 5;
+        String home = System.getProperty("user.home");
+        File openMRS = new File(home, SDKConstants.OPENMRS_SERVER_PATH);
+        Map<Long, String> sortedMap = new TreeMap<Long, String>(Collections.reverseOrder());
+        File [] list = (openMRS.listFiles() == null) ? new File[0] : openMRS.listFiles();
+        for (File f: list) {
+            sortedMap.put(f.lastModified(), f.getName());
+        }
+        int length = sortedMap.size() < count ? sortedMap.size() : count;
+        return new ArrayList<String>(sortedMap.values()).subList(0, length);
     }
 }
