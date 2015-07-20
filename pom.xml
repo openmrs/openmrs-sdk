@@ -1,13 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>org.openmrs.maven.plugins</groupId>
 	<artifactId>openmrs-sdk-maven-plugin</artifactId>
 	<packaging>maven-plugin</packaging>
-	<version>2.0-beta-SNAPSHOT</version>
+	<version>2.0-beta</version>
 
 	<name>OpenMRS SDK Maven Plugin</name>
 	<description>OpenMRS SDK allows for rapid development of OpenMRS modules.</description>
@@ -39,7 +38,7 @@
 		<connection>scm:git:https://github.com/openmrs/openmrs-contrib-sdk-maven-plugin</connection>
 		<developerConnection>scm:git:https://github.com/openmrs/openmrs-contrib-sdk-maven-plugin</developerConnection>
 		<url>https://github.com/openmrs/openmrs-contrib-sdk-maven-plugin</url>
-		<tag>HEAD</tag>
+		<tag>2.0-beta</tag>
 	</scm>
 
 
