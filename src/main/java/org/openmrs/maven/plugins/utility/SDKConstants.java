@@ -57,6 +57,7 @@ public class SDKConstants {
     public static final String DRIVER_H2 = "org.h2.Driver";
     // default settings path
     public static final String MAVEN_SETTINGS = "settings.xml";
+    public static final String TMP = "tmp";
     // non-platform web app versions
     public static final Map<String,String> WEBAPP_VERSIONS = new HashMap<String, String>() {{
         put("2.0", "1.9.7");
@@ -210,5 +211,14 @@ public class SDKConstants {
             add(new Artifact("openmrs-webapp", webAppVersion, Artifact.GROUP_WEB, Artifact.TYPE_WAR));
             add(new Artifact("h2", "1.2.135", Artifact.GROUP_H2, Artifact.TYPE_JAR));
         }};
+    }
+
+    /**
+     * Get module for downloading distro
+     * @param version - distro (module) version
+     * @return
+     */
+    public static Artifact getReferenceModule(String version) {
+        return new Artifact("referenceapplication-package", version, Artifact.GROUP_DISTRO, Artifact.TYPE_ZIP).putClassifier("distro");
     }
 }

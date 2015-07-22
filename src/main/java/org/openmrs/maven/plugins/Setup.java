@@ -109,7 +109,7 @@ public class Setup extends AbstractMojo {
                         .setInteractiveMode(interactiveMode)
                         .build();
         // setup non-platform server
-        String serverPath = configurator.setup(server, false);
+        String serverPath = configurator.setup(server, false, true);
         getLog().info("Server configured successfully, path: " + serverPath);
     }
 }

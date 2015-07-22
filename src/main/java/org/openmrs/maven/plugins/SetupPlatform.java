@@ -1,5 +1,6 @@
 package org.openmrs.maven.plugins;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.BuildPluginManager;
@@ -9,14 +10,19 @@ import org.codehaus.plexus.components.interactivity.Prompter;
 import org.codehaus.plexus.components.interactivity.PrompterException;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.Server;
+import org.openmrs.maven.plugins.model.Version;
 import org.openmrs.maven.plugins.utility.AttributeHelper;
 import org.openmrs.maven.plugins.utility.DBConnector;
 import org.openmrs.maven.plugins.utility.PropertyManager;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 
 import java.io.File;
+import java.io.IOException;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
 
@@ -137,9 +143,10 @@ public class SetupPlatform extends AbstractMojo {
      * Create and setup server with following parameters
      * @param server - server instance
      * @param isCreatePlatform - flag for platform setup
+     * @param isCopyDependencies - flag for executing depencency plugin for OpenMRS 2.3 and higher
      * @throws MojoExecutionException
      */
-    public String setup(Server server, Boolean isCreatePlatform) throws MojoExecutionException {
+    public String setup(Server server, boolean isCreatePlatform, boolean isCopyDependencies) throws MojoExecutionException {
         AttributeHelper helper = new AttributeHelper(prompter);
         File openMRSPath = new File(System.getProperty("user.home"), SDKConstants.OPENMRS_SERVER_PATH);
         try {
@@ -161,22 +168,25 @@ public class SetupPlatform extends AbstractMojo {
         } catch (PrompterException e) {
             throw new MojoExecutionException(e.getMessage());
         }
-        // install core modules
-        List<Artifact> coreModules = SDKConstants.getCoreModules(server.getVersion(), isCreatePlatform);
-        if (coreModules == null) {
-            throw new MojoExecutionException(String.format("Invalid version: '%s'", server.getVersion()));
+        if (new Version(server.getVersion()).higher(new Version(Version.PRIOR)) && !isCreatePlatform) {
+            if (isCopyDependencies) extractDistroToServer(server.getVersion(), serverPath);
         }
-        installModules(coreModules, serverPath.getPath());
-        // install other modules
-        if (!isCreatePlatform) {
-            File modules = new File(serverPath, SDKConstants.OPENMRS_SERVER_MODULES);
-            modules.mkdirs();
-            List<Artifact> artifacts = SDKConstants.ARTIFACTS.get(server.getVersion());
-            // install modules for each version
-            installModules(artifacts, modules.getPath());
+        else {
+            // install core modules
+            List<Artifact> coreModules = SDKConstants.getCoreModules(server.getVersion(), isCreatePlatform);
+            if (coreModules == null) {
+                throw new MojoExecutionException(String.format("Invalid version: '%s'", server.getVersion()));
+            }
+            installModules(coreModules, serverPath.getPath());
+            // install other modules
+            if (!isCreatePlatform) {
+                File modules = new File(serverPath, SDKConstants.OPENMRS_SERVER_MODULES);
+                modules.mkdirs();
+                List<Artifact> artifacts = SDKConstants.ARTIFACTS.get(server.getVersion());
+                // install modules for each version
+                installModules(artifacts, modules.getPath());
+            }
         }
-        getLog().info("Server created successfully, path: " + serverPath.getPath());
-
         File propertiesFile = new File(serverPath.getPath(), SDKConstants.OPENMRS_SERVER_PROPERTIES);
         PropertyManager properties = new PropertyManager(propertiesFile.getPath());
         properties.setDefaults();
@@ -216,7 +226,18 @@ public class SetupPlatform extends AbstractMojo {
         }
         properties.setParam(SDKConstants.PROPERTY_PLATFORM, server.getVersion());
         if (!isCreatePlatform) {
-            properties.setParam(SDKConstants.PROPERTY_VERSION, SDKConstants.WEBAPP_VERSIONS.get(server.getVersion()));
+            // set web app version for OpenMRS 2.2 and higher
+            if (new Version(server.getVersion()).higher(new Version(Version.PRIOR)) && !isCreatePlatform) {
+                for (File f: serverPath.listFiles()) {
+                    if (f.getName().endsWith("." + Artifact.TYPE_WAR)) {
+                        properties.setParam(SDKConstants.PROPERTY_VERSION, Version.parseVersionFromFile(f.getName()));
+                        break;
+                    }
+                }
+            }
+            else {
+                properties.setParam(SDKConstants.PROPERTY_VERSION, SDKConstants.WEBAPP_VERSIONS.get(server.getVersion()));
+            }
         }
         String dbName = String.format(SDKConstants.DB_NAME_TEMPLATE, server.getServerId());
         properties.setParam(SDKConstants.PROPERTY_DB_NAME, dbName);
@@ -252,7 +273,30 @@ public class SetupPlatform extends AbstractMojo {
      * @param artifacts
      * @param outputDir
      */
-    private void installModules(List<Artifact> artifacts, String outputDir) throws MojoExecutionException{
+    private void installModules(List<Artifact> artifacts, String outputDir) throws MojoExecutionException {
+        final String goal = "copy";
+        prepareModules(artifacts, outputDir, goal);
+    }
+
+    /**
+     * Extract selected Artifact list
+     * @param artifacts
+     * @param outputDir
+     * @throws MojoExecutionException
+     */
+    public void extractModules(List<Artifact> artifacts, String outputDir) throws MojoExecutionException {
+        final String goal = "unpack";
+        prepareModules(artifacts, outputDir, goal);
+    }
+
+    /**
+     * Handle list of modules
+     * @param artifacts
+     * @param outputDir
+     * @param goal
+     * @throws MojoExecutionException
+     */
+    private void prepareModules(List<Artifact> artifacts, String outputDir, String goal) throws MojoExecutionException {
         Element[] artifactItems = new Element[artifacts.size()];
         for (Artifact artifact: artifacts) {
             int index = artifacts.indexOf(artifact);
@@ -264,12 +308,58 @@ public class SetupPlatform extends AbstractMojo {
                         artifactId(SDKConstants.PLUGIN_DEPENDENCIES_ARTIFACT_ID),
                         version(SDKConstants.PLUGIN_DEPENDENCIES_VERSION)
                 ),
-                goal("copy"),
+                goal(goal),
                 configuration(
                         element(name("artifactItems"), artifactItems)
                 ),
                 executionEnvironment(mavenProject, mavenSession, pluginManager)
         );
+    }
+
+    /**
+     * Download distro using dependency plugin to server dir
+     * @param version
+     * @param serverPath
+     * @return web app version
+     */
+    public Version extractDistroToServer(String version, File serverPath) throws MojoExecutionException {
+        File zipFolder = new File(serverPath, SDKConstants.TMP);
+        List<Artifact> artifacts = new ArrayList<Artifact>();
+        artifacts.add(SDKConstants.getReferenceModule(version));
+        extractModules(artifacts, zipFolder.getPath());
+        if (zipFolder.listFiles().length == 0) {
+            throw new MojoExecutionException("Error during resolving dependencies");
+        }
+        File distro = zipFolder.listFiles()[0];
+        File modules = new File(serverPath, SDKConstants.OPENMRS_SERVER_MODULES);
+        modules.mkdirs();
+        Version v = null;
+        for (File f: distro.listFiles()) {
+            int index = f.getName().lastIndexOf(".");
+            String type = f.getName().substring(index + 1);
+            File target;
+            // for war or h2 file
+            if ((type.equals(Artifact.TYPE_WAR)) || f.getName().startsWith("h2")) {
+                target = new File(serverPath, f.getName());
+                if (type.equals(Artifact.TYPE_WAR)) v = new Version(Version.parseVersionFromFile(f.getName()));
+            }
+            // for modules
+            else {
+                target = new File(modules, f.getName());
+            }
+            try {
+                FileUtils.copyFile(f, target);
+            } catch (IOException e) {
+                throw new MojoExecutionException("Error during copying dependencies: " + e.getMessage());
+            }
+        }
+        // clean
+        try {
+            FileUtils.deleteDirectory(zipFolder);
+        } catch (IOException e) {
+            throw new MojoExecutionException("Error during cleaning server directory");
+        }
+        return v;
     }
 
     public void execute() throws MojoExecutionException {
@@ -283,7 +373,7 @@ public class SetupPlatform extends AbstractMojo {
                 .setInteractiveMode(interactiveMode)
                 .build();
         // setup platform server
-        String path = setup(server, true);
+        String path = setup(server, true, true);
         getLog().info("Server configured successfully, path: " + path);
     }
 }

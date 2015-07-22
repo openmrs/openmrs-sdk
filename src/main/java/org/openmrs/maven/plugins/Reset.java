@@ -107,7 +107,7 @@ public class Reset extends AbstractMojo{
             try {
                 SetupPlatform platform = new SetupPlatform(mavenProject, mavenSession, prompter, pluginManager);
                 FileUtils.deleteDirectory(serverPath);
-                platform.setup(server, isPlatform);
+                platform.setup(server, isPlatform, true);
                 getLog().info(String.format(TEMPLATE_SUCCESS_FULL, server.getServerId()));
             } catch (IOException e) {
                 throw new MojoExecutionException(e.getMessage());

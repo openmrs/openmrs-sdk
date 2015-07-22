@@ -1,5 +1,6 @@
 package org.openmrs.maven.plugins;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.BuildPluginManager;
@@ -16,6 +17,7 @@ import org.openmrs.maven.plugins.utility.SDKConstants;
 import org.openmrs.maven.plugins.model.Version;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -119,13 +121,13 @@ public class UpgradePlatform extends AbstractMojo{
             if (currentProperties != null) serverId = currentProperties.getName();
         }
         try {
-            resultServer = helper.promptForValueIfMissing(serverId, "serverId");
             resultVersion = helper.promptForValueIfMissing(version, "version");
         } catch (PrompterException e) {
             throw new MojoExecutionException(e.getMessage());
         }
 
-        File serverPath = helper.getServerPath(resultServer);
+        File serverPath = helper.getServerPath(serverId);
+        resultServer = serverPath.getName();
         File propertyFile = new File(serverPath, SDKConstants.OPENMRS_SERVER_PROPERTIES);
         PropertyManager properties = new PropertyManager(propertyFile.getPath());
         String webapp = properties.getParam(SDKConstants.PROPERTY_VERSION);
@@ -137,6 +139,15 @@ public class UpgradePlatform extends AbstractMojo{
         }
         Version platformVersion = new Version(platform);
         Version nextVersion = new Version(resultVersion);
+        SetupPlatform setupPlatform = new SetupPlatform(mavenProject, mavenSession, prompter, pluginManager);
+        // get list modules to remove after
+        // for 2.3 and higher, copy dependencies to tmp folder
+        File tmpFolder = new File(serverPath, SDKConstants.TMP);
+        boolean isPriorVersion = new Version(resultVersion).higher(new Version(Version.PRIOR));
+        Version webAppVersionFromTmpFolder = new Version("1");
+        if (isPriorVersion) {
+            webAppVersionFromTmpFolder = setupPlatform.extractDistroToServer(resultVersion, tmpFolder);
+        }
         if (isUpdateToPlatform) {
             if (webapp != null) {
                 throw new MojoExecutionException(String.format(TEMPLATE_NONPLATFORM, resultServer));
@@ -150,7 +161,8 @@ public class UpgradePlatform extends AbstractMojo{
             }
         }
         else {
-            String targetWebApp = SDKConstants.WEBAPP_VERSIONS.get(resultVersion);
+            String targetWebApp = isPriorVersion ? webAppVersionFromTmpFolder.toString() : SDKConstants.WEBAPP_VERSIONS.get(resultVersion);
+            // note, that in future we also must detect web app version also for 2.3 and higher
             if (targetWebApp == null) {
                 throw new MojoExecutionException(String.format(TEMPLATE_INVALID_VERSION, resultVersion));
             }
@@ -181,15 +193,34 @@ public class UpgradePlatform extends AbstractMojo{
         }
         // flag if old server is platform server
         boolean isOldPlatformServer = webapp == null;
-        // get list modules to remove after
+        // calculate diff
         List<File> listFilesToRemove = getFileListToRemove(serverPath, platform, resultVersion, isOldPlatformServer);
+        // for 2.3 and higher, move data from tmp to server
+        if (isPriorVersion) {
+            try {
+                for (File f: tmpFolder.listFiles()) {
+                    if (f.isFile()) {
+                        File t = new File(serverPath, f.getName());
+                        if (!t.exists()) FileUtils.moveFile(f, t);
+                    }
+                }
+                for (File f: new File(tmpFolder, SDKConstants.OPENMRS_SERVER_MODULES).listFiles()) {
+                    if (f.isFile()) {
+                        File t = new File(new File(serverPath, SDKConstants.OPENMRS_SERVER_MODULES), f.getName());
+                        if (!t.exists()) FileUtils.moveFile(f, t);
+                    }
+                }
+                FileUtils.deleteDirectory(tmpFolder);
+            } catch (IOException e) {
+                throw new MojoExecutionException("Error during resolving dependencies: " + e.getMessage());
+            }
+        }
         // also make a copy of old properties file
         File tempProperties = new File(serverPath, TEMP_PROPERTIES);
         properties.apply(tempProperties.getPath());
         // also remove copy of old properties file if success
         listFilesToRemove.add(tempProperties);
         propertyFile.delete();
-        SetupPlatform setupPlatform = new SetupPlatform(mavenProject, mavenSession, prompter, pluginManager);
         Server server = new Server.ServerBuilder()
                 .setServerId(resultServer)
                 .setVersion(resultVersion)
@@ -199,7 +230,7 @@ public class UpgradePlatform extends AbstractMojo{
                 .setDbPassword(properties.getParam(SDKConstants.PROPERTY_DB_PASS))
                 .setInteractiveMode("false")
                 .build();
-        setupPlatform.setup(server, isUpdateToPlatform);
+        setupPlatform.setup(server, isUpdateToPlatform, false);
         removeFiles(listFilesToRemove);
         // if this is not "reset" server
         if (!allowEqualVersion) {
@@ -229,15 +260,19 @@ public class UpgradePlatform extends AbstractMojo{
      */
     private List<File> getFileListToRemove(File serverPath, String oldVersion, String targetVersion, boolean isPlatform) throws MojoExecutionException, MojoFailureException {
         List<File> list = new ArrayList<File>();
-        boolean oldPlatformVersion = SDKConstants.WEBAPP_VERSIONS.get(targetVersion) == null;
+        boolean isPriorOld = new Version(oldVersion).higher(new Version(Version.PRIOR));
+        boolean isPriorNew = new Version(targetVersion).higher(new Version(Version.PRIOR));
+        boolean oldPlatformVersion = SDKConstants.WEBAPP_VERSIONS.get(oldVersion) == null;
+        File tmpModules = new File(new File(serverPath, SDKConstants.TMP), SDKConstants.OPENMRS_SERVER_MODULES);
         // remove modules first
         if (!isPlatform) {
             File modulePath = new File(serverPath, SDKConstants.OPENMRS_SERVER_MODULES);
             if (modulePath.exists() && !oldPlatformVersion) {
                 Map<String, Artifact> oldModules = new HashMap<String, Artifact>();
                 Map<String, Artifact> targetModules = new HashMap<String, Artifact>();
-                List<Artifact> artifactList = SDKConstants.ARTIFACTS.get(oldVersion);
-                List<Artifact> targerArtifactList = SDKConstants.ARTIFACTS.get(targetVersion);
+                // logic for 2.2 and later
+                List<Artifact> artifactList = isPriorOld ? getArtifactsFromFolder(modulePath) : SDKConstants.ARTIFACTS.get(oldVersion);
+                List<Artifact> targerArtifactList = isPriorNew ? getArtifactsFromFolder(tmpModules) : SDKConstants.ARTIFACTS.get(targetVersion);
                 if (artifactList != null) {
                     for (Artifact artifact: artifactList) {
                         oldModules.put(getId(artifact.getArtifactId()), artifact);
@@ -264,10 +299,12 @@ public class UpgradePlatform extends AbstractMojo{
 
         Map<String, Artifact> oldCoreModules = new HashMap<String, Artifact>();
         Map<String, Artifact> targetCoreModules = new HashMap<String, Artifact>();
-        for (Artifact artifact: SDKConstants.getCoreModules(oldVersion, isPlatform)) {
+        List<Artifact> oldModules = isPriorOld ? getArtifactsFromFolder(serverPath) : SDKConstants.getCoreModules(oldVersion, isPlatform);
+        for (Artifact artifact: oldModules) {
             oldCoreModules.put(getId(artifact.getArtifactId()), artifact);
         }
-        for (Artifact artifact: SDKConstants.getCoreModules(targetVersion, isPlatform)) {
+        List<Artifact> newModules = isPriorNew ? getArtifactsFromFolder(tmpModules.getParentFile()) : SDKConstants.getCoreModules(targetVersion, isPlatform);
+        for (Artifact artifact: newModules) {
             targetCoreModules.put(getId(artifact.getArtifactId()), artifact);
         }
         // also remove core war and h2 module
@@ -276,7 +313,6 @@ public class UpgradePlatform extends AbstractMojo{
             Artifact targetMod = targetCoreModules.get(getId(coreModule.getName()));
             if (oldMod != null) {
                 if ((targetMod == null) || (!oldMod.getDestFileName().equals(targetMod.getDestFileName()))) {
-                    getLog().info("ADD " + oldMod.getArtifactId());
                     list.add(coreModule);
                 }
             }
@@ -292,5 +328,27 @@ public class UpgradePlatform extends AbstractMojo{
         for (File file: files) {
             file.delete();
         }
+    }
+
+    /**
+     * Convert file names to Artifacts
+     * @param folder
+     * @return
+     */
+    private List<Artifact> getArtifactsFromFolder(File folder) {
+        final String[] supported = {Artifact.TYPE_WAR, Artifact.TYPE_JAR, Artifact.TYPE_OMOD};
+        List<Artifact> artifacts = new ArrayList<Artifact>();
+        File[] files = (folder.listFiles() == null) ? new File[0] : folder.listFiles();
+        for (File f: files) {
+            String type = f.getName().substring(f.getName().lastIndexOf(".") + 1);
+            if (type.equals(supported[0]) || type.equals(supported[1]) || type.equals(supported[2])) {
+                String id = getId(f.getName());
+                String version = Version.parseVersionFromFile(f.getName());
+                Artifact a = new Artifact(id, version);
+                a.setDestFileName(f.getName());
+                artifacts.add(a);
+            }
+        }
+        return artifacts;
     }
 }
