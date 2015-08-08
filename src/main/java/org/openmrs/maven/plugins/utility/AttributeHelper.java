@@ -177,7 +177,7 @@ public class AttributeHelper {
         Map<Long, String> sortedMap = new TreeMap<Long, String>(Collections.reverseOrder());
         File [] list = (openMRS.listFiles() == null) ? new File[0] : openMRS.listFiles();
         for (File f: list) {
-            sortedMap.put(f.lastModified(), f.getName());
+            if (f.isDirectory()) sortedMap.put(f.lastModified(), f.getName());
         }
         int length = sortedMap.size() < count ? sortedMap.size() : count;
         return new ArrayList<String>(sortedMap.values()).subList(0, length);
