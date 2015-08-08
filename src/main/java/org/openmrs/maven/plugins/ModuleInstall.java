@@ -12,6 +12,7 @@ import org.codehaus.plexus.components.interactivity.PrompterException;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.utility.AttributeHelper;
 import org.openmrs.maven.plugins.utility.ConfigurationManager;
+import org.openmrs.maven.plugins.utility.PropertyManager;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 import org.openmrs.maven.plugins.model.Version;
 
@@ -154,6 +155,9 @@ public class ModuleInstall extends AbstractMojo {
                 ),
                 executionEnvironment(mavenProject, mavenSession, pluginManager)
         );
+        PropertyManager properties = new PropertyManager(new File(serverPath, SDKConstants.OPENMRS_SERVER_PROPERTIES).getPath());
+        properties.addToValueList(SDKConstants.PROPERTY_USER_MODULES, originalId);
+        properties.apply();
         if (versionUpdated) {
             if (removed) getLog().info(String.format(DEFAULT_UPDATE_MESSAGE, originalId, artifact.getVersion()));
         }
