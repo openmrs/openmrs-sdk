@@ -12,6 +12,7 @@ public class Server {
     private String dbPassword;
     private String interactiveMode;
     private String version;
+    private String filePath;
 
     public static class ServerBuilder {
         private String nestedServerId;
@@ -21,6 +22,7 @@ public class Server {
         private String nestedDbPassword;
         private String nestedInteractiveMode;
         private String nestedVersion;
+        private String nestedFilePath;
 
         public ServerBuilder setInteractiveMode(String nestedInteractiveMode) {
             this.nestedInteractiveMode = nestedInteractiveMode;
@@ -57,22 +59,32 @@ public class Server {
             return this;
         }
 
+        public ServerBuilder setFilePath(String nestedFilePath) {
+            this.nestedFilePath = nestedFilePath;
+            return this;
+        }
+
         public Server build() {
-            return new Server(nestedServerId, nestedVersion, nestedDbDriver, nestedDbUri, nestedDbUser, nestedDbPassword, nestedInteractiveMode);
+            return new Server(nestedServerId, nestedVersion, nestedDbDriver, nestedDbUri, nestedDbUser, nestedDbPassword, nestedFilePath, nestedInteractiveMode);
         }
     }
 
     private Server() {};
 
-    private Server(String serverId, String version, String dbDriver, String dbUri, String dbUser, String dbPassword, String interactiveMode) {
+    private Server(String serverId, String version, String dbDriver, String dbUri, String dbUser, String dbPassword, String filePath, String interactiveMode) {
         this.serverId = serverId;
         this.version = version;
         this.dbDriver = dbDriver;
         this.dbUri = dbUri;
         this.dbUser = dbUser;
         this.dbPassword = dbPassword;
+        this.filePath = filePath;
         this.interactiveMode = interactiveMode;
     }
+
+    public String getFilePath() { return filePath; }
+
+    public void setFilePath(String filePath) { this.filePath = filePath; }
 
     public String getDbPath() {
         return dbPath;

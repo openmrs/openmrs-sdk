@@ -19,7 +19,8 @@ import java.util.Properties;
  */
 public class PropertyManager {
 
-    private static final String COMMA = ",";
+    public static final String COMMA = ",";
+    public static final String SLASH = "/";
 
     private Properties properties;
     private String path;
@@ -107,16 +108,17 @@ public class PropertyManager {
     /**
      * Remove value from value list for a selected key
      * @param key
-     * @param value
+     * @param artifactId
      */
-    public void removeFromValueList(String key, String value) {
+    public void removeFromValueList(String key, String artifactId) {
         String beforeValue = properties.getProperty(key);
         if (beforeValue == null) return;
         else {
             List<String> values = new ArrayList<String>(Arrays.asList(beforeValue.split(COMMA)));
             int indx = -1;
             for (String val: values) {
-                if (val.equals(value)) {
+                String[] params = val.split(SLASH);
+                if (params[1].equals(artifactId)) {
                     indx = values.indexOf(val);
                     break;
                 }

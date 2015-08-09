@@ -144,12 +144,15 @@ public class AttributeHelper {
      */
     public File getCurrentServerPath() throws MojoExecutionException {
         File currentFolder = new File(System.getProperty("user.dir"));
+        File openmrsHome = new File(System.getProperty("user.home"), SDKConstants.OPENMRS_SERVER_PATH);
         File current = new File(currentFolder, SDKConstants.OPENMRS_SERVER_PROPERTIES);
         File parent = new File(currentFolder.getParent(), SDKConstants.OPENMRS_SERVER_PROPERTIES);
         File propertiesFile = null;
         if (current.exists()) propertiesFile = current;
         else if (parent.exists()) propertiesFile = parent;
         if (propertiesFile != null) {
+            File server = propertiesFile.getParentFile();
+            if (!server.getParentFile().equals(openmrsHome)) return null;
             PropertyManager properties = new PropertyManager(propertiesFile.getPath());
             if (properties.getParam(SDKConstants.PROPERTY_SERVER_ID) != null) return propertiesFile.getParentFile();
         }

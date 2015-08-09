@@ -5,6 +5,7 @@ import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.components.interactivity.Prompter;
 import org.codehaus.plexus.components.interactivity.PrompterException;
@@ -125,6 +126,13 @@ public class SetupPlatform extends AbstractMojo {
     private String dbPassword;
 
     /**
+     * Path to installation.properties
+     *
+     * @parameter expression="${file}"
+     */
+    private String file;
+
+    /**
      * Component for user prompt
      *
      * @component
@@ -146,9 +154,22 @@ public class SetupPlatform extends AbstractMojo {
      * @param isCopyDependencies - flag for executing depencency plugin for OpenMRS 2.3 and higher
      * @throws MojoExecutionException
      */
-    public String setup(Server server, boolean isCreatePlatform, boolean isCopyDependencies) throws MojoExecutionException {
+    public String setup(Server server, boolean isCreatePlatform, boolean isCopyDependencies) throws MojoExecutionException, MojoFailureException {
         AttributeHelper helper = new AttributeHelper(prompter);
         File openMRSPath = new File(System.getProperty("user.home"), SDKConstants.OPENMRS_SERVER_PATH);
+        PropertyManager basicProperties = null;
+        if (server.getFilePath() != null) {
+            File basicFileProperties = new File(server.getFilePath());
+            if (!basicFileProperties.exists()) throw new MojoExecutionException("Selected server file is not exist");
+            basicProperties = new PropertyManager(basicFileProperties.getPath());
+            // fill empty properties with values from server file
+            if (server.getServerId() == null) server.setServerId(basicProperties.getParam(SDKConstants.PROPERTY_SERVER_ID));
+            if (server.getVersion() == null) server.setVersion(basicProperties.getParam(SDKConstants.PROPERTY_PLATFORM));
+            if (server.getDbDriver() == null) server.setDbDriver(basicProperties.getParam(SDKConstants.PROPERTY_DB_DRIVER));
+            if (server.getDbUri() == null) server.setDbUri(basicProperties.getParam(SDKConstants.PROPERTY_DB_URI));
+            if (server.getDbUser() == null) server.setDbUser(basicProperties.getParam(SDKConstants.PROPERTY_DB_USER));
+            if (server.getDbPassword() == null) server.setDbPassword(basicProperties.getParam(SDKConstants.PROPERTY_DB_PASS));
+        }
         try {
             server.setServerId(helper.promptForNewServerIfMissing(openMRSPath.getPath(), server.getServerId()));
         } catch (PrompterException e) {
@@ -185,6 +206,22 @@ public class SetupPlatform extends AbstractMojo {
                 List<Artifact> artifacts = SDKConstants.ARTIFACTS.get(server.getVersion());
                 // install modules for each version
                 installModules(artifacts, modules.getPath());
+            }
+            // install user modules
+            if (basicProperties != null) {
+                String values = basicProperties.getParam(SDKConstants.PROPERTY_USER_MODULES);
+                if (values != null) {
+                    ModuleInstall installer = new ModuleInstall();
+                    String[] modules = values.split(PropertyManager.COMMA);
+                    for (String mod: modules) {
+                        String[] params = mod.split(PropertyManager.SLASH);
+                        // check
+                        if (params.length == 3) {
+                            installer.installModule(server.getServerId(), params[1], params[0] + "-omod", params[2]);
+                        }
+                        else throw new MojoExecutionException("Properties file parse error - cannot read user modules list");
+                    }
+                }
             }
         }
         File propertiesFile = new File(serverPath.getPath(), SDKConstants.OPENMRS_SERVER_PROPERTIES);
@@ -362,7 +399,7 @@ public class SetupPlatform extends AbstractMojo {
         return v;
     }
 
-    public void execute() throws MojoExecutionException {
+    public void execute() throws MojoExecutionException, MojoFailureException {
         Server server = new Server.ServerBuilder()
                 .setServerId(serverId)
                 .setVersion(version)
@@ -370,6 +407,7 @@ public class SetupPlatform extends AbstractMojo {
                 .setDbUser(dbUser)
                 .setDbUri(dbUri)
                 .setDbPassword(dbPassword)
+                .setFilePath(file)
                 .setInteractiveMode(interactiveMode)
                 .build();
         // setup platform server

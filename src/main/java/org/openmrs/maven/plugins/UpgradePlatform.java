@@ -2,10 +2,7 @@ package org.openmrs.maven.plugins;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.maven.execution.MavenSession;
-import org.apache.maven.plugin.AbstractMojo;
-import org.apache.maven.plugin.BuildPluginManager;
-import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugin.*;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.components.interactivity.Prompter;
 import org.codehaus.plexus.components.interactivity.PrompterException;
@@ -214,6 +211,20 @@ public class UpgradePlatform extends AbstractMojo{
             } catch (IOException e) {
                 throw new MojoExecutionException("Error during resolving dependencies: " + e.getMessage());
             }
+            // install user modules
+            String values = properties.getParam(SDKConstants.PROPERTY_USER_MODULES);
+            if (values != null) {
+                ModuleInstall installer = new ModuleInstall(mavenProject, mavenSession, pluginManager, prompter);
+                String[] modules = values.split(PropertyManager.COMMA);
+                for (String mod: modules) {
+                    String[] params = mod.split(PropertyManager.SLASH);
+                    // check
+                    if (params.length == 3) {
+                        installer.installModule(resultServer, params[0], params[1], params[2]);
+                    }
+                    else throw new MojoExecutionException("Properties file parse error - cannot read user modules list");
+                }
+            }
         }
         // also make a copy of old properties file
         File tempProperties = new File(serverPath, TEMP_PROPERTIES);
@@ -232,6 +243,13 @@ public class UpgradePlatform extends AbstractMojo{
                 .build();
         setupPlatform.setup(server, isUpdateToPlatform, false);
         removeFiles(listFilesToRemove);
+        // remove temp files after upgrade
+        File tmp = new File(serverPath, "${project.basedir}");
+        if (tmp.exists()) try {
+            FileUtils.deleteDirectory(tmp);
+        } catch (IOException e) {
+            throw new MojoExecutionException("Error during clean: " + e.getMessage());
+        }
         // if this is not "reset" server
         if (!allowEqualVersion) {
             getLog().info(String.format(TEMPLATE_SUCCESS, resultServer, platform, resultVersion));

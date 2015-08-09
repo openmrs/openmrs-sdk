@@ -81,11 +81,18 @@ public class ModuleInstall extends AbstractMojo {
      */
     private Prompter prompter;
 
-    public ModuleInstall() {};
+    public ModuleInstall(MavenProject project, MavenSession session, BuildPluginManager manager, Prompter prompt) {
+        mavenProject = project;
+        mavenSession = session;
+        pluginManager = manager;
+        prompter = prompt;
+    };
 
     public ModuleInstall(Prompter prompter) {
         this.prompter = prompter;
     }
+
+    public ModuleInstall() {}
 
     public void execute() throws MojoExecutionException, MojoFailureException {
         installModule(serverId, groupId, artifactId, version);
@@ -156,7 +163,9 @@ public class ModuleInstall extends AbstractMojo {
                 executionEnvironment(mavenProject, mavenSession, pluginManager)
         );
         PropertyManager properties = new PropertyManager(new File(serverPath, SDKConstants.OPENMRS_SERVER_PROPERTIES).getPath());
-        properties.addToValueList(SDKConstants.PROPERTY_USER_MODULES, originalId);
+        String[] params = {artifact.getGroupId(), originalId, artifact.getVersion()};
+        String module = StringUtils.join(params, "/");
+        properties.addToValueList(SDKConstants.PROPERTY_USER_MODULES, module);
         properties.apply();
         if (versionUpdated) {
             if (removed) getLog().info(String.format(DEFAULT_UPDATE_MESSAGE, originalId, artifact.getVersion()));
