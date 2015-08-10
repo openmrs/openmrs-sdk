@@ -14,14 +14,17 @@ public class Artifact {
     private String artifactId;
     private String type;
     private String destFileName;
+    private String classifier;
 
     public static final String GROUP_MODULE = "org.openmrs.module";
     public static final String GROUP_WEB = "org.openmrs.web";
     public static final String GROUP_OPENMRS = "org.openmrs";
     public static final String GROUP_H2 = "com.h2database";
+    public static final String GROUP_DISTRO = "org.openmrs.distro";
     public static final String TYPE_OMOD = "omod";
     public static final String TYPE_WAR = "war";
     public static final String TYPE_JAR = "jar";
+    public static final String TYPE_ZIP = "zip";
     public static final String DEST_TEMPLATE = "%s-%s.%s";
 
     public Artifact() {};
@@ -63,6 +66,7 @@ public class Artifact {
         this.destFileName = String.format(DEST_TEMPLATE, id, version, artifactType);
         // set type if not null
         if (type != null) this.type = type;
+        classifier = null;
     }
     public String getVersion() {
         return version;
@@ -105,6 +109,11 @@ public class Artifact {
 
     public void setDestFileName(String destFileName) { this.destFileName = destFileName; }
 
+    public Artifact putClassifier(String classifier) {
+        this.classifier = classifier;
+        return this;
+    }
+
     /**
      * Convert Artifact to Element
      * String outputDir
@@ -118,6 +127,9 @@ public class Artifact {
         attributes.add(element("destFileName", destFileName));
         if (type != null) {
             attributes.add(element("type", type));
+        }
+        if (classifier != null) {
+            attributes.add(element("classifier", classifier));
         }
         attributes.add(element("outputDirectory", outputDir));
         Element[] arrayElements = attributes.toArray(new Element[0]);

@@ -11,6 +11,8 @@ import org.openmrs.maven.plugins.utility.AttributeHelper;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
 
@@ -77,11 +79,20 @@ public class Run extends AbstractMojo {
             }
             if ((warFile != null) && (h2File != null)) break;
         };
+        // prepare web app configuration
+        List<Element> webAppConfiguration = new ArrayList<Element>();
+        webAppConfiguration.add(element("contextPath", "/openmrs"));
+        webAppConfiguration.add(element("tempDirectory", tempDirectory.getAbsolutePath()));
         if (warFile == null) {
             throw new MojoExecutionException("Error during running server: war file was not found");
         }
-        else if (h2File == null) {
-            throw new MojoExecutionException("Error during running server: h2 file was not found");
+        // add h2 file to webapp config if it exists
+        if (h2File != null) {
+            webAppConfiguration.add(element("extraClasspath", new File(serverPath, h2File).getAbsolutePath()));
+        }
+        Element[] webAppConfigurationElements = new Element[webAppConfiguration.size()];
+        for (Element e: webAppConfiguration) {
+            webAppConfigurationElements[webAppConfiguration.indexOf(e)] = e;
         }
         executeMojo(
                 plugin(
@@ -92,10 +103,7 @@ public class Run extends AbstractMojo {
                 goal("run-war"),
                 configuration(
                         element(name("war"), new File(serverPath, warFile).getAbsolutePath()),
-                        element(name("webApp"),
-                                element("contextPath", "/openmrs"),
-                                element("tempDirectory", tempDirectory.getAbsolutePath()),
-                                element("extraClasspath", new File(serverPath, h2File).getAbsolutePath())),
+                        element(name("webApp"), webAppConfigurationElements),
                         element(name("systemProperties"),
                                 element("systemProperty",
                                         element("name", "OPENMRS_INSTALLATION_SCRIPT"),

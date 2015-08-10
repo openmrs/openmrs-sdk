@@ -4,6 +4,7 @@ import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.components.interactivity.Prompter;
 import org.openmrs.maven.plugins.model.Server;
@@ -83,6 +84,13 @@ public class Setup extends AbstractMojo {
     private String dbPassword;
 
     /**
+     * Path to installation.properties
+     *
+     * @parameter expression="${file}"
+     */
+    private String file;
+
+    /**
      * Component for user prompt
      *
      * @component
@@ -97,7 +105,7 @@ public class Setup extends AbstractMojo {
      */
     private BuildPluginManager pluginManager;
 
-    public void execute() throws MojoExecutionException {
+    public void execute() throws MojoExecutionException, MojoFailureException {
         SetupPlatform configurator = new SetupPlatform(mavenProject, mavenSession, prompter, pluginManager);
         Server server = new Server.ServerBuilder()
                         .setServerId(serverId)
@@ -106,10 +114,11 @@ public class Setup extends AbstractMojo {
                         .setDbUri(dbUri)
                         .setDbUser(dbUser)
                         .setDbPassword(dbPassword)
+                        .setFilePath(file)
                         .setInteractiveMode(interactiveMode)
                         .build();
         // setup non-platform server
-        String serverPath = configurator.setup(server, false);
+        String serverPath = configurator.setup(server, false, true);
         getLog().info("Server configured successfully, path: " + serverPath);
     }
 }

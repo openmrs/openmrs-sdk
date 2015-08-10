@@ -12,6 +12,7 @@ import org.codehaus.plexus.components.interactivity.PrompterException;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.utility.AttributeHelper;
 import org.openmrs.maven.plugins.utility.ConfigurationManager;
+import org.openmrs.maven.plugins.utility.PropertyManager;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 import org.openmrs.maven.plugins.model.Version;
 
@@ -80,11 +81,18 @@ public class ModuleInstall extends AbstractMojo {
      */
     private Prompter prompter;
 
-    public ModuleInstall() {};
+    public ModuleInstall(MavenProject project, MavenSession session, BuildPluginManager manager, Prompter prompt) {
+        mavenProject = project;
+        mavenSession = session;
+        pluginManager = manager;
+        prompter = prompt;
+    };
 
     public ModuleInstall(Prompter prompter) {
         this.prompter = prompter;
     }
+
+    public ModuleInstall() {}
 
     public void execute() throws MojoExecutionException, MojoFailureException {
         installModule(serverId, groupId, artifactId, version);
@@ -154,6 +162,11 @@ public class ModuleInstall extends AbstractMojo {
                 ),
                 executionEnvironment(mavenProject, mavenSession, pluginManager)
         );
+        PropertyManager properties = new PropertyManager(new File(serverPath, SDKConstants.OPENMRS_SERVER_PROPERTIES).getPath());
+        String[] params = {artifact.getGroupId(), originalId, artifact.getVersion()};
+        String module = StringUtils.join(params, "/");
+        properties.addToValueList(SDKConstants.PROPERTY_USER_MODULES, module);
+        properties.apply();
         if (versionUpdated) {
             if (removed) getLog().info(String.format(DEFAULT_UPDATE_MESSAGE, originalId, artifact.getVersion()));
         }
