@@ -13,6 +13,7 @@ public class Server {
     private String interactiveMode;
     private String version;
     private String filePath;
+    private boolean includeDemoData;
 
     public static class ServerBuilder {
         private String nestedServerId;
@@ -23,6 +24,7 @@ public class Server {
         private String nestedInteractiveMode;
         private String nestedVersion;
         private String nestedFilePath;
+        private boolean nestedDemoData;
 
         public ServerBuilder setInteractiveMode(String nestedInteractiveMode) {
             this.nestedInteractiveMode = nestedInteractiveMode;
@@ -64,14 +66,19 @@ public class Server {
             return this;
         }
 
+        public ServerBuilder setDemoData(boolean is) {
+            this.nestedDemoData = is;
+            return this;
+        }
+
         public Server build() {
-            return new Server(nestedServerId, nestedVersion, nestedDbDriver, nestedDbUri, nestedDbUser, nestedDbPassword, nestedFilePath, nestedInteractiveMode);
+            return new Server(nestedServerId, nestedVersion, nestedDbDriver, nestedDbUri, nestedDbUser, nestedDbPassword, nestedFilePath, nestedDemoData, nestedInteractiveMode);
         }
     }
 
     private Server() {};
 
-    private Server(String serverId, String version, String dbDriver, String dbUri, String dbUser, String dbPassword, String filePath, String interactiveMode) {
+    private Server(String serverId, String version, String dbDriver, String dbUri, String dbUser, String dbPassword, String filePath, boolean demoData, String interactiveMode) {
         this.serverId = serverId;
         this.version = version;
         this.dbDriver = dbDriver;
@@ -79,6 +86,7 @@ public class Server {
         this.dbUser = dbUser;
         this.dbPassword = dbPassword;
         this.filePath = filePath;
+        this.includeDemoData = demoData;
         this.interactiveMode = interactiveMode;
     }
 
@@ -142,11 +150,11 @@ public class Server {
 
     public void setVersion(String version) { this.version = version; }
 
-    public String getPlatformVersion() {
-        return (isOld()) ? "1.x": version;
+    public boolean isIncludeDemoData() {
+        return includeDemoData;
     }
 
-    public boolean isOld() {
-        return version.startsWith("1.");
+    public void setIncludeDemoData(boolean includeDemoData) {
+        this.includeDemoData = includeDemoData;
     }
 }

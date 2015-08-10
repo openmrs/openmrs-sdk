@@ -231,7 +231,7 @@ public class UpgradePlatform extends AbstractMojo{
         properties.apply(tempProperties.getPath());
         // also remove copy of old properties file if success
         listFilesToRemove.add(tempProperties);
-        propertyFile.delete();
+        boolean addDemoData = (String.valueOf(true).equals(properties.getParam(SDKConstants.PROPERTY_DEMO_DATA)));
         Server server = new Server.ServerBuilder()
                 .setServerId(resultServer)
                 .setVersion(resultVersion)
@@ -240,7 +240,9 @@ public class UpgradePlatform extends AbstractMojo{
                 .setDbUser(properties.getParam(SDKConstants.PROPERTY_DB_USER))
                 .setDbPassword(properties.getParam(SDKConstants.PROPERTY_DB_PASS))
                 .setInteractiveMode("false")
+                .setDemoData(addDemoData)
                 .build();
+        propertyFile.delete();
         setupPlatform.setup(server, isUpdateToPlatform, false);
         removeFiles(listFilesToRemove);
         // remove temp files after upgrade

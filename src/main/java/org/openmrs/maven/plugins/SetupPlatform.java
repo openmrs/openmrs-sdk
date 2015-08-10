@@ -131,6 +131,13 @@ public class SetupPlatform extends AbstractMojo {
     private String file;
 
     /**
+     * Option to include demo data
+     *
+     * @parameter expression="${addDemoData}" default-value=false
+     */
+    private boolean addDemoData;
+
+    /**
      * Component for user prompt
      *
      * @component
@@ -276,6 +283,7 @@ public class SetupPlatform extends AbstractMojo {
         }
         String dbName = String.format(SDKConstants.DB_NAME_TEMPLATE, server.getServerId());
         properties.setParam(SDKConstants.PROPERTY_DB_NAME, dbName);
+        properties.setParam(SDKConstants.PROPERTY_DEMO_DATA, String.valueOf(server.isIncludeDemoData()));
         properties.apply();
         String dbType = properties.getParam(SDKConstants.PROPERTY_DB_DRIVER);
         if (dbType.equals(SDKConstants.DRIVER_MYSQL)) {
@@ -407,6 +415,7 @@ public class SetupPlatform extends AbstractMojo {
                 .setDbPassword(dbPassword)
                 .setFilePath(file)
                 .setInteractiveMode(interactiveMode)
+                .setDemoData(addDemoData)
                 .build();
         // setup platform server
         String path = setup(server, true, true);
