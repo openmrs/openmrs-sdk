@@ -12,7 +12,7 @@ import org.openmrs.maven.plugins.utility.SDKConstants;
 import java.io.File;
 
 /**
- * @goal uninstall-module
+ * @goal uninstall
  * @requiresProject false
  */
 public class ModuleUninstall extends AbstractMojo {

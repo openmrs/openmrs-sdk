@@ -17,12 +17,12 @@ Options: none (only interactive mode)
 * `create-platform-module` - Create OpenMRS platform module <br/>
 Options: none (only interactive mode)
 * `setup-platform` - Setup platform server <br/>
-Options: serverId, version, dbDriver, dbUri, dbUser, dbPassword
+Options: serverId, version, dbDriver, dbUri, dbUser, dbPassword, file, addDemoData
 * `setup` - Setup server with modules <br/>
-Options: serverId, version, dbDriver, dbUri, dbUser, dbPassword
-* `install-module` - Install selected module to server <br/>
+Options: serverId, version, dbDriver, dbUri, dbUser, dbPassword, file
+* `install` - Install selected module to server <br/>
 Options: serverId, groupId, artifactId, version
-* `uninstall-module` - Uninstall selected module from server <br/>
+* `uninstall` - Uninstall selected module from server <br/>
 Options: serverId, groupId, artifactId
 * `upgrade` - Upgrade server or platform server to selected version <br/>
 Options: serverId, version

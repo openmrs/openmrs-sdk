@@ -22,7 +22,7 @@ import java.util.Arrays;
 import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
 
 /**
- * @goal install-module
+ * @goal install
  * @requiresProject false
  */
 public class ModuleInstall extends AbstractMojo {
