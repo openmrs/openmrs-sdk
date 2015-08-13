@@ -8,6 +8,7 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.components.interactivity.Prompter;
 import org.openmrs.maven.plugins.utility.AttributeHelper;
+import org.openmrs.maven.plugins.utility.ConfigurationManager;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 
 import java.io.File;
@@ -66,6 +67,19 @@ public class Run extends AbstractMojo {
         }
         File serverPath = helper.getServerPath(serverId, NO_SERVER_TEXT);
         serverPath.mkdirs();
+        File pom = new File(System.getProperty("user.dir"), SDKConstants.OPENMRS_MODULE_POM);
+        if (pom.exists()) {
+            // install current module before run
+            ConfigurationManager config = new ConfigurationManager(pom.getPath());
+            String artifactId = config.getArtifactId();
+            String groupId = config.getGroupId();
+            String version = config.getVersion();
+            if ((artifactId != null) && (groupId != null) && version != null) {
+                getLog().info("OpenMRS module detected, installing before run...");
+                ModuleInstall installer = new ModuleInstall(mavenProject, mavenSession, pluginManager, prompter);
+                installer.installModule(serverPath.getName(), groupId, artifactId, version);
+            }
+        }
         File tempDirectory = new File(serverPath, "tmp");
         tempDirectory.mkdirs();
         String warFile = null;
