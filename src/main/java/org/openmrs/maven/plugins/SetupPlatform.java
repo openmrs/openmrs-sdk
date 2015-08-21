@@ -35,6 +35,7 @@ public class SetupPlatform extends AbstractMojo {
 
     private static final String DEFAULT_VERSION = "2.2";
     private static final String DEFAULT_PLATFORM_VERSION = "1.11.2";
+    private static final String GOAL_UNPACK = "unpack";
 
     /**
      * Default constructor
@@ -328,8 +329,7 @@ public class SetupPlatform extends AbstractMojo {
      * @throws MojoExecutionException
      */
     public void extractModules(List<Artifact> artifacts, String outputDir) throws MojoExecutionException {
-        final String goal = "unpack";
-        prepareModules(artifacts, outputDir, goal);
+        prepareModules(artifacts, outputDir, GOAL_UNPACK);
     }
 
     /**
@@ -345,6 +345,9 @@ public class SetupPlatform extends AbstractMojo {
             int index = artifacts.indexOf(artifact);
             artifactItems[index] = artifact.toElement(outputDir);
         }
+        List<Element> configuration = new ArrayList<Element>();
+        configuration.add(element("artifactItems", artifactItems));
+        if (goal.equals(GOAL_UNPACK)) configuration.add(element("overWriteSnapshots", "true"));
         executeMojo(
                 plugin(
                         groupId(SDKConstants.PLUGIN_DEPENDENCIES_GROUP_ID),
@@ -352,9 +355,7 @@ public class SetupPlatform extends AbstractMojo {
                         version(SDKConstants.PLUGIN_DEPENDENCIES_VERSION)
                 ),
                 goal(goal),
-                configuration(
-                        element(name("artifactItems"), artifactItems)
-                ),
+                configuration(configuration.toArray(new Element[0])),
                 executionEnvironment(mavenProject, mavenSession, pluginManager)
         );
     }
