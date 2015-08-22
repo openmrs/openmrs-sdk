@@ -33,4 +33,4 @@ Options: serverId, full
 * `delete` - Delete server <br/>
 Options: serverId
 * `run` - Start server <br/>
-Options: serverId
+Options: serverId, jetty.port

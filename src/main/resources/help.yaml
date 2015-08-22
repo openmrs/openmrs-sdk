@@ -21,6 +21,8 @@ help:
         desc: Username for database (default value 'root')
       - name: DdbPassword
         desc: Password for dbUser
+      - name: Dfile
+        desc: File to get required attributes (server properties)
 
   - name: setup-platform
     desc: Setup platform server
@@ -37,8 +39,12 @@ help:
         desc: Username for database (default value 'root') (optional)
       - name: DdbPassword
         desc: Password for dbUser (optional)
+      - name: DaddDemoData
+        desc: Add demo data to server
+      - name: Dfile
+        desc: File to get required attributes (server properties)
 
-  - name: install-module
+  - name: install
     desc: Install selected module to server
     options:
       - name: DserverId
@@ -50,7 +56,7 @@ help:
       - name: Dversion
         desc: Version of module which will be installed
 
-  - name: uninstall-module
+  - name: uninstall
     desc: Uninstall selected module from server
     options:
       - name: DserverId
@@ -94,3 +100,5 @@ help:
     options:
       - name: DserverId
         desc: ServerId of server which will be launched
+      - name: Djetty.port
+        desc: Port to execute OpenMRS server
