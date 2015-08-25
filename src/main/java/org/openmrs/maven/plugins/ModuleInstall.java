@@ -186,7 +186,7 @@ public class ModuleInstall extends AbstractMojo {
         String moduleGroupId = null;
         String moduleArtifactId = null;
         String moduleVersion = null;
-        if (pomFile.exists() && (artifactId == null)) {
+        if (pomFile.exists() && (new ConfigurationManager(pomFile.getPath()).isOmod()) && (artifactId == null)) {
             ConfigurationManager manager = new ConfigurationManager(pomFile.getPath());
             if (manager.getParent() != null) {
                 moduleGroupId = manager.getParent().getGroupId();
