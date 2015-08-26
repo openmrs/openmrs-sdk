@@ -6,6 +6,7 @@ import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
+import org.openmrs.maven.plugins.model.Artifact;
 
 import java.io.File;
 import java.io.FileReader;
@@ -77,5 +78,13 @@ public class ConfigurationManager {
      */
     public String getVersion() {
         return model.getVersion();
+    }
+
+    /**
+     * Return true if current pom related to omod
+     * @return
+     */
+    public boolean isOmod() {
+        return Artifact.GROUP_MODULE.equals(model.getGroupId());
     }
 }

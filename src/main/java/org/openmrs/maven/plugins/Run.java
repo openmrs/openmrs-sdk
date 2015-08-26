@@ -71,13 +71,15 @@ public class Run extends AbstractMojo {
         if (pom.exists()) {
             // install current module before run
             ConfigurationManager config = new ConfigurationManager(pom.getPath());
-            String artifactId = config.getArtifactId();
-            String groupId = config.getGroupId();
-            String version = config.getVersion();
-            if ((artifactId != null) && (groupId != null) && version != null) {
-                getLog().info("OpenMRS module detected, installing before run...");
-                ModuleInstall installer = new ModuleInstall(mavenProject, mavenSession, pluginManager, prompter);
-                installer.installModule(serverPath.getName(), groupId, artifactId, version);
+            if (config.isOmod()) {
+                String artifactId = config.getArtifactId();
+                String groupId = config.getGroupId();
+                String version = config.getVersion();
+                if ((artifactId != null) && (groupId != null) && version != null) {
+                    getLog().info("OpenMRS module detected, installing before run...");
+                    ModuleInstall installer = new ModuleInstall(mavenProject, mavenSession, pluginManager, prompter);
+                    installer.installModule(serverPath.getName(), groupId, artifactId, version);
+                }
             }
         }
         File tempDirectory = new File(serverPath, "tmp");
