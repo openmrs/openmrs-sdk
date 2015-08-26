@@ -23,6 +23,7 @@ public class Help extends AbstractMojo {
     private static final String HELP_FILE = "help.yaml";
     private static final String DESC_MESSAGE = "Description: ";
     private static final String INFO = "OpenMRS SDK %s";
+    private static final String WIKI = "https://wiki.openmrs.org/display/docs/OpenMRS+SDK";
 
     public void execute() throws MojoExecutionException, MojoFailureException {
         InputStream stream = getClass().getClassLoader().getResourceAsStream(HELP_FILE);
@@ -32,8 +33,10 @@ public class Help extends AbstractMojo {
             Map keys = (Map) dec.readObject();
             List l = (List) keys.get("help");
             String printVersion = String.format(INFO, keys.get("version"));
+            String printWikiLink = "For more info, see SDK documentation: " + WIKI;
             PrintWriter writer = new PrintWriter(System.out);
             writer.println(printVersion);
+            writer.println(printWikiLink);
             writer.flush();
             if (l == null) {
                 throw new MojoExecutionException("Error during reading help data");
@@ -55,6 +58,8 @@ public class Help extends AbstractMojo {
                 }
                 formatter.printHelp(m.get("name").toString(), header, options, "");
             }
+            writer.println(" -Djetty.port Port to execute OpenMRS server");
+            writer.flush();
         } catch (EOFException e) {
             throw new MojoExecutionException(e.getMessage());
         } finally {

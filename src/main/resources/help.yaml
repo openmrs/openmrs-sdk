@@ -100,5 +100,3 @@ help:
     options:
       - name: DserverId
         desc: ServerId of server which will be launched
-      - name: Djetty.port
-        desc: Port to execute OpenMRS server
