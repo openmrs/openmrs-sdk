@@ -217,13 +217,13 @@ public class SetupPlatform extends AbstractMojo {
             if (basicProperties != null) {
                 String values = basicProperties.getParam(SDKConstants.PROPERTY_USER_MODULES);
                 if (values != null) {
-                    ModuleInstall installer = new ModuleInstall();
+                    ModuleInstall installer = new ModuleInstall(mavenProject, mavenSession, pluginManager, prompter);
                     String[] modules = values.split(PropertyManager.COMMA);
                     for (String mod: modules) {
                         String[] params = mod.split(PropertyManager.SLASH);
                         // check
                         if (params.length == 3) {
-                            installer.installModule(server.getServerId(), params[1], params[0] + "-omod", params[2]);
+                            installer.installModule(server.getServerId(), params[0], params[1], params[2]);
                         }
                         else throw new MojoExecutionException("Properties file parse error - cannot read user modules list");
                     }

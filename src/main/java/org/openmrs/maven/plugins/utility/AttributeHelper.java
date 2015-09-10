@@ -21,7 +21,7 @@ public class AttributeHelper {
     private static final String DEFAULT_VALUE_TMPL_WITH_DEFAULT = "Define value for property '%s': (default: '%s')";
     private static final String DEFAULT_FAIL_MESSAGE = "Server with such serverId is not exists";
     private static final String INVALID_SERVER = "Invalid server Id";
-    private static final String YESNO = " [Y/N]";
+    private static final String YESNO = " [Y/n]";
 
     private Prompter prompter;
 
