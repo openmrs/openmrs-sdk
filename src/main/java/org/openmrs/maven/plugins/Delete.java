@@ -6,9 +6,13 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.codehaus.plexus.components.interactivity.Prompter;
 import org.openmrs.maven.plugins.utility.AttributeHelper;
+import org.openmrs.maven.plugins.utility.DBConnector;
+import org.openmrs.maven.plugins.utility.PropertyManager;
+import org.openmrs.maven.plugins.utility.SDKConstants;
 
 import java.io.File;
 import java.io.IOException;
+import java.sql.SQLException;
 
 /**
  * @goal delete
@@ -32,9 +36,20 @@ public class Delete extends AbstractMojo{
         AttributeHelper helper = new AttributeHelper(prompter);
         File server = helper.getServerPath(serverId);
         try {
+            File properties = new File(server, SDKConstants.OPENMRS_SERVER_PROPERTIES);
+            PropertyManager props = new PropertyManager(properties.getPath());
             FileUtils.deleteDirectory(server);
+            String dbName = props.getParam(SDKConstants.PROPERTY_DB_NAME);
+            String dbUser = props.getParam(SDKConstants.PROPERTY_DB_USER);
+            String dbPass = props.getParam(SDKConstants.PROPERTY_DB_PASS);
+            String dbUri = props.getParam(SDKConstants.PROPERTY_DB_URI);
+            DBConnector connector = new DBConnector(dbUri, dbUser, dbPass, dbName);
+            connector.dropDatabase();
+            connector.close();
             getLog().info(String.format(TEMPLATE_SUCCESS, server.getName()));
         } catch (IOException e) {
+            throw new MojoExecutionException(e.getMessage());
+        } catch (SQLException e) {
             throw new MojoExecutionException(e.getMessage());
         }
     }
