@@ -15,6 +15,8 @@ import org.codehaus.plexus.components.interactivity.Prompter;
  *
  */
 public class Upgrade extends AbstractMojo{
+	
+	private static final String TEMPLATE_SUCCESS = "Server '%s' has been successfully upgraded to '%s'";
 
     /**
      * The project currently being build.
@@ -63,9 +65,8 @@ public class Upgrade extends AbstractMojo{
 
     public void execute() throws MojoExecutionException, MojoFailureException {
         UpgradePlatform upgrader = new UpgradePlatform(mavenProject, mavenSession, pluginManager, prompter);
-        final boolean isUpdateToPlatform = false;
-        final boolean allowEqualVersion = false;
-        upgrader.upgradeServer(serverId, version, isUpdateToPlatform, allowEqualVersion);
+        upgrader.upgradeServer(serverId, version, false);
+        getLog().info(String.format(TEMPLATE_SUCCESS, serverId, version));
     }
 
 

@@ -24,8 +24,8 @@ import java.sql.SQLException;
  */
 public class Reset extends AbstractMojo{
 
-    private static final String TEMPLATE_SUCCESS = "Server '%s' was reset successfully, user modules were saved";
-    private static final String TEMPLATE_SUCCESS_FULL = "Server '%s' was reset successfully, user modules were removed";
+    private static final String TEMPLATE_SUCCESS = "Server '%s' has been reset, user modules were saved";
+    private static final String TEMPLATE_SUCCESS_FULL = "Server '%s' has been reset, user modules were removed";
 
     /**
      * The project currently being build.
@@ -115,8 +115,7 @@ public class Reset extends AbstractMojo{
         }
         else {
             UpgradePlatform upgradePlatform = new UpgradePlatform(mavenProject, mavenSession, pluginManager, prompter);
-            final boolean allowEqualVersion = true;
-            upgradePlatform.upgradeServer(server.getServerId(), server.getVersion(), isPlatform, allowEqualVersion);
+            upgradePlatform.upgradeServer(server.getServerId(), server.getVersion(), isPlatform);
             getLog().info(String.format(TEMPLATE_SUCCESS, server.getServerId()));
         }
     }

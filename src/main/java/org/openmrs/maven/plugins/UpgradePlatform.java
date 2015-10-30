@@ -1,24 +1,27 @@
 package org.openmrs.maven.plugins;
 
-import org.apache.commons.io.FileUtils;
-import org.apache.maven.execution.MavenSession;
-import org.apache.maven.plugin.*;
-import org.apache.maven.project.MavenProject;
-import org.codehaus.plexus.components.interactivity.Prompter;
-import org.codehaus.plexus.components.interactivity.PrompterException;
-import org.openmrs.maven.plugins.model.Artifact;
-import org.openmrs.maven.plugins.model.Server;
-import org.openmrs.maven.plugins.utility.AttributeHelper;
-import org.openmrs.maven.plugins.utility.PropertyManager;
-import org.openmrs.maven.plugins.utility.SDKConstants;
-import org.openmrs.maven.plugins.model.Version;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.apache.commons.io.FileUtils;
+import org.apache.maven.execution.MavenSession;
+import org.apache.maven.plugin.AbstractMojo;
+import org.apache.maven.plugin.BuildPluginManager;
+import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.project.MavenProject;
+import org.codehaus.plexus.components.interactivity.Prompter;
+import org.codehaus.plexus.components.interactivity.PrompterException;
+import org.openmrs.maven.plugins.model.Artifact;
+import org.openmrs.maven.plugins.model.Server;
+import org.openmrs.maven.plugins.model.Version;
+import org.openmrs.maven.plugins.utility.AttributeHelper;
+import org.openmrs.maven.plugins.utility.PropertyManager;
+import org.openmrs.maven.plugins.utility.SDKConstants;
 
 /**
  *
@@ -27,10 +30,8 @@ import java.util.Map;
  *
  */
 public class UpgradePlatform extends AbstractMojo{
-    private static final String TEMPLATE_SAME_VERSION = "Server '%s' already has version '%s'";
-    private static final String TEMPLATE_SUCCESS = "Server '%s' was successfully upgraded from version '%s' to '%s'";
     private static final String TEMPLATE_INVALID_VERSION = "Cannot upgrade to version '%s'";
-    private static final String TEMPLATE_INVALID_PROPERTIES = "Server '%s' hav invalid properties";
+    private static final String TEMPLATE_INVALID_PROPERTIES = "Server '%s' has invalid properties";
     private static final String TEMPLATE_DOWNGRADE = "Server '%s' has higher version, than you tried to upgrade";
     private static final String TEMPLATE_NONPLATFORM = "Cannot upgrade server '%s' from non-platform to platform";
 
@@ -94,9 +95,7 @@ public class UpgradePlatform extends AbstractMojo{
     private BuildPluginManager pluginManager;
 
     public void execute() throws MojoExecutionException, MojoFailureException {
-        final boolean isUpdatePlatform = true;
-        final boolean allowEqualVersion = false;
-        upgradeServer(serverId, version, isUpdatePlatform, allowEqualVersion);
+        upgradeServer(serverId, version, true);
     }
 
     /**
@@ -104,11 +103,10 @@ public class UpgradePlatform extends AbstractMojo{
      * @param serverId
      * @param version
      * @param isUpdateToPlatform
-     * @param allowEqualVersion
      * @throws MojoExecutionException
      * @throws MojoFailureException
      */
-    public void upgradeServer(String serverId, String version, boolean isUpdateToPlatform, boolean allowEqualVersion) throws MojoExecutionException, MojoFailureException {
+    public void upgradeServer(String serverId, final String version, boolean isUpdateToPlatform) throws MojoExecutionException, MojoFailureException {
         AttributeHelper helper = new AttributeHelper(prompter);
         String resultVersion = null;
         String resultServer = null;
@@ -152,10 +150,6 @@ public class UpgradePlatform extends AbstractMojo{
             else if (platformVersion.higher(nextVersion)) {
                 throw new MojoExecutionException(String.format(TEMPLATE_DOWNGRADE, resultServer));
             }
-            else if (platformVersion.equal(nextVersion) && (!allowEqualVersion)) {
-                getLog().info(String.format(TEMPLATE_SAME_VERSION, resultServer, resultVersion));
-                return;
-            }
         }
         else {
             String targetWebApp = isPriorVersion ? webAppVersionFromTmpFolder.toString() : SDKConstants.WEBAPP_VERSIONS.get(resultVersion);
@@ -181,10 +175,6 @@ public class UpgradePlatform extends AbstractMojo{
                 }
                 else if (new Version(webapp).higher(new Version(targetWebApp)) || (platformVersion.higher(nextVersion))) {
                     throw new MojoExecutionException(String.format(TEMPLATE_DOWNGRADE, resultServer));
-                }
-                else if ((!allowEqualVersion) && ((new Version(webapp).equal(new Version(targetWebApp)) || (platformVersion.equal(nextVersion))))) {
-                    getLog().info(String.format(TEMPLATE_SAME_VERSION, resultServer, resultVersion));
-                    return;
                 }
             }
         }
@@ -251,10 +241,6 @@ public class UpgradePlatform extends AbstractMojo{
             FileUtils.deleteDirectory(tmp);
         } catch (IOException e) {
             throw new MojoExecutionException("Error during clean: " + e.getMessage());
-        }
-        // if this is not "reset" server
-        if (!allowEqualVersion) {
-            getLog().info(String.format(TEMPLATE_SUCCESS, resultServer, platform, resultVersion));
         }
     }
 

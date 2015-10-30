@@ -347,7 +347,10 @@ public class SetupPlatform extends AbstractMojo {
         }
         List<Element> configuration = new ArrayList<Element>();
         configuration.add(element("artifactItems", artifactItems));
-        if (goal.equals(GOAL_UNPACK)) configuration.add(element("overWriteSnapshots", "true"));
+        if (goal.equals(GOAL_UNPACK)) {
+        	configuration.add(element("overWriteSnapshots", "true"));
+        	configuration.add(element("overWriteReleases", "true"));
+        }
         executeMojo(
                 plugin(
                         groupId(SDKConstants.PLUGIN_DEPENDENCIES_GROUP_ID),
