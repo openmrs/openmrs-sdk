@@ -6,7 +6,7 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.codehaus.plexus.components.interactivity.Prompter;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.utility.AttributeHelper;
-import org.openmrs.maven.plugins.utility.PropertyManager;
+import org.openmrs.maven.plugins.utility.ServerConfig;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 
 import java.io.File;
@@ -52,9 +52,9 @@ public class ModuleUninstall extends AbstractMojo {
             if (mod.getName().startsWith(artifact.getArtifactId())) {
                 boolean deleted = mod.delete();
                 if (deleted) {
-                    PropertyManager properties = new PropertyManager(new File(serverPath, SDKConstants.OPENMRS_SERVER_PROPERTIES).getPath());
+                    ServerConfig properties = ServerConfig.loadServerConfig(serverPath);
                     properties.removeFromValueList(SDKConstants.PROPERTY_USER_MODULES, artifact.getArtifactId());
-                    properties.apply();
+                    properties.save();
                     getLog().info(String.format("Module with groupId: '%s', artifactId: '%s' was successfully removed from server.",
                             artifact.getGroupId(), artifact.getArtifactId()));
                     return;

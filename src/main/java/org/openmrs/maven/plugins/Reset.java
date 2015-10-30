@@ -11,7 +11,7 @@ import org.codehaus.plexus.components.interactivity.Prompter;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.utility.AttributeHelper;
 import org.openmrs.maven.plugins.utility.DBConnector;
-import org.openmrs.maven.plugins.utility.PropertyManager;
+import org.openmrs.maven.plugins.utility.ServerConfig;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 
 import java.io.File;
@@ -73,7 +73,7 @@ public class Reset extends AbstractMojo{
             if (currentProperties != null) serverId = currentProperties.getName();
         }
         File serverPath = helper.getServerPath(serverId);
-        PropertyManager properties = new PropertyManager(new File(serverPath, SDKConstants.OPENMRS_SERVER_PROPERTIES).getPath());
+        ServerConfig properties = ServerConfig.loadServerConfig(serverPath);
         DBConnector connector = null;
         try {
             String dbName = String.format(SDKConstants.DB_NAME_TEMPLATE, serverPath.getName());

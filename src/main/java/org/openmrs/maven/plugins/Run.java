@@ -1,5 +1,21 @@
 package org.openmrs.maven.plugins;
 
+import static org.twdata.maven.mojoexecutor.MojoExecutor.artifactId;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.configuration;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.element;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.executeMojo;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.executionEnvironment;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.goal;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.groupId;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.name;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.plugin;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.version;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.BuildPluginManager;
@@ -8,14 +24,10 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.components.interactivity.Prompter;
 import org.openmrs.maven.plugins.utility.AttributeHelper;
-import org.openmrs.maven.plugins.utility.ConfigurationManager;
+import org.openmrs.maven.plugins.utility.Project;
 import org.openmrs.maven.plugins.utility.SDKConstants;
-
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-
-import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
+import org.openmrs.maven.plugins.utility.ServerConfig;
+import org.twdata.maven.mojoexecutor.MojoExecutor.Element;
 
 /**
  * @goal run
@@ -67,11 +79,10 @@ public class Run extends AbstractMojo {
         }
         File serverPath = helper.getServerPath(serverId, NO_SERVER_TEXT);
         serverPath.mkdirs();
-        File pom = new File(System.getProperty("user.dir"), SDKConstants.OPENMRS_MODULE_POM);
-        if (pom.exists()) {
-            // install current module before run
-            ConfigurationManager config = new ConfigurationManager(pom.getPath());
-            if (config.isOmod()) {
+        File userDir = new File(System.getProperty("user.dir"));
+        if (Project.hasProject(userDir)) {
+            Project config = Project.loadProject(userDir);
+            if (config.isOpenmrsModule()) {
                 String artifactId = config.getArtifactId();
                 String groupId = config.getGroupId();
                 String version = config.getVersion();
@@ -106,29 +117,52 @@ public class Run extends AbstractMojo {
         if (h2File != null) {
             webAppConfiguration.add(element("extraClasspath", new File(serverPath, h2File).getAbsolutePath()));
         }
-        Element[] webAppConfigurationElements = new Element[webAppConfiguration.size()];
-        for (Element e: webAppConfiguration) {
-            webAppConfigurationElements[webAppConfiguration.indexOf(e)] = e;
+        
+        List<Element> systemProperties = new ArrayList<Element>();
+        systemProperties.add(element("systemProperty",
+            element("name", "OPENMRS_INSTALLATION_SCRIPT"),
+            element("value", new File(serverPath, SDKConstants.OPENMRS_SERVER_PROPERTIES).getAbsolutePath())));
+        systemProperties.add(element("systemProperty",
+            element("name", "OPENMRS_APPLICATION_DATA_DIRECTORY"),
+            element("value", serverPath.getAbsolutePath())));
+    
+        List<Element> watchedProjects = getWatchedProjectsConfiguration(serverPath);
+        if (!watchedProjects.isEmpty()) {
+        	systemProperties.addAll(watchedProjects);
         }
+        
         executeMojo(
                 plugin(
                         groupId(SDKConstants.PLUGIN_JETTY_GROUP_ID),
                         artifactId(SDKConstants.PLUGIN_JETTY_ARTIFACT_ID),
                         version(SDKConstants.PLUGIN_JETTY_VERSION)
                 ),
-                goal("run-war"),
+                goal("deploy-war"),
                 configuration(
                         element(name("war"), new File(serverPath, warFile).getAbsolutePath()),
-                        element(name("webApp"), webAppConfigurationElements),
-                        element(name("systemProperties"),
-                                element("systemProperty",
-                                        element("name", "OPENMRS_INSTALLATION_SCRIPT"),
-                                        element("value", new File(serverPath, SDKConstants.OPENMRS_SERVER_PROPERTIES).getAbsolutePath())),
-                                element("systemProperty",
-                                        element("name", "OPENMRS_APPLICATION_DATA_DIRECTORY"),
-                                        element("value", serverPath.getAbsolutePath())))
+                        element(name("webApp"), webAppConfiguration.toArray(new Element[0])),
+                        element(name("systemProperties"), systemProperties.toArray(new Element[0]))
                 ),
                 executionEnvironment(mavenProject, mavenSession, pluginManager)
         );
+    }
+
+	private List<Element> getWatchedProjectsConfiguration(File serverPath) throws MojoExecutionException {
+	    ServerConfig serverConfig = ServerConfig.loadServerConfig(serverPath);
+        List<Element> watched = new ArrayList<Element>();
+        Set<Project> watchedProjects = serverConfig.getWatchedProjects();
+        if (!watchedProjects.isEmpty()) {
+        	getLog().info(" ");
+        	getLog().info("Hot redeployment for controllers and gsps enabled.");
+        	
+        	getLog().info(" ");
+
+	        for (Project project : watchedProjects) {
+		        watched.add(element("systemProperty", element("name", "uiFramework.development." + project.getArtifactId()),
+		        	element("value", project.getPath())));
+	        }
+        }
+        
+        return watched;
     }
 }

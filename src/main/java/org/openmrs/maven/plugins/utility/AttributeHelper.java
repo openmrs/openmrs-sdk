@@ -156,7 +156,7 @@ public class AttributeHelper {
         if (propertiesFile != null) {
             File server = propertiesFile.getParentFile();
             if (!server.getParentFile().equals(openmrsHome)) return null;
-            PropertyManager properties = new PropertyManager(propertiesFile.getPath());
+            ServerConfig properties = ServerConfig.loadServerConfig(server);
             if (properties.getParam(SDKConstants.PROPERTY_SERVER_ID) != null) return propertiesFile.getParentFile();
         }
         return null;

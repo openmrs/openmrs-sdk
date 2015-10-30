@@ -14,7 +14,7 @@ import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.model.Version;
 import org.openmrs.maven.plugins.utility.AttributeHelper;
 import org.openmrs.maven.plugins.utility.DBConnector;
-import org.openmrs.maven.plugins.utility.PropertyManager;
+import org.openmrs.maven.plugins.utility.ServerConfig;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 
 import java.io.File;
@@ -163,18 +163,17 @@ public class SetupPlatform extends AbstractMojo {
     public String setup(Server server, boolean isCreatePlatform, boolean isCopyDependencies) throws MojoExecutionException, MojoFailureException {
         AttributeHelper helper = new AttributeHelper(prompter);
         File openMRSPath = new File(System.getProperty("user.home"), SDKConstants.OPENMRS_SERVER_PATH);
-        PropertyManager basicProperties = null;
+        ServerConfig serverConfig = null;
         if (server.getFilePath() != null) {
-            File basicFileProperties = new File(server.getFilePath());
-            if (!basicFileProperties.exists()) throw new MojoExecutionException("Selected server file is not exist");
-            basicProperties = new PropertyManager(basicFileProperties.getPath());
+            File serverPath = new File(server.getFilePath());
+            serverConfig = ServerConfig.loadServerConfig(serverPath);
             // fill empty properties with values from server file
-            if (server.getServerId() == null) server.setServerId(basicProperties.getParam(SDKConstants.PROPERTY_SERVER_ID));
-            if (server.getVersion() == null) server.setVersion(basicProperties.getParam(SDKConstants.PROPERTY_PLATFORM));
-            if (server.getDbDriver() == null) server.setDbDriver(basicProperties.getParam(SDKConstants.PROPERTY_DB_DRIVER));
-            if (server.getDbUri() == null) server.setDbUri(basicProperties.getParam(SDKConstants.PROPERTY_DB_URI));
-            if (server.getDbUser() == null) server.setDbUser(basicProperties.getParam(SDKConstants.PROPERTY_DB_USER));
-            if (server.getDbPassword() == null) server.setDbPassword(basicProperties.getParam(SDKConstants.PROPERTY_DB_PASS));
+            if (server.getServerId() == null) server.setServerId(serverConfig.getParam(SDKConstants.PROPERTY_SERVER_ID));
+            if (server.getVersion() == null) server.setVersion(serverConfig.getParam(SDKConstants.PROPERTY_PLATFORM));
+            if (server.getDbDriver() == null) server.setDbDriver(serverConfig.getParam(SDKConstants.PROPERTY_DB_DRIVER));
+            if (server.getDbUri() == null) server.setDbUri(serverConfig.getParam(SDKConstants.PROPERTY_DB_URI));
+            if (server.getDbUser() == null) server.setDbUser(serverConfig.getParam(SDKConstants.PROPERTY_DB_USER));
+            if (server.getDbPassword() == null) server.setDbPassword(serverConfig.getParam(SDKConstants.PROPERTY_DB_PASS));
         }
         try {
             server.setServerId(helper.promptForNewServerIfMissing(openMRSPath.getPath(), server.getServerId()));
@@ -182,9 +181,8 @@ public class SetupPlatform extends AbstractMojo {
             getLog().error(e.getMessage());
         }
         File serverPath = new File(openMRSPath, server.getServerId());
-        File propertyPath = new File(serverPath, SDKConstants.OPENMRS_SERVER_PROPERTIES);
-        if (propertyPath.exists()) {
-            PropertyManager props = new PropertyManager(propertyPath.getPath());
+        if (ServerConfig.hasServerConfig(serverPath)) {
+            ServerConfig props = ServerConfig.loadServerConfig(serverPath);
             if (props.getParam(SDKConstants.PROPERTY_SERVER_ID) != null) {
                 throw new MojoExecutionException("Server with same id already created");
             }
@@ -214,13 +212,13 @@ public class SetupPlatform extends AbstractMojo {
                 installModules(artifacts, modules.getPath());
             }
             // install user modules
-            if (basicProperties != null) {
-                String values = basicProperties.getParam(SDKConstants.PROPERTY_USER_MODULES);
+            if (serverConfig != null) {
+                String values = serverConfig.getParam(SDKConstants.PROPERTY_USER_MODULES);
                 if (values != null) {
                     ModuleInstall installer = new ModuleInstall(mavenProject, mavenSession, pluginManager, prompter);
-                    String[] modules = values.split(PropertyManager.COMMA);
+                    String[] modules = values.split(ServerConfig.COMMA);
                     for (String mod: modules) {
-                        String[] params = mod.split(PropertyManager.SLASH);
+                        String[] params = mod.split(ServerConfig.SLASH);
                         // check
                         if (params.length == 3) {
                             installer.installModule(server.getServerId(), params[0], params[1], params[2]);
@@ -230,8 +228,13 @@ public class SetupPlatform extends AbstractMojo {
                 }
             }
         }
-        File propertiesFile = new File(serverPath.getPath(), SDKConstants.OPENMRS_SERVER_PROPERTIES);
-        PropertyManager properties = new PropertyManager(propertiesFile.getPath());
+        
+        ServerConfig properties;
+        if (ServerConfig.hasServerConfig(serverPath)) {
+        	properties = ServerConfig.loadServerConfig(serverPath);
+        } else {
+        	properties = ServerConfig.createServerConfig(serverPath);
+        }
         properties.setDefaults();
         properties.setParam(SDKConstants.PROPERTY_SERVER_ID, server.getServerId());
         // configure db properties
@@ -285,7 +288,7 @@ public class SetupPlatform extends AbstractMojo {
         String dbName = String.format(SDKConstants.DB_NAME_TEMPLATE, server.getServerId());
         properties.setParam(SDKConstants.PROPERTY_DB_NAME, dbName);
         properties.setParam(SDKConstants.PROPERTY_DEMO_DATA, String.valueOf(server.isIncludeDemoData()));
-        properties.apply();
+        properties.save();
         String dbType = properties.getParam(SDKConstants.PROPERTY_DB_DRIVER);
         if (dbType.equals(SDKConstants.DRIVER_MYSQL)) {
             String uri = properties.getParam(SDKConstants.PROPERTY_DB_URI);

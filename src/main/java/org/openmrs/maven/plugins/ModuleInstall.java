@@ -11,8 +11,8 @@ import org.codehaus.plexus.components.interactivity.Prompter;
 import org.codehaus.plexus.components.interactivity.PrompterException;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.utility.AttributeHelper;
-import org.openmrs.maven.plugins.utility.ConfigurationManager;
-import org.openmrs.maven.plugins.utility.PropertyManager;
+import org.openmrs.maven.plugins.utility.Project;
+import org.openmrs.maven.plugins.utility.ServerConfig;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 import org.openmrs.maven.plugins.model.Version;
 
@@ -162,11 +162,11 @@ public class ModuleInstall extends AbstractMojo {
                 ),
                 executionEnvironment(mavenProject, mavenSession, pluginManager)
         );
-        PropertyManager properties = new PropertyManager(new File(serverPath, SDKConstants.OPENMRS_SERVER_PROPERTIES).getPath());
+        ServerConfig properties = ServerConfig.loadServerConfig(serverPath);
         String[] params = {artifact.getGroupId(), originalId, artifact.getVersion()};
         String module = StringUtils.join(params, "/");
         properties.addToValueList(SDKConstants.PROPERTY_USER_MODULES, module);
-        properties.apply();
+        properties.save();
         if (versionUpdated) {
             if (removed) getLog().info(String.format(DEFAULT_UPDATE_MESSAGE, originalId, artifact.getVersion()));
         }
@@ -182,21 +182,26 @@ public class ModuleInstall extends AbstractMojo {
      * @return
      */
     public Artifact getArtifactForSelectedParameters(AttributeHelper helper, String groupId, String artifactId, String version) throws MojoExecutionException {
-        File pomFile = new File(System.getProperty("user.dir"), SDKConstants.OPENMRS_MODULE_POM);
         String moduleGroupId = null;
         String moduleArtifactId = null;
         String moduleVersion = null;
-        if (pomFile.exists() && (new ConfigurationManager(pomFile.getPath()).isOmod()) && (artifactId == null)) {
-            ConfigurationManager manager = new ConfigurationManager(pomFile.getPath());
-            if (manager.getParent() != null) {
-                moduleGroupId = manager.getParent().getGroupId();
-                moduleArtifactId = manager.getParent().getArtifactId();
-                moduleVersion = (version != null) ? version : manager.getParent().getVersion();
+        
+        File userDir = new File(System.getProperty("user.dir"));
+        Project project = null;
+        if (Project.hasProject(userDir)) {
+        	project = Project.loadProject(userDir);
+        }
+        
+        if (artifactId == null && project.isOpenmrsModule()) {
+            if (project.getParent() != null) {
+                moduleGroupId = project.getParent().getGroupId();
+                moduleArtifactId = project.getParent().getArtifactId();
+                moduleVersion = (version != null) ? version : project.getParent().getVersion();
             }
             else {
-                moduleGroupId = manager.getGroupId();
-                moduleArtifactId = manager.getArtifactId();
-                moduleVersion = (version != null) ? version: manager.getVersion();
+                moduleGroupId = project.getGroupId();
+                moduleArtifactId = project.getArtifactId();
+                moduleVersion = (version != null) ? version: project.getVersion();
             }
         }
         else {

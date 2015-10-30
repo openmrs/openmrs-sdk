@@ -20,7 +20,7 @@ import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.model.Version;
 import org.openmrs.maven.plugins.utility.AttributeHelper;
-import org.openmrs.maven.plugins.utility.PropertyManager;
+import org.openmrs.maven.plugins.utility.ServerConfig;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 
 /**
@@ -123,8 +123,7 @@ public class UpgradePlatform extends AbstractMojo{
 
         File serverPath = helper.getServerPath(serverId);
         resultServer = serverPath.getName();
-        File propertyFile = new File(serverPath, SDKConstants.OPENMRS_SERVER_PROPERTIES);
-        PropertyManager properties = new PropertyManager(propertyFile.getPath());
+        ServerConfig properties = ServerConfig.loadServerConfig(serverPath);
         String webapp = properties.getParam(SDKConstants.PROPERTY_VERSION);
         String platform = properties.getParam(SDKConstants.PROPERTY_PLATFORM);
 
@@ -205,9 +204,9 @@ public class UpgradePlatform extends AbstractMojo{
             String values = properties.getParam(SDKConstants.PROPERTY_USER_MODULES);
             if (values != null) {
                 ModuleInstall installer = new ModuleInstall(mavenProject, mavenSession, pluginManager, prompter);
-                String[] modules = values.split(PropertyManager.COMMA);
+                String[] modules = values.split(ServerConfig.COMMA);
                 for (String mod: modules) {
-                    String[] params = mod.split(PropertyManager.SLASH);
+                    String[] params = mod.split(ServerConfig.SLASH);
                     // check
                     if (params.length == 3) {
                         installer.installModule(resultServer, params[0], params[1], params[2]);
@@ -218,7 +217,7 @@ public class UpgradePlatform extends AbstractMojo{
         }
         // also make a copy of old properties file
         File tempProperties = new File(serverPath, TEMP_PROPERTIES);
-        properties.apply(tempProperties.getPath());
+        properties.saveTo(tempProperties);
         // also remove copy of old properties file if success
         listFilesToRemove.add(tempProperties);
         boolean addDemoData = (String.valueOf(true).equals(properties.getParam(SDKConstants.PROPERTY_DEMO_DATA)));
@@ -232,7 +231,7 @@ public class UpgradePlatform extends AbstractMojo{
                 .setInteractiveMode("false")
                 .setDemoData(addDemoData)
                 .build();
-        propertyFile.delete();
+        properties.delete();
         setupPlatform.setup(server, isUpdateToPlatform, false);
         removeFiles(listFilesToRemove);
         // remove temp files after upgrade
