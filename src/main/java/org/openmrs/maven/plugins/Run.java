@@ -124,7 +124,7 @@ public class Run extends AbstractMojo {
             element("value", new File(serverPath, SDKConstants.OPENMRS_SERVER_PROPERTIES).getAbsolutePath())));
         systemProperties.add(element("systemProperty",
             element("name", "OPENMRS_APPLICATION_DATA_DIRECTORY"),
-            element("value", serverPath.getAbsolutePath())));
+            element("value", serverPath.getAbsolutePath() + File.separator )));
     
         List<Element> watchedProjects = getWatchedProjectsConfiguration(serverPath);
         if (!watchedProjects.isEmpty()) {
