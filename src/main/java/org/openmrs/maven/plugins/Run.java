@@ -140,6 +140,7 @@ public class Run extends AbstractMojo {
                 goal("deploy-war"),
                 configuration(
                         element(name("war"), new File(serverPath, warFile).getAbsolutePath()),
+                        element(name("daemon"), "false"),
                         element(name("webApp"), webAppConfiguration.toArray(new Element[0])),
                         element(name("systemProperties"), systemProperties.toArray(new Element[0]))
                 ),

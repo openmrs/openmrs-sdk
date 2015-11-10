@@ -37,7 +37,7 @@ public class ServerConfig {
 	
 	public static boolean hasServerConfig(File dir) {
 		if (dir.exists()) {
-			File properties = new File(dir, "installation.properties");
+			File properties = new File(dir, SDKConstants.OPENMRS_SERVER_PROPERTIES);
 			return properties.exists();
 		}
 		
@@ -46,18 +46,18 @@ public class ServerConfig {
 	
 	public static ServerConfig createServerConfig(File dir) {
 		Properties properties = new Properties();
-		File config = new File(dir, "installation.properties");
+		File config = new File(dir, SDKConstants.OPENMRS_SERVER_PROPERTIES);
 		
 		return new ServerConfig(config, properties);
 	}
 	
 	public static ServerConfig loadServerConfig(File dir) throws MojoExecutionException {
 		if (!hasServerConfig(dir)) {
-			throw new IllegalArgumentException("Installation.properties file is missing");
+			throw new IllegalArgumentException(SDKConstants.OPENMRS_SERVER_PROPERTIES + " file is missing");
 		}
 		
 		Properties properties = new Properties();
-		File config = new File(dir, "installation.properties");
+		File config = new File(dir, SDKConstants.OPENMRS_SERVER_PROPERTIES);
 		
 		FileInputStream in = null;
 		try {
