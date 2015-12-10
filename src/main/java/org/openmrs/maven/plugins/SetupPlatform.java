@@ -33,8 +33,8 @@ import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
  */
 public class SetupPlatform extends AbstractMojo {
 
-    private static final String DEFAULT_VERSION = "2.2";
-    private static final String DEFAULT_PLATFORM_VERSION = "1.11.2";
+    private static final String DEFAULT_VERSION = "2.3";
+    private static final String DEFAULT_PLATFORM_VERSION = "1.11.5";
     private static final String GOAL_UNPACK = "unpack";
 
     /**

@@ -211,7 +211,7 @@ public class SDKConstants {
         if (webAppVersion == null) return null;
         return new ArrayList<Artifact>() {{
             add(new Artifact("openmrs-webapp", webAppVersion, Artifact.GROUP_WEB, Artifact.TYPE_WAR));
-            add(new Artifact("h2", "1.2.135", Artifact.GROUP_H2, Artifact.TYPE_JAR));
+            add(new Artifact("h2", "1.4.190", Artifact.GROUP_H2, Artifact.TYPE_JAR));
         }};
     }
 
