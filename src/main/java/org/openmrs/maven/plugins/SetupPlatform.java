@@ -12,18 +12,9 @@ import static org.twdata.maven.mojoexecutor.MojoExecutor.version;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URLDecoder;
-import java.net.URLEncoder;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.maven.execution.MavenSession;
@@ -309,13 +300,15 @@ public class SetupPlatform extends AbstractMojo {
                 properties.setParam(SDKConstants.PROPERTY_VERSION, SDKConstants.WEBAPP_VERSIONS.get(server.getVersion()));
             }
         }
-        String dbName = String.format(SDKConstants.DB_NAME_TEMPLATE, server.getServerId());
+
+        String uri = properties.getParam(SDKConstants.PROPERTY_DB_URI);
+        String dbName = determineDbName(uri, server.getServerId());
         properties.setParam(SDKConstants.PROPERTY_DB_NAME, dbName);
         properties.setParam(SDKConstants.PROPERTY_DEMO_DATA, String.valueOf(server.isIncludeDemoData()));
         properties.save();
         String dbType = properties.getParam(SDKConstants.PROPERTY_DB_DRIVER);
         if (dbType.equals(SDKConstants.DRIVER_MYSQL)) {
-            String uri = properties.getParam(SDKConstants.PROPERTY_DB_URI);
+            uri = properties.getParam(SDKConstants.PROPERTY_DB_URI);
             uri = uri.substring(0, uri.lastIndexOf("/"));
             String user = properties.getParam(SDKConstants.PROPERTY_DB_USER);
             String pass = properties.getParam(SDKConstants.PROPERTY_DB_PASS);
@@ -338,6 +331,24 @@ public class SetupPlatform extends AbstractMojo {
 
         return serverPath.getPath();
     }
+
+	public String determineDbName(String uri, String serverId) throws MojoExecutionException {
+		String dbName = String.format(SDKConstants.DB_NAME_TEMPLATE, serverId);
+        if (!uri.contains("@DBNAME@")) {
+        	//determine db name from uri
+        	int dbNameStart = uri.lastIndexOf("/");
+        	if (dbNameStart < 0) {
+        		throw new MojoExecutionException("The uri is in a wrong format: " + uri);
+        	}
+        	int dbNameEnd = uri.indexOf("?");
+        	dbName = dbNameEnd < 0 ? uri.substring(dbNameStart + 1) : uri.substring(dbNameStart + 1, dbNameEnd);
+
+        	if (!dbName.matches("^[A-Za-z0-9_\\-]+$")) {
+        		throw new MojoExecutionException("The db name is in a wrong format (allowed alphanumeric, dash and underscore signs): " + dbName);
+        	}
+        }
+		return dbName;
+	}
 
     /**
      * Install modules from Artifact list
