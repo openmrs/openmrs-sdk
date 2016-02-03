@@ -1,5 +1,30 @@
 package org.openmrs.maven.plugins;
 
+import static org.twdata.maven.mojoexecutor.MojoExecutor.artifactId;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.configuration;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.element;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.executeMojo;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.executionEnvironment;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.goal;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.groupId;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.plugin;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.version;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
@@ -14,16 +39,9 @@ import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.model.Version;
 import org.openmrs.maven.plugins.utility.AttributeHelper;
 import org.openmrs.maven.plugins.utility.DBConnector;
-import org.openmrs.maven.plugins.utility.ServerConfig;
 import org.openmrs.maven.plugins.utility.SDKConstants;
-
-import java.io.File;
-import java.io.IOException;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-
-import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
+import org.openmrs.maven.plugins.utility.ServerConfig;
+import org.twdata.maven.mojoexecutor.MojoExecutor.Element;
 
 /**
  *
@@ -228,7 +246,7 @@ public class SetupPlatform extends AbstractMojo {
                 }
             }
         }
-        
+
         ServerConfig properties;
         if (ServerConfig.hasServerConfig(serverPath)) {
         	properties = ServerConfig.loadServerConfig(serverPath);
@@ -259,7 +277,13 @@ public class SetupPlatform extends AbstractMojo {
                 }
                 else properties.setParam(SDKConstants.PROPERTY_DB_DRIVER, server.getDbDriver());
 
-                server.setDbUri(helper.promptForValueIfMissingWithDefault(server.getDbUri(), "dbUri", defaultUri));
+
+                String dbUri = helper.promptForValueIfMissingWithDefault(server.getDbUri(), "dbUri", defaultUri);
+                if (dbUri.startsWith("jdbc:mysql:")) {
+                	dbUri = helper.addMySQLParamsIfMissing(dbUri);
+                }
+
+                server.setDbUri(dbUri);
                 String defaultUser = "root";
                 server.setDbUser(helper.promptForValueIfMissingWithDefault(server.getDbUser(), "dbUser", defaultUser));
                 server.setDbPassword(helper.promptForValueIfMissing(server.getDbPassword(), "dbPassword"));

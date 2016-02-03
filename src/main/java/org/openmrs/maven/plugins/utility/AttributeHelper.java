@@ -1,10 +1,15 @@
 package org.openmrs.maven.plugins.utility;
 
 import java.io.File;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.TreeMap;
 
 import org.apache.commons.lang.StringUtils;
@@ -188,4 +193,44 @@ public class AttributeHelper {
         int length = sortedMap.size() < count ? sortedMap.size() : count;
         return new ArrayList<String>(sortedMap.values()).subList(0, length);
     }
+
+    public String addMySQLParamsIfMissing(String dbUri) {
+		Map<String, String> mysqlParams = new LinkedHashMap<String, String>();
+		mysqlParams.put("autoReconnect", "true");
+		mysqlParams.put("sessionVariables", "storage_engine=InnoDB");
+		mysqlParams.put("useUnicode", "true");
+		mysqlParams.put("characterEncoding", "UTF-8");
+
+		int querySeparator = dbUri.indexOf("?");
+
+		String query = querySeparator > 0 ? dbUri.substring(querySeparator + 1) : null;
+		if (query != null) {
+			String[] params = query.split("&");
+			for (String param : params) {
+				int valueSeparator = param.indexOf("=");
+			    try {
+					String key = valueSeparator > 0 ? URLDecoder.decode(param.substring(0, valueSeparator), "UTF-8") : param;
+					String value = valueSeparator > 0 ? URLDecoder.decode(param.substring(valueSeparator + 1), "UTF-8") : "";
+					mysqlParams.put(key, value);
+				}
+				catch (UnsupportedEncodingException e) {
+					throw new RuntimeException(e);
+				}
+			}
+		}
+
+		StringBuilder newUri = new StringBuilder(querySeparator > 0 ? dbUri.substring(0, querySeparator) : dbUri);
+		newUri.append("?");
+		for (Entry<String, String> param : mysqlParams.entrySet()) {
+			try {
+				newUri.append(URLEncoder.encode(param.getKey(), "UTF-8")).append("=").append(URLEncoder.encode(param.getValue(), "UTF-8")).append("&");
+			}
+			catch (UnsupportedEncodingException e) {
+				throw new RuntimeException(e);
+			}
+		}
+		dbUri = newUri.toString();
+		dbUri = dbUri.substring(0, dbUri.length() - 1);
+		return dbUri;
+	}
 }
