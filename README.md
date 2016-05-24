@@ -41,7 +41,7 @@ To build the plugin run:
 
 `mvn clean install`
 
-To run a SNAPSHOT version of SDK, you need to specify groupId:artifactId:version in all SDK commands, e.g.
+To run a SNAPSHOT version of SDK, you need to specify groupId:artifactId:version for all SDK commands, e.g.
 
 `mvn org.openmrs.maven.plugins:openmrs-sdk-maven-plugin:2.1.3-SNAPSHOT:setup-platform`
 
