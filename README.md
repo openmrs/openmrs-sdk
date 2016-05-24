@@ -7,7 +7,7 @@ A maven plugin for the OpenMRS 2.x SDK
 ## Installation
 For installing sdk, just run: <br/>
 
-    mvn org.openmrs.maven.plugins:openmrs-sdk-maven-plugin:setup-sdk
+`mvn org.openmrs.maven.plugins:openmrs-sdk-maven-plugin:setup-sdk`
 
 ## List of supported commands:
 All commands can be executed by `mvn openmrs-sdk:<command>`
@@ -38,9 +38,11 @@ Options: serverId, jetty.port
 ## Development
 
 To build the plugin run:
+
 `mvn clean install`
 
 To run a SNAPSHOT version of SDK, you need to specify groupId:artifactId:version in all SDK commands, e.g.
+
 `mvn org.openmrs.maven.plugins:openmrs-sdk-maven-plugin:2.1.3-SNAPSHOT:setup-platform`
 
 You can also debug commands by creating maven run configurations for the SNAPSHOT version in your IDE and starting them in the debug mode.
