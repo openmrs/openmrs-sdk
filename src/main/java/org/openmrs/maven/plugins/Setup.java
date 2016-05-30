@@ -192,7 +192,7 @@ public class Setup extends AbstractMojo {
                 throw new MojoExecutionException("Server with same id already created");
             }
         }
-        server.setPropertiesFile(serverPath);
+        server.setServerDirectory(serverPath);
 
         if(isCreatePlatform){
             Artifact webapp = new Artifact(SDKConstants.WEBAPP_ARTIFACT_ID, SDKConstants.SETUP_DEFAULT_PLATFORM_VERSION, Artifact.GROUP_WEB);
@@ -216,8 +216,8 @@ public class Setup extends AbstractMojo {
             wizard.promptForDbSettingsIfMissing(server);
         }
 
-        server.setDbName(determineDbName(server.getDbUri(), server.getServerId()));
         server.setUnspecifiedToDefault();
+        server.setDbName(determineDbName(server.getDbUri(), server.getServerId()));
         server.save();
 
         if (server.getDbDriver().equals(SDKConstants.DRIVER_MYSQL)){
@@ -233,10 +233,10 @@ public class Setup extends AbstractMojo {
         if (coreModules == null) {
             throw new MojoExecutionException(String.format("Invalid version: '%s'", server.getVersion()));
         }
-        installModules(coreModules, server.getPropertiesFile().getPath());
+        installModules(coreModules, server.getServerDirectory().getPath());
         // install other modules
         if (!isCreatePlatform) {
-            File modules = new File(server.getPropertiesFile(), SDKConstants.OPENMRS_SERVER_MODULES);
+            File modules = new File(server.getServerDirectory(), SDKConstants.OPENMRS_SERVER_MODULES);
             modules.mkdirs();
             List<Artifact> artifacts = SDKConstants.ARTIFACTS.get(server.getVersion());
             // install modules for each version

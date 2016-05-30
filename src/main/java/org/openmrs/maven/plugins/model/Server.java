@@ -63,6 +63,8 @@ public class Server {
 
     private File propertiesFile;
 
+    private File serverDirectory;
+
     private String interactiveMode;
 
     public static class ServerBuilder {
@@ -454,11 +456,16 @@ public class Server {
         setParam(PROPERTY_DB_NAME, dbName);
     }
 
+    public void setServerDirectory(File dir) {
+        this.serverDirectory = dir;
+        this.propertiesFile = new File(dir, SDKConstants.OPENMRS_SERVER_PROPERTIES);
+    }
+
     public File getPropertiesFile() {
         return propertiesFile;
     }
 
-    public void setPropertiesFile(File propertiesFile) {
-        this.propertiesFile = propertiesFile;
+    public File getServerDirectory() {
+        return serverDirectory;
     }
 }

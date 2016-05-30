@@ -10,7 +10,7 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 
-public class SetupPlatformTest {
+public class SetupTest {
 
 	@Rule
 	public ExpectedException expectedException = ExpectedException.none();

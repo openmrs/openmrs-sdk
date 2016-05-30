@@ -24,6 +24,8 @@ import java.util.Map.Entry;
 public class DefaultWizard implements Wizard {
     private static final String EMPTY_STRING = "";
     private static final String NONE = "(none)";
+    private static final String DEFAULT_CHOICE_TMPL = "\nWhich one do You choose? [";
+    private static final String DEFAULT_OPTION_TMPL = "\n%d) %s";
     private static final String DEFAULT_SERVER_NAME = "server";
     private static final String DEFAULT_VALUE_TMPL = "Define value for property '%s'";
     private static final String DEFAULT_VALUE_TMPL_WITH_DEFAULT = "Define value for property '%s': (default: '%s')";
@@ -91,24 +93,40 @@ public class DefaultWizard implements Wizard {
         return val;
     }
 
-    private String promptForMissingValueWithOptions(String message, String value, String parameterName, String[] options){
+    private String promptForMissingValueWithOptions(String message, String value, String parameterName, List<String> options){
         if (value != null) {
             return value;
         }
-        String textToShow = String.format(message != null? message : DEFAULT_VALUE_TMPL_WITH_DEFAULT, parameterName, options[0]);
-        for(String option: options){
+        String question = String.format(message != null? message : DEFAULT_VALUE_TMPL_WITH_DEFAULT, parameterName, options.get(0));
+        StringBuilder choiceBuilder = new StringBuilder(DEFAULT_CHOICE_TMPL);
 
+        showMessage(question);
+        int i = 1;
+        for(String option : options){
+            showMessage(String.format(DEFAULT_OPTION_TMPL, i, option));
+            choiceBuilder.append((i)+"/");
+            i++;
         }
-        String val = prompt(textToShow);
+        String choice = choiceBuilder.toString();
+        //delete trailing '/'
+        String val = prompt(choice.substring(0, choice.length()-1)+"]");
         if (val.equals(EMPTY_STRING)) {
-            val = options[0];
+            return options.get(0);
+        } else {
+            return options.get(Integer.parseInt(val)-1);
         }
-        return val;
     }
 
     private String prompt(String textToShow){
         try {
             return prompter.prompt(textToShow);
+        } catch (PrompterException e) {
+            throw new RuntimeException(e);
+        }
+    }
+    private void showMessage(String textToShow){
+        try {
+            prompter.showMessage(textToShow);
         } catch (PrompterException e) {
             throw new RuntimeException(e);
         }
@@ -198,22 +216,28 @@ public class DefaultWizard implements Wizard {
 
     @Override
     public void promptForPlatformVersionIfMissing(Server server, VersionsHelper versionsHelper, Artifact artifact) {
-        String version = (promptForValueWithDefaultList(server.getVersion(), "version",
-                versionsHelper.getLatestReleasedVersion(artifact), versionsHelper.getVersionAdvice(artifact, 6)));
+        String version = promptForMissingValueWithOptions("You can install the following versions of a platform:",
+                server.getVersion(), "version", versionsHelper.getVersionAdvice(artifact, 6));
         server.setVersion(version);
     }
 
     @Override
     public void promptForDistroVersionIfMissing(Server server) {
-        server.setVersion(promptForValueIfMissingWithDefault
-                ("Specify server id (-D%s) (default: '%s')", server.getVersion(), "version", SDKConstants.SETUP_DEFAULT_VERSION));
+        List<String> options = Arrays.asList(
+                "2.2",
+                "2.3",
+                "2.4-SNAPSHOT");
+
+        String version = promptForMissingValueWithOptions ("You can install the following versions of distribution:",
+                server.getVersion(), "version", options);
+        server.setVersion(version);
     }
 
     @Override
     public void promptForDbSettingsIfMissing(Server server) {
         //set driver
         String dbDriver = promptForValueIfMissingWithDefault("Please specify database (-D%s) (default: '%s')",
-                server.getServerId(), "dbDriver", "mysql");
+                server.getDbDriver(), "dbDriver", "mysql");
         String defaultUri = SDKConstants.URI_MYSQL;
         if ((dbDriver.equals("postgresql")) || (dbDriver.equals(SDKConstants.DRIVER_POSTGRESQL))) {
             server.setDbDriver(SDKConstants.DRIVER_POSTGRESQL);
@@ -228,16 +252,19 @@ public class DefaultWizard implements Wizard {
         }
         else server.setParam(Server.PROPERTY_DB_DRIVER, server.getDbDriver());
         //set uri
-        String dbUri = promptForValueIfMissingWithDefault("Specify server id (-D%s) (default: '%s')", server.getDbUri(), "dbUri", defaultUri);
+        String dbUri = promptForValueIfMissingWithDefault(
+                "Please specify database uri (-D%s) (default: '%s')", server.getDbUri(), "dbUri", defaultUri);
         if (dbUri.startsWith("jdbc:mysql:")) {
             dbUri = addMySQLParamsIfMissing(dbUri);
         }
         server.setDbUri(dbUri);
         //set user
         String defaultUser = "root";
-        server.setDbUser(promptForValueIfMissingWithDefault(null, server.getDbUser(), "dbUser", defaultUser));
+        server.setDbUser(promptForValueIfMissingWithDefault(
+                "Please specify database username (-D%s) (default: '%s')", server.getDbUser(), "dbUser", defaultUser));
         //set password
-        server.setDbPassword(promptForValueIfMissing(server.getDbPassword(), "dbPassword"));
+        server.setDbPassword(promptForValueIfMissingWithDefault(
+                "Please specify database password (-D%s) (default: '%s')", server.getDbPassword(), "dbPassword", " "));
     }
 
     /**

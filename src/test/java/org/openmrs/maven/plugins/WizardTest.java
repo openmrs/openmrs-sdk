@@ -9,20 +9,20 @@ import org.junit.Test;
 import org.openmrs.maven.plugins.utility.Wizard;
 import org.openmrs.maven.plugins.utility.DefaultWizard;
 
-public class AttributeHelperTest {
+public class WizardTest {
 
-	Wizard helper;
+	Wizard wizard;
 
 	@Before
 	public void before() {
-		helper = new DefaultWizard(null);
+		wizard = new DefaultWizard(null);
 	}
 
 	@Test
 	public void addMySQLParamsIfMissing_shouldAddMissingMySQLParamsIfNoParamsSpecified() {
 		String uri = "jdbc:mysql://localhost:3016/openmrs";
 
-		String correctUri = helper.addMySQLParamsIfMissing(uri);
+		String correctUri = wizard.addMySQLParamsIfMissing(uri);
 
 		assertThat(correctUri, is(equalTo(
 		    "jdbc:mysql://localhost:3016/openmrs?autoReconnect=true&sessionVariables=storage_engine%3DInnoDB&useUnicode=true&characterEncoding=UTF-8")));
@@ -32,7 +32,7 @@ public class AttributeHelperTest {
 	public void addMySQLParamsIfMissing_shouldAddMissingMySQLParamsIfSomeParamsSpecified() throws Exception {
 		String uri = "jdbc:mysql://localhost:3016/openmrs?autoReconnect=false&useUnicode=false";
 
-		String correctUri = helper.addMySQLParamsIfMissing(uri);
+		String correctUri = wizard.addMySQLParamsIfMissing(uri);
 
 		assertThat(correctUri, is(equalTo(
 		    "jdbc:mysql://localhost:3016/openmrs?autoReconnect=false&sessionVariables=storage_engine%3DInnoDB&useUnicode=false&characterEncoding=UTF-8")));
