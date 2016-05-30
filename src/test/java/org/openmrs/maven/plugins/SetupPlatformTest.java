@@ -17,28 +17,28 @@ public class SetupPlatformTest {
 
 	@Test
 	public void determineDbName_shouldReturnDefaultNameIfVariableWasUsed() throws MojoExecutionException {
-		SetupPlatform setupPlatform = new SetupPlatform();
+		Setup setupPlatform = new Setup();
 		String dbName = setupPlatform.determineDbName("jdbc:mysql://localhost:3016/@DBNAME@?someParam=value", "my_server");
 		assertThat(dbName, is(equalTo("openmrs-my_server")));
 	}
 
 	@Test
 	public void determineDbName_shouldReturnNameFromUriWithParams() throws MojoExecutionException {
-		SetupPlatform setupPlatform = new SetupPlatform();
+		Setup setupPlatform = new Setup();
 		String dbName = setupPlatform.determineDbName("jdbc:mysql://localhost:3016/open?someParam=value", "my_server");
 		assertThat(dbName, is(equalTo("open")));
 	}
 
 	@Test
 	public void determineDbName_shouldReturnNameFromUriWithoutParams() throws MojoExecutionException {
-		SetupPlatform setupPlatform = new SetupPlatform();
+		Setup setupPlatform = new Setup();
 		String dbName = setupPlatform.determineDbName("jdbc:mysql://localhost:3016/open", "my_server");
 		assertThat(dbName, is(equalTo("open")));
 	}
 
 	@Test
 	public void determineDbName_shouldFailIfNoNameInUri() throws MojoExecutionException {
-		SetupPlatform setupPlatform = new SetupPlatform();
+		Setup setupPlatform = new Setup();
 
 		expectedException.expectMessage("The db name is in a wrong format (allowed ");
 

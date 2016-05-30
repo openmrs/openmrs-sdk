@@ -15,13 +15,17 @@ import java.util.TreeMap;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
 import org.codehaus.plexus.components.interactivity.Prompter;
 import org.codehaus.plexus.components.interactivity.PrompterException;
+import org.openmrs.maven.plugins.model.Server;
 
 /**
  * Class for attribute helper functions
  */
-public class AttributeHelper {
+@Component(role=Wizard.class)
+public class DefaultWizard implements Wizard {
     private static final String EMPTY_STRING = "";
     private static final String NONE = "(none)";
     private static final String DEFAULT_SERVER_NAME = "server";
@@ -31,47 +35,72 @@ public class AttributeHelper {
     private static final String INVALID_SERVER = "Invalid server Id";
     private static final String YESNO = " [Y/n]";
 
-    private Prompter prompter;
+    @Requirement
+    Prompter prompter;
 
-    public AttributeHelper(Prompter prompter) {
+    public DefaultWizard(){};
+
+    public DefaultWizard(Prompter prompter) {
         this.prompter = prompter;
     }
 
     /**
      * Prompt for serverId, and get default serverId which is not exists,
      * if serverId is not set before
-     * @param omrsPath
-     * @param serverId
-     * @return
+     *
+     * @param server @return
      * @throws PrompterException
      */
-    public String promptForNewServerIfMissing(String omrsPath, String serverId) throws PrompterException {
+    @Override
+    public void promptForNewServerIfMissing(Server server) {
         String defaultServerId = DEFAULT_SERVER_NAME;
         int indx = 0;
-        while (new File(omrsPath, defaultServerId).exists()) {
+        while (new File(ServerConfig.getDefaultServersPath(), defaultServerId).exists()) {
             indx++;
             defaultServerId = DEFAULT_SERVER_NAME + String.valueOf(indx);
         }
-        return promptForValueIfMissingWithDefault(serverId, "serverId", defaultServerId);
+        String serverId =  promptForValueIfMissingWithDefault("Specify server id (-D%s) (default: '%s')", server.getServerId(), "serverId", defaultServerId);
+        server.setServerId(serverId);
     }
+
+
 
     /**
      * Prompt for a value if it not set, and default value is set
+     *
+     * @param message
      * @param value
      * @param parameterName
      * @param defValue
      * @return value
      * @throws PrompterException
      */
-    public String promptForValueIfMissingWithDefault(String value, String parameterName, String defValue) throws PrompterException {
-        if (value != null) return value;
+    @Override
+    public String promptForValueIfMissingWithDefault(String message, String value, String parameterName, String defValue) {
+        if (value != null) {
+            return value;
+        }
         String textToShow = null;
         // check if there no default value
-        if (defValue.equals(EMPTY_STRING)) textToShow = String.format(DEFAULT_VALUE_TMPL, parameterName);
-        else textToShow = String.format(DEFAULT_VALUE_TMPL_WITH_DEFAULT, parameterName, defValue);
-        String val = prompter.prompt(textToShow);
-        if (val.equals(EMPTY_STRING)) val = defValue;
+        if (defValue.equals(EMPTY_STRING)){
+            textToShow = String.format(message != null ? message : DEFAULT_VALUE_TMPL, parameterName);
+        }
+        else {
+            textToShow = String.format(message != null? message : DEFAULT_VALUE_TMPL_WITH_DEFAULT, parameterName, defValue);
+        }
+        String val = prompt(textToShow);
+        if (val.equals(EMPTY_STRING)) {
+            val = defValue;
+        }
         return val;
+    }
+
+    private String prompt(String textToShow){
+        try {
+            return prompter.prompt(textToShow);
+        } catch (PrompterException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
@@ -82,18 +111,20 @@ public class AttributeHelper {
      * @return value
      * @throws PrompterException
      */
-    public String promptForValueWithDefaultList(String value, String parameterName, List<String> values) throws PrompterException {
+    @Override
+    public String promptForValueWithDefaultList(String value, String parameterName, List<String> values) {
         if (value != null) return value;
         String defaultValue = values.size() > 0 ? values.get(0) : NONE;
         final String text = DEFAULT_VALUE_TMPL_WITH_DEFAULT + " (possible: %s)";
-        String val = prompter.prompt(String.format(text, parameterName, defaultValue, StringUtils.join(values.toArray(), ", ")));
+        String val = prompt(String.format(text, parameterName, defaultValue, StringUtils.join(values.toArray(), ", ")));
         if (val.equals(EMPTY_STRING)) val = defaultValue;
         return val;
     }
-    public String promptForValueWithDefaultList(String value, String parameterName, String defaultValue, List<String> values) throws PrompterException {
+    @Override
+    public String promptForValueWithDefaultList(String value, String parameterName, String defaultValue, List<String> values) {
         if (value != null) return value;
         final String text = DEFAULT_VALUE_TMPL_WITH_DEFAULT + " (possible: %s)";
-        String val = prompter.prompt(String.format(text, parameterName, defaultValue, StringUtils.join(values.toArray(), ", ")));
+        String val = prompt(String.format(text, parameterName, defaultValue, StringUtils.join(values.toArray(), ", ")));
         if (val.equals(EMPTY_STRING)) val = defaultValue;
         return val;
     }
@@ -105,8 +136,9 @@ public class AttributeHelper {
      * @return
      * @throws PrompterException
      */
-    public String promptForValueIfMissing(String value, String parameterName) throws PrompterException {
-        return promptForValueIfMissingWithDefault(value, parameterName, EMPTY_STRING);
+    @Override
+    public String promptForValueIfMissing(String value, String parameterName) {
+        return promptForValueIfMissingWithDefault(null, value, parameterName, EMPTY_STRING);
     }
 
     /**
@@ -114,8 +146,10 @@ public class AttributeHelper {
      * @param text - text to display
      * @return
      */
-    public boolean dialogYesNo(String text) throws PrompterException {
-        String yesNo = prompter.prompt(text.concat(YESNO));
+    @Override
+    public boolean promptYesNo(String text) {
+        String yesNo = null;
+        yesNo = prompt(text.concat(YESNO));
         return yesNo.equals("") || yesNo.toLowerCase().equals("y");
     }
 
@@ -124,6 +158,7 @@ public class AttributeHelper {
      * @param value
      * @return
      */
+    @Override
     public boolean checkYes(String value) {
         String val = value.toLowerCase();
         return val.equals("true") || val.equals("yes");
@@ -134,15 +169,12 @@ public class AttributeHelper {
      * @return
      * @throws MojoFailureException
      */
+    @Override
     public File getServerPath(String serverId, String failureMessage) throws MojoFailureException {
         File omrsHome = new File(System.getProperty("user.home"), SDKConstants.OPENMRS_SERVER_PATH);
         String resultServerId = null;
-        try {
-            List<String> servers = getListOf5RecentServers();
-            resultServerId = promptForValueWithDefaultList(serverId, "serverId", servers);
-        } catch (PrompterException e) {
-            throw new MojoFailureException(e.getMessage());
-        }
+        List<String> servers = getListOf5RecentServers();
+        resultServerId = promptForValueWithDefaultList(serverId, "serverId", servers);
         if (resultServerId.equals(NONE)) {
             throw new MojoFailureException(INVALID_SERVER);
         }
@@ -157,6 +189,7 @@ public class AttributeHelper {
      * Check if we are currenly inside "server" folder and get path
      * @return
      */
+    @Override
     public File getCurrentServerPath() throws MojoExecutionException {
         File currentFolder = new File(System.getProperty("user.dir"));
         File openmrsHome = new File(System.getProperty("user.home"), SDKConstants.OPENMRS_SERVER_PATH);
@@ -180,6 +213,7 @@ public class AttributeHelper {
      * @return
      * @throws MojoFailureException
      */
+    @Override
     public File getServerPath(String serverId) throws MojoFailureException {
         return getServerPath(serverId, DEFAULT_FAIL_MESSAGE);
     }
@@ -188,6 +222,7 @@ public class AttributeHelper {
      * Get 5 last modified servers
      * @return
      */
+    @Override
     public List<String> getListOf5RecentServers() {
         final int count = 5;
         String home = System.getProperty("user.home");
@@ -201,6 +236,7 @@ public class AttributeHelper {
         return new ArrayList<String>(sortedMap.values()).subList(0, length);
     }
 
+    @Override
     public String addMySQLParamsIfMissing(String dbUri) {
 		Map<String, String> mysqlParams = new LinkedHashMap<String, String>();
 		mysqlParams.put("autoReconnect", "true");

@@ -5,7 +5,8 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.codehaus.plexus.components.interactivity.Prompter;
 import org.openmrs.maven.plugins.model.Artifact;
-import org.openmrs.maven.plugins.utility.AttributeHelper;
+import org.openmrs.maven.plugins.utility.Wizard;
+import org.openmrs.maven.plugins.utility.DefaultWizard;
 import org.openmrs.maven.plugins.utility.ServerConfig;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 
@@ -39,7 +40,7 @@ public class ModuleUninstall extends AbstractMojo {
 
     public void execute() throws MojoExecutionException, MojoFailureException {
         ModuleInstall installer = new ModuleInstall(prompter);
-        AttributeHelper helper = new AttributeHelper(prompter);
+        Wizard helper = new DefaultWizard(prompter);
         if (serverId == null) {
             File currentProperties = helper.getCurrentServerPath();
             if (currentProperties != null) serverId = currentProperties.getName();

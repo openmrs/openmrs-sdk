@@ -15,11 +15,11 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.components.interactivity.Prompter;
-import org.codehaus.plexus.components.interactivity.PrompterException;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.model.Version;
-import org.openmrs.maven.plugins.utility.AttributeHelper;
+import org.openmrs.maven.plugins.utility.Wizard;
+import org.openmrs.maven.plugins.utility.DefaultWizard;
 import org.openmrs.maven.plugins.utility.ServerConfig;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 
@@ -107,7 +107,7 @@ public class UpgradePlatform extends AbstractMojo{
      * @throws MojoFailureException
      */
     public void upgradeServer(String serverId, final String version, boolean isUpdateToPlatform) throws MojoExecutionException, MojoFailureException {
-        AttributeHelper helper = new AttributeHelper(prompter);
+        Wizard helper = new DefaultWizard(prompter);
         String resultVersion = null;
         String resultServer = null;
         // check if we are inside the some server folder
@@ -115,11 +115,7 @@ public class UpgradePlatform extends AbstractMojo{
             File currentProperties = helper.getCurrentServerPath();
             if (currentProperties != null) serverId = currentProperties.getName();
         }
-        try {
-            resultVersion = helper.promptForValueIfMissing(version, "version");
-        } catch (PrompterException e) {
-            throw new MojoExecutionException(e.getMessage());
-        }
+        resultVersion = helper.promptForValueIfMissing(version, "version");
 
         File serverPath = helper.getServerPath(serverId);
         resultServer = serverPath.getName();
@@ -133,7 +129,7 @@ public class UpgradePlatform extends AbstractMojo{
         }
         Version platformVersion = new Version(platform);
         Version nextVersion = new Version(resultVersion);
-        SetupPlatform setupPlatform = new SetupPlatform(mavenProject, mavenSession, prompter, pluginManager);
+        Setup setupPlatform = new Setup(mavenProject, mavenSession, prompter, pluginManager);
         // get list modules to remove after
         // for 2.3 and higher, copy dependencies to tmp folder
         File tmpFolder = new File(serverPath, SDKConstants.TMP);
@@ -159,13 +155,9 @@ public class UpgradePlatform extends AbstractMojo{
             else {
                 if (webapp == null) {
                     if (nextVersion.higher(platformVersion)) {
-                        try {
-                            boolean yes = helper.dialogYesNo("Do you want to upgrade platform server?");
-                            if (!yes) {
-                                return;
-                            }
-                        } catch (PrompterException e) {
-                            throw new MojoExecutionException(e.getMessage());
+                        boolean yes = helper.promptYesNo("Do you want to upgrade platform server?");
+                        if (!yes) {
+                            return;
                         }
                     }
                     else {
