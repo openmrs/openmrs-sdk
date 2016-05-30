@@ -9,7 +9,10 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.components.interactivity.Prompter;
 import org.openmrs.maven.plugins.model.Server;
-import org.openmrs.maven.plugins.utility.*;
+import org.openmrs.maven.plugins.utility.DBConnector;
+import org.openmrs.maven.plugins.utility.DefaultWizard;
+import org.openmrs.maven.plugins.utility.SDKConstants;
+import org.openmrs.maven.plugins.utility.Wizard;
 
 import java.io.File;
 import java.io.IOException;
@@ -70,14 +73,14 @@ public class Reset extends AbstractMojo{
             if (currentProperties != null) serverId = currentProperties.getName();
         }
         File serverPath = helper.getServerPath(serverId);
-        ServerConfig properties = ServerConfig.loadServerConfig(serverPath);
+        Server properties = Server.loadServer(serverPath);
         DBConnector connector = null;
         try {
             String dbName = String.format(SDKConstants.DB_NAME_TEMPLATE, serverPath.getName());
-            String uri = properties.getParam(SDKConstants.PROPERTY_DB_URI);
+            String uri = properties.getParam(Server.PROPERTY_DB_URI);
             uri = uri.substring(0, uri.lastIndexOf("/"));
-            connector = new DBConnector(uri, properties.getParam(SDKConstants.PROPERTY_DB_USER),
-                                          properties.getParam(SDKConstants.PROPERTY_DB_PASS),
+            connector = new DBConnector(uri, properties.getParam(Server.PROPERTY_DB_USER),
+                                          properties.getParam(Server.PROPERTY_DB_PASS),
                                           dbName);
             connector.dropDatabase();
             connector.close();
@@ -90,14 +93,14 @@ public class Reset extends AbstractMojo{
                 getLog().error(e.getMessage());
             }
         }
-        boolean isPlatform = properties.getParam(SDKConstants.PROPERTY_VERSION) == null;
+        boolean isPlatform = properties.getParam(Server.PROPERTY_VERSION) == null;
         Server server = new Server.ServerBuilder()
-                .setServerId(properties.getParam(SDKConstants.PROPERTY_SERVER_ID))
-                .setVersion(properties.getParam(SDKConstants.PROPERTY_PLATFORM))
-                .setDbDriver(properties.getParam(SDKConstants.PROPERTY_DB_DRIVER))
-                .setDbUri(properties.getParam(SDKConstants.PROPERTY_DB_URI))
-                .setDbUser(properties.getParam(SDKConstants.PROPERTY_DB_USER))
-                .setDbPassword(properties.getParam(SDKConstants.PROPERTY_DB_PASS))
+                .setServerId(properties.getParam(Server.PROPERTY_SERVER_ID))
+                .setVersion(properties.getParam(Server.PROPERTY_PLATFORM))
+                .setDbDriver(properties.getParam(Server.PROPERTY_DB_DRIVER))
+                .setDbUri(properties.getParam(Server.PROPERTY_DB_URI))
+                .setDbUser(properties.getParam(Server.PROPERTY_DB_USER))
+                .setDbPassword(properties.getParam(Server.PROPERTY_DB_PASS))
                 .setInteractiveMode("false")
                 .build();
         if (helper.checkYes(full)) {

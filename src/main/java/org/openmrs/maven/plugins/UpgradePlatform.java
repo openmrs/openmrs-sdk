@@ -1,12 +1,5 @@
 package org.openmrs.maven.plugins;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
@@ -18,10 +11,16 @@ import org.codehaus.plexus.components.interactivity.Prompter;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.model.Version;
-import org.openmrs.maven.plugins.utility.Wizard;
 import org.openmrs.maven.plugins.utility.DefaultWizard;
-import org.openmrs.maven.plugins.utility.ServerConfig;
 import org.openmrs.maven.plugins.utility.SDKConstants;
+import org.openmrs.maven.plugins.utility.Wizard;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  *
@@ -119,9 +118,9 @@ public class UpgradePlatform extends AbstractMojo{
 
         File serverPath = helper.getServerPath(serverId);
         resultServer = serverPath.getName();
-        ServerConfig properties = ServerConfig.loadServerConfig(serverPath);
-        String webapp = properties.getParam(SDKConstants.PROPERTY_VERSION);
-        String platform = properties.getParam(SDKConstants.PROPERTY_PLATFORM);
+        Server properties = Server.loadServer(serverPath);
+        String webapp = properties.getParam(Server.PROPERTY_VERSION);
+        String platform = properties.getParam(Server.PROPERTY_PLATFORM);
 
         // invalid old version
         if (platform == null) {
@@ -193,12 +192,12 @@ public class UpgradePlatform extends AbstractMojo{
                 throw new MojoExecutionException("Error during resolving dependencies: " + e.getMessage());
             }
             // install user modules
-            String values = properties.getParam(SDKConstants.PROPERTY_USER_MODULES);
+            String values = properties.getParam(Server.PROPERTY_USER_MODULES);
             if (values != null) {
                 ModuleInstall installer = new ModuleInstall(mavenProject, mavenSession, pluginManager, prompter);
-                String[] modules = values.split(ServerConfig.COMMA);
+                String[] modules = values.split(Server.COMMA);
                 for (String mod: modules) {
-                    String[] params = mod.split(ServerConfig.SLASH);
+                    String[] params = mod.split(Server.SLASH);
                     // check
                     if (params.length == 3) {
                         installer.installModule(resultServer, params[0], params[1], params[2]);
@@ -212,14 +211,14 @@ public class UpgradePlatform extends AbstractMojo{
         properties.saveTo(tempProperties);
         // also remove copy of old properties file if success
         listFilesToRemove.add(tempProperties);
-        boolean addDemoData = (String.valueOf(true).equals(properties.getParam(SDKConstants.PROPERTY_DEMO_DATA)));
+        boolean addDemoData = (String.valueOf(true).equals(properties.getParam(Server.PROPERTY_DEMO_DATA)));
         Server server = new Server.ServerBuilder()
                 .setServerId(resultServer)
                 .setVersion(resultVersion)
-                .setDbDriver(properties.getParam(SDKConstants.PROPERTY_DB_DRIVER))
-                .setDbUri(properties.getParam(SDKConstants.PROPERTY_DB_URI))
-                .setDbUser(properties.getParam(SDKConstants.PROPERTY_DB_USER))
-                .setDbPassword(properties.getParam(SDKConstants.PROPERTY_DB_PASS))
+                .setDbDriver(properties.getParam(Server.PROPERTY_DB_DRIVER))
+                .setDbUri(properties.getParam(Server.PROPERTY_DB_URI))
+                .setDbUser(properties.getParam(Server.PROPERTY_DB_USER))
+                .setDbPassword(properties.getParam(Server.PROPERTY_DB_PASS))
                 .setInteractiveMode("false")
                 .setDemoData(addDemoData)
                 .build();

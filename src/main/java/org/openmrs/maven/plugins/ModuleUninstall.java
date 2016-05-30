@@ -5,10 +5,10 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.codehaus.plexus.components.interactivity.Prompter;
 import org.openmrs.maven.plugins.model.Artifact;
-import org.openmrs.maven.plugins.utility.Wizard;
+import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.utility.DefaultWizard;
-import org.openmrs.maven.plugins.utility.ServerConfig;
 import org.openmrs.maven.plugins.utility.SDKConstants;
+import org.openmrs.maven.plugins.utility.Wizard;
 
 import java.io.File;
 
@@ -53,8 +53,8 @@ public class ModuleUninstall extends AbstractMojo {
             if (mod.getName().startsWith(artifact.getArtifactId())) {
                 boolean deleted = mod.delete();
                 if (deleted) {
-                    ServerConfig properties = ServerConfig.loadServerConfig(serverPath);
-                    properties.removeFromValueList(SDKConstants.PROPERTY_USER_MODULES, artifact.getArtifactId());
+                    Server properties = Server.loadServer(serverPath);
+                    properties.removeFromValueList(Server.PROPERTY_USER_MODULES, artifact.getArtifactId());
                     properties.save();
                     getLog().info(String.format("Module with groupId: '%s', artifactId: '%s' was successfully removed from server.",
                             artifact.getGroupId(), artifact.getArtifactId()));
