@@ -2,6 +2,7 @@ package org.openmrs.maven.plugins.utility;
 
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.Server;
 
 import java.io.File;
@@ -12,6 +13,12 @@ import java.util.List;
  */
 public interface Wizard {
     void promptForNewServerIfMissing(Server server);
+
+    void promptForDbSettingsIfMissing(Server server);
+
+    void promptForPlatformVersionIfMissing(Server server, VersionsHelper versionsHelper, Artifact artifact);
+
+    void promptForDistroVersionIfMissing(Server server);
 
     String promptForValueIfMissingWithDefault(String message, String value, String parameterName, String defValue);
 

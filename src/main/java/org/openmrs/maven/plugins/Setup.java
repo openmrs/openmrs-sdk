@@ -35,8 +35,6 @@ import static org.twdata.maven.mojoexecutor.MojoExecutor.executionEnvironment;
  */
 public class Setup extends AbstractMojo {
 
-    private static final String DEFAULT_VERSION = "2.3";
-    private static final String DEFAULT_PLATFORM_VERSION = "1.11.5";
     private static final String GOAL_UNPACK = "unpack";
 
     /**
@@ -186,6 +184,7 @@ public class Setup extends AbstractMojo {
         versionsHelper = new VersionsHelper(artifactFactory, mavenProject, mavenSession, artifactMetadataSource);
         File openMRSPath = new File(System.getProperty("user.home"), SDKConstants.OPENMRS_SERVER_PATH);
         wizard.promptForNewServerIfMissing(server);
+
         File serverPath = new File(openMRSPath, server.getServerId());
         if (Server.hasServerConfig(serverPath)) {
             Server props = Server.loadServer(serverPath);
@@ -193,139 +192,109 @@ public class Setup extends AbstractMojo {
                 throw new MojoExecutionException("Server with same id already created");
             }
         }
-        String defaultV = isCreatePlatform ? DEFAULT_PLATFORM_VERSION : DEFAULT_VERSION;
+        server.setPropertiesFile(serverPath);
+
         if(isCreatePlatform){
-            Artifact webapp = new Artifact(SDKConstants.WEBAPP_ARTIFACT_ID, defaultV, Artifact.GROUP_WEB);
-            server.setVersion(wizard.promptForValueWithDefaultList(server.getVersion(), "version",
-                    versionsHelper.getLatestReleasedVersion(webapp), versionsHelper.getVersionAdvice(webapp, 6)));
+            Artifact webapp = new Artifact(SDKConstants.WEBAPP_ARTIFACT_ID, SDKConstants.SETUP_DEFAULT_PLATFORM_VERSION, Artifact.GROUP_WEB);
+            wizard.promptForPlatformVersionIfMissing(server, versionsHelper, webapp);
         } else {
-            server.setVersion(wizard.promptForValueIfMissingWithDefault(null, server.getVersion(), "version", defaultV));
+            wizard.promptForDistroVersionIfMissing(server);
         }
 
         if (new Version(server.getVersion()).higher(new Version(Version.PRIOR)) && !isCreatePlatform) {
             if (isCopyDependencies) extractDistroToServer(server.getVersion(), serverPath);
         }
         else {
-            // install core modules
-            List<Artifact> coreModules = SDKConstants.getCoreModules(server.getVersion(), isCreatePlatform);
-            if (coreModules == null) {
-                throw new MojoExecutionException(String.format("Invalid version: '%s'", server.getVersion()));
-            }
-            installModules(coreModules, serverPath.getPath());
-            // install other modules
-            if (!isCreatePlatform) {
-                File modules = new File(serverPath, SDKConstants.OPENMRS_SERVER_MODULES);
-                modules.mkdirs();
-                List<Artifact> artifacts = SDKConstants.ARTIFACTS.get(server.getVersion());
-                // install modules for each version
-                installModules(artifacts, modules.getPath());
-            }
-            // install user modules
-            if (server != null) {
-                String values = server.getParam(Server.PROPERTY_USER_MODULES);
-                if (values != null) {
-                    ModuleInstall installer = new ModuleInstall(mavenProject, mavenSession, pluginManager, prompter);
-                    String[] modules = values.split(Server.COMMA);
-                    for (String mod: modules) {
-                        String[] params = mod.split(Server.SLASH);
-                        // check
-                        if (params.length == 3) {
-                            installer.installModule(server.getServerId(), params[0], params[1], params[2]);
-                        }
-                        else throw new MojoExecutionException("Properties file parse error - cannot read user modules list");
-                    }
-                }
-            }
+            installCoreModules(server, isCreatePlatform);
         }
-
-        Server properties;
-        if (Server.hasServerConfig(serverPath)) {
-            properties = Server.loadServer(serverPath);
-        } else {
-            properties = Server.createServer(serverPath);
-        }
-        properties.setDefaults();
-        properties.setParam(Server.PROPERTY_SERVER_ID, server.getServerId());
         // configure db properties
         if ((server.getDbDriver() != null) ||
                 (server.getDbUser() != null) ||
                 (server.getDbPassword() != null) ||
                 (server.getDbUri() != null) ||
                 !isCreatePlatform) {
-            server.setDbDriver(wizard.promptForValueIfMissingWithDefault(null, server.getDbDriver(), "dbDriver", "mysql"));
-            String defaultUri = SDKConstants.URI_MYSQL;
-            if ((server.getDbDriver().equals("postgresql")) || (server.getDbDriver().equals(SDKConstants.DRIVER_POSTGRESQL))) {
-                properties.setParam(Server.PROPERTY_DB_DRIVER, SDKConstants.DRIVER_POSTGRESQL);
-                defaultUri = SDKConstants.URI_POSTGRESQL;
-            }
-            else if ((server.getDbDriver().equals("h2")) || (server.getDbDriver().equals(SDKConstants.DRIVER_H2))) {
-                properties.setParam(Server.PROPERTY_DB_DRIVER, SDKConstants.DRIVER_H2);
-                defaultUri = SDKConstants.URI_H2;
-            }
-            else if (server.getDbDriver().equals("mysql")) {
-                properties.setParam(Server.PROPERTY_DB_DRIVER, SDKConstants.DRIVER_MYSQL);
-            }
-            else properties.setParam(Server.PROPERTY_DB_DRIVER, server.getDbDriver());
-
-
-            String dbUri = wizard.promptForValueIfMissingWithDefault(null, server.getDbUri(), "dbUri", defaultUri);
-            if (dbUri.startsWith("jdbc:mysql:")) {
-                dbUri = wizard.addMySQLParamsIfMissing(dbUri);
-            }
-
-            server.setDbUri(dbUri);
-            String defaultUser = "root";
-            server.setDbUser(wizard.promptForValueIfMissingWithDefault(null, server.getDbUser(), "dbUser", defaultUser));
-            server.setDbPassword(wizard.promptForValueIfMissing(server.getDbPassword(), "dbPassword"));
-            properties.setParam(Server.PROPERTY_DB_USER, server.getDbUser());
-            properties.setParam(Server.PROPERTY_DB_PASS, server.getDbPassword());
-            properties.setParam(Server.PROPERTY_DB_URI, server.getDbUri());
+            wizard.promptForDbSettingsIfMissing(server);
         }
-        properties.setParam(Server.PROPERTY_PLATFORM, server.getVersion());
+
+        server.setDbName(determineDbName(server.getDbUri(), server.getServerId()));
+        server.setUnspecifiedToDefault();
+        server.save();
+
+        if (server.getDbDriver().equals(SDKConstants.DRIVER_MYSQL)){
+            connectMySqlDatabase(server);
+        }
+
+        configureVersion(server, isCreatePlatform);
+        return serverPath.getPath();
+    }
+
+    private void installCoreModules(Server server, boolean isCreatePlatform) throws MojoExecutionException, MojoFailureException {
+        List<Artifact> coreModules = SDKConstants.getCoreModules(server.getVersion(), isCreatePlatform);
+        if (coreModules == null) {
+            throw new MojoExecutionException(String.format("Invalid version: '%s'", server.getVersion()));
+        }
+        installModules(coreModules, server.getPropertiesFile().getPath());
+        // install other modules
+        if (!isCreatePlatform) {
+            File modules = new File(server.getPropertiesFile(), SDKConstants.OPENMRS_SERVER_MODULES);
+            modules.mkdirs();
+            List<Artifact> artifacts = SDKConstants.ARTIFACTS.get(server.getVersion());
+            // install modules for each version
+            installModules(artifacts, modules.getPath());
+        }
+        // install user modules
+        if (server != null) {
+            String values = server.getParam(Server.PROPERTY_USER_MODULES);
+            if (values != null) {
+                ModuleInstall installer = new ModuleInstall(mavenProject, mavenSession, pluginManager, prompter);
+                String[] modules = values.split(Server.COMMA);
+                for (String mod: modules) {
+                    String[] params = mod.split(Server.SLASH);
+                    // check
+                    if (params.length == 3) {
+                        installer.installModule(server.getServerId(), params[0], params[1], params[2]);
+                    }
+                    else throw new MojoExecutionException("Properties file parse error - cannot read user modules list");
+                }
+            }
+        }
+    }
+
+    private void configureVersion(Server server, boolean isCreatePlatform){
+        server.setPlatformVersion(server.getVersion());
         if (!isCreatePlatform) {
             // set web app version for OpenMRS 2.2 and higher
             if (new Version(server.getVersion()).higher(new Version(Version.PRIOR)) && !isCreatePlatform) {
-                for (File f: serverPath.listFiles()) {
+                for (File f: server.getPropertiesFile().listFiles()) {
                     if (f.getName().endsWith("." + Artifact.TYPE_WAR)) {
-                        properties.setParam(Server.PROPERTY_VERSION, Version.parseVersionFromFile(f.getName()));
+                        server.setVersion(Version.parseVersionFromFile(f.getName()));
                         break;
                     }
                 }
             }
             else {
-                properties.setParam(Server.PROPERTY_VERSION, SDKConstants.WEBAPP_VERSIONS.get(server.getVersion()));
+                server.setVersion(SDKConstants.WEBAPP_VERSIONS.get(server.getVersion()));
             }
         }
-
-        String uri = properties.getParam(Server.PROPERTY_DB_URI);
-        String dbName = determineDbName(uri, server.getServerId());
-        properties.setParam(Server.PROPERTY_DB_NAME, dbName);
-        properties.setParam(Server.PROPERTY_DEMO_DATA, String.valueOf(server.isIncludeDemoData()));
-        properties.save();
-        String dbType = properties.getParam(Server.PROPERTY_DB_DRIVER);
-        if (dbType.equals(SDKConstants.DRIVER_MYSQL)) {
-            uri = properties.getParam(Server.PROPERTY_DB_URI);
-            uri = uri.substring(0, uri.lastIndexOf("/"));
-            String user = properties.getParam(Server.PROPERTY_DB_USER);
-            String pass = properties.getParam(Server.PROPERTY_DB_PASS);
-            DBConnector connector = null;
-            try {
-                connector = new DBConnector(uri, user, pass, dbName);
-                connector.checkAndCreate();
+    }
+    private void connectMySqlDatabase(Server server) throws MojoExecutionException {
+        String uri = server.getDbUri();
+        uri = uri.substring(0, uri.lastIndexOf("/"));
+        DBConnector connector = null;
+        try {
+            connector = new DBConnector(uri, server.getDbUser(), server.getDbPassword(), server.getDbName());
+            connector.checkAndCreate();
+            connector.close();
+            getLog().info("Database configured successfully");
+        } catch (SQLException e) {
+            throw new MojoExecutionException(e.getMessage());
+        } finally {
+            if (connector != null) try {
                 connector.close();
-                getLog().info("Database configured successfully");
             } catch (SQLException e) {
-                throw new MojoExecutionException(e.getMessage());
-            } finally {
-                if (connector != null) try {
-                    connector.close();
-                } catch (SQLException e) {
-                    getLog().error(e.getMessage());
-                }
+                getLog().error(e.getMessage());
             }
         }
-
-        return serverPath.getPath();
     }
 
     public String determineDbName(String uri, String serverId) throws MojoExecutionException {

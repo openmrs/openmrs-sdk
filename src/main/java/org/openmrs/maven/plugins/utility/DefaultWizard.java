@@ -7,6 +7,7 @@ import org.codehaus.plexus.component.annotations.Component;
 import org.codehaus.plexus.component.annotations.Requirement;
 import org.codehaus.plexus.components.interactivity.Prompter;
 import org.codehaus.plexus.components.interactivity.PrompterException;
+import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.Server;
 
 import java.io.File;
@@ -86,6 +87,21 @@ public class DefaultWizard implements Wizard {
         String val = prompt(textToShow);
         if (val.equals(EMPTY_STRING)) {
             val = defValue;
+        }
+        return val;
+    }
+
+    private String promptForMissingValueWithOptions(String message, String value, String parameterName, String[] options){
+        if (value != null) {
+            return value;
+        }
+        String textToShow = String.format(message != null? message : DEFAULT_VALUE_TMPL_WITH_DEFAULT, parameterName, options[0]);
+        for(String option: options){
+
+        }
+        String val = prompt(textToShow);
+        if (val.equals(EMPTY_STRING)) {
+            val = options[0];
         }
         return val;
     }
@@ -178,6 +194,50 @@ public class DefaultWizard implements Wizard {
             throw new MojoFailureException(failureMessage);
         }
         return serverPath;
+    }
+
+    @Override
+    public void promptForPlatformVersionIfMissing(Server server, VersionsHelper versionsHelper, Artifact artifact) {
+        String version = (promptForValueWithDefaultList(server.getVersion(), "version",
+                versionsHelper.getLatestReleasedVersion(artifact), versionsHelper.getVersionAdvice(artifact, 6)));
+        server.setVersion(version);
+    }
+
+    @Override
+    public void promptForDistroVersionIfMissing(Server server) {
+        server.setVersion(promptForValueIfMissingWithDefault
+                ("Specify server id (-D%s) (default: '%s')", server.getVersion(), "version", SDKConstants.SETUP_DEFAULT_VERSION));
+    }
+
+    @Override
+    public void promptForDbSettingsIfMissing(Server server) {
+        //set driver
+        String dbDriver = promptForValueIfMissingWithDefault("Please specify database (-D%s) (default: '%s')",
+                server.getServerId(), "dbDriver", "mysql");
+        String defaultUri = SDKConstants.URI_MYSQL;
+        if ((dbDriver.equals("postgresql")) || (dbDriver.equals(SDKConstants.DRIVER_POSTGRESQL))) {
+            server.setDbDriver(SDKConstants.DRIVER_POSTGRESQL);
+            defaultUri = SDKConstants.URI_POSTGRESQL;
+        }
+        else if ((dbDriver.equals("h2")) || (dbDriver.equals(SDKConstants.DRIVER_H2))) {
+            server.setDbDriver(SDKConstants.DRIVER_H2);
+            defaultUri = SDKConstants.URI_H2;
+        }
+        else if (dbDriver.equals("mysql")) {
+            server.setDbDriver(SDKConstants.DRIVER_MYSQL);
+        }
+        else server.setParam(Server.PROPERTY_DB_DRIVER, server.getDbDriver());
+        //set uri
+        String dbUri = promptForValueIfMissingWithDefault("Specify server id (-D%s) (default: '%s')", server.getDbUri(), "dbUri", defaultUri);
+        if (dbUri.startsWith("jdbc:mysql:")) {
+            dbUri = addMySQLParamsIfMissing(dbUri);
+        }
+        server.setDbUri(dbUri);
+        //set user
+        String defaultUser = "root";
+        server.setDbUser(promptForValueIfMissingWithDefault(null, server.getDbUser(), "dbUser", defaultUser));
+        //set password
+        server.setDbPassword(promptForValueIfMissing(server.getDbPassword(), "dbPassword"));
     }
 
     /**
