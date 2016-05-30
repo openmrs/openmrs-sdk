@@ -10,7 +10,6 @@ import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.project.MavenProject;
-import org.codehaus.plexus.component.annotations.Requirement;
 import org.codehaus.plexus.components.interactivity.Prompter;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.Server;
@@ -84,13 +83,6 @@ public class Setup extends AbstractMojo {
      * @parameter expression="${serverId}"
      */
     private String serverId;
-
-    /**
-     * Platform version
-     *
-     * @parameter expression="${version}"
-     */
-    private String version;
 
     /**
      * DB Driver type
@@ -169,6 +161,19 @@ public class Setup extends AbstractMojo {
      * @component
      */
     Wizard wizard;
+
+    public Setup() {
+    }
+
+    public Setup(MavenProject mavenProject,
+                         MavenSession mavenSession,
+                         Prompter prompter,
+                         BuildPluginManager pluginManager) {
+        this.mavenProject = mavenProject;
+        this.mavenSession = mavenSession;
+        this.prompter = prompter;
+        this.pluginManager = pluginManager;
+    }
 
     /**
      * Create and setup server with following parameters
@@ -471,8 +476,16 @@ public class Setup extends AbstractMojo {
     }*/
 
     public void execute() throws MojoExecutionException, MojoFailureException {
+        boolean createPlatform;
+        String version = null;
         if(platform == null && distro == null){
-
+            createPlatform = !wizard.promptYesNo("Would you like to install OpenMRS distribution?");
+        } else if(platform != null){
+            version = platform;
+            createPlatform = true;
+        } else {
+            version = distro;
+            createPlatform = false;
         }
         Server server = new Server.ServerBuilder()
                         .setServerId(serverId)
@@ -485,7 +498,7 @@ public class Setup extends AbstractMojo {
                         .setInteractiveMode(interactiveMode)
                         .build();
         // setup non-platform server
-        String serverPath = setup(server, false, true);
+        String serverPath = setup(server, createPlatform, true);
         getLog().info("Server configured successfully, path: " + serverPath);
     }
 }

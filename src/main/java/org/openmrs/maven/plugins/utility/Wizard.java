@@ -20,7 +20,7 @@ public interface Wizard {
 
     String promptForValueIfMissing(String value, String parameterName);
 
-    boolean dialogYesNo(String text);
+    boolean promptYesNo(String text);
 
     boolean checkYes(String value);
 

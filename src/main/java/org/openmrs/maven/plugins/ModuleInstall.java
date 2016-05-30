@@ -130,7 +130,7 @@ public class ModuleInstall extends AbstractMojo {
                     throw new MojoExecutionException(String.format(TEMPLATE_DOWNGRADE, oldVersion.toString(), newVersion.toString()));
                 }
                 else if (oldVersion.lower(newVersion)) {
-                    boolean agree = helper.dialogYesNo(String.format(TEMPLATE_UPDATE, artifact.getVersion()));
+                    boolean agree = helper.promptYesNo(String.format(TEMPLATE_UPDATE, artifact.getVersion()));
                     if (!agree) {
                         return;
                     }

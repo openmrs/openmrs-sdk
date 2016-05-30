@@ -134,7 +134,7 @@ public class DefaultWizard implements Wizard {
      * @return
      */
     @Override
-    public boolean dialogYesNo(String text) {
+    public boolean promptYesNo(String text) {
         String yesNo = null;
         yesNo = prompt(text.concat(YESNO));
         return yesNo.equals("") || yesNo.toLowerCase().equals("y");

@@ -129,7 +129,7 @@ public class UpgradePlatform extends AbstractMojo{
         }
         Version platformVersion = new Version(platform);
         Version nextVersion = new Version(resultVersion);
-        SetupPlatform setupPlatform = new SetupPlatform(mavenProject, mavenSession, prompter, pluginManager);
+        Setup setupPlatform = new Setup(mavenProject, mavenSession, prompter, pluginManager);
         // get list modules to remove after
         // for 2.3 and higher, copy dependencies to tmp folder
         File tmpFolder = new File(serverPath, SDKConstants.TMP);
@@ -155,7 +155,7 @@ public class UpgradePlatform extends AbstractMojo{
             else {
                 if (webapp == null) {
                     if (nextVersion.higher(platformVersion)) {
-                        boolean yes = helper.dialogYesNo("Do you want to upgrade platform server?");
+                        boolean yes = helper.promptYesNo("Do you want to upgrade platform server?");
                         if (!yes) {
                             return;
                         }
