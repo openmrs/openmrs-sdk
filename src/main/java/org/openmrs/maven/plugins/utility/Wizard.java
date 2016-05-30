@@ -2,6 +2,7 @@ package org.openmrs.maven.plugins.utility;
 
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.openmrs.maven.plugins.model.Server;
 
 import java.io.File;
 import java.util.List;
@@ -10,9 +11,9 @@ import java.util.List;
  * Created by user on 30.05.16.
  */
 public interface Wizard {
-    String promptForNewServerIfMissing(String omrsPath, String serverId);
+    void promptForNewServerIfMissing(Server server);
 
-    String promptForValueIfMissingWithDefault(String value, String parameterName, String defValue);
+    String promptForValueIfMissingWithDefault(String message, String value, String parameterName, String defValue);
 
     String promptForValueWithDefaultList(String value, String parameterName, List<String> values);
 

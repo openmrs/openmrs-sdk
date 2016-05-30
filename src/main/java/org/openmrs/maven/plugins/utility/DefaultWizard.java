@@ -19,6 +19,7 @@ import org.codehaus.plexus.component.annotations.Component;
 import org.codehaus.plexus.component.annotations.Requirement;
 import org.codehaus.plexus.components.interactivity.Prompter;
 import org.codehaus.plexus.components.interactivity.PrompterException;
+import org.openmrs.maven.plugins.model.Server;
 
 /**
  * Class for attribute helper functions
@@ -46,24 +47,28 @@ public class DefaultWizard implements Wizard {
     /**
      * Prompt for serverId, and get default serverId which is not exists,
      * if serverId is not set before
-     * @param omrsPath
-     * @param serverId
-     * @return
+     *
+     * @param server @return
      * @throws PrompterException
      */
     @Override
-    public String promptForNewServerIfMissing(String omrsPath, String serverId) {
+    public void promptForNewServerIfMissing(Server server) {
         String defaultServerId = DEFAULT_SERVER_NAME;
         int indx = 0;
-        while (new File(omrsPath, defaultServerId).exists()) {
+        while (new File(ServerConfig.getDefaultServersPath(), defaultServerId).exists()) {
             indx++;
             defaultServerId = DEFAULT_SERVER_NAME + String.valueOf(indx);
         }
-        return promptForValueIfMissingWithDefault(serverId, "serverId", defaultServerId);
+        String serverId =  promptForValueIfMissingWithDefault("Specify server id (-D%s) (default: '%s')", server.getServerId(), "serverId", defaultServerId);
+        server.setServerId(serverId);
     }
+
+
 
     /**
      * Prompt for a value if it not set, and default value is set
+     *
+     * @param message
      * @param value
      * @param parameterName
      * @param defValue
@@ -71,14 +76,22 @@ public class DefaultWizard implements Wizard {
      * @throws PrompterException
      */
     @Override
-    public String promptForValueIfMissingWithDefault(String value, String parameterName, String defValue) {
-        if (value != null) return value;
+    public String promptForValueIfMissingWithDefault(String message, String value, String parameterName, String defValue) {
+        if (value != null) {
+            return value;
+        }
         String textToShow = null;
         // check if there no default value
-        if (defValue.equals(EMPTY_STRING)) textToShow = String.format(DEFAULT_VALUE_TMPL, parameterName);
-        else textToShow = String.format(DEFAULT_VALUE_TMPL_WITH_DEFAULT, parameterName, defValue);
+        if (defValue.equals(EMPTY_STRING)){
+            textToShow = String.format(message != null ? message : DEFAULT_VALUE_TMPL, parameterName);
+        }
+        else {
+            textToShow = String.format(message != null? message : DEFAULT_VALUE_TMPL_WITH_DEFAULT, parameterName, defValue);
+        }
         String val = prompt(textToShow);
-        if (val.equals(EMPTY_STRING)) val = defValue;
+        if (val.equals(EMPTY_STRING)) {
+            val = defValue;
+        }
         return val;
     }
 
@@ -125,7 +138,7 @@ public class DefaultWizard implements Wizard {
      */
     @Override
     public String promptForValueIfMissing(String value, String parameterName) {
-        return promptForValueIfMissingWithDefault(value, parameterName, EMPTY_STRING);
+        return promptForValueIfMissingWithDefault(null, value, parameterName, EMPTY_STRING);
     }
 
     /**

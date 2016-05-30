@@ -1,5 +1,8 @@
 package org.openmrs.maven.plugins.model;
 
+import org.openmrs.maven.plugins.utility.SDKConstants;
+import org.openmrs.maven.plugins.utility.ServerConfig;
+
 /**
  * Class for Server model
  */
@@ -12,87 +15,73 @@ public class Server {
     private String dbPassword;
     private String interactiveMode;
     private String version;
-    private String filePath;
+    private ServerConfig serverConfig;
     private boolean includeDemoData;
 
     public static class ServerBuilder {
-        private String nestedServerId;
-        private String nestedDbDriver;
-        private String nestedDbUri;
-        private String nestedDbUser;
-        private String nestedDbPassword;
-        private String nestedInteractiveMode;
-        private String nestedVersion;
-        private String nestedFilePath;
-        private boolean nestedDemoData;
+        private Server server = new Server();
+
+        public ServerBuilder(ServerConfig serverConfig){
+            server.setServerId(serverConfig.getParam(SDKConstants.PROPERTY_SERVER_ID));
+            server.setVersion(serverConfig.getParam(SDKConstants.PROPERTY_PLATFORM));
+            server.setDbDriver(serverConfig.getParam(SDKConstants.PROPERTY_DB_DRIVER));
+            server.setDbUri(serverConfig.getParam(SDKConstants.PROPERTY_DB_URI));
+            server.setDbUser(serverConfig.getParam(SDKConstants.PROPERTY_DB_USER));
+            server.setDbPassword(serverConfig.getParam(SDKConstants.PROPERTY_DB_PASS));
+            server.serverConfig = serverConfig;
+        }
+        public ServerBuilder(){}
 
         public ServerBuilder setInteractiveMode(String nestedInteractiveMode) {
-            this.nestedInteractiveMode = nestedInteractiveMode;
+            server.interactiveMode = nestedInteractiveMode;
             return this;
         }
 
-        public ServerBuilder setVersion(String nestedVersion) {
-            this.nestedVersion = nestedVersion;
+        public ServerBuilder setVersion(String version) {
+            server.version = version;
             return this;
         }
 
-        public ServerBuilder setServerId(String nestedServerId) {
-            this.nestedServerId = nestedServerId;
+        public ServerBuilder setServerId(String serverId) {
+            server.serverId = serverId;
             return this;
         }
 
-        public ServerBuilder setDbDriver(String nestedDbDriver) {
-            this.nestedDbDriver = nestedDbDriver;
+        public ServerBuilder setDbDriver(String DbDriver) {
+            server.dbDriver = DbDriver;
             return this;
         }
 
-        public ServerBuilder setDbUri(String nestedDbUri) {
-            this.nestedDbUri = nestedDbUri;
+        public ServerBuilder setDbUri(String DbUri) {
+            server.dbUri = DbUri;
             return this;
         }
 
-        public ServerBuilder setDbUser(String nestedDbUser) {
-            this.nestedDbUser = nestedDbUser;
+        public ServerBuilder setDbUser(String DbUser) {
+            server.dbUser = DbUser;
             return this;
         }
 
-        public ServerBuilder setDbPassword(String nestedDbPassword) {
-            this.nestedDbPassword = nestedDbPassword;
-            return this;
-        }
-
-        public ServerBuilder setFilePath(String nestedFilePath) {
-            this.nestedFilePath = nestedFilePath;
+        public ServerBuilder setDbPassword(String DbPassword) {
+            server.dbPassword = DbPassword;
             return this;
         }
 
         public ServerBuilder setDemoData(boolean is) {
-            this.nestedDemoData = is;
+            server.includeDemoData = is;
             return this;
         }
 
         public Server build() {
-            return new Server(nestedServerId, nestedVersion, nestedDbDriver, nestedDbUri, nestedDbUser, nestedDbPassword, nestedFilePath, nestedDemoData, nestedInteractiveMode);
+            return server;
         }
     }
 
     private Server() {};
 
-    private Server(String serverId, String version, String dbDriver, String dbUri, String dbUser, String dbPassword, String filePath, boolean demoData, String interactiveMode) {
-        this.serverId = serverId;
-        this.version = version;
-        this.dbDriver = dbDriver;
-        this.dbUri = dbUri;
-        this.dbUser = dbUser;
-        this.dbPassword = dbPassword;
-        this.filePath = filePath;
-        this.includeDemoData = demoData;
-        this.interactiveMode = interactiveMode;
+    public ServerConfig getServerConfig(){
+        return serverConfig;
     }
-
-    public String getFilePath() { return filePath; }
-
-    public void setFilePath(String filePath) { this.filePath = filePath; }
 
     public String getDbPath() {
         return dbPath;

@@ -158,6 +158,10 @@ public class ServerConfig {
 		}
 		return watchedProjects;
 	}
+
+    public static File getDefaultServersPath(){
+        return new File(System.getProperty("user.home"), SDKConstants.OPENMRS_SERVER_PATH);
+    }
 	
 	/**
 	 * Get param from properties
