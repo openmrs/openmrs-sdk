@@ -90,6 +90,13 @@ public class AttributeHelper {
         if (val.equals(EMPTY_STRING)) val = defaultValue;
         return val;
     }
+    public String promptForValueWithDefaultList(String value, String parameterName, String defaultValue, List<String> values) throws PrompterException {
+        if (value != null) return value;
+        final String text = DEFAULT_VALUE_TMPL_WITH_DEFAULT + " (possible: %s)";
+        String val = prompter.prompt(String.format(text, parameterName, defaultValue, StringUtils.join(values.toArray(), ", ")));
+        if (val.equals(EMPTY_STRING)) val = defaultValue;
+        return val;
+    }
 
     /**
      * Prompt for a value if it not set, and default value is NOT set

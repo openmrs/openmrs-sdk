@@ -1,22 +1,9 @@
 package org.openmrs.maven.plugins;
 
-import static org.twdata.maven.mojoexecutor.MojoExecutor.artifactId;
-import static org.twdata.maven.mojoexecutor.MojoExecutor.configuration;
-import static org.twdata.maven.mojoexecutor.MojoExecutor.element;
-import static org.twdata.maven.mojoexecutor.MojoExecutor.executeMojo;
-import static org.twdata.maven.mojoexecutor.MojoExecutor.executionEnvironment;
-import static org.twdata.maven.mojoexecutor.MojoExecutor.goal;
-import static org.twdata.maven.mojoexecutor.MojoExecutor.groupId;
-import static org.twdata.maven.mojoexecutor.MojoExecutor.plugin;
-import static org.twdata.maven.mojoexecutor.MojoExecutor.version;
-
-import java.io.File;
-import java.io.IOException;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-
 import org.apache.commons.io.FileUtils;
+import org.apache.maven.artifact.factory.ArtifactFactory;
+import org.apache.maven.artifact.metadata.ArtifactMetadataSource;
+import org.apache.maven.artifact.versioning.ArtifactVersion;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.BuildPluginManager;
@@ -28,11 +15,16 @@ import org.codehaus.plexus.components.interactivity.PrompterException;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.model.Version;
-import org.openmrs.maven.plugins.utility.AttributeHelper;
-import org.openmrs.maven.plugins.utility.DBConnector;
-import org.openmrs.maven.plugins.utility.SDKConstants;
-import org.openmrs.maven.plugins.utility.ServerConfig;
-import org.twdata.maven.mojoexecutor.MojoExecutor.Element;
+import org.openmrs.maven.plugins.utility.*;
+import org.twdata.maven.mojoexecutor.MojoExecutor.*;
+
+import java.io.File;
+import java.io.IOException;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
 
 /**
  *
@@ -83,6 +75,21 @@ public class SetupPlatform extends AbstractMojo {
      * @required
      */
     private MavenSession mavenSession;
+
+    /**
+     * The artifact metadata source to use.
+     *
+     * @component
+     * @required
+     * @readonly
+     */
+    protected ArtifactMetadataSource artifactMetadataSource;
+
+    /**
+     * @component
+     * @required
+     */
+    protected ArtifactFactory artifactFactory;
 
     /**
      * Interactive mode param
@@ -163,6 +170,11 @@ public class SetupPlatform extends AbstractMojo {
     private BuildPluginManager pluginManager;
 
     /**
+     * helper for resolving artifact available versions
+     */
+    private VersionsHelper versionsHelper;
+
+    /**
      * Create and setup server with following parameters
      * @param server - server instance
      * @param isCreatePlatform - flag for platform setup
@@ -171,6 +183,7 @@ public class SetupPlatform extends AbstractMojo {
      */
     public String setup(Server server, boolean isCreatePlatform, boolean isCopyDependencies) throws MojoExecutionException, MojoFailureException {
         AttributeHelper helper = new AttributeHelper(prompter);
+        versionsHelper = new VersionsHelper(artifactFactory, mavenProject, mavenSession, artifactMetadataSource);
         File openMRSPath = new File(System.getProperty("user.home"), SDKConstants.OPENMRS_SERVER_PATH);
         ServerConfig serverConfig = null;
         if (server.getFilePath() != null) {
@@ -198,7 +211,14 @@ public class SetupPlatform extends AbstractMojo {
         }
         try {
             String defaultV = isCreatePlatform ? DEFAULT_PLATFORM_VERSION : DEFAULT_VERSION;
-            server.setVersion(helper.promptForValueIfMissingWithDefault(server.getVersion(), "version", defaultV));
+            if(isCreatePlatform){
+                Artifact webapp = new Artifact(SDKConstants.WEBAPP_ARTIFACT_ID, defaultV, Artifact.GROUP_WEB);
+                server.setVersion(helper.promptForValueWithDefaultList(server.getVersion(), "version",
+                        versionsHelper.getLatestReleasedVersion(webapp), versionsHelper.getVersionAdvice(webapp, 6)));
+            } else {
+                server.setVersion(helper.promptForValueIfMissingWithDefault(server.getVersion(), "version", defaultV));
+            }
+
         } catch (PrompterException e) {
             throw new MojoExecutionException(e.getMessage());
         }
@@ -379,7 +399,10 @@ public class SetupPlatform extends AbstractMojo {
      */
     private void prepareModules(List<Artifact> artifacts, String outputDir, String goal) throws MojoExecutionException {
         Element[] artifactItems = new Element[artifacts.size()];
+        List<ArtifactVersion> versions;
         for (Artifact artifact: artifacts) {
+
+            artifact.setVersion(versionsHelper.inferVersion(artifact));
             int index = artifacts.indexOf(artifact);
             artifactItems[index] = artifact.toElement(outputDir);
         }
