@@ -19,17 +19,6 @@ public class SDKConstants {
     public static final String PLUGIN_JETTY_GROUP_ID = "org.eclipse.jetty";
     public static final String PLUGIN_JETTY_ARTIFACT_ID = "jetty-maven-plugin";
     public static final String PLUGIN_JETTY_VERSION = "9.0.4.v20130625";
-    // attributes
-    public static final String PROPERTY_SERVER_ID = "server.id";
-    public static final String PROPERTY_DB_DRIVER = "connection.driver_class";
-    public static final String PROPERTY_DB_USER = "connection.username";
-    public static final String PROPERTY_DB_PASS = "connection.password";
-    public static final String PROPERTY_DB_URI = "connection.url";
-    public static final String PROPERTY_VERSION = "openmrs.version";
-    public static final String PROPERTY_PLATFORM = "openmrs.platform.version";
-    public static final String PROPERTY_DB_NAME = "database_name";
-    public static final String PROPERTY_USER_MODULES = "user_modules";
-    public static final String PROPERTY_DEMO_DATA = "add_demo_data";
     public static final String DB_NAME_TEMPLATE = "openmrs-%s";
     // archetype
     public static final String ARCH_CATALOG = "http://mavenrepo.openmrs.org/nexus/service/local/repositories/releases/content/archetype-catalog.xml";

@@ -5,7 +5,10 @@ import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.codehaus.plexus.components.interactivity.Prompter;
-import org.openmrs.maven.plugins.utility.*;
+import org.openmrs.maven.plugins.model.Server;
+import org.openmrs.maven.plugins.utility.DBConnector;
+import org.openmrs.maven.plugins.utility.DefaultWizard;
+import org.openmrs.maven.plugins.utility.Wizard;
 
 import java.io.File;
 import java.io.IOException;
@@ -33,12 +36,12 @@ public class Delete extends AbstractMojo{
         Wizard helper = new DefaultWizard(prompter);
         File server = helper.getServerPath(serverId);
         try {
-            ServerConfig props = ServerConfig.loadServerConfig(server);
+            Server props = Server.loadServer(server);
             FileUtils.deleteDirectory(server);
-            String dbName = props.getParam(SDKConstants.PROPERTY_DB_NAME);
-            String dbUser = props.getParam(SDKConstants.PROPERTY_DB_USER);
-            String dbPass = props.getParam(SDKConstants.PROPERTY_DB_PASS);
-            String dbUri = props.getParam(SDKConstants.PROPERTY_DB_URI);
+            String dbName = props.getParam(Server.PROPERTY_DB_NAME);
+            String dbUser = props.getParam(Server.PROPERTY_DB_USER);
+            String dbPass = props.getParam(Server.PROPERTY_DB_PASS);
+            String dbUri = props.getParam(Server.PROPERTY_DB_URI);
             DBConnector connector = new DBConnector(dbUri, dbUser, dbPass, dbName);
             connector.dropDatabase();
             connector.close();

@@ -23,6 +23,7 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.components.interactivity.Prompter;
+import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.utility.*;
 import org.twdata.maven.mojoexecutor.MojoExecutor.Element;
 
@@ -146,7 +147,7 @@ public class Run extends AbstractMojo {
     }
 
 	private List<Element> getWatchedProjectsConfiguration(File serverPath) throws MojoExecutionException {
-	    ServerConfig serverConfig = ServerConfig.loadServerConfig(serverPath);
+	    Server serverConfig = Server.loadServer(serverPath);
         List<Element> watched = new ArrayList<Element>();
         Set<Project> watchedProjects = serverConfig.getWatchedProjects();
         if (!watchedProjects.isEmpty()) {

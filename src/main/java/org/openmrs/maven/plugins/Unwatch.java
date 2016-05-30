@@ -1,16 +1,16 @@
 package org.openmrs.maven.plugins;
 
-import java.io.File;
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.codehaus.plexus.components.interactivity.Prompter;
-import org.openmrs.maven.plugins.utility.Wizard;
+import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.utility.DefaultWizard;
 import org.openmrs.maven.plugins.utility.Project;
-import org.openmrs.maven.plugins.utility.ServerConfig;
+import org.openmrs.maven.plugins.utility.Wizard;
+
+import java.io.File;
 
 
 /**
@@ -47,7 +47,7 @@ public class Unwatch extends AbstractMojo {
     public void execute() throws MojoExecutionException, MojoFailureException {
 	    Wizard wizard = new DefaultWizard(prompter);
 	    File serverPath = wizard.getServerPath(serverId);
-	    ServerConfig serverConfig = ServerConfig.loadServerConfig(serverPath);
+	    Server serverConfig = Server.loadServer(serverPath);
 	    
 	    File userDir = new File(System.getProperty("user.dir"));
 	    if (StringUtils.isBlank(artifactId) && Project.hasProject(userDir)) {

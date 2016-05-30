@@ -9,6 +9,7 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.components.interactivity.Prompter;
 import org.openmrs.maven.plugins.model.Artifact;
+import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.utility.*;
 import org.openmrs.maven.plugins.model.Version;
 
@@ -152,10 +153,10 @@ public class ModuleInstall extends AbstractMojo {
                 ),
                 executionEnvironment(mavenProject, mavenSession, pluginManager)
         );
-        ServerConfig properties = ServerConfig.loadServerConfig(serverPath);
+        Server properties = Server.loadServer(serverPath);
         String[] params = {artifact.getGroupId(), originalId, artifact.getVersion()};
         String module = StringUtils.join(params, "/");
-        properties.addToValueList(SDKConstants.PROPERTY_USER_MODULES, module);
+        properties.addToValueList(Server.PROPERTY_USER_MODULES, module);
         properties.save();
         if (versionUpdated) {
             if (removed) getLog().info(String.format(DEFAULT_UPDATE_MESSAGE, originalId, artifact.getVersion()));
