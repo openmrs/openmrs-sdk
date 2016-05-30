@@ -11,7 +11,6 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.components.interactivity.Prompter;
-import org.codehaus.plexus.components.interactivity.PrompterException;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.model.Version;
@@ -170,7 +169,7 @@ public class SetupPlatform extends AbstractMojo {
     private BuildPluginManager pluginManager;
 
     /**
-     * helper for resolving artifact available versions
+     * wizard for resolving artifact available versions
      */
     private VersionsHelper versionsHelper;
 
@@ -182,7 +181,7 @@ public class SetupPlatform extends AbstractMojo {
      * @throws MojoExecutionException
      */
     public String setup(Server server, boolean isCreatePlatform, boolean isCopyDependencies) throws MojoExecutionException, MojoFailureException {
-        AttributeHelper helper = new AttributeHelper(prompter);
+        Wizard helper = new DefaultWizard(prompter);
         versionsHelper = new VersionsHelper(artifactFactory, mavenProject, mavenSession, artifactMetadataSource);
         File openMRSPath = new File(System.getProperty("user.home"), SDKConstants.OPENMRS_SERVER_PATH);
         ServerConfig serverConfig = null;
@@ -197,11 +196,7 @@ public class SetupPlatform extends AbstractMojo {
             if (server.getDbUser() == null) server.setDbUser(serverConfig.getParam(SDKConstants.PROPERTY_DB_USER));
             if (server.getDbPassword() == null) server.setDbPassword(serverConfig.getParam(SDKConstants.PROPERTY_DB_PASS));
         }
-        try {
-            server.setServerId(helper.promptForNewServerIfMissing(openMRSPath.getPath(), server.getServerId()));
-        } catch (PrompterException e) {
-            getLog().error(e.getMessage());
-        }
+        server.setServerId(helper.promptForNewServerIfMissing(openMRSPath.getPath(), server.getServerId()));
         File serverPath = new File(openMRSPath, server.getServerId());
         if (ServerConfig.hasServerConfig(serverPath)) {
             ServerConfig props = ServerConfig.loadServerConfig(serverPath);
@@ -209,19 +204,15 @@ public class SetupPlatform extends AbstractMojo {
                 throw new MojoExecutionException("Server with same id already created");
             }
         }
-        try {
-            String defaultV = isCreatePlatform ? DEFAULT_PLATFORM_VERSION : DEFAULT_VERSION;
-            if(isCreatePlatform){
-                Artifact webapp = new Artifact(SDKConstants.WEBAPP_ARTIFACT_ID, defaultV, Artifact.GROUP_WEB);
-                server.setVersion(helper.promptForValueWithDefaultList(server.getVersion(), "version",
-                        versionsHelper.getLatestReleasedVersion(webapp), versionsHelper.getVersionAdvice(webapp, 6)));
-            } else {
-                server.setVersion(helper.promptForValueIfMissingWithDefault(server.getVersion(), "version", defaultV));
-            }
-
-        } catch (PrompterException e) {
-            throw new MojoExecutionException(e.getMessage());
+        String defaultV = isCreatePlatform ? DEFAULT_PLATFORM_VERSION : DEFAULT_VERSION;
+        if(isCreatePlatform){
+            Artifact webapp = new Artifact(SDKConstants.WEBAPP_ARTIFACT_ID, defaultV, Artifact.GROUP_WEB);
+            server.setVersion(helper.promptForValueWithDefaultList(server.getVersion(), "version",
+                    versionsHelper.getLatestReleasedVersion(webapp), versionsHelper.getVersionAdvice(webapp, 6)));
+        } else {
+            server.setVersion(helper.promptForValueIfMissingWithDefault(server.getVersion(), "version", defaultV));
         }
+
         if (new Version(server.getVersion()).higher(new Version(Version.PRIOR)) && !isCreatePlatform) {
             if (isCopyDependencies) extractDistroToServer(server.getVersion(), serverPath);
         }
@@ -272,38 +263,34 @@ public class SetupPlatform extends AbstractMojo {
                 (server.getDbPassword() != null) ||
                 (server.getDbUri() != null) ||
                 !isCreatePlatform) {
-            try {
-                server.setDbDriver(helper.promptForValueIfMissingWithDefault(server.getDbDriver(), "dbDriver", "mysql"));
-                String defaultUri = SDKConstants.URI_MYSQL;
-                if ((server.getDbDriver().equals("postgresql")) || (server.getDbDriver().equals(SDKConstants.DRIVER_POSTGRESQL))) {
-                    properties.setParam(SDKConstants.PROPERTY_DB_DRIVER, SDKConstants.DRIVER_POSTGRESQL);
-                    defaultUri = SDKConstants.URI_POSTGRESQL;
-                }
-                else if ((server.getDbDriver().equals("h2")) || (server.getDbDriver().equals(SDKConstants.DRIVER_H2))) {
-                    properties.setParam(SDKConstants.PROPERTY_DB_DRIVER, SDKConstants.DRIVER_H2);
-                    defaultUri = SDKConstants.URI_H2;
-                }
-                else if (server.getDbDriver().equals("mysql")) {
-                    properties.setParam(SDKConstants.PROPERTY_DB_DRIVER, SDKConstants.DRIVER_MYSQL);
-                }
-                else properties.setParam(SDKConstants.PROPERTY_DB_DRIVER, server.getDbDriver());
-
-
-                String dbUri = helper.promptForValueIfMissingWithDefault(server.getDbUri(), "dbUri", defaultUri);
-                if (dbUri.startsWith("jdbc:mysql:")) {
-                	dbUri = helper.addMySQLParamsIfMissing(dbUri);
-                }
-
-                server.setDbUri(dbUri);
-                String defaultUser = "root";
-                server.setDbUser(helper.promptForValueIfMissingWithDefault(server.getDbUser(), "dbUser", defaultUser));
-                server.setDbPassword(helper.promptForValueIfMissing(server.getDbPassword(), "dbPassword"));
-                properties.setParam(SDKConstants.PROPERTY_DB_USER, server.getDbUser());
-                properties.setParam(SDKConstants.PROPERTY_DB_PASS, server.getDbPassword());
-                properties.setParam(SDKConstants.PROPERTY_DB_URI, server.getDbUri());
-            } catch (PrompterException e) {
-                getLog().error(e.getMessage());
+            server.setDbDriver(helper.promptForValueIfMissingWithDefault(server.getDbDriver(), "dbDriver", "mysql"));
+            String defaultUri = SDKConstants.URI_MYSQL;
+            if ((server.getDbDriver().equals("postgresql")) || (server.getDbDriver().equals(SDKConstants.DRIVER_POSTGRESQL))) {
+                properties.setParam(SDKConstants.PROPERTY_DB_DRIVER, SDKConstants.DRIVER_POSTGRESQL);
+                defaultUri = SDKConstants.URI_POSTGRESQL;
             }
+            else if ((server.getDbDriver().equals("h2")) || (server.getDbDriver().equals(SDKConstants.DRIVER_H2))) {
+                properties.setParam(SDKConstants.PROPERTY_DB_DRIVER, SDKConstants.DRIVER_H2);
+                defaultUri = SDKConstants.URI_H2;
+            }
+            else if (server.getDbDriver().equals("mysql")) {
+                properties.setParam(SDKConstants.PROPERTY_DB_DRIVER, SDKConstants.DRIVER_MYSQL);
+            }
+            else properties.setParam(SDKConstants.PROPERTY_DB_DRIVER, server.getDbDriver());
+
+
+            String dbUri = helper.promptForValueIfMissingWithDefault(server.getDbUri(), "dbUri", defaultUri);
+            if (dbUri.startsWith("jdbc:mysql:")) {
+                dbUri = helper.addMySQLParamsIfMissing(dbUri);
+            }
+
+            server.setDbUri(dbUri);
+            String defaultUser = "root";
+            server.setDbUser(helper.promptForValueIfMissingWithDefault(server.getDbUser(), "dbUser", defaultUser));
+            server.setDbPassword(helper.promptForValueIfMissing(server.getDbPassword(), "dbPassword"));
+            properties.setParam(SDKConstants.PROPERTY_DB_USER, server.getDbUser());
+            properties.setParam(SDKConstants.PROPERTY_DB_PASS, server.getDbPassword());
+            properties.setParam(SDKConstants.PROPERTY_DB_URI, server.getDbUri());
         }
         properties.setParam(SDKConstants.PROPERTY_PLATFORM, server.getVersion());
         if (!isCreatePlatform) {

@@ -6,7 +6,8 @@ import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.codehaus.plexus.components.interactivity.Prompter;
-import org.openmrs.maven.plugins.utility.AttributeHelper;
+import org.openmrs.maven.plugins.utility.Wizard;
+import org.openmrs.maven.plugins.utility.DefaultWizard;
 import org.openmrs.maven.plugins.utility.Project;
 import org.openmrs.maven.plugins.utility.ServerConfig;
 
@@ -32,8 +33,8 @@ public class Watch extends AbstractMojo {
 
 	@Override
     public void execute() throws MojoExecutionException, MojoFailureException {
-	    AttributeHelper attributeHelper = new AttributeHelper(prompter);
-	    File serverPath = attributeHelper.getServerPath(serverId);
+	    Wizard wizard = new DefaultWizard(prompter);
+	    File serverPath = wizard.getServerPath(serverId);
 	    
 	    File userDir = new File(System.getProperty("user.dir"));
 	    if (Project.hasProject(userDir)) {

@@ -9,10 +9,7 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.components.interactivity.Prompter;
 import org.openmrs.maven.plugins.model.Server;
-import org.openmrs.maven.plugins.utility.AttributeHelper;
-import org.openmrs.maven.plugins.utility.DBConnector;
-import org.openmrs.maven.plugins.utility.ServerConfig;
-import org.openmrs.maven.plugins.utility.SDKConstants;
+import org.openmrs.maven.plugins.utility.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -67,7 +64,7 @@ public class Reset extends AbstractMojo{
     private BuildPluginManager pluginManager;
 
     public void execute() throws MojoExecutionException, MojoFailureException {
-        AttributeHelper helper = new AttributeHelper(prompter);
+        Wizard helper = new DefaultWizard(prompter);
         if (serverId == null) {
             File currentProperties = helper.getCurrentServerPath();
             if (currentProperties != null) serverId = currentProperties.getName();

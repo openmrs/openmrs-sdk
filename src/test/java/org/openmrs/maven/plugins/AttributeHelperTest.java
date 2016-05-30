@@ -6,15 +6,16 @@ import static org.junit.Assert.*;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.openmrs.maven.plugins.utility.AttributeHelper;
+import org.openmrs.maven.plugins.utility.Wizard;
+import org.openmrs.maven.plugins.utility.DefaultWizard;
 
 public class AttributeHelperTest {
 
-	AttributeHelper helper;
+	Wizard helper;
 
 	@Before
 	public void before() {
-		helper = new AttributeHelper(null);
+		helper = new DefaultWizard(null);
 	}
 
 	@Test

@@ -5,10 +5,7 @@ import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.codehaus.plexus.components.interactivity.Prompter;
-import org.openmrs.maven.plugins.utility.AttributeHelper;
-import org.openmrs.maven.plugins.utility.DBConnector;
-import org.openmrs.maven.plugins.utility.ServerConfig;
-import org.openmrs.maven.plugins.utility.SDKConstants;
+import org.openmrs.maven.plugins.utility.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -33,7 +30,7 @@ public class Delete extends AbstractMojo{
     private Prompter prompter;
 
     public void execute() throws MojoExecutionException, MojoFailureException {
-        AttributeHelper helper = new AttributeHelper(prompter);
+        Wizard helper = new DefaultWizard(prompter);
         File server = helper.getServerPath(serverId);
         try {
             ServerConfig props = ServerConfig.loadServerConfig(server);

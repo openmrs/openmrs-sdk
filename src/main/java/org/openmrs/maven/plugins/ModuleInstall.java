@@ -8,12 +8,8 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.components.interactivity.Prompter;
-import org.codehaus.plexus.components.interactivity.PrompterException;
 import org.openmrs.maven.plugins.model.Artifact;
-import org.openmrs.maven.plugins.utility.AttributeHelper;
-import org.openmrs.maven.plugins.utility.Project;
-import org.openmrs.maven.plugins.utility.ServerConfig;
-import org.openmrs.maven.plugins.utility.SDKConstants;
+import org.openmrs.maven.plugins.utility.*;
 import org.openmrs.maven.plugins.model.Version;
 
 import java.io.File;
@@ -108,7 +104,7 @@ public class ModuleInstall extends AbstractMojo {
      * @throws MojoFailureException
      */
     public void installModule(String serverId, String groupId, String artifactId, String version) throws MojoExecutionException, MojoFailureException {
-        AttributeHelper helper = new AttributeHelper(prompter);
+        Wizard helper = new DefaultWizard(prompter);
         if (serverId == null) {
             File currentProperties = helper.getCurrentServerPath();
             if (currentProperties != null) serverId = currentProperties.getName();
@@ -128,26 +124,20 @@ public class ModuleInstall extends AbstractMojo {
             String[] parts = itemModule.getName().split("-");
             String oldV = StringUtils.join(Arrays.copyOfRange(parts, 1, parts.length), "-");
             if (originalId.equals(parts[0])) {
-                try {
-                    Version oldVersion = new Version(oldV.substring(0, oldV.lastIndexOf('.')));
-                    Version newVersion = new Version(artifact.getVersion());
-                    if (oldVersion.higher(newVersion)) {
-                        throw new MojoExecutionException(String.format(TEMPLATE_DOWNGRADE, oldVersion.toString(), newVersion.toString()));
-                    }
-                    else if (oldVersion.lower(newVersion)) {
-                        boolean agree = helper.dialogYesNo(String.format(TEMPLATE_UPDATE, artifact.getVersion()));
-                        if (!agree) {
-                            return;
-                        }
-                    }
-                    versionUpdated = true;
-                    removed = itemModule.delete();
-                    break;
-
-                } catch (PrompterException e) {
-                    throw new MojoExecutionException(e.getMessage());
+                Version oldVersion = new Version(oldV.substring(0, oldV.lastIndexOf('.')));
+                Version newVersion = new Version(artifact.getVersion());
+                if (oldVersion.higher(newVersion)) {
+                    throw new MojoExecutionException(String.format(TEMPLATE_DOWNGRADE, oldVersion.toString(), newVersion.toString()));
                 }
-
+                else if (oldVersion.lower(newVersion)) {
+                    boolean agree = helper.dialogYesNo(String.format(TEMPLATE_UPDATE, artifact.getVersion()));
+                    if (!agree) {
+                        return;
+                    }
+                }
+                versionUpdated = true;
+                removed = itemModule.delete();
+                break;
             }
         }
         executeMojo(
@@ -181,7 +171,7 @@ public class ModuleInstall extends AbstractMojo {
      * @param version
      * @return
      */
-    public Artifact getArtifactForSelectedParameters(AttributeHelper helper, String groupId, String artifactId, String version) throws MojoExecutionException {
+    public Artifact getArtifactForSelectedParameters(Wizard helper, String groupId, String artifactId, String version) throws MojoExecutionException {
         String moduleGroupId = null;
         String moduleArtifactId = null;
         String moduleVersion = null;
@@ -206,12 +196,8 @@ public class ModuleInstall extends AbstractMojo {
         }
         else {
             moduleGroupId = groupId;
-            try {
-                moduleArtifactId = helper.promptForValueIfMissing(artifactId, "artifactId");
-                moduleVersion = helper.promptForValueIfMissing(version, "version");
-            } catch (PrompterException e) {
-                getLog().error(e.getMessage());
-            }
+            moduleArtifactId = helper.promptForValueIfMissing(artifactId, "artifactId");
+            moduleVersion = helper.promptForValueIfMissing(version, "version");
         }
         return new Artifact(moduleArtifactId, moduleVersion, moduleGroupId);
     }
