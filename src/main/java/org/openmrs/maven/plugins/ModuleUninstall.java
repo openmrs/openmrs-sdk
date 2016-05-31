@@ -44,7 +44,7 @@ public class ModuleUninstall extends AbstractMojo {
             if (currentProperties != null) serverId = currentProperties.getName();
         }
         File serverPath = wizard.getServerPath(serverId);
-        Artifact artifact = installer.getArtifactForSelectedParameters(wizard, groupId, artifactId, "default");
+        Artifact artifact = installer.getArtifactForSelectedParameters(groupId, artifactId, "default");
         File modules = new File(serverPath, SDKConstants.OPENMRS_SERVER_MODULES);
         File[] listOfModules = modules.listFiles();
         for (File mod : listOfModules) {

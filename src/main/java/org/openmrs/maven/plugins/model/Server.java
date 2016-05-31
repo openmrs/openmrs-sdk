@@ -260,6 +260,15 @@ public class Server {
     }
 
     /**
+     * Get openmrs-core version
+     *
+     * @
+     */
+    public String getOpenmrsCoreVersion(){
+        return properties.getProperty("openmrs.platform.version");
+    }
+
+    /**
      * Get param from properties
      *
      * @param key - property key
