@@ -1,31 +1,23 @@
 package org.openmrs.maven.plugins;
 
-import static org.twdata.maven.mojoexecutor.MojoExecutor.artifactId;
-import static org.twdata.maven.mojoexecutor.MojoExecutor.configuration;
-import static org.twdata.maven.mojoexecutor.MojoExecutor.element;
-import static org.twdata.maven.mojoexecutor.MojoExecutor.executeMojo;
-import static org.twdata.maven.mojoexecutor.MojoExecutor.executionEnvironment;
-import static org.twdata.maven.mojoexecutor.MojoExecutor.goal;
-import static org.twdata.maven.mojoexecutor.MojoExecutor.groupId;
-import static org.twdata.maven.mojoexecutor.MojoExecutor.name;
-import static org.twdata.maven.mojoexecutor.MojoExecutor.plugin;
-import static org.twdata.maven.mojoexecutor.MojoExecutor.version;
-
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.project.MavenProject;
-import org.codehaus.plexus.components.interactivity.Prompter;
 import org.openmrs.maven.plugins.model.Server;
-import org.openmrs.maven.plugins.utility.*;
-import org.twdata.maven.mojoexecutor.MojoExecutor.Element;
+import org.openmrs.maven.plugins.utility.Project;
+import org.openmrs.maven.plugins.utility.SDKConstants;
+import org.openmrs.maven.plugins.utility.Wizard;
+import org.twdata.maven.mojoexecutor.MojoExecutor.*;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+
+import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
 
 /**
  * @goal run
@@ -65,17 +57,17 @@ public class Run extends AbstractMojo {
     private BuildPluginManager pluginManager;
 
     /**
+     * @required
      * @component
      */
-    private Prompter prompter;
+    Wizard wizard;
 
     public void execute() throws MojoExecutionException, MojoFailureException {
-        Wizard helper = new DefaultWizard(prompter);
         if (serverId == null) {
-            File currentProperties = helper.getCurrentServerPath();
+            File currentProperties = wizard.getCurrentServerPath();
             if (currentProperties != null) serverId = currentProperties.getName();
         }
-        File serverPath = helper.getServerPath(serverId, NO_SERVER_TEXT);
+        File serverPath = wizard.getServerPath(serverId, NO_SERVER_TEXT);
         serverPath.mkdirs();
         File userDir = new File(System.getProperty("user.dir"));
         if (Project.hasProject(userDir)) {
@@ -86,7 +78,7 @@ public class Run extends AbstractMojo {
                 String version = config.getVersion();
                 if ((artifactId != null) && (groupId != null) && version != null) {
                     getLog().info("OpenMRS module detected, installing before run...");
-                    ModuleInstall installer = new ModuleInstall(mavenProject, mavenSession, pluginManager, prompter);
+                    ModuleInstall installer = new ModuleInstall(mavenProject, mavenSession, pluginManager);
                     installer.installModule(serverPath.getName(), groupId, artifactId, version);
                 }
             }

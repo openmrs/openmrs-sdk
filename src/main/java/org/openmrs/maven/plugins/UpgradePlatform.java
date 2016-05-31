@@ -7,11 +7,9 @@ import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.project.MavenProject;
-import org.codehaus.plexus.components.interactivity.Prompter;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.model.Version;
-import org.openmrs.maven.plugins.utility.DefaultWizard;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 import org.openmrs.maven.plugins.utility.Wizard;
 
@@ -40,12 +38,10 @@ public class UpgradePlatform extends AbstractMojo{
 
     public UpgradePlatform(MavenProject mavenProject,
                            MavenSession mavenSession,
-                           BuildPluginManager pluginManager,
-                           Prompter prompter) {
+                           BuildPluginManager pluginManager) {
         this.mavenProject = mavenProject;
         this.mavenSession = mavenSession;
         this.pluginManager = pluginManager;
-        this.prompter = prompter;
     }
 
     /**
@@ -79,11 +75,10 @@ public class UpgradePlatform extends AbstractMojo{
     private String version;
 
     /**
-     * Component for user prompt
-     *
+     * @required
      * @component
      */
-    private Prompter prompter;
+    Wizard wizard;
 
     /**
      * The Maven BuildPluginManager component.
@@ -106,17 +101,16 @@ public class UpgradePlatform extends AbstractMojo{
      * @throws MojoFailureException
      */
     public void upgradeServer(String serverId, final String version, boolean isUpdateToPlatform) throws MojoExecutionException, MojoFailureException {
-        Wizard helper = new DefaultWizard(prompter);
         String resultVersion = null;
         String resultServer = null;
         // check if we are inside the some server folder
         if (serverId == null) {
-            File currentProperties = helper.getCurrentServerPath();
+            File currentProperties = wizard.getCurrentServerPath();
             if (currentProperties != null) serverId = currentProperties.getName();
         }
-        resultVersion = helper.promptForValueIfMissing(version, "version");
+        resultVersion = wizard.promptForValueIfMissing(version, "version");
 
-        File serverPath = helper.getServerPath(serverId);
+        File serverPath = wizard.getServerPath(serverId);
         resultServer = serverPath.getName();
         Server properties = Server.loadServer(serverPath);
         String webapp = properties.getParam(Server.PROPERTY_VERSION);
@@ -128,14 +122,14 @@ public class UpgradePlatform extends AbstractMojo{
         }
         Version platformVersion = new Version(platform);
         Version nextVersion = new Version(resultVersion);
-        Setup setupPlatform = new Setup(mavenProject, mavenSession, prompter, pluginManager);
+        Setup setup = new Setup(mavenProject, mavenSession, pluginManager);
         // get list modules to remove after
         // for 2.3 and higher, copy dependencies to tmp folder
         File tmpFolder = new File(serverPath, SDKConstants.TMP);
         boolean isPriorVersion = new Version(resultVersion).higher(new Version(Version.PRIOR));
         Version webAppVersionFromTmpFolder = new Version("1");
         if (isPriorVersion) {
-            webAppVersionFromTmpFolder = setupPlatform.extractDistroToServer(resultVersion, tmpFolder);
+            webAppVersionFromTmpFolder = setup.extractDistroToServer(resultVersion, tmpFolder);
         }
         if (isUpdateToPlatform) {
             if (webapp != null) {
@@ -154,7 +148,7 @@ public class UpgradePlatform extends AbstractMojo{
             else {
                 if (webapp == null) {
                     if (nextVersion.higher(platformVersion)) {
-                        boolean yes = helper.promptYesNo("Do you want to upgrade platform server?");
+                        boolean yes = wizard.promptYesNo("Do you want to upgrade platform server?");
                         if (!yes) {
                             return;
                         }
@@ -194,7 +188,7 @@ public class UpgradePlatform extends AbstractMojo{
             // install user modules
             String values = properties.getParam(Server.PROPERTY_USER_MODULES);
             if (values != null) {
-                ModuleInstall installer = new ModuleInstall(mavenProject, mavenSession, pluginManager, prompter);
+                ModuleInstall installer = new ModuleInstall(mavenProject, mavenSession, pluginManager);
                 String[] modules = values.split(Server.COMMA);
                 for (String mod: modules) {
                     String[] params = mod.split(Server.SLASH);
@@ -223,7 +217,7 @@ public class UpgradePlatform extends AbstractMojo{
                 .setDemoData(addDemoData)
                 .build();
         properties.delete();
-        setupPlatform.setup(server, isUpdateToPlatform, false);
+        setup.setup(server, isUpdateToPlatform, false);
         removeFiles(listFilesToRemove);
         // remove temp files after upgrade
         File tmp = new File(serverPath, "${project.basedir}");

@@ -3,10 +3,8 @@ package org.openmrs.maven.plugins;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
-import org.codehaus.plexus.components.interactivity.Prompter;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.Server;
-import org.openmrs.maven.plugins.utility.DefaultWizard;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 import org.openmrs.maven.plugins.utility.Wizard;
 
@@ -34,19 +32,19 @@ public class ModuleUninstall extends AbstractMojo {
     private String groupId;
 
     /**
+     * @required
      * @component
      */
-    private Prompter prompter;
+    Wizard wizard;
 
     public void execute() throws MojoExecutionException, MojoFailureException {
-        ModuleInstall installer = new ModuleInstall(prompter);
-        Wizard helper = new DefaultWizard(prompter);
+        ModuleInstall installer = new ModuleInstall();
         if (serverId == null) {
-            File currentProperties = helper.getCurrentServerPath();
+            File currentProperties = wizard.getCurrentServerPath();
             if (currentProperties != null) serverId = currentProperties.getName();
         }
-        File serverPath = helper.getServerPath(serverId);
-        Artifact artifact = installer.getArtifactForSelectedParameters(helper, groupId, artifactId, "default");
+        File serverPath = wizard.getServerPath(serverId);
+        Artifact artifact = installer.getArtifactForSelectedParameters(wizard, groupId, artifactId, "default");
         File modules = new File(serverPath, SDKConstants.OPENMRS_SERVER_MODULES);
         File[] listOfModules = modules.listFiles();
         for (File mod : listOfModules) {

@@ -7,10 +7,8 @@ import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.project.MavenProject;
-import org.codehaus.plexus.components.interactivity.Prompter;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.utility.DBConnector;
-import org.openmrs.maven.plugins.utility.DefaultWizard;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 import org.openmrs.maven.plugins.utility.Wizard;
 
@@ -54,9 +52,10 @@ public class Reset extends AbstractMojo{
     private String full;
 
     /**
+     * @required
      * @component
      */
-    private Prompter prompter;
+    Wizard wizard;
 
     /**
      * The Maven BuildPluginManager component.
@@ -67,12 +66,11 @@ public class Reset extends AbstractMojo{
     private BuildPluginManager pluginManager;
 
     public void execute() throws MojoExecutionException, MojoFailureException {
-        Wizard helper = new DefaultWizard(prompter);
         if (serverId == null) {
-            File currentProperties = helper.getCurrentServerPath();
+            File currentProperties = wizard.getCurrentServerPath();
             if (currentProperties != null) serverId = currentProperties.getName();
         }
-        File serverPath = helper.getServerPath(serverId);
+        File serverPath = wizard.getServerPath(serverId);
         Server properties = Server.loadServer(serverPath);
         DBConnector connector = null;
         try {
@@ -103,9 +101,9 @@ public class Reset extends AbstractMojo{
                 .setDbPassword(properties.getParam(Server.PROPERTY_DB_PASS))
                 .setInteractiveMode("false")
                 .build();
-        if (helper.checkYes(full)) {
+        if (wizard.checkYes(full)) {
             try {
-                Setup platform = new Setup(mavenProject, mavenSession, prompter, pluginManager);
+                Setup platform = new Setup(mavenProject, mavenSession, pluginManager);
                 FileUtils.deleteDirectory(serverPath);
                 platform.setup(server, isPlatform, true);
                 getLog().info(String.format(TEMPLATE_SUCCESS_FULL, server.getServerId()));
@@ -114,7 +112,7 @@ public class Reset extends AbstractMojo{
             }
         }
         else {
-            UpgradePlatform upgradePlatform = new UpgradePlatform(mavenProject, mavenSession, pluginManager, prompter);
+            UpgradePlatform upgradePlatform = new UpgradePlatform(mavenProject, mavenSession, pluginManager);
             upgradePlatform.upgradeServer(server.getServerId(), server.getVersion(), isPlatform);
             getLog().info(String.format(TEMPLATE_SUCCESS, server.getServerId()));
         }

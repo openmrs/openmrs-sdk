@@ -6,7 +6,6 @@ import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.project.MavenProject;
-import org.codehaus.plexus.components.interactivity.Prompter;
 
 /**
  *
@@ -49,13 +48,6 @@ public class Upgrade extends AbstractMojo{
     private String version;
 
     /**
-     * Component for user prompt
-     *
-     * @component
-     */
-    private Prompter prompter;
-
-    /**
      * The Maven BuildPluginManager component.
      *
      * @component
@@ -64,7 +56,7 @@ public class Upgrade extends AbstractMojo{
     private BuildPluginManager pluginManager;
 
     public void execute() throws MojoExecutionException, MojoFailureException {
-        UpgradePlatform upgrader = new UpgradePlatform(mavenProject, mavenSession, pluginManager, prompter);
+        UpgradePlatform upgrader = new UpgradePlatform(mavenProject, mavenSession, pluginManager);
         upgrader.upgradeServer(serverId, version, false);
         getLog().info(String.format(TEMPLATE_SUCCESS, serverId, version));
     }

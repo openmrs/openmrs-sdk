@@ -56,6 +56,8 @@ public class SDKConstants {
         put("2.1", "1.10.0");
         put("2.2", "1.11.2");
     }};
+    public static final String SETUP_DEFAULT_VERSION = "2.3";
+    public static final String SETUP_DEFAULT_PLATFORM_VERSION = "1.11.5";
 
     // modules 2.x
     public static final List<Artifact> ARTIFACTS_2_0 = new ArrayList<Artifact>() {{

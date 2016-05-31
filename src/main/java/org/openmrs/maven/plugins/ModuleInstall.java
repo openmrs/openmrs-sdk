@@ -7,11 +7,12 @@ import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.project.MavenProject;
-import org.codehaus.plexus.components.interactivity.Prompter;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.Server;
-import org.openmrs.maven.plugins.utility.*;
 import org.openmrs.maven.plugins.model.Version;
+import org.openmrs.maven.plugins.utility.Project;
+import org.openmrs.maven.plugins.utility.SDKConstants;
+import org.openmrs.maven.plugins.utility.Wizard;
 
 import java.io.File;
 import java.util.Arrays;
@@ -72,22 +73,17 @@ public class ModuleInstall extends AbstractMojo {
      * @parameter expression="${version}"
      */
     private String version;
-
     /**
+     * @required
      * @component
      */
-    private Prompter prompter;
+    Wizard wizard;
 
-    public ModuleInstall(MavenProject project, MavenSession session, BuildPluginManager manager, Prompter prompt) {
+    public ModuleInstall(MavenProject project, MavenSession session, BuildPluginManager manager) {
         mavenProject = project;
         mavenSession = session;
         pluginManager = manager;
-        prompter = prompt;
     };
-
-    public ModuleInstall(Prompter prompter) {
-        this.prompter = prompter;
-    }
 
     public ModuleInstall() {}
 
@@ -105,13 +101,12 @@ public class ModuleInstall extends AbstractMojo {
      * @throws MojoFailureException
      */
     public void installModule(String serverId, String groupId, String artifactId, String version) throws MojoExecutionException, MojoFailureException {
-        Wizard helper = new DefaultWizard(prompter);
         if (serverId == null) {
-            File currentProperties = helper.getCurrentServerPath();
+            File currentProperties = wizard.getCurrentServerPath();
             if (currentProperties != null) serverId = currentProperties.getName();
         }
-        File serverPath = helper.getServerPath(serverId);
-        Artifact artifact = getArtifactForSelectedParameters(helper, groupId, artifactId, version);
+        File serverPath = wizard.getServerPath(serverId);
+        Artifact artifact = getArtifactForSelectedParameters(wizard, groupId, artifactId, version);
         String originalId = artifact.getArtifactId();
         artifact.setArtifactId(artifact.getArtifactId() + "-omod");
         File modules = new File(serverPath, SDKConstants.OPENMRS_SERVER_MODULES);
@@ -131,7 +126,7 @@ public class ModuleInstall extends AbstractMojo {
                     throw new MojoExecutionException(String.format(TEMPLATE_DOWNGRADE, oldVersion.toString(), newVersion.toString()));
                 }
                 else if (oldVersion.lower(newVersion)) {
-                    boolean agree = helper.promptYesNo(String.format(TEMPLATE_UPDATE, artifact.getVersion()));
+                    boolean agree = wizard.promptYesNo(String.format(TEMPLATE_UPDATE, artifact.getVersion()));
                     if (!agree) {
                         return;
                     }

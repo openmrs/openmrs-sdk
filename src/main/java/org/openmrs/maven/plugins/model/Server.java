@@ -27,7 +27,30 @@ public class Server {
     public static final String PROPERTY_DB_NAME = "database_name";
     public static final String PROPERTY_USER_MODULES = "user_modules";
     public static final String PROPERTY_DEMO_DATA = "add_demo_data";
-    public static final String PROPERTY_INTERACTIVE = "interactive";
+
+    public void setUnspecifiedToDefault() {
+/*        setPropertyIfNotSpecified("connection.url",
+                "jdbc:h2:@APPLICATIONDATADIR@/database/@DBNAME@;AUTO_RECONNECT=TRUE;DB_CLOSE_DELAY=-1");
+        setPropertyIfNotSpecified("connection.driver_class", "org.h2.Driver");
+        setPropertyIfNotSpecified("connection.username", "sa");
+        setPropertyIfNotSpecified("connection.password", "sa");
+        setPropertyIfNotSpecified("database_name", "openmrs");
+        setPropertyIfNotSpecified("has_current_openmrs_database", "true");
+        setPropertyIfNotSpecified("create_database_user", "false");
+        setPropertyIfNotSpecified("create_tables", "true");
+        setPropertyIfNotSpecified("add_demo_data", "false");
+        setPropertyIfNotSpecified("auto_update_database", "false");*/
+        setPropertyIfNotSpecified("module_web_admin", "true");
+        setPropertyIfNotSpecified("install_method", "auto");
+        setPropertyIfNotSpecified("admin_user_password", "Admin123");
+    }
+    private void setPropertyIfNotSpecified(String key, String value){
+        if(properties.getProperty(key)==null){
+            properties.setProperty(key, value);
+        }
+    }
+
+
 
     public static final String COMMA = ",";
 
@@ -35,7 +58,9 @@ public class Server {
 
     private Properties properties;
 
-    private File file;
+    private File propertiesFile;
+
+    private File serverDirectory;
 
     private String interactiveMode;
 
@@ -98,7 +123,7 @@ public class Server {
     };
 
     private Server(File file, Properties properties){
-        this.file = file;
+        this.propertiesFile = file;
         this.properties = properties;
     }
 
@@ -120,7 +145,7 @@ public class Server {
 
     public static Server loadServer(File dir) throws MojoExecutionException {
         if (!hasServerConfig(dir)) {
-            throw new IllegalArgumentException(SDKConstants.OPENMRS_SERVER_PROPERTIES + " file is missing");
+            throw new IllegalArgumentException(SDKConstants.OPENMRS_SERVER_PROPERTIES + " propertiesFile is missing");
         }
 
         Properties properties = new Properties();
@@ -142,28 +167,32 @@ public class Server {
         return new Server(config, properties);
     }
 
-    public void delete() {
-        file.delete();
+    public static Server loadConfig(File dir) throws MojoExecutionException {
+        if (!hasServerConfig(dir)) {
+            throw new IllegalArgumentException(SDKConstants.OPENMRS_SERVER_PROPERTIES + " propertiesFile is missing");
+        }
+
+        Properties properties = new Properties();
+        File config = new File(dir, SDKConstants.OPENMRS_SERVER_PROPERTIES);
+
+        FileInputStream in = null;
+        try {
+            in = new FileInputStream(config);
+            properties.load(in);
+            in.close();
+        }
+        catch (IOException e) {
+            throw new MojoExecutionException(e.getMessage());
+        }
+        finally {
+            IOUtils.closeQuietly(in);
+        }
+
+        return new Server(null, properties);
     }
 
-    /**
-     * Set default properties
-     */
-    public void setDefaults() {
-        properties.setProperty("install_method", "auto");
-        properties.setProperty("connection.url",
-                "jdbc:h2:@APPLICATIONDATADIR@/database/@DBNAME@;AUTO_RECONNECT=TRUE;DB_CLOSE_DELAY=-1");
-        properties.setProperty("connection.driver_class", "org.h2.Driver");
-        properties.setProperty("connection.username", "sa");
-        properties.setProperty("connection.password", "sa");
-        properties.setProperty("database_name", "openmrs");
-        properties.setProperty("has_current_openmrs_database", "true");
-        properties.setProperty("create_database_user", "false");
-        properties.setProperty("create_tables", "true");
-        properties.setProperty("add_demo_data", "false");
-        properties.setProperty("module_web_admin", "true");
-        properties.setProperty("auto_update_database", "false");
-        properties.setProperty("admin_user_password", "Admin123");
+    public void delete() {
+        propertiesFile.delete();
     }
 
     public boolean addWatchedProject(Project project) {
@@ -306,7 +335,7 @@ public class Server {
     }
 
     /**
-     * Write properties to file
+     * Write properties to propertiesFile
      *
      * @param path
      */
@@ -331,16 +360,18 @@ public class Server {
      * doesn't replace DBNAME with the specified value.
      */
     private void replaceDbNameInDbUri() {
-        String dbUri = getParam(Server.PROPERTY_DB_URI);
-        dbUri = dbUri.replace("@DBNAME@", getParam(Server.PROPERTY_DB_NAME));
-        setParam(Server.PROPERTY_DB_URI, dbUri);
+        if(getDbUri() != null){
+            String dbUri = getDbUri();
+            dbUri = dbUri.replace("@DBNAME@", getParam(Server.PROPERTY_DB_NAME));
+            setParam(Server.PROPERTY_DB_URI, dbUri);
+        }
     }
 
     /**
      * Save properties
      */
     public void save() throws MojoExecutionException {
-        saveTo(file);
+        saveTo(propertiesFile);
     }
 
     /**
@@ -394,9 +425,9 @@ public class Server {
         setParam(PROPERTY_DB_PASS, dbPassword);
     }
 
-    public String getInteractiveMode() { return getParam(PROPERTY_INTERACTIVE); }
+    public String getInteractiveMode() { return interactiveMode; }
 
-    public void setInteractiveMode(String interactiveMode) { setParam(PROPERTY_INTERACTIVE, interactiveMode); }
+    public void setInteractiveMode(String interactiveMode) { this.interactiveMode = interactiveMode; }
 
     public String getVersion() { return getParam(PROPERTY_VERSION); }
 
@@ -408,5 +439,32 @@ public class Server {
 
     public void setIncludeDemoData(boolean includeDemoData) {
         setParam(PROPERTY_DEMO_DATA, String.valueOf(includeDemoData));
+    }
+
+    public String getPlatformVersion(){
+        return getParam(PROPERTY_PLATFORM);
+    }
+    public void setPlatformVersion(String platformVersion){
+        setParam(PROPERTY_PLATFORM, platformVersion);
+    }
+
+    public String getDbName(){
+        return getParam(PROPERTY_DB_NAME);
+    }
+    public void setDbName(String dbName){
+        setParam(PROPERTY_DB_NAME, dbName);
+    }
+
+    public void setServerDirectory(File dir) {
+        this.serverDirectory = dir;
+        this.propertiesFile = new File(dir, SDKConstants.OPENMRS_SERVER_PROPERTIES);
+    }
+
+    public File getPropertiesFile() {
+        return propertiesFile;
+    }
+
+    public File getServerDirectory() {
+        return serverDirectory;
     }
 }
