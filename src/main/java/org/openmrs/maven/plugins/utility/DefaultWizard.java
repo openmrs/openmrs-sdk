@@ -23,9 +23,9 @@ import java.util.Map.Entry;
 public class DefaultWizard implements Wizard {
     private static final String EMPTY_STRING = "";
     private static final String NONE = "(none)";
-    private static final String DEFAULT_CHOICE_TMPL = "\nWhich one do You choose? [";
-    private static final String DEFAULT_OPTION_TMPL = "\n%d) %s";
-    private static final String DEFAULT_OTHER_OPTION_TMPL = "\n%d) Other";
+    private static final String DEFAULT_CHOICE_TMPL = "Which one do You choose? [";
+    private static final String DEFAULT_OPTION_TMPL = "%d) %s";
+    private static final String DEFAULT_OTHER_OPTION_TMPL = "%d) Other";
     private static final String DEFAULT_SERVER_NAME = "server";
     private static final String DEFAULT_VALUE_TMPL = "Define value for property '%s'";
     private static final String DEFAULT_VALUE_TMPL_WITH_DEFAULT = "Define value for property '%s': (default: '%s')";
@@ -101,15 +101,15 @@ public class DefaultWizard implements Wizard {
         StringBuilder choiceBuilder = new StringBuilder(DEFAULT_CHOICE_TMPL);
 
         showMessage(question);
+        System.out.println("");
         int i = 1;
         for(String option : options){
-            showMessage(String.format(DEFAULT_OPTION_TMPL, i, option));
+            System.out.println(String.format(DEFAULT_OPTION_TMPL, i, option));
             choiceBuilder.append((i)+"/");
             i++;
         }
-        showMessage(String.format(DEFAULT_OTHER_OPTION_TMPL, i));
+        System.out.println(String.format(DEFAULT_OTHER_OPTION_TMPL, i));
         choiceBuilder.append((i));
-        //delete trailing '/'
         String val = prompt(choiceBuilder.toString()+"]");
         if (val.equals(EMPTY_STRING)) {
             return options.get(0);
@@ -117,14 +117,12 @@ public class DefaultWizard implements Wizard {
             if(StringUtils.isNumeric(val)){
                 if(Integer.parseInt(val)==i){
                     return prompt(String.format(DEFAULT_VALUE_TMPL, parameterName));
-                } else {
+                } else if(Integer.parseInt(val)<i){
                     return options.get(Integer.parseInt(val)-1);
                 }
-            } else {
-                showMessage("\nPlease insert valid option number!");
-                return promptForMissingValueWithOptions(message, value, parameterName, options);
             }
-
+            System.out.println("\nPlease insert valid option number!");
+            return promptForMissingValueWithOptions(message, value, parameterName, options);
         }
     }
 
@@ -226,7 +224,7 @@ public class DefaultWizard implements Wizard {
 
     @Override
     public void promptForPlatformVersionIfMissing(Server server, List<String> versions) {
-        String version = promptForMissingValueWithOptions("You can install the following versions of a platform:",
+        String version = promptForMissingValueWithOptions("You can install the following versions of a platform",
                 server.getVersion(), "version", versions);
         server.setVersion(version);
     }
@@ -234,11 +232,12 @@ public class DefaultWizard implements Wizard {
     @Override
     public void promptForDistroVersionIfMissing(Server server) {
         List<String> options = Arrays.asList(
-                "2.0",
                 "2.1",
-                "2.2");
+                "2.2",
+                "2.3",
+                "2.4-SNAPSHOT");
 
-        String version = promptForMissingValueWithOptions ("You can install the following versions of distribution:",
+        String version = promptForMissingValueWithOptions ("You can install the following versions of distribution",
                 server.getVersion(), "version", options);
         server.setVersion(version);
     }
@@ -293,6 +292,7 @@ public class DefaultWizard implements Wizard {
         boolean h2 = promptYesNo(
                 "Would you like to use the h2 database (-DdbDriver) (note that some modules do not support it)?");
         if(h2){
+            server.setDbDriver(SDKConstants.DRIVER_H2);
             String dbUri = promptForValueIfMissingWithDefault(
                     "Please specify database uri (-D%s) (default: '%s')",
                     server.getDbUri(), "dbUri", SDKConstants.URI_H2);

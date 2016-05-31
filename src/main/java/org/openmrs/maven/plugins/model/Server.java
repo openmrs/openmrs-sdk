@@ -29,17 +29,19 @@ public class Server {
     public static final String PROPERTY_DEMO_DATA = "add_demo_data";
 
     public void setUnspecifiedToDefault() {
-/*        setPropertyIfNotSpecified("connection.url",
-                "jdbc:h2:@APPLICATIONDATADIR@/database/@DBNAME@;AUTO_RECONNECT=TRUE;DB_CLOSE_DELAY=-1");
-        setPropertyIfNotSpecified("connection.driver_class", "org.h2.Driver");
-        setPropertyIfNotSpecified("connection.username", "sa");
-        setPropertyIfNotSpecified("connection.password", "sa");
-        setPropertyIfNotSpecified("database_name", "openmrs");
-        setPropertyIfNotSpecified("has_current_openmrs_database", "true");
-        setPropertyIfNotSpecified("create_database_user", "false");
-        setPropertyIfNotSpecified("create_tables", "true");
-        setPropertyIfNotSpecified("add_demo_data", "false");
-        setPropertyIfNotSpecified("auto_update_database", "false");*/
+        if(getDbDriver()!=null){
+            setPropertyIfNotSpecified("connection.url",
+                    "jdbc:h2:@APPLICATIONDATADIR@/database/@DBNAME@;AUTO_RECONNECT=TRUE;DB_CLOSE_DELAY=-1");
+            setPropertyIfNotSpecified("connection.driver_class", "org.h2.Driver");
+            setPropertyIfNotSpecified("connection.username", "sa");
+            setPropertyIfNotSpecified("connection.password", "sa");
+            setPropertyIfNotSpecified("database_name", "openmrs");
+            setPropertyIfNotSpecified("has_current_openmrs_database", "true");
+            setPropertyIfNotSpecified("create_database_user", "false");
+            setPropertyIfNotSpecified("create_tables", "true");
+            setPropertyIfNotSpecified("add_demo_data", "false");
+            setPropertyIfNotSpecified("auto_update_database", "false");
+        }
         setPropertyIfNotSpecified("module_web_admin", "true");
         setPropertyIfNotSpecified("install_method", "auto");
         setPropertyIfNotSpecified("admin_user_password", "Admin123");
