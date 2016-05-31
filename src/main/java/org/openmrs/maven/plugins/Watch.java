@@ -30,13 +30,13 @@ public class Watch extends AbstractMojo {
 
 	@Override
     public void execute() throws MojoExecutionException, MojoFailureException {
-	    File serverPath = wizard.getServerPath(serverId);
+	    serverId = wizard.promptForExistingServerIdIfMissing(serverId);
 	    
 	    File userDir = new File(System.getProperty("user.dir"));
 	    if (Project.hasProject(userDir)) {
             Project config = Project.loadProject(userDir);
             
-            Server serverConfig = Server.loadServer(serverPath);
+            Server serverConfig = Server.loadServer(serverId);
             serverConfig.addWatchedProject(config);
             serverConfig.save();
             

@@ -70,11 +70,11 @@ public class Reset extends AbstractMojo{
             File currentProperties = wizard.getCurrentServerPath();
             if (currentProperties != null) serverId = currentProperties.getName();
         }
-        File serverPath = wizard.getServerPath(serverId);
-        Server properties = Server.loadServer(serverPath);
+        serverId = wizard.promptForExistingServerIdIfMissing(serverId);
+        Server properties = Server.loadServer(serverId);
         DBConnector connector = null;
         try {
-            String dbName = String.format(SDKConstants.DB_NAME_TEMPLATE, serverPath.getName());
+            String dbName = String.format(SDKConstants.DB_NAME_TEMPLATE, serverId);
             String uri = properties.getParam(Server.PROPERTY_DB_URI);
             uri = uri.substring(0, uri.lastIndexOf("/"));
             connector = new DBConnector(uri, properties.getParam(Server.PROPERTY_DB_USER),
@@ -104,7 +104,7 @@ public class Reset extends AbstractMojo{
         if (wizard.checkYes(full)) {
             try {
                 Setup platform = new Setup(mavenProject, mavenSession, pluginManager);
-                FileUtils.deleteDirectory(serverPath);
+                FileUtils.deleteDirectory(server.getServerDirectory());
                 platform.setup(server, isPlatform, true);
                 getLog().info(String.format(TEMPLATE_SUCCESS_FULL, server.getServerId()));
             } catch (IOException e) {

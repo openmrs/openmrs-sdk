@@ -109,8 +109,9 @@ public class UpgradePlatform extends AbstractMojo{
             if (currentProperties != null) serverId = currentProperties.getName();
         }
         resultVersion = wizard.promptForValueIfMissing(version, "version");
-
-        File serverPath = wizard.getServerPath(serverId);
+        serverId = wizard.promptForExistingServerIdIfMissing(serverId);
+        Server server = Server.loadServer(serverId);
+        File serverPath = server.getServerDirectory();
         resultServer = serverPath.getName();
         Server properties = Server.loadServer(serverPath);
         String webapp = properties.getParam(Server.PROPERTY_VERSION);
@@ -206,7 +207,7 @@ public class UpgradePlatform extends AbstractMojo{
         // also remove copy of old properties file if success
         listFilesToRemove.add(tempProperties);
         boolean addDemoData = (String.valueOf(true).equals(properties.getParam(Server.PROPERTY_DEMO_DATA)));
-        Server server = new Server.ServerBuilder()
+        server = new Server.ServerBuilder()
                 .setServerId(resultServer)
                 .setVersion(resultVersion)
                 .setDbDriver(properties.getParam(Server.PROPERTY_DB_DRIVER))

@@ -122,8 +122,11 @@ public class Server {
         properties = new Properties();
     };
 
-    private Server(File file, Properties properties){
-        this.propertiesFile = file;
+    private Server(File file, Properties properties) {
+        if (file != null) {
+            this.propertiesFile = new File(file, SDKConstants.OPENMRS_SERVER_PROPERTIES);
+            this.serverDirectory = file;
+        }
         this.properties = properties;
     }
 
@@ -138,9 +141,13 @@ public class Server {
 
     public static Server createServer(File dir) {
         Properties properties = new Properties();
-        File config = new File(dir, SDKConstants.OPENMRS_SERVER_PROPERTIES);
+        return new Server(dir, properties);
+    }
 
-        return new Server(config, properties);
+    public static Server loadServer(String serverId) throws MojoExecutionException {
+        File serversPath = getDefaultServersPath();
+        File serverPath = new File(serversPath, serverId);
+        return loadServer(serverPath);
     }
 
     public static Server loadServer(File dir) throws MojoExecutionException {
@@ -164,7 +171,7 @@ public class Server {
             IOUtils.closeQuietly(in);
         }
 
-        return new Server(config, properties);
+        return new Server(dir, properties);
     }
 
     public static Server loadConfig(File dir) throws MojoExecutionException {
@@ -253,6 +260,10 @@ public class Server {
             watchedProjects.add(project);
         }
         return watchedProjects;
+    }
+
+    public boolean hasWatchedProjects() {
+        return !getWatchedProjects().isEmpty();
     }
 
     public static File getDefaultServersPath(){

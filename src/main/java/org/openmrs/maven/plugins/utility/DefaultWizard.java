@@ -210,19 +210,18 @@ public class DefaultWizard implements Wizard {
      * @throws MojoFailureException
      */
     @Override
-    public File getServerPath(String serverId, String failureMessage) throws MojoFailureException {
+    public String promptForExistingServerIdIfMissing(String serverId) {
         File omrsHome = new File(System.getProperty("user.home"), SDKConstants.OPENMRS_SERVER_PATH);
-        String resultServerId = null;
         List<String> servers = getListOf5RecentServers();
-        resultServerId = promptForValueWithDefaultList(serverId, "serverId", servers);
-        if (resultServerId.equals(NONE)) {
-            throw new MojoFailureException(INVALID_SERVER);
+        serverId = promptForValueWithDefaultList(serverId, "serverId", servers);
+        if (serverId.equals(NONE)) {
+            throw new RuntimeException(INVALID_SERVER);
         }
-        File serverPath = new File(omrsHome, resultServerId);
+        File serverPath = new File(omrsHome, serverId);
         if (!serverPath.exists()) {
-            throw new MojoFailureException(failureMessage);
+            throw new RuntimeException("There is no server with the given server id. Please create it first using openmrs-sdk:setup.");
         }
-        return serverPath;
+        return serverId;
     }
 
     @Override
@@ -336,17 +335,6 @@ public class DefaultWizard implements Wizard {
             if (properties.getParam(Server.PROPERTY_SERVER_ID) != null) return propertiesFile.getParentFile();
         }
         return null;
-    }
-
-    /**
-     * Get server with default failure message
-     * @param serverId
-     * @return
-     * @throws MojoFailureException
-     */
-    @Override
-    public File getServerPath(String serverId) throws MojoFailureException {
-        return getServerPath(serverId, DEFAULT_FAIL_MESSAGE);
     }
 
     /**
