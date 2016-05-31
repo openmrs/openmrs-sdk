@@ -14,11 +14,17 @@ import java.util.List;
 public interface Wizard {
     void promptForNewServerIfMissing(Server server);
 
-    void promptForDbSettingsIfMissing(Server server);
+    void promptForDbDistro(Server server);
+
+    void promptForDbPlatform(Server server);
+
+    void promptForDbCredentialsIfMissing(Server server);
 
     void promptForPlatformVersionIfMissing(Server server, VersionsHelper versionsHelper, Artifact artifact);
 
     void promptForDistroVersionIfMissing(Server server);
+
+    void showMessage(String message);
 
     String promptForValueIfMissingWithDefault(String message, String value, String parameterName, String defValue);
 

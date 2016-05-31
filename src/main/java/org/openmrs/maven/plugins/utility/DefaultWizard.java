@@ -26,6 +26,7 @@ public class DefaultWizard implements Wizard {
     private static final String NONE = "(none)";
     private static final String DEFAULT_CHOICE_TMPL = "\nWhich one do You choose? [";
     private static final String DEFAULT_OPTION_TMPL = "\n%d) %s";
+    private static final String DEFAULT_OTHER_OPTION_TMPL = "\n%d) Other";
     private static final String DEFAULT_SERVER_NAME = "server";
     private static final String DEFAULT_VALUE_TMPL = "Define value for property '%s'";
     private static final String DEFAULT_VALUE_TMPL_WITH_DEFAULT = "Define value for property '%s': (default: '%s')";
@@ -107,13 +108,24 @@ public class DefaultWizard implements Wizard {
             choiceBuilder.append((i)+"/");
             i++;
         }
-        String choice = choiceBuilder.toString();
+        showMessage(String.format(DEFAULT_OTHER_OPTION_TMPL, i));
+        choiceBuilder.append((i));
         //delete trailing '/'
-        String val = prompt(choice.substring(0, choice.length()-1)+"]");
+        String val = prompt(choiceBuilder.toString()+"]");
         if (val.equals(EMPTY_STRING)) {
             return options.get(0);
         } else {
-            return options.get(Integer.parseInt(val)-1);
+            if(StringUtils.isNumeric(val)){
+                if(Integer.parseInt(val)==i){
+                    return prompt(String.format(DEFAULT_VALUE_TMPL, parameterName));
+                } else {
+                    return options.get(Integer.parseInt(val)-1);
+                }
+            } else {
+                showMessage("\nPlease insert valid option number!");
+                return promptForMissingValueWithOptions(message, value, parameterName, options);
+            }
+
         }
     }
 
@@ -124,7 +136,7 @@ public class DefaultWizard implements Wizard {
             throw new RuntimeException(e);
         }
     }
-    private void showMessage(String textToShow){
+    public void showMessage(String textToShow){
         try {
             prompter.showMessage(textToShow);
         } catch (PrompterException e) {
@@ -224,16 +236,20 @@ public class DefaultWizard implements Wizard {
     @Override
     public void promptForDistroVersionIfMissing(Server server) {
         List<String> options = Arrays.asList(
-                "2.2",
-                "2.3",
-                "2.4-SNAPSHOT");
+                "2.0",
+                "2.1",
+                "2.2");
 
         String version = promptForMissingValueWithOptions ("You can install the following versions of distribution:",
                 server.getVersion(), "version", options);
         server.setVersion(version);
     }
 
-    @Override
+    /**
+     * old prompt for db settings
+     * @param server
+     */
+    @Deprecated
     public void promptForDbSettingsIfMissing(Server server) {
         //set driver
         String dbDriver = promptForValueIfMissingWithDefault("Please specify database (-D%s) (default: '%s')",
@@ -253,18 +269,52 @@ public class DefaultWizard implements Wizard {
         else server.setParam(Server.PROPERTY_DB_DRIVER, server.getDbDriver());
         //set uri
         String dbUri = promptForValueIfMissingWithDefault(
-                "Please specify database uri (-D%s) (default: '%s')", server.getDbUri(), "dbUri", defaultUri);
+                "Please specify database uri (-D%s) (default: '%s')",
+                server.getDbUri(), "dbUri", defaultUri);
         if (dbUri.startsWith("jdbc:mysql:")) {
             dbUri = addMySQLParamsIfMissing(dbUri);
         }
         server.setDbUri(dbUri);
-        //set user
+    }
+
+    @Override
+    public void promptForDbDistro(Server server) {
+        server.setDbDriver(SDKConstants.DRIVER_MYSQL);
+        String dbUri = promptForValueIfMissingWithDefault(
+                "The distribution requires MySQL database. Please specify database uri (-D%s) (default: '%s')",
+                server.getDbUri(), "dbUri", SDKConstants.URI_MYSQL);
+        if (dbUri.startsWith("jdbc:mysql:")) {
+            dbUri = addMySQLParamsIfMissing(dbUri);
+        }
+        server.setDbUri(dbUri);
+        promptForDbCredentialsIfMissing(server);
+    }
+
+    @Override
+    public void promptForDbPlatform(Server server) {
+        boolean h2 = promptYesNo(
+                "Would you like to use the h2 database (-DdbDriver) (note that some modules do not support it)?");
+        if(h2){
+            String dbUri = promptForValueIfMissingWithDefault(
+                    "Please specify database uri (-D%s) (default: '%s')",
+                    server.getDbUri(), "dbUri", SDKConstants.URI_H2);
+            server.setDbUri(dbUri);
+            promptForDbCredentialsIfMissing(server);
+        }
+    }
+
+    @Override
+    public void promptForDbCredentialsIfMissing(Server server) {
         String defaultUser = "root";
-        server.setDbUser(promptForValueIfMissingWithDefault(
-                "Please specify database username (-D%s) (default: '%s')", server.getDbUser(), "dbUser", defaultUser));
+        String user = promptForValueIfMissingWithDefault(
+                "Please specify database username (-D%s) (default: '%s')",
+                server.getDbUser(), "dbUser", defaultUser);
+        server.setDbUser(user);
         //set password
-        server.setDbPassword(promptForValueIfMissingWithDefault(
-                "Please specify database password (-D%s) (default: '%s')", server.getDbPassword(), "dbPassword", " "));
+        String dbPassword = promptForValueIfMissingWithDefault(
+                "Please specify database password (-D%s) (default: '')",
+                server.getDbPassword(), "dbPassword", "");
+        server.setDbPassword(dbPassword);
     }
 
     /**

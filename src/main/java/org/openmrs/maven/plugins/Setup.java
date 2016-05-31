@@ -188,23 +188,17 @@ public class Setup extends AbstractMojo {
         if(isCreatePlatform){
             Artifact webapp = new Artifact(SDKConstants.WEBAPP_ARTIFACT_ID, SDKConstants.SETUP_DEFAULT_PLATFORM_VERSION, Artifact.GROUP_WEB);
             wizard.promptForPlatformVersionIfMissing(server, versionsHelper, webapp);
+            if (new Version(server.getVersion()).higher(new Version(Version.PRIOR))) {
+                if (isCopyDependencies) extractDistroToServer(server.getVersion(), serverPath);
+            }
+            else {
+                installCoreModules(server, isCreatePlatform);
+            }
+            wizard.promptForDbPlatform(server);
         } else {
             wizard.promptForDistroVersionIfMissing(server);
-        }
-
-        if (new Version(server.getVersion()).higher(new Version(Version.PRIOR)) && !isCreatePlatform) {
-            if (isCopyDependencies) extractDistroToServer(server.getVersion(), serverPath);
-        }
-        else {
             installCoreModules(server, isCreatePlatform);
-        }
-        // configure db properties
-        if ((server.getDbDriver() != null) ||
-                (server.getDbUser() != null) ||
-                (server.getDbPassword() != null) ||
-                (server.getDbUri() != null) ||
-                !isCreatePlatform) {
-            wizard.promptForDbSettingsIfMissing(server);
+            wizard.promptForDbDistro(server);
         }
 
         server.setUnspecifiedToDefault();
@@ -212,7 +206,11 @@ public class Setup extends AbstractMojo {
         server.save();
 
         if (server.getDbDriver().equals(SDKConstants.DRIVER_MYSQL)){
-            connectMySqlDatabase(server);
+            if(!connectMySqlDatabase(server)){
+                wizard.showMessage("The specified database "+server.getDbName()+" does not exist and it will be created for you.");
+            }
+        } else {
+            wizard.showMessage("The specified database "+server.getDbName()+" does not exist and it will be created for you.");
         }
 
         configureVersion(server, isCreatePlatform);
@@ -268,7 +266,7 @@ public class Setup extends AbstractMojo {
             }
         }
     }
-    private void connectMySqlDatabase(Server server) throws MojoExecutionException {
+    private boolean connectMySqlDatabase(Server server) throws MojoExecutionException {
         String uri = server.getDbUri();
         uri = uri.substring(0, uri.lastIndexOf("/"));
         DBConnector connector = null;
@@ -277,13 +275,16 @@ public class Setup extends AbstractMojo {
             connector.checkAndCreate();
             connector.close();
             getLog().info("Database configured successfully");
+            return true;
         } catch (SQLException e) {
-            throw new MojoExecutionException(e.getMessage());
+            return false;
         } finally {
-            if (connector != null) try {
-                connector.close();
-            } catch (SQLException e) {
-                getLog().error(e.getMessage());
+            if (connector != null){
+                try {
+                    connector.close();
+                } catch (SQLException e) {
+                    getLog().error(e.getMessage());
+                }
             }
         }
     }
