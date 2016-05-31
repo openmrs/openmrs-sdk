@@ -3,7 +3,8 @@ package org.openmrs.maven.plugins.model;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.Element;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.element;
 
 /**
  * Class for Artifact model

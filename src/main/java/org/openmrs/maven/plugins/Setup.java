@@ -10,11 +10,13 @@ import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.project.MavenProject;
-import org.codehaus.plexus.components.interactivity.Prompter;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.model.Version;
-import org.openmrs.maven.plugins.utility.*;
+import org.openmrs.maven.plugins.utility.DBConnector;
+import org.openmrs.maven.plugins.utility.SDKConstants;
+import org.openmrs.maven.plugins.utility.VersionsHelper;
+import org.openmrs.maven.plugins.utility.Wizard;
 import org.twdata.maven.mojoexecutor.MojoExecutor;
 
 import java.io.File;
@@ -24,8 +26,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
-import static org.twdata.maven.mojoexecutor.MojoExecutor.configuration;
-import static org.twdata.maven.mojoexecutor.MojoExecutor.executionEnvironment;
 
 /**
  *
@@ -125,13 +125,6 @@ public class Setup extends AbstractMojo {
     private boolean addDemoData;
 
     /**
-     * Component for user prompt
-     *
-     * @component
-     */
-    private Prompter prompter;
-
-    /**
      * The Maven BuildPluginManager component.
      *
      * @component
@@ -164,12 +157,10 @@ public class Setup extends AbstractMojo {
     }
 
     public Setup(MavenProject mavenProject,
-                         MavenSession mavenSession,
-                         Prompter prompter,
-                         BuildPluginManager pluginManager) {
+                 MavenSession mavenSession,
+                 BuildPluginManager pluginManager) {
         this.mavenProject = mavenProject;
         this.mavenSession = mavenSession;
-        this.prompter = prompter;
         this.pluginManager = pluginManager;
     }
 
@@ -246,7 +237,7 @@ public class Setup extends AbstractMojo {
         if (server != null) {
             String values = server.getParam(Server.PROPERTY_USER_MODULES);
             if (values != null) {
-                ModuleInstall installer = new ModuleInstall(mavenProject, mavenSession, pluginManager, prompter);
+                ModuleInstall installer = new ModuleInstall(mavenProject, mavenSession, pluginManager);
                 String[] modules = values.split(Server.COMMA);
                 for (String mod: modules) {
                     String[] params = mod.split(Server.SLASH);

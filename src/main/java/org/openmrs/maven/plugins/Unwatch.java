@@ -4,9 +4,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
-import org.codehaus.plexus.components.interactivity.Prompter;
 import org.openmrs.maven.plugins.model.Server;
-import org.openmrs.maven.plugins.utility.DefaultWizard;
 import org.openmrs.maven.plugins.utility.Project;
 import org.openmrs.maven.plugins.utility.Wizard;
 
@@ -35,17 +33,15 @@ public class Unwatch extends AbstractMojo {
      * @parameter expression="${groupId}"
      */
     private String groupId;
-    
+
     /**
-     * Component for user prompt
-     *
+     * @required
      * @component
      */
-    private Prompter prompter;
+    Wizard wizard;
 
 	@Override
     public void execute() throws MojoExecutionException, MojoFailureException {
-	    Wizard wizard = new DefaultWizard(prompter);
 	    File serverPath = wizard.getServerPath(serverId);
 	    Server serverConfig = Server.loadServer(serverPath);
 	    

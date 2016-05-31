@@ -8,7 +8,9 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.ho.yaml.YamlDecoder;
 
-import java.io.*;
+import java.io.EOFException;
+import java.io.InputStream;
+import java.io.PrintWriter;
 import java.util.List;
 import java.util.Map;
 

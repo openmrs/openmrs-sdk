@@ -1,9 +1,5 @@
 package org.openmrs.maven.plugins.utility;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.ToStringBuilder;
@@ -13,6 +9,10 @@ import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 import org.openmrs.maven.plugins.model.Artifact;
+
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 
 /**
  * Class for reading pom.xml
