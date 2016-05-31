@@ -43,15 +43,16 @@ public class ModuleUninstall extends AbstractMojo {
             File currentProperties = wizard.getCurrentServerPath();
             if (currentProperties != null) serverId = currentProperties.getName();
         }
-        File serverPath = wizard.getServerPath(serverId);
+        serverId = wizard.promptForExistingServerIdIfMissing(serverId);
+        Server server = Server.loadServer(serverId);
         Artifact artifact = installer.getArtifactForSelectedParameters(groupId, artifactId, "default");
-        File modules = new File(serverPath, SDKConstants.OPENMRS_SERVER_MODULES);
+        File modules = new File(server.getServerDirectory(), SDKConstants.OPENMRS_SERVER_MODULES);
         File[] listOfModules = modules.listFiles();
         for (File mod : listOfModules) {
             if (mod.getName().startsWith(artifact.getArtifactId())) {
                 boolean deleted = mod.delete();
                 if (deleted) {
-                    Server properties = Server.loadServer(serverPath);
+                    Server properties = Server.loadServer(serverId);
                     properties.removeFromValueList(Server.PROPERTY_USER_MODULES, artifact.getArtifactId());
                     properties.save();
                     getLog().info(String.format("Module with groupId: '%s', artifactId: '%s' was successfully removed from server.",

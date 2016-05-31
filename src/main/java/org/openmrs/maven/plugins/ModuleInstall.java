@@ -107,7 +107,9 @@ public class ModuleInstall extends AbstractMojo {
             File currentProperties = wizard.getCurrentServerPath();
             if (currentProperties != null) serverId = currentProperties.getName();
         }
-        File serverPath = wizard.getServerPath(serverId);
+
+        serverId = wizard.promptForExistingServerIdIfMissing(serverId);
+        File serverPath = Server.loadServer(serverId).getServerDirectory();
         Artifact artifact = checkCurrentDirectoryForOpenmrsCoreVersion(serverPath);
 
         if(artifact != null){
@@ -150,8 +152,9 @@ public class ModuleInstall extends AbstractMojo {
         List<Element> artifactItems = new ArrayList<Element>();
         Server properties = Server.loadServer(serverPath);
         Artifact artifact = getArtifactForSelectedParameters(groupId, artifactId, version);
+
         artifact.setArtifactId(artifact.getArtifactId() + "-omod");
-        File modules = new File(serverPath, SDKConstants.OPENMRS_SERVER_MODULES);
+        File modules = new File(properties.getServerDirectory(), SDKConstants.OPENMRS_SERVER_MODULES);
         modules.mkdirs();
         artifactItems.add(artifact.toElement(modules.getPath()));
 

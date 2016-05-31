@@ -1,11 +1,15 @@
 package org.openmrs.maven.plugins.utility;
 
+import org.apache.commons.io.IOUtils;
 import org.openmrs.maven.plugins.model.Artifact;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 /**
  * Class for handling static values
@@ -203,7 +207,6 @@ public class SDKConstants {
         if (webAppVersion == null) return null;
         return new ArrayList<Artifact>() {{
             add(new Artifact("openmrs-webapp", webAppVersion, Artifact.GROUP_WEB, Artifact.TYPE_WAR));
-            add(new Artifact("h2", "1.4.190", Artifact.GROUP_H2, Artifact.TYPE_JAR));
         }};
     }
 
@@ -214,5 +217,20 @@ public class SDKConstants {
      */
     public static Artifact getReferenceModule(String version) {
         return new Artifact("referenceapplication-package", version, Artifact.GROUP_DISTRO, Artifact.TYPE_ZIP).putClassifier("distro");
+    }
+
+    public static Artifact getSDKInfo() {
+    	Properties properties = new Properties();
+    	InputStream in = SDKConstants.class.getClassLoader().getResourceAsStream("sdk.properties");
+    	try {
+			properties.load(in);
+			in.close();
+			return new Artifact(properties.getProperty("artifactId"), properties.getProperty("version"), properties.getProperty("groupId"));
+		}
+		catch (IOException e) {
+			throw new RuntimeException(e);
+		} finally {
+			IOUtils.closeQuietly(in);
+		}
     }
 }

@@ -31,9 +31,9 @@ public class Info extends AbstractMojo {
 
 	@Override
     public void execute() throws MojoExecutionException, MojoFailureException {
-	    File serverPath = wizard.getServerPath(serverId);
+	    serverId = wizard.promptForExistingServerIdIfMissing(serverId);
            
-        Server serverConfig = Server.loadServer(serverPath);
+        Server serverConfig = Server.loadServer(serverId);
         Set<Project> watchedProjects = serverConfig.getWatchedProjects();
         
         getLog().info(" ");

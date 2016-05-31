@@ -32,10 +32,10 @@ public class Delete extends AbstractMojo{
     Wizard wizard;
 
     public void execute() throws MojoExecutionException, MojoFailureException {
-        File server = wizard.getServerPath(serverId);
+        serverId = wizard.promptForExistingServerIdIfMissing(serverId);
         try {
-            Server props = Server.loadServer(server);
-            FileUtils.deleteDirectory(server);
+            Server props = Server.loadServer(serverId);
+            FileUtils.deleteDirectory(props.getServerDirectory());
             String dbName = props.getParam(Server.PROPERTY_DB_NAME);
             String dbUser = props.getParam(Server.PROPERTY_DB_USER);
             String dbPass = props.getParam(Server.PROPERTY_DB_PASS);
@@ -43,7 +43,7 @@ public class Delete extends AbstractMojo{
             DBConnector connector = new DBConnector(dbUri, dbUser, dbPass, dbName);
             connector.dropDatabase();
             connector.close();
-            getLog().info(String.format(TEMPLATE_SUCCESS, server.getName()));
+            getLog().info(String.format(TEMPLATE_SUCCESS, props.getServerId()));
         } catch (IOException e) {
             throw new MojoExecutionException(e.getMessage());
         } catch (SQLException e) {

@@ -42,8 +42,8 @@ public class Unwatch extends AbstractMojo {
 
 	@Override
     public void execute() throws MojoExecutionException, MojoFailureException {
-	    File serverPath = wizard.getServerPath(serverId);
-	    Server serverConfig = Server.loadServer(serverPath);
+	    serverId = wizard.promptForExistingServerIdIfMissing(serverId);
+	    Server serverConfig = Server.loadServer(serverId);
 	    
 	    File userDir = new File(System.getProperty("user.dir"));
 	    if (StringUtils.isBlank(artifactId) && Project.hasProject(userDir)) {

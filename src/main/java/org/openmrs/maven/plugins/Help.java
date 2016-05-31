@@ -60,7 +60,7 @@ public class Help extends AbstractMojo {
                 }
                 formatter.printHelp(m.get("name").toString(), header, options, "");
             }
-            writer.println(" -Djetty.port Port to execute OpenMRS server");
+            writer.println(" -Dport Port on which to run server");
             writer.flush();
         } catch (EOFException e) {
             throw new MojoExecutionException(e.getMessage());

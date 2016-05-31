@@ -37,11 +37,9 @@ public interface Wizard {
 
     boolean checkYes(String value);
 
-    File getServerPath(String serverId, String failureMessage) throws MojoFailureException;
-
     File getCurrentServerPath() throws MojoExecutionException;
 
-    File getServerPath(String serverId) throws MojoFailureException;
+    String promptForExistingServerIdIfMissing(String serverId);
 
     List<String> getListOf5RecentServers();
 
