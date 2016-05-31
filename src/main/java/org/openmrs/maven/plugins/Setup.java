@@ -3,7 +3,6 @@ package org.openmrs.maven.plugins;
 import org.apache.commons.io.FileUtils;
 import org.apache.maven.artifact.factory.ArtifactFactory;
 import org.apache.maven.artifact.metadata.ArtifactMetadataSource;
-import org.apache.maven.artifact.versioning.ArtifactVersion;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.BuildPluginManager;
@@ -13,19 +12,13 @@ import org.apache.maven.project.MavenProject;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.model.Version;
-import org.openmrs.maven.plugins.utility.DBConnector;
-import org.openmrs.maven.plugins.utility.SDKConstants;
-import org.openmrs.maven.plugins.utility.VersionsHelper;
-import org.openmrs.maven.plugins.utility.Wizard;
-import org.twdata.maven.mojoexecutor.MojoExecutor;
+import org.openmrs.maven.plugins.utility.*;
 
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-
-import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
 
 /**
  *
@@ -138,6 +131,11 @@ public class Setup extends AbstractMojo {
     private VersionsHelper versionsHelper;
 
     /**
+     *
+     */
+    private ModuleManager moduleManager;
+
+    /**
      * @parameter expression="${distro}"
      */
     private String distro;
@@ -172,7 +170,10 @@ public class Setup extends AbstractMojo {
      * @throws MojoExecutionException
      */
     public String setup(Server server, boolean isCreatePlatform, boolean isCopyDependencies) throws MojoExecutionException, MojoFailureException {
+
         versionsHelper = new VersionsHelper(artifactFactory, mavenProject, mavenSession, artifactMetadataSource);
+        moduleManager = new ModuleManager(mavenProject, mavenSession, pluginManager, versionsHelper);
+
         File openMRSPath = new File(System.getProperty("user.home"), SDKConstants.OPENMRS_SERVER_PATH);
         wizard.promptForNewServerIfMissing(server);
 
@@ -187,66 +188,36 @@ public class Setup extends AbstractMojo {
 
         if(isCreatePlatform){
             Artifact webapp = new Artifact(SDKConstants.WEBAPP_ARTIFACT_ID, SDKConstants.SETUP_DEFAULT_PLATFORM_VERSION, Artifact.GROUP_WEB);
-            wizard.promptForPlatformVersionIfMissing(server, versionsHelper, webapp);
-            if (new Version(server.getVersion()).higher(new Version(Version.PRIOR))) {
-                if (isCopyDependencies) extractDistroToServer(server.getVersion(), serverPath);
+            wizard.promptForPlatformVersionIfMissing(server, versionsHelper.getVersionAdvice(webapp, 6));
+            if (new Version(server.getVersion()).higher(new Version(Version.PRIOR))&&isCopyDependencies) {
+                extractDistroToServer(server.getVersion(), serverPath);
             }
             else {
-                installCoreModules(server, isCreatePlatform);
+                moduleManager.installCoreModules(server, isCreatePlatform);
             }
             wizard.promptForDbPlatform(server);
         } else {
             wizard.promptForDistroVersionIfMissing(server);
-            installCoreModules(server, isCreatePlatform);
+            moduleManager.installCoreModules(server, isCreatePlatform);
             wizard.promptForDbDistro(server);
         }
 
-        server.setUnspecifiedToDefault();
-        server.setDbName(determineDbName(server.getDbUri(), server.getServerId()));
-        server.save();
-
-        if (server.getDbDriver().equals(SDKConstants.DRIVER_MYSQL)){
-            if(!connectMySqlDatabase(server)){
+        if(server.getDbDriver() != null){
+            server.setDbName(determineDbName(server.getDbUri(), server.getServerId()));
+            if (server.getDbDriver().equals(SDKConstants.DRIVER_MYSQL)){
+                if(!connectMySqlDatabase(server)){
+                    wizard.showMessage("The specified database "+server.getDbName()+" does not exist and it will be created for you.");
+                }
+            } else {
                 wizard.showMessage("The specified database "+server.getDbName()+" does not exist and it will be created for you.");
             }
-        } else {
-            wizard.showMessage("The specified database "+server.getDbName()+" does not exist and it will be created for you.");
         }
 
+        server.setUnspecifiedToDefault();
         configureVersion(server, isCreatePlatform);
-        return serverPath.getPath();
-    }
+        server.save();
 
-    private void installCoreModules(Server server, boolean isCreatePlatform) throws MojoExecutionException, MojoFailureException {
-        List<Artifact> coreModules = SDKConstants.getCoreModules(server.getVersion(), isCreatePlatform);
-        if (coreModules == null) {
-            throw new MojoExecutionException(String.format("Invalid version: '%s'", server.getVersion()));
-        }
-        installModules(coreModules, server.getServerDirectory().getPath());
-        // install other modules
-        if (!isCreatePlatform) {
-            File modules = new File(server.getServerDirectory(), SDKConstants.OPENMRS_SERVER_MODULES);
-            modules.mkdirs();
-            List<Artifact> artifacts = SDKConstants.ARTIFACTS.get(server.getVersion());
-            // install modules for each version
-            installModules(artifacts, modules.getPath());
-        }
-        // install user modules
-        if (server != null) {
-            String values = server.getParam(Server.PROPERTY_USER_MODULES);
-            if (values != null) {
-                ModuleInstall installer = new ModuleInstall(mavenProject, mavenSession, pluginManager);
-                String[] modules = values.split(Server.COMMA);
-                for (String mod: modules) {
-                    String[] params = mod.split(Server.SLASH);
-                    // check
-                    if (params.length == 3) {
-                        installer.installModule(server.getServerId(), params[0], params[1], params[2]);
-                    }
-                    else throw new MojoExecutionException("Properties file parse error - cannot read user modules list");
-                }
-            }
-        }
+        return serverPath.getPath();
     }
 
     private void configureVersion(Server server, boolean isCreatePlatform){
@@ -308,60 +279,6 @@ public class Setup extends AbstractMojo {
     }
 
     /**
-     * Install modules from Artifact list
-     * @param artifacts
-     * @param outputDir
-     */
-    private void installModules(List<Artifact> artifacts, String outputDir) throws MojoExecutionException {
-        final String goal = "copy";
-        prepareModules(artifacts, outputDir, goal);
-    }
-
-    /**
-     * Extract selected Artifact list
-     * @param artifacts
-     * @param outputDir
-     * @throws MojoExecutionException
-     */
-    public void extractModules(List<Artifact> artifacts, String outputDir) throws MojoExecutionException {
-        prepareModules(artifacts, outputDir, GOAL_UNPACK);
-    }
-
-    /**
-     * Handle list of modules
-     * @param artifacts
-     * @param outputDir
-     * @param goal
-     * @throws MojoExecutionException
-     */
-    private void prepareModules(List<Artifact> artifacts, String outputDir, String goal) throws MojoExecutionException {
-        MojoExecutor.Element[] artifactItems = new MojoExecutor.Element[artifacts.size()];
-        List<ArtifactVersion> versions;
-        for (Artifact artifact: artifacts) {
-
-            artifact.setVersion(versionsHelper.inferVersion(artifact));
-            int index = artifacts.indexOf(artifact);
-            artifactItems[index] = artifact.toElement(outputDir);
-        }
-        List<MojoExecutor.Element> configuration = new ArrayList<MojoExecutor.Element>();
-        configuration.add(element("artifactItems", artifactItems));
-        if (goal.equals(GOAL_UNPACK)) {
-            configuration.add(element("overWriteSnapshots", "true"));
-            configuration.add(element("overWriteReleases", "true"));
-        }
-        executeMojo(
-                plugin(
-                        groupId(SDKConstants.PLUGIN_DEPENDENCIES_GROUP_ID),
-                        artifactId(SDKConstants.PLUGIN_DEPENDENCIES_ARTIFACT_ID),
-                        version(SDKConstants.PLUGIN_DEPENDENCIES_VERSION)
-                ),
-                goal(goal),
-                configuration(configuration.toArray(new Element[0])),
-                executionEnvironment(mavenProject, mavenSession, pluginManager)
-        );
-    }
-
-    /**
      * Download distro using dependency plugin to server dir
      * @param version
      * @param serverPath
@@ -371,7 +288,7 @@ public class Setup extends AbstractMojo {
         File zipFolder = new File(serverPath, SDKConstants.TMP);
         List<Artifact> artifacts = new ArrayList<Artifact>();
         artifacts.add(SDKConstants.getReferenceModule(version));
-        extractModules(artifacts, zipFolder.getPath());
+        moduleManager.extractModules(artifacts, zipFolder.getPath());
         if (zipFolder.listFiles().length == 0) {
             throw new MojoExecutionException("Error during resolving dependencies");
         }

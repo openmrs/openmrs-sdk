@@ -2,7 +2,6 @@ package org.openmrs.maven.plugins.utility;
 
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
-import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.Server;
 
 import java.io.File;
@@ -20,7 +19,7 @@ public interface Wizard {
 
     void promptForDbCredentialsIfMissing(Server server);
 
-    void promptForPlatformVersionIfMissing(Server server, VersionsHelper versionsHelper, Artifact artifact);
+    void promptForPlatformVersionIfMissing(Server server, List<String> versions);
 
     void promptForDistroVersionIfMissing(Server server);
 

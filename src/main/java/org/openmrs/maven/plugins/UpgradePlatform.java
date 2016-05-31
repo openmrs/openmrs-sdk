@@ -122,14 +122,14 @@ public class UpgradePlatform extends AbstractMojo{
         }
         Version platformVersion = new Version(platform);
         Version nextVersion = new Version(resultVersion);
-        Setup setupPlatform = new Setup(mavenProject, mavenSession, pluginManager);
+        Setup setup = new Setup(mavenProject, mavenSession, pluginManager);
         // get list modules to remove after
         // for 2.3 and higher, copy dependencies to tmp folder
         File tmpFolder = new File(serverPath, SDKConstants.TMP);
         boolean isPriorVersion = new Version(resultVersion).higher(new Version(Version.PRIOR));
         Version webAppVersionFromTmpFolder = new Version("1");
         if (isPriorVersion) {
-            webAppVersionFromTmpFolder = setupPlatform.extractDistroToServer(resultVersion, tmpFolder);
+            webAppVersionFromTmpFolder = setup.extractDistroToServer(resultVersion, tmpFolder);
         }
         if (isUpdateToPlatform) {
             if (webapp != null) {
@@ -217,7 +217,7 @@ public class UpgradePlatform extends AbstractMojo{
                 .setDemoData(addDemoData)
                 .build();
         properties.delete();
-        setupPlatform.setup(server, isUpdateToPlatform, false);
+        setup.setup(server, isUpdateToPlatform, false);
         removeFiles(listFilesToRemove);
         // remove temp files after upgrade
         File tmp = new File(serverPath, "${project.basedir}");

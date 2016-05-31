@@ -7,7 +7,6 @@ import org.codehaus.plexus.component.annotations.Component;
 import org.codehaus.plexus.component.annotations.Requirement;
 import org.codehaus.plexus.components.interactivity.Prompter;
 import org.codehaus.plexus.components.interactivity.PrompterException;
-import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.Server;
 
 import java.io.File;
@@ -227,9 +226,9 @@ public class DefaultWizard implements Wizard {
     }
 
     @Override
-    public void promptForPlatformVersionIfMissing(Server server, VersionsHelper versionsHelper, Artifact artifact) {
+    public void promptForPlatformVersionIfMissing(Server server, List<String> versions) {
         String version = promptForMissingValueWithOptions("You can install the following versions of a platform:",
-                server.getVersion(), "version", versionsHelper.getVersionAdvice(artifact, 6));
+                server.getVersion(), "version", versions);
         server.setVersion(version);
     }
 
