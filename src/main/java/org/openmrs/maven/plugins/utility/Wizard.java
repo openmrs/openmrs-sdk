@@ -13,9 +13,9 @@ import java.util.List;
 public interface Wizard {
     void promptForNewServerIfMissing(Server server);
 
-    void promptForDbDistro(Server server);
+    void promptForMySQLDb(Server server);
 
-    void promptForDbPlatform(Server server);
+    void promptForH2Db(Server server);
 
     void promptForDbCredentialsIfMissing(Server server);
 

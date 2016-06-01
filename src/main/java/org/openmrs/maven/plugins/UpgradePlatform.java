@@ -4,6 +4,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.openmrs.maven.plugins.model.Artifact;
+import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.model.Version;
 import org.openmrs.maven.plugins.utility.SDKConstants;
@@ -90,7 +91,8 @@ public class UpgradePlatform extends AbstractTask {
         boolean isPriorVersion = new Version(resultVersion).higher(new Version(Version.PRIOR));
         Version webAppVersionFromTmpFolder = new Version("1");
         if (isPriorVersion) {
-            webAppVersionFromTmpFolder = setup.extractDistroToServer(resultVersion, tmpFolder);
+            //DistroProperties distroProperties = setup.extractDistroToServer(resultVersion, tmpFolder);
+            //webAppVersionFromTmpFolder = new Version(distroProperties.getServerVersion());
         }
         if (isUpdateToPlatform) {
             if (webapp != null) {
@@ -178,7 +180,7 @@ public class UpgradePlatform extends AbstractTask {
                 .setDemoData(addDemoData)
                 .build();
         properties.delete();
-        setup.setup(server, isUpdateToPlatform, false);
+        setup.setup(server, isUpdateToPlatform, false, null);
         removeFiles(listFilesToRemove);
         // remove temp files after upgrade
         File tmp = new File(serverPath, "${project.basedir}");

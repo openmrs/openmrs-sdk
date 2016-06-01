@@ -27,6 +27,8 @@ public class Server {
     public static final String PROPERTY_DB_NAME = "database_name";
     public static final String PROPERTY_USER_MODULES = "user_modules";
     public static final String PROPERTY_DEMO_DATA = "add_demo_data";
+    public static final String PROPERTY_DISTRO_ARTIFACT_ID = "distro.artifactId";
+    public static final String PROPERTY_DISTRO_GROUP_ID = "distro.groupId";
 
     public void setUnspecifiedToDefault() {
         if(getDbDriver()!=null){
@@ -301,6 +303,23 @@ public class Server {
         if(key != null && value != null)
         properties.setProperty(key, value);
     }
+
+    public  void setDistroArtifactId(String artifactId){
+        setParam(PROPERTY_DISTRO_ARTIFACT_ID, artifactId);
+    }
+
+    public void setDistroGroupId(String groupId){
+        setParam(PROPERTY_DISTRO_GROUP_ID, groupId);
+    }
+
+    public String getDistroArtifactId(){
+        return getParam(PROPERTY_DISTRO_ARTIFACT_ID);
+    }
+
+    public String getDistroGroupId(){
+        return getParam(PROPERTY_DISTRO_GROUP_ID);
+    }
+
 
     /**
      * Add value to value list for a selected key

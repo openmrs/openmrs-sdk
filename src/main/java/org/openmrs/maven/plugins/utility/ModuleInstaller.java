@@ -1,5 +1,6 @@
 package org.openmrs.maven.plugins.utility;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -7,12 +8,18 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.project.MavenProject;
 import org.openmrs.maven.plugins.ModuleInstall;
 import org.openmrs.maven.plugins.model.Artifact;
+import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.Server;
 import org.twdata.maven.mojoexecutor.MojoExecutor;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.List;
+import java.util.Properties;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
 
@@ -41,19 +48,26 @@ public class ModuleInstaller {
         this.versionsHelper = versionsHelper;
     }
 
-    public void installCoreModules(Server server, boolean isCreatePlatform) throws MojoExecutionException, MojoFailureException {
-        List<Artifact> coreModules = SDKConstants.getCoreModules(server.getVersion(), isCreatePlatform);
-        if (coreModules == null) {
-            throw new MojoExecutionException(String.format("Invalid version: '%s'", server.getVersion()));
-        }
-        installModules(coreModules, server.getServerDirectory().getPath());
+    public void installCoreModules(Server server, boolean isCreatePlatform, DistroProperties properties) throws MojoExecutionException, MojoFailureException {
+        List<Artifact> coreModules;
         // install other modules
-        if (!isCreatePlatform) {
+        if (!isCreatePlatform && properties != null) {
+            coreModules = properties.getCoreModuleArtifacts();
+            if (coreModules == null) {
+                throw new MojoExecutionException(String.format("Invalid version: '%s'", server.getVersion()));
+            }
+            installModules(coreModules, server.getServerDirectory().getPath());
             File modules = new File(server.getServerDirectory(), SDKConstants.OPENMRS_SERVER_MODULES);
             modules.mkdirs();
-            List<Artifact> artifacts = SDKConstants.ARTIFACTS.get(server.getVersion());
+            List<Artifact> artifacts = properties.getModuleArtifacts();
             // install modules for each version
             installModules(artifacts, modules.getPath());
+        } else {
+            coreModules = SDKConstants.getCoreModules(server.getVersion(), isCreatePlatform);
+            if (coreModules == null) {
+                throw new MojoExecutionException(String.format("Invalid version: '%s'", server.getVersion()));
+            }
+            installModules(coreModules, server.getServerDirectory().getPath());
         }
         // install user modules
         if (server != null) {
@@ -77,9 +91,60 @@ public class ModuleInstaller {
         final String goal = "copy";
         prepareModules(artifacts, outputDir, goal);
     }
+
     public void installModule(Artifact artifact, String outputDir) throws MojoExecutionException {
         final String goal = "copy";
         prepareModule(artifact, outputDir, goal);
+    }
+
+    public DistroProperties downloadDistroProperties(File serverPath, Server server) throws MojoExecutionException {
+
+        Artifact artifact = new Artifact(server.getDistroArtifactId(), server.getVersion(), server.getDistroGroupId(), "jar");
+        artifact.setDestFileName("openmrs-distro.jar");
+        List<Element> artifactItems = new ArrayList<Element>();
+        Element element = artifact.toElement(serverPath.toString());
+        artifactItems.add(element);
+
+        executeMojo(
+                plugin(
+                        groupId(SDKConstants.PLUGIN_DEPENDENCIES_GROUP_ID),
+                        artifactId(SDKConstants.PLUGIN_DEPENDENCIES_ARTIFACT_ID),
+                        version(SDKConstants.PLUGIN_DEPENDENCIES_VERSION)
+                ),
+                goal("copy"),
+                configuration(
+                        element(name("artifactItems"), artifactItems.toArray(new Element[0]))
+                ),
+                executionEnvironment(mavenProject, mavenSession, pluginManager)
+        );
+
+        DistroProperties distroProperties = null;
+        File file = new File(serverPath, artifact.getDestFileName());
+        ZipFile zipFile = null;
+        try {
+            zipFile = new ZipFile(file);
+
+            Enumeration<? extends ZipEntry> entries = zipFile.entries();
+
+            while(entries.hasMoreElements()){
+                ZipEntry zipEntry = entries.nextElement();
+                if("openmrs-distro.properties".equals(zipEntry.getName())){
+                    Properties properties = new Properties();
+                    properties.load(zipFile.getInputStream(zipEntry));
+                    distroProperties = new DistroProperties(properties);
+                }
+            }
+
+            zipFile.close();
+
+
+        } catch (IOException e) {
+            throw new RuntimeException("Could not read " + file.toString(), e);
+        } finally {
+            IOUtils.closeQuietly(zipFile);
+        }
+
+        return distroProperties;
     }
 
     /**

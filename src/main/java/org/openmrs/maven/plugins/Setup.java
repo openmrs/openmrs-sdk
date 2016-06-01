@@ -4,6 +4,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.openmrs.maven.plugins.model.Artifact;
+import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.model.Version;
 import org.openmrs.maven.plugins.utility.DBConnector;
@@ -24,6 +25,8 @@ import java.util.List;
 public class Setup extends AbstractTask {
 
     private static final String GOAL_UNPACK = "unpack";
+    private static final String DEFAULT_DISTRIBUTION = "\n\nWould you like to install OpenMRS distribution?";
+    private static final String CUSTOM_DISTRIBUTION = "\n\nWould you like to install %s %s distribution?";
 
     /**
      * Interactive mode param
@@ -107,7 +110,7 @@ public class Setup extends AbstractTask {
      * @param isCopyDependencies - flag for executing depencency plugin for OpenMRS 2.3 and higher
      * @throws MojoExecutionException
      */
-    public String setup(Server server, boolean isCreatePlatform, boolean isCopyDependencies) throws MojoExecutionException, MojoFailureException {
+    public String setup(Server server, boolean isCreatePlatform, boolean isCopyDependencies, DistroProperties distroProperties) throws MojoExecutionException, MojoFailureException {
 
         File openMRSPath = new File(System.getProperty("user.home"), SDKConstants.OPENMRS_SERVER_PATH);
         wizard.promptForNewServerIfMissing(server);
@@ -121,20 +124,30 @@ public class Setup extends AbstractTask {
         }
         server.setServerDirectory(serverPath);
 
-        if(isCreatePlatform){
-            Artifact webapp = new Artifact(SDKConstants.WEBAPP_ARTIFACT_ID, SDKConstants.SETUP_DEFAULT_PLATFORM_VERSION, Artifact.GROUP_WEB);
-            wizard.promptForPlatformVersionIfMissing(server, versionsHelper.getVersionAdvice(webapp, 6));
-            moduleInstaller.installCoreModules(server, isCreatePlatform);
-            wizard.promptForDbPlatform(server);
+        if (distroProperties == null) {
+            if(isCreatePlatform){
+                Artifact webapp = new Artifact(SDKConstants.WEBAPP_ARTIFACT_ID, SDKConstants.SETUP_DEFAULT_PLATFORM_VERSION, Artifact.GROUP_WEB);
+                wizard.promptForPlatformVersionIfMissing(server, versionsHelper.getVersionAdvice(webapp, 6));
+                moduleInstaller.installCoreModules(server, isCreatePlatform, distroProperties);
+                wizard.promptForH2Db(server);
+            } else {
+                wizard.promptForDistroVersionIfMissing(server);
+                distroProperties = extractDistroToServer(server, isCreatePlatform, serverPath);
+            }
         } else {
-            wizard.promptForDistroVersionIfMissing(server);
-            if (new Version(server.getVersion()).higher(new Version(Version.PRIOR))&&isCopyDependencies) {
-                extractDistroToServer(server.getVersion(), serverPath);
+            moduleInstaller.installCoreModules(server, isCreatePlatform, distroProperties);
+        }
+        
+        if(dbDriver == null){
+            if(distroProperties.isH2Supported()){
+                wizard.promptForH2Db(server);
+            }else {
+                wizard.promptForMySQLDb(server);
             }
-            else {
-                moduleInstaller.installCoreModules(server, isCreatePlatform);
-            }
-            wizard.promptForDbDistro(server);
+        }else if(dbDriver.equals("h2")){
+            wizard.promptForH2Db(server);
+        }else if(dbDriver.equals("mysql")){
+            wizard.promptForH2Db(server);
         }
 
         if(server.getDbDriver() != null){
@@ -154,6 +167,17 @@ public class Setup extends AbstractTask {
         server.save();
 
         return serverPath.getPath();
+    }
+
+    private DistroProperties extractDistroToServer(Server server, boolean isCreatePlatform, File serverPath) throws MojoExecutionException, MojoFailureException {
+        DistroProperties distroProperties;
+        if(new Version(server.getVersion()).lower(new Version("2.4-SNAPSHOT"))){
+            distroProperties = new DistroProperties(server.getVersion());
+        } else {
+            distroProperties = moduleInstaller.downloadDistroProperties(serverPath, server);
+        }
+        moduleInstaller.installCoreModules(server, isCreatePlatform, distroProperties);
+        return distroProperties;
     }
 
     private void configureVersion(Server server, boolean isCreatePlatform){
@@ -214,63 +238,48 @@ public class Setup extends AbstractTask {
         return dbName;
     }
 
-    /**
-     * Download distro using dependency plugin to server dir
-     * @param version
-     * @param serverPath
-     * @return web app version
-     */
-    public Version extractDistroToServer(String version, File serverPath) throws MojoExecutionException {
-        File zipFolder = new File(serverPath, SDKConstants.TMP);
-        List<Artifact> artifacts = new ArrayList<Artifact>();
-        artifacts.add(SDKConstants.getReferenceModule(version));
-        moduleInstaller.extractModules(artifacts, zipFolder.getPath());
-        if (zipFolder.listFiles().length == 0) {
-            throw new MojoExecutionException("Error during resolving dependencies");
+    private boolean checkIfDistroIsPath(String distro){
+        File file = new File(distro);
+        if(file.exists()){
+            return true;
+        }else {
+            return false;
         }
-        File distro = zipFolder.listFiles()[0];
-        File modules = new File(serverPath, SDKConstants.OPENMRS_SERVER_MODULES);
-        modules.mkdirs();
-        Version v = null;
-        for (File f: distro.listFiles()) {
-            int index = f.getName().lastIndexOf(".");
-            String type = f.getName().substring(index + 1);
-            File target;
-            // for war or h2 file
-            if ((type.equals(Artifact.TYPE_WAR)) || f.getName().startsWith("h2")) {
-                target = new File(serverPath, f.getName());
-                if (type.equals(Artifact.TYPE_WAR)) v = new Version(Version.parseVersionFromFile(f.getName()));
-            }
-            // for modules
-            else {
-                target = new File(modules, f.getName());
-            }
-            try {
-                FileUtils.copyFile(f, target);
-            } catch (IOException e) {
-                throw new MojoExecutionException("Error during copying dependencies: " + e.getMessage());
-            }
-        }
-        // clean
-        try {
-            FileUtils.deleteDirectory(zipFolder);
-        } catch (IOException e) {
-            throw new MojoExecutionException("Error during cleaning server directory");
-        }
-        return v;
     }
+
 
     public void execute() throws MojoExecutionException, MojoFailureException {
         initUtilities();
         boolean createPlatform;
+        boolean installDistFromFile;
         String version = null;
+        DistroProperties distroProperties = null;
+        wizard.showMessage("\nCreating a new server...");
         if(platform == null && distro == null){
-            createPlatform = !wizard.promptYesNo("Would you like to install OpenMRS distribution?");
+            File distroFile = new File(new File(System.getProperty("user.dir")), "openmrs-distro.properties");
+            if(distroFile.exists()){
+                distroProperties = new DistroProperties(distroFile);
+                installDistFromFile = wizard.promptYesNo(String.format(CUSTOM_DISTRIBUTION, distroProperties.getName(), distroProperties.getServerVersion()));
+                if(installDistFromFile){
+                    createPlatform = false;
+                    version = distroProperties.getServerVersion();
+                }else {
+                    createPlatform = !wizard.promptYesNo(DEFAULT_DISTRIBUTION);
+                    distroProperties = null;
+                }
+            } else {
+                createPlatform = !wizard.promptYesNo(DEFAULT_DISTRIBUTION);
+            }
         } else if(platform != null){
             version = platform;
             createPlatform = true;
         } else {
-            version = distro;
+            if (checkIfDistroIsPath(distro)) {
+                distroProperties = new DistroProperties(new File(distro));
+                version = distroProperties.getServerVersion();
+            } else {
+                version = distro;
+            }
             createPlatform = false;
         }
         Server.ServerBuilder serverBuilder;
@@ -292,7 +301,7 @@ public class Setup extends AbstractTask {
                         .setInteractiveMode(interactiveMode)
                         .build();
         // setup non-platform server
-        String serverPath = setup(server, createPlatform, true);
+        String serverPath = setup(server, createPlatform, true, distroProperties);
         getLog().info("Server configured successfully, path: " + serverPath);
     }
 }

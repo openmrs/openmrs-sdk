@@ -3,10 +3,13 @@ package org.openmrs.maven.plugins.utility;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugin.logging.Log;
+import org.apache.maven.plugin.logging.SystemStreamLog;
 import org.codehaus.plexus.component.annotations.Component;
 import org.codehaus.plexus.component.annotations.Requirement;
 import org.codehaus.plexus.components.interactivity.Prompter;
 import org.codehaus.plexus.components.interactivity.PrompterException;
+import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.Server;
 
 import java.io.File;
@@ -25,16 +28,21 @@ public class DefaultWizard implements Wizard {
     private static final String NONE = "(none)";
     private static final String DEFAULT_CHOICE_TMPL = "Which one do You choose? [";
     private static final String DEFAULT_OPTION_TMPL = "%d) %s";
-    private static final String DEFAULT_OTHER_OPTION_TMPL = "%d) Other";
+    private static final String DEFAULT_CUSTOM_OPTION_TMPL = "%d) Custom";
     private static final String DEFAULT_SERVER_NAME = "server";
     private static final String DEFAULT_VALUE_TMPL = "Define value for property '%s'";
     private static final String DEFAULT_VALUE_TMPL_WITH_DEFAULT = "Define value for property '%s': (default: '%s')";
     private static final String DEFAULT_FAIL_MESSAGE = "Server with such serverId is not exists";
     private static final String INVALID_SERVER = "Invalid server Id";
     private static final String YESNO = " [Y/n]";
+    private static final String REFERENCEAPPLICATION_2_3 = "org.openmrs.distro:referenceapplication-package:2.3.1";
+    private static final String DEFAULT_CUSTOM_DIST_ARTIFACT = "Please specify custom distribution artifact%s (default: '%s')";
 
     @Requirement
     Prompter prompter;
+
+
+    Log log;
 
     public DefaultWizard(){};
 
@@ -108,23 +116,24 @@ public class DefaultWizard implements Wizard {
             choiceBuilder.append((i)+"/");
             i++;
         }
-        System.out.println(String.format(DEFAULT_OTHER_OPTION_TMPL, i));
+        System.out.println(String.format(DEFAULT_CUSTOM_OPTION_TMPL, i));
         choiceBuilder.append((i));
         String val = prompt(choiceBuilder.toString()+"]");
         if (val.equals(EMPTY_STRING)) {
             return options.get(0);
         } else {
             if(StringUtils.isNumeric(val)){
-                if(Integer.parseInt(val)==i){
-                    return prompt(String.format(DEFAULT_VALUE_TMPL, parameterName));
-                } else if(Integer.parseInt(val)<i){
+                if(Integer.parseInt(val)<i){
                     return options.get(Integer.parseInt(val)-1);
+                } else if(Integer.parseInt(val)==i) {
+                    return promptForValueIfMissingWithDefault(DEFAULT_CUSTOM_DIST_ARTIFACT, null, "", REFERENCEAPPLICATION_2_3);
                 }
             }
             System.out.println("\nPlease insert valid option number!");
             return promptForMissingValueWithOptions(message, value, parameterName, options);
         }
     }
+
 
     private String prompt(String textToShow){
         try {
@@ -234,12 +243,25 @@ public class DefaultWizard implements Wizard {
         List<String> options = Arrays.asList(
                 "2.1",
                 "2.2",
-                "2.3",
+                "2.3.1",
                 "2.4-SNAPSHOT");
 
         String version = promptForMissingValueWithOptions ("You can install the following versions of distribution",
                 server.getVersion(), "version", options);
-        server.setVersion(version);
+        String[] split = version.split(":");
+        if(split.length > 1){
+            if(split.length == 3 ) {
+                server.setVersion(split[2]);
+                server.setDistroArtifactId(split[1]);
+                server.setDistroGroupId(split[0]);
+            }else {
+                getLog().error(String.format("Wrong distribution format '%s'. Please specify distribution in format groupId:artifactId:version", version));
+            }
+        } else {
+            server.setDistroArtifactId("referenceapplication-package");
+            server.setDistroGroupId(Artifact.GROUP_DISTRO);
+            server.setVersion(version);
+        }
     }
 
     /**
@@ -275,8 +297,10 @@ public class DefaultWizard implements Wizard {
     }
 
     @Override
-    public void promptForDbDistro(Server server) {
-        server.setDbDriver(SDKConstants.DRIVER_MYSQL);
+    public void promptForMySQLDb(Server server) {
+        if(server.getDbDriver() == null){
+            server.setDbDriver(SDKConstants.DRIVER_MYSQL);
+        }
         String dbUri = promptForValueIfMissingWithDefault(
                 "The distribution requires MySQL database. Please specify database uri (-D%s) (default: '%s')",
                 server.getDbUri(), "dbUri", SDKConstants.URI_MYSQL);
@@ -288,7 +312,7 @@ public class DefaultWizard implements Wizard {
     }
 
     @Override
-    public void promptForDbPlatform(Server server) {
+    public void promptForH2Db(Server server) {
         boolean h2 = promptYesNo(
                 "Would you like to use the h2 database (-DdbDriver) (note that some modules do not support it)?");
         if(h2){
@@ -395,4 +419,11 @@ public class DefaultWizard implements Wizard {
 		dbUri = dbUri.substring(0, dbUri.length() - 1);
 		return dbUri;
 	}
+
+    public Log getLog() {
+        if(log == null){
+            log = new SystemStreamLog();
+        }
+        return log;
+    }
 }
