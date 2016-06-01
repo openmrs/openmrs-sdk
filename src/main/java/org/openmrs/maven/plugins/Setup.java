@@ -133,7 +133,7 @@ public class Setup extends AbstractMojo {
     /**
      *
      */
-    private ModuleManager moduleManager;
+    private ModuleInstaller moduleManager;
 
     /**
      * @parameter expression="${distro}"
@@ -172,7 +172,7 @@ public class Setup extends AbstractMojo {
     public String setup(Server server, boolean isCreatePlatform, boolean isCopyDependencies) throws MojoExecutionException, MojoFailureException {
 
         versionsHelper = new VersionsHelper(artifactFactory, mavenProject, mavenSession, artifactMetadataSource);
-        moduleManager = new ModuleManager(mavenProject, mavenSession, pluginManager, versionsHelper);
+        moduleManager = new ModuleInstaller(mavenProject, mavenSession, pluginManager, versionsHelper);
 
         File openMRSPath = new File(System.getProperty("user.home"), SDKConstants.OPENMRS_SERVER_PATH);
         wizard.promptForNewServerIfMissing(server);
@@ -189,16 +189,16 @@ public class Setup extends AbstractMojo {
         if(isCreatePlatform){
             Artifact webapp = new Artifact(SDKConstants.WEBAPP_ARTIFACT_ID, SDKConstants.SETUP_DEFAULT_PLATFORM_VERSION, Artifact.GROUP_WEB);
             wizard.promptForPlatformVersionIfMissing(server, versionsHelper.getVersionAdvice(webapp, 6));
+            moduleManager.installCoreModules(server, isCreatePlatform);
+            wizard.promptForDbPlatform(server);
+        } else {
+            wizard.promptForDistroVersionIfMissing(server);
             if (new Version(server.getVersion()).higher(new Version(Version.PRIOR))&&isCopyDependencies) {
                 extractDistroToServer(server.getVersion(), serverPath);
             }
             else {
                 moduleManager.installCoreModules(server, isCreatePlatform);
             }
-            wizard.promptForDbPlatform(server);
-        } else {
-            wizard.promptForDistroVersionIfMissing(server);
-            moduleManager.installCoreModules(server, isCreatePlatform);
             wizard.promptForDbDistro(server);
         }
 
@@ -224,16 +224,16 @@ public class Setup extends AbstractMojo {
         server.setPlatformVersion(server.getVersion());
         if (!isCreatePlatform) {
             // set web app version for OpenMRS 2.2 and higher
-            if (new Version(server.getVersion()).higher(new Version(Version.PRIOR)) && !isCreatePlatform) {
-                for (File f: server.getPropertiesFile().listFiles()) {
+            if (new Version(server.getVersion()).higher(new Version(Version.PRIOR))) {
+                for (File f: server.getServerDirectory().listFiles()) {
                     if (f.getName().endsWith("." + Artifact.TYPE_WAR)) {
-                        server.setVersion(Version.parseVersionFromFile(f.getName()));
+                        server.setPlatformVersion(Version.parseVersionFromFile(f.getName()));
                         break;
                     }
                 }
             }
             else {
-                server.setVersion(SDKConstants.WEBAPP_VERSIONS.get(server.getVersion()));
+                server.setPlatformVersion(SDKConstants.WEBAPP_VERSIONS.get(server.getVersion()));
             }
         }
     }

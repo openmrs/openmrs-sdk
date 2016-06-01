@@ -20,7 +20,7 @@ import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
 /**
  * Handles installing modules on server
  */
-public class ModuleManager {
+public class ModuleInstaller {
 
     private static final String GOAL_UNPACK = "unpack";
 
@@ -32,10 +32,10 @@ public class ModuleManager {
 
     VersionsHelper versionsHelper;
 
-    public ModuleManager(MavenProject mavenProject,
-                         MavenSession mavenSession,
-                         BuildPluginManager pluginManager,
-                         VersionsHelper versionsHelper) {
+    public ModuleInstaller(MavenProject mavenProject,
+                           MavenSession mavenSession,
+                           BuildPluginManager pluginManager,
+                           VersionsHelper versionsHelper) {
         this.mavenProject = mavenProject;
         this.mavenSession = mavenSession;
         this.pluginManager = pluginManager;
