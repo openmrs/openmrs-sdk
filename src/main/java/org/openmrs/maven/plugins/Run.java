@@ -1,17 +1,12 @@
 package org.openmrs.maven.plugins;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.maven.execution.MavenSession;
-import org.apache.maven.plugin.AbstractMojo;
-import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
-import org.apache.maven.project.MavenProject;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.utility.Project;
 import org.openmrs.maven.plugins.utility.SDKConstants;
-import org.openmrs.maven.plugins.utility.Wizard;
 
 import java.io.File;
 import java.io.IOException;
@@ -25,7 +20,13 @@ import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
  * @goal run
  * @requiresProject false
  */
-public class Run extends AbstractMojo {
+public class Run extends AbstractTask {
+
+    public Run(){};
+
+    public Run(AbstractTask other){
+        super(other);
+    }
 
 	/**
 	 * @parameter expression="${serverId}"
@@ -47,35 +48,6 @@ public class Run extends AbstractMojo {
 	 */
 	private Boolean fork;
 
-	/**
-	 * The project currently being build.
-	 *
-	 * @parameter expression="${project}"
-	 * @required
-	 */
-	private MavenProject mavenProject;
-
-	/**
-	 * The current Maven session.
-	 *
-	 * @parameter expression="${session}"
-	 * @required
-	 */
-	private MavenSession mavenSession;
-
-	/**
-	 * The Maven BuildPluginManager component.
-	 *
-	 * @component
-	 * @required
-	 */
-	private BuildPluginManager pluginManager;
-
-	/**
-	 * @component
-	 * @required
-	 */
-	private Wizard wizard;
 
 	public void execute() throws MojoExecutionException, MojoFailureException {
 		if (serverId == null) {
@@ -95,7 +67,7 @@ public class Run extends AbstractMojo {
 				String version = config.getVersion();
 				if ((artifactId != null) && (groupId != null) && version != null) {
 					getLog().info("OpenMRS module detected, installing before run...");
-					ModuleInstall installer = new ModuleInstall(mavenProject, mavenSession, pluginManager);
+					ModuleInstall installer = new ModuleInstall(this);
 					installer.installModule(serverPath.getName(), groupId, artifactId, version);
 				}
 			}

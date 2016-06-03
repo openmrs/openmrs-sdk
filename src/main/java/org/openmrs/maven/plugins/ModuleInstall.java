@@ -2,7 +2,6 @@ package org.openmrs.maven.plugins;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.execution.MavenSession;
-import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -12,7 +11,6 @@ import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.model.Version;
 import org.openmrs.maven.plugins.utility.Project;
 import org.openmrs.maven.plugins.utility.SDKConstants;
-import org.openmrs.maven.plugins.utility.Wizard;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -25,36 +23,12 @@ import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
  * @goal install
  * @requiresProject false
  */
-public class ModuleInstall extends AbstractMojo {
+public class ModuleInstall extends AbstractTask {
 
     private static final String DEFAULT_OK_MESSAGE = "Module '%s' installed successfully";
     private static final String DEFAULT_UPDATE_MESSAGE = "Module '%s' was updated to version '%s'";
     private static final String TEMPLATE_UPDATE = "Module is installed already. Do you want to upgrade it to version '%s'?";
     private static final String TEMPLATE_DOWNGRADE = "Installed version '%s' of module higher than target '%s'";
-
-    /**
-     * The project currently being build.
-     *
-     * @parameter expression="${project}"
-     * @required
-     */
-    private MavenProject mavenProject;
-
-    /**
-     * The current Maven session.
-     *
-     * @parameter expression="${session}"
-     * @required
-     */
-    private MavenSession mavenSession;
-
-    /**
-     * The Maven BuildPluginManager component.
-     *
-     * @component
-     * @required
-     */
-    private BuildPluginManager pluginManager;
 
     /**
      * @parameter expression="${serverId}"
@@ -75,19 +49,17 @@ public class ModuleInstall extends AbstractMojo {
      * @parameter expression="${version}"
      */
     private String version;
-    /**
-     * @required
-     * @component
-     */
-    Wizard wizard;
 
-    public ModuleInstall(MavenProject project, MavenSession session, BuildPluginManager manager) {
-        mavenProject = project;
-        mavenSession = session;
-        pluginManager = manager;
-    };
 
     public ModuleInstall() {}
+
+    public ModuleInstall(AbstractTask other) {super(other);}
+
+    public ModuleInstall(MavenProject project, MavenSession session, BuildPluginManager manager) {
+        super.mavenProject = project;
+        super.mavenSession = session;
+        super.pluginManager = manager;
+    }
 
     public void execute() throws MojoExecutionException, MojoFailureException {
         installModule(serverId, groupId, artifactId, version);

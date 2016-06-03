@@ -1,16 +1,11 @@
 package org.openmrs.maven.plugins;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.maven.execution.MavenSession;
-import org.apache.maven.plugin.AbstractMojo;
-import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
-import org.apache.maven.project.MavenProject;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.utility.DBConnector;
 import org.openmrs.maven.plugins.utility.SDKConstants;
-import org.openmrs.maven.plugins.utility.Wizard;
 
 import java.io.File;
 import java.io.IOException;
@@ -20,26 +15,10 @@ import java.sql.SQLException;
  * @goal reset
  * @requiresProject false
  */
-public class Reset extends AbstractMojo{
+public class Reset extends AbstractTask {
 
     private static final String TEMPLATE_SUCCESS = "Server '%s' has been reset, user modules were saved";
     private static final String TEMPLATE_SUCCESS_FULL = "Server '%s' has been reset, user modules were removed";
-
-    /**
-     * The project currently being build.
-     *
-     * @parameter expression="${project}"
-     * @required
-     */
-    private MavenProject mavenProject;
-
-    /**
-     * The current Maven session.
-     *
-     * @parameter expression="${session}"
-     * @required
-     */
-    private MavenSession mavenSession;
 
     /**
      * @parameter expression="${serverId}"
@@ -50,20 +29,6 @@ public class Reset extends AbstractMojo{
      * @parameter expression="${full}" default-value=false
      */
     private String full;
-
-    /**
-     * @required
-     * @component
-     */
-    Wizard wizard;
-
-    /**
-     * The Maven BuildPluginManager component.
-     *
-     * @component
-     * @required
-     */
-    private BuildPluginManager pluginManager;
 
     public void execute() throws MojoExecutionException, MojoFailureException {
         if (serverId == null) {
@@ -103,7 +68,7 @@ public class Reset extends AbstractMojo{
                 .build();
         if (wizard.checkYes(full)) {
             try {
-                Setup platform = new Setup(mavenProject, mavenSession, pluginManager);
+                Setup platform = new Setup(this);
                 FileUtils.deleteDirectory(server.getServerDirectory());
                 platform.setup(server, isPlatform, true);
                 getLog().info(String.format(TEMPLATE_SUCCESS_FULL, server.getServerId()));
@@ -112,7 +77,7 @@ public class Reset extends AbstractMojo{
             }
         }
         else {
-            UpgradePlatform upgradePlatform = new UpgradePlatform(mavenProject, mavenSession, pluginManager);
+            UpgradePlatform upgradePlatform = new UpgradePlatform(this);
             upgradePlatform.upgradeServer(server.getServerId(), server.getVersion(), isPlatform);
             getLog().info(String.format(TEMPLATE_SUCCESS, server.getServerId()));
         }
