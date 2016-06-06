@@ -1,6 +1,5 @@
 package org.openmrs.maven.plugins.utility;
 
-import org.apache.maven.artifact.versioning.ArtifactVersion;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -74,9 +73,13 @@ public class ModuleInstaller {
         }
     }
 
-    private void installModules(List<Artifact> artifacts, String outputDir) throws MojoExecutionException {
+    public void installModules(List<Artifact> artifacts, String outputDir) throws MojoExecutionException {
         final String goal = "copy";
         prepareModules(artifacts, outputDir, goal);
+    }
+    public void installModule(Artifact artifact, String outputDir) throws MojoExecutionException {
+        final String goal = "copy";
+        prepareModule(artifact, outputDir, goal);
     }
 
     /**
@@ -98,7 +101,6 @@ public class ModuleInstaller {
      */
     private void prepareModules(List<Artifact> artifacts, String outputDir, String goal) throws MojoExecutionException {
         MojoExecutor.Element[] artifactItems = new MojoExecutor.Element[artifacts.size()];
-        List<ArtifactVersion> versions;
         for (Artifact artifact: artifacts) {
 
             artifact.setVersion(versionsHelper.inferVersion(artifact));
@@ -107,6 +109,26 @@ public class ModuleInstaller {
         }
         List<MojoExecutor.Element> configuration = new ArrayList<MojoExecutor.Element>();
         configuration.add(element("artifactItems", artifactItems));
+        if (goal.equals(GOAL_UNPACK)) {
+            configuration.add(element("overWriteSnapshots", "true"));
+            configuration.add(element("overWriteReleases", "true"));
+        }
+        executeMojo(
+                plugin(
+                        groupId(SDKConstants.PLUGIN_DEPENDENCIES_GROUP_ID),
+                        artifactId(SDKConstants.PLUGIN_DEPENDENCIES_ARTIFACT_ID),
+                        version(SDKConstants.PLUGIN_DEPENDENCIES_VERSION)
+                ),
+                goal(goal),
+                configuration(configuration.toArray(new Element[0])),
+                executionEnvironment(mavenProject, mavenSession, pluginManager)
+        );
+    }
+    private void prepareModule(Artifact artifact, String outputDir, String goal) throws MojoExecutionException {
+        artifact.setVersion(versionsHelper.inferVersion(artifact));
+        MojoExecutor.Element artifactElement = artifact.toElement(outputDir);
+        List<MojoExecutor.Element> configuration = new ArrayList<MojoExecutor.Element>();
+        configuration.add(element("artifactItems", artifactElement));
         if (goal.equals(GOAL_UNPACK)) {
             configuration.add(element("overWriteSnapshots", "true"));
             configuration.add(element("overWriteReleases", "true"));
