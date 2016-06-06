@@ -81,6 +81,10 @@ public abstract class AbstractTask extends AbstractMojo {
         this.artifactMetadataSource = other.artifactMetadataSource;
         this.moduleInstaller = other.moduleInstaller;
         this.versionsHelper = other.versionsHelper;
+        initUtilities();
+    }
+
+    public void initUtilities() {
         if(versionsHelper == null){
             versionsHelper = new VersionsHelper(artifactFactory, mavenProject, mavenSession, artifactMetadataSource);
         }

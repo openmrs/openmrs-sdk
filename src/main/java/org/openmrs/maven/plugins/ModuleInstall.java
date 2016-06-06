@@ -62,6 +62,7 @@ public class ModuleInstall extends AbstractTask {
     }
 
     public void execute() throws MojoExecutionException, MojoFailureException {
+        initUtilities();
         installModule(serverId, groupId, artifactId, version);
     }
 
