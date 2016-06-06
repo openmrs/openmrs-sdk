@@ -28,6 +28,7 @@ public class Upgrade extends AbstractTask {
     private String version;
 
     public void execute() throws MojoExecutionException, MojoFailureException {
+        initUtilities();
         UpgradePlatform upgrader = new UpgradePlatform(this);
         upgrader.upgradeServer(serverId, version, false);
         getLog().info(String.format(TEMPLATE_SUCCESS, serverId, version));

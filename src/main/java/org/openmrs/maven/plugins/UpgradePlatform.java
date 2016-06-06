@@ -48,6 +48,7 @@ public class UpgradePlatform extends AbstractTask {
     private String version;
 
     public void execute() throws MojoExecutionException, MojoFailureException {
+        initUtilities();
         upgradeServer(serverId, version, true);
     }
 

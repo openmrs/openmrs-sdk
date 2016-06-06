@@ -144,7 +144,7 @@ public class Setup extends AbstractTask {
                     wizard.showMessage("The specified database "+server.getDbName()+" does not exist and it will be created for you.");
                 }
             } else {
-                moduleManager.installModule(SDKConstants.H2_ARTIFACT, server.getServerDirectory().getPath());
+                moduleInstaller.installModule(SDKConstants.H2_ARTIFACT, server.getServerDirectory().getPath());
                 wizard.showMessage("The specified database "+server.getDbName()+" does not exist and it will be created for you.");
             }
         }
@@ -261,6 +261,7 @@ public class Setup extends AbstractTask {
     }
 
     public void execute() throws MojoExecutionException, MojoFailureException {
+        initUtilities();
         boolean createPlatform;
         String version = null;
         if(platform == null && distro == null){

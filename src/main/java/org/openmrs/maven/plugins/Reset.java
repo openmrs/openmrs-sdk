@@ -31,6 +31,7 @@ public class Reset extends AbstractTask {
     private String full;
 
     public void execute() throws MojoExecutionException, MojoFailureException {
+        initUtilities();
         if (serverId == null) {
             File currentProperties = wizard.getCurrentServerPath();
             if (currentProperties != null) serverId = currentProperties.getName();
