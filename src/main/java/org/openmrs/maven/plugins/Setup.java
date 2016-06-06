@@ -1,18 +1,13 @@
 package org.openmrs.maven.plugins;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.maven.artifact.factory.ArtifactFactory;
-import org.apache.maven.artifact.metadata.ArtifactMetadataSource;
-import org.apache.maven.execution.MavenSession;
-import org.apache.maven.plugin.AbstractMojo;
-import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
-import org.apache.maven.project.MavenProject;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.model.Version;
-import org.openmrs.maven.plugins.utility.*;
+import org.openmrs.maven.plugins.utility.DBConnector;
+import org.openmrs.maven.plugins.utility.SDKConstants;
 
 import java.io.File;
 import java.io.IOException;
@@ -26,40 +21,9 @@ import java.util.List;
  * @requiresProject false
  *
  */
-public class Setup extends AbstractMojo {
+public class Setup extends AbstractTask {
 
     private static final String GOAL_UNPACK = "unpack";
-
-    /**
-     * The project currently being build.
-     *
-     * @parameter expression="${project}"
-     * @required
-     */
-    private MavenProject mavenProject;
-
-    /**
-     * The current Maven session.
-     *
-     * @parameter expression="${session}"
-     * @required
-     */
-    private MavenSession mavenSession;
-
-    /**
-     * The artifact metadata source to use.
-     *
-     * @component
-     * @required
-     * @readonly
-     */
-    protected ArtifactMetadataSource artifactMetadataSource;
-
-    /**
-     * @component
-     * @required
-     */
-    protected ArtifactFactory artifactFactory;
 
     /**
      * Interactive mode param
@@ -118,24 +82,6 @@ public class Setup extends AbstractMojo {
     private boolean addDemoData;
 
     /**
-     * The Maven BuildPluginManager component.
-     *
-     * @component
-     * @required
-     */
-    private BuildPluginManager pluginManager;
-
-    /**
-     * wizard for resolving artifact available versions
-     */
-    private VersionsHelper versionsHelper;
-
-    /**
-     *
-     */
-    private ModuleInstaller moduleManager;
-
-    /**
      * @parameter expression="${distro}"
      */
     private String distro;
@@ -145,21 +91,13 @@ public class Setup extends AbstractMojo {
      */
     private String platform;
 
-    /**
-     * @required
-     * @component
-     */
-    Wizard wizard;
 
     public Setup() {
+        super();
     }
 
-    public Setup(MavenProject mavenProject,
-                 MavenSession mavenSession,
-                 BuildPluginManager pluginManager) {
-        this.mavenProject = mavenProject;
-        this.mavenSession = mavenSession;
-        this.pluginManager = pluginManager;
+    public Setup(AbstractTask other){
+        super(other);
     }
 
     /**
@@ -170,9 +108,6 @@ public class Setup extends AbstractMojo {
      * @throws MojoExecutionException
      */
     public String setup(Server server, boolean isCreatePlatform, boolean isCopyDependencies) throws MojoExecutionException, MojoFailureException {
-
-        versionsHelper = new VersionsHelper(artifactFactory, mavenProject, mavenSession, artifactMetadataSource);
-        moduleManager = new ModuleInstaller(mavenProject, mavenSession, pluginManager, versionsHelper);
 
         File openMRSPath = new File(System.getProperty("user.home"), SDKConstants.OPENMRS_SERVER_PATH);
         wizard.promptForNewServerIfMissing(server);
@@ -189,7 +124,7 @@ public class Setup extends AbstractMojo {
         if(isCreatePlatform){
             Artifact webapp = new Artifact(SDKConstants.WEBAPP_ARTIFACT_ID, SDKConstants.SETUP_DEFAULT_PLATFORM_VERSION, Artifact.GROUP_WEB);
             wizard.promptForPlatformVersionIfMissing(server, versionsHelper.getVersionAdvice(webapp, 6));
-            moduleManager.installCoreModules(server, isCreatePlatform);
+            moduleInstaller.installCoreModules(server, isCreatePlatform);
             wizard.promptForDbPlatform(server);
         } else {
             wizard.promptForDistroVersionIfMissing(server);
@@ -197,7 +132,7 @@ public class Setup extends AbstractMojo {
                 extractDistroToServer(server.getVersion(), serverPath);
             }
             else {
-                moduleManager.installCoreModules(server, isCreatePlatform);
+                moduleInstaller.installCoreModules(server, isCreatePlatform);
             }
             wizard.promptForDbDistro(server);
         }
@@ -288,7 +223,7 @@ public class Setup extends AbstractMojo {
         File zipFolder = new File(serverPath, SDKConstants.TMP);
         List<Artifact> artifacts = new ArrayList<Artifact>();
         artifacts.add(SDKConstants.getReferenceModule(version));
-        moduleManager.extractModules(artifacts, zipFolder.getPath());
+        moduleInstaller.extractModules(artifacts, zipFolder.getPath());
         if (zipFolder.listFiles().length == 0) {
             throw new MojoExecutionException("Error during resolving dependencies");
         }

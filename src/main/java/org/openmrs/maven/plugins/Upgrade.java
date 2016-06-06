@@ -1,11 +1,7 @@
 package org.openmrs.maven.plugins;
 
-import org.apache.maven.execution.MavenSession;
-import org.apache.maven.plugin.AbstractMojo;
-import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
-import org.apache.maven.project.MavenProject;
 
 /**
  *
@@ -13,25 +9,9 @@ import org.apache.maven.project.MavenProject;
  * @requiresProject false
  *
  */
-public class Upgrade extends AbstractMojo{
+public class Upgrade extends AbstractTask {
 	
 	private static final String TEMPLATE_SUCCESS = "Server '%s' has been successfully upgraded to '%s'";
-
-    /**
-     * The project currently being build.
-     *
-     * @parameter expression="${project}"
-     * @required
-     */
-    private MavenProject mavenProject;
-
-    /**
-     * The current Maven session.
-     *
-     * @parameter expression="${session}"
-     * @required
-     */
-    private MavenSession mavenSession;
 
     /**
      * Server id (folder name)
@@ -47,16 +27,8 @@ public class Upgrade extends AbstractMojo{
      */
     private String version;
 
-    /**
-     * The Maven BuildPluginManager component.
-     *
-     * @component
-     * @required
-     */
-    private BuildPluginManager pluginManager;
-
     public void execute() throws MojoExecutionException, MojoFailureException {
-        UpgradePlatform upgrader = new UpgradePlatform(mavenProject, mavenSession, pluginManager);
+        UpgradePlatform upgrader = new UpgradePlatform(this);
         upgrader.upgradeServer(serverId, version, false);
         getLog().info(String.format(TEMPLATE_SUCCESS, serverId, version));
     }

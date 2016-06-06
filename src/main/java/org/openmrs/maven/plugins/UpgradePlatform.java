@@ -1,17 +1,12 @@
 package org.openmrs.maven.plugins;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.maven.execution.MavenSession;
-import org.apache.maven.plugin.AbstractMojo;
-import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
-import org.apache.maven.project.MavenProject;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.model.Version;
 import org.openmrs.maven.plugins.utility.SDKConstants;
-import org.openmrs.maven.plugins.utility.Wizard;
 
 import java.io.File;
 import java.io.IOException;
@@ -26,7 +21,7 @@ import java.util.Map;
  * @requiresProject false
  *
  */
-public class UpgradePlatform extends AbstractMojo{
+public class UpgradePlatform extends AbstractTask {
     private static final String TEMPLATE_INVALID_VERSION = "Cannot upgrade to version '%s'";
     private static final String TEMPLATE_INVALID_PROPERTIES = "Server '%s' has invalid properties";
     private static final String TEMPLATE_DOWNGRADE = "Server '%s' has higher version, than you tried to upgrade";
@@ -36,29 +31,7 @@ public class UpgradePlatform extends AbstractMojo{
 
     public UpgradePlatform() {};
 
-    public UpgradePlatform(MavenProject mavenProject,
-                           MavenSession mavenSession,
-                           BuildPluginManager pluginManager) {
-        this.mavenProject = mavenProject;
-        this.mavenSession = mavenSession;
-        this.pluginManager = pluginManager;
-    }
-
-    /**
-     * The project currently being build.
-     *
-     * @parameter expression="${project}"
-     * @required
-     */
-    private MavenProject mavenProject;
-
-    /**
-     * The current Maven session.
-     *
-     * @parameter expression="${session}"
-     * @required
-     */
-    private MavenSession mavenSession;
+    public UpgradePlatform(AbstractTask other) {super(other);};
 
     /**
      * Server id (folder name)
@@ -73,20 +46,6 @@ public class UpgradePlatform extends AbstractMojo{
      * @parameter expression="${version}"
      */
     private String version;
-
-    /**
-     * @required
-     * @component
-     */
-    Wizard wizard;
-
-    /**
-     * The Maven BuildPluginManager component.
-     *
-     * @component
-     * @required
-     */
-    private BuildPluginManager pluginManager;
 
     public void execute() throws MojoExecutionException, MojoFailureException {
         upgradeServer(serverId, version, true);
@@ -123,7 +82,7 @@ public class UpgradePlatform extends AbstractMojo{
         }
         Version platformVersion = new Version(platform);
         Version nextVersion = new Version(resultVersion);
-        Setup setup = new Setup(mavenProject, mavenSession, pluginManager);
+        Setup setup = new Setup(this);
         // get list modules to remove after
         // for 2.3 and higher, copy dependencies to tmp folder
         File tmpFolder = new File(serverPath, SDKConstants.TMP);
@@ -189,7 +148,7 @@ public class UpgradePlatform extends AbstractMojo{
             // install user modules
             String values = properties.getParam(Server.PROPERTY_USER_MODULES);
             if (values != null) {
-                ModuleInstall installer = new ModuleInstall(mavenProject, mavenSession, pluginManager);
+                ModuleInstall installer = new ModuleInstall(this);
                 String[] modules = values.split(Server.COMMA);
                 for (String mod: modules) {
                     String[] params = mod.split(Server.SLASH);
