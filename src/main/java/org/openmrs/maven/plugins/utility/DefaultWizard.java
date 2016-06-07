@@ -50,6 +50,12 @@ public class DefaultWizard implements Wizard {
         this.prompter = prompter;
     }
 
+    private List<String> distroOptions = Arrays.asList(
+            "2.1",
+            "2.2",
+            "2.3",
+            "2.4-SNAPSHOT");
+
     /**
      * Prompt for serverId, and get default serverId which is not exists,
      * if serverId is not set before
@@ -238,7 +244,12 @@ public class DefaultWizard implements Wizard {
         server.setVersion(version);
     }
 
-    @Override
+	@Override
+	public String promptForPlatformVersion(List<String> versions) {
+		return null;
+	}
+
+	@Override
     public void promptForDistroVersionIfMissing(Server server) {
         List<String> options = Arrays.asList(
                 "2.1",
@@ -264,36 +275,15 @@ public class DefaultWizard implements Wizard {
         }
     }
 
-    /**
-     * old prompt for db settings
-     * @param server
-     */
-    @Deprecated
-    public void promptForDbSettingsIfMissing(Server server) {
-        //set driver
-        String dbDriver = promptForValueIfMissingWithDefault("Please specify database (-D%s) (default: '%s')",
-                server.getDbDriver(), "dbDriver", "mysql");
-        String defaultUri = SDKConstants.URI_MYSQL;
-        if ((dbDriver.equals("postgresql")) || (dbDriver.equals(SDKConstants.DRIVER_POSTGRESQL))) {
-            server.setDbDriver(SDKConstants.DRIVER_POSTGRESQL);
-            defaultUri = SDKConstants.URI_POSTGRESQL;
-        }
-        else if ((dbDriver.equals("h2")) || (dbDriver.equals(SDKConstants.DRIVER_H2))) {
-            server.setDbDriver(SDKConstants.DRIVER_H2);
-            defaultUri = SDKConstants.URI_H2;
-        }
-        else if (dbDriver.equals("mysql")) {
-            server.setDbDriver(SDKConstants.DRIVER_MYSQL);
-        }
-        else server.setParam(Server.PROPERTY_DB_DRIVER, server.getDbDriver());
-        //set uri
-        String dbUri = promptForValueIfMissingWithDefault(
-                "Please specify database uri (-D%s) (default: '%s')",
-                server.getDbUri(), "dbUri", defaultUri);
-        if (dbUri.startsWith("jdbc:mysql:")) {
-            dbUri = addMySQLParamsIfMissing(dbUri);
-        }
-        server.setDbUri(dbUri);
+    public String promptForDistroVersion() {
+        String version = promptForMissingValueWithOptions ("You can install the following versions of distribution",
+                null, "version", distroOptions);
+        return version;
+    }
+
+    @Override
+    public boolean promptForInstallDistro() {
+        return promptYesNo("Would you like to install OpenMRS distribution?");
     }
 
     @Override

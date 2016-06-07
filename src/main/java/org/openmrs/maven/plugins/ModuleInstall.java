@@ -29,6 +29,7 @@ public class ModuleInstall extends AbstractTask {
     private static final String DEFAULT_UPDATE_MESSAGE = "Module '%s' was updated to version '%s'";
     private static final String TEMPLATE_UPDATE = "Module is installed already. Do you want to upgrade it to version '%s'?";
     private static final String TEMPLATE_DOWNGRADE = "Installed version '%s' of module higher than target '%s'";
+    private static final String TEMPLATE_CURRENT_VERSION = "The server currently has the OpenMRS %s in version %s installed.";
 
     /**
      * @parameter expression="${serverId}"
@@ -49,7 +50,15 @@ public class ModuleInstall extends AbstractTask {
      * @parameter expression="${version}"
      */
     private String version;
+    /**
+     * @parameter expression="${distro}"
+     */
+    private String distro;
 
+    /**
+     * @parameter expression="${platform}"
+     */
+    private String platform;
 
     public ModuleInstall() {}
 
@@ -63,7 +72,57 @@ public class ModuleInstall extends AbstractTask {
 
     public void execute() throws MojoExecutionException, MojoFailureException {
         initUtilities();
-        installModule(serverId, groupId, artifactId, version);
+        if (serverId == null) {
+            File currentProperties = wizard.getCurrentServerPath();
+            if (currentProperties != null) serverId = currentProperties.getName();
+        }
+        serverId = wizard.promptForExistingServerIdIfMissing(serverId);
+        Server server = Server.loadServer(serverId);
+        /**
+         * asssumptions:
+         * -if user specified both distro and platform, clean it and enter interactive mode
+         * -if user specified distro or platform, always upgrade distro/platform
+         * -if user don't specify any:
+         * -- if in module project dir/ core dir, install it
+         * -- if not, start interactive mode for upgrading platform/distro
+         */
+        Upgrader upgrader = new Upgrader(this);
+        if(platform!=null&&distro!=null) {
+            if(platform!=null&&distro!=null) getLog().error("platform and distro both specified, starting interactive mode");
+            platform = null;
+            distro = null;
+        }
+        if((platform == null && distro == null)){
+            Artifact artifact = checkCurrentDirectoryForOpenmrsCoreVersion(server);
+            if(artifact != null){
+                deployOpenmrsWar(server, artifact);
+            } else if(checkCurrentDirForModuleProject()) {
+                deployModule(groupId, artifactId, version, server);
+            } else {
+                boolean installDistro = wizard.promptForInstallDistro();
+                if(installDistro){
+                    wizard.showMessage(String.format(
+                            TEMPLATE_CURRENT_VERSION,
+                            "Reference Application distribution",
+                            server.getVersion()));
+
+                    distro = wizard.promptForDistroVersion();
+                    upgrader.upgradeDistro(server, distro);
+                } else {
+                    wizard.showMessage(String.format(
+                            TEMPLATE_CURRENT_VERSION,
+                            "platform",
+                            server.getPlatformVersion()));
+                    Artifact webapp = new Artifact(SDKConstants.WEBAPP_ARTIFACT_ID, SDKConstants.SETUP_DEFAULT_PLATFORM_VERSION, Artifact.GROUP_WEB);
+                    platform = wizard.promptForPlatformVersion(versionsHelper.getVersionAdvice(webapp, 3));
+                    upgrader.upgradePlatform(server, platform);
+                }
+            }
+        } else if(distro != null) {
+            upgrader.upgradeDistro(server, distro);
+        } else {
+            upgrader.upgradePlatform(server, platform);
+        }
     }
 
     /**
@@ -76,41 +135,46 @@ public class ModuleInstall extends AbstractTask {
      * @throws MojoFailureException
      */
     public void installModule(String serverId, String groupId, String artifactId, String version) throws MojoExecutionException, MojoFailureException {
+        initUtilities();
         if (serverId == null) {
             File currentProperties = wizard.getCurrentServerPath();
             if (currentProperties != null) serverId = currentProperties.getName();
         }
 
         serverId = wizard.promptForExistingServerIdIfMissing(serverId);
-        File serverPath = Server.loadServer(serverId).getServerDirectory();
-        Artifact artifact = checkCurrentDirectoryForOpenmrsCoreVersion(serverPath);
+        Server server = Server.loadServer(serverId);
+        Artifact artifact = checkCurrentDirectoryForOpenmrsCoreVersion(server);
 
         if(artifact != null){
-            deployOpenmrsWar(serverPath, artifact);
+            deployOpenmrsWar(server, artifact);
         } else {
-            deployModule(groupId, artifactId, version, serverPath);
+            deployModule(groupId, artifactId, version, server);
         }
     }
 
     /**
      * Deploy openmrs.war file to server
-     * @param serverPath
+     * @param server
      * @param artifact
      * @return tru if success
      * @throws MojoExecutionException
      */
-    private void deployOpenmrsWar(File serverPath, Artifact artifact) throws MojoExecutionException {
-        Server properties = Server.loadServer(serverPath);
+    private void deployOpenmrsWar(Server server, Artifact artifact) throws MojoExecutionException {
         List<Element> artifactItems = new ArrayList<Element>();
-        artifactItems.add(artifact.toElement(serverPath.toString()));
+        artifactItems.add(artifact.toElement(server.getServerDirectory().getPath()));
 
         executeMojoPlugin(artifactItems);
 
-        File openmrsCorePath = new File(serverPath, "openmrs-" + properties.getOpenmrsCoreVersion() + ".war");
+        File openmrsCorePath = new File(server.getServerDirectory(), "openmrs-" + server.getOpenmrsCoreVersion() + ".war");
         openmrsCorePath.delete();
 
-        properties.setParam("openmrs.platform.version", mavenProject.getVersion());
-        properties.save();
+        if(server.getVersion()!=null){
+            server.setVersion(mavenProject.getVersion());
+        } else {
+            server.setPlatformVersion(mavenProject.getVersion());
+        }
+        server.save();
+        getLog().info("OpenMRS war has been successfully deployed");
     }
 
     /**
@@ -118,16 +182,15 @@ public class ModuleInstall extends AbstractTask {
      * @param groupId
      * @param artifactId
      * @param version
-     * @param serverPath
+     * @param server
      * @throws MojoExecutionException
      */
-    private void deployModule(String groupId, String artifactId, String version, File serverPath) throws MojoExecutionException {
+    private void deployModule(String groupId, String artifactId, String version, Server server) throws MojoExecutionException {
         List<Element> artifactItems = new ArrayList<Element>();
-        Server properties = Server.loadServer(serverPath);
         Artifact artifact = getArtifactForSelectedParameters(groupId, artifactId, version);
 
         artifact.setArtifactId(artifact.getArtifactId() + "-omod");
-        File modules = new File(properties.getServerDirectory(), SDKConstants.OPENMRS_SERVER_MODULES);
+        File modules = new File(server.getServerDirectory(), SDKConstants.OPENMRS_SERVER_MODULES);
         modules.mkdirs();
         artifactItems.add(artifact.toElement(modules.getPath()));
 
@@ -139,8 +202,8 @@ public class ModuleInstall extends AbstractTask {
         moduleId = moduleId.substring(0, moduleId.indexOf("-omod"));
         String[] params = {artifact.getGroupId(), moduleId, artifact.getVersion()};
         String module = StringUtils.join(params, "/");
-        properties.addToValueList(Server.PROPERTY_USER_MODULES, module);
-        properties.save();
+        server.addToValueList(Server.PROPERTY_USER_MODULES, module);
+        server.save();
         if (moduleRemoved) {
             getLog().info(String.format(DEFAULT_UPDATE_MESSAGE, moduleId, artifact.getVersion()));
         }
@@ -201,17 +264,16 @@ public class ModuleInstall extends AbstractTask {
 
     /**
      * Check if the command openmrs-sdk:install was invoked from the openmrs-core directory and then check the version
-     * @param serverPath
+     * @param server
      * @return
      * @throws MojoExecutionException
      * @throws MojoFailureException
      */
-    public Artifact checkCurrentDirectoryForOpenmrsCoreVersion(File serverPath) throws MojoExecutionException, MojoFailureException {
-        Server serverConfig = Server.loadServer(serverPath);
+    public Artifact checkCurrentDirectoryForOpenmrsCoreVersion(Server server) throws MojoExecutionException, MojoFailureException {
         String moduleName = mavenProject.getArtifactId();
         if(moduleName.equals("openmrs")){
-            if(!new Version(mavenProject.getVersion()).equals(new Version(serverConfig.getOpenmrsCoreVersion()))){
-                String message = String.format("The server currently has openmrs.war in version %s. Would you like to change it to %s?", serverConfig.getOpenmrsCoreVersion(), mavenProject.getVersion());
+            if(!new Version(mavenProject.getVersion()).equals(new Version(server.getOpenmrsCoreVersion()))){
+                String message = String.format("The server currently has openmrs.war in version %s. Would you like to change it to %s?", server.getOpenmrsCoreVersion(), mavenProject.getVersion());
                 boolean agree = wizard.promptYesNo(message);
                 if(agree){
                     return new Artifact("openmrs-webapp", mavenProject.getVersion(), Artifact.GROUP_WEB, Artifact.TYPE_WAR);
@@ -257,5 +319,14 @@ public class ModuleInstall extends AbstractTask {
             moduleVersion = wizard.promptForValueIfMissing(version, "version");
         }
         return new Artifact(moduleArtifactId, moduleVersion, moduleGroupId);
+    }
+
+    public boolean checkCurrentDirForModuleProject() throws MojoExecutionException {
+        File dir = new File(System.getProperty("user.dir"));
+        Project project = null;
+        if (Project.hasProject(dir)) {
+            project = Project.loadProject(dir);
+        }
+        return (project != null && project.isOpenmrsModule());
     }
 }

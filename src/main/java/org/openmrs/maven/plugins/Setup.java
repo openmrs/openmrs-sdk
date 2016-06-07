@@ -270,6 +270,7 @@ public class Setup extends AbstractTask {
             } else {
                 createPlatform = !wizard.promptYesNo(DEFAULT_DISTRIBUTION);
             }
+
         } else if(platform != null){
             version = platform;
             createPlatform = true;
