@@ -79,14 +79,14 @@ public class ModuleInstall extends AbstractTask {
         serverId = wizard.promptForExistingServerIdIfMissing(serverId);
         Server server = Server.loadServer(serverId);
         /**
-         * asssumptions:
-         * -if user specified both distro and platform, clean it and enter interactive mode
+         * workflow:
+         * -if user specified both distro and platform, ignore them and enter interactive mode
          * -if user specified distro or platform, always upgrade distro/platform
          * -if user don't specify any:
          * -- if in module project dir/ core dir, install it
          * -- if not, start interactive mode for upgrading platform/distro
          */
-        Upgrader upgrader = new Upgrader(this);
+        ServerUpgrader upgrader = new ServerUpgrader(this);
         if(platform!=null&&distro!=null) {
             if(platform!=null&&distro!=null) getLog().error("platform and distro both specified, starting interactive mode");
             platform = null;
@@ -107,7 +107,7 @@ public class ModuleInstall extends AbstractTask {
                             server.getVersion()));
 
                     distro = wizard.promptForDistroVersion();
-                    upgrader.upgradeDistro(server, distro);
+                    upgrader.upgradeToDistro(server, distro);
                 } else {
                     wizard.showMessage(String.format(
                             TEMPLATE_CURRENT_VERSION,
@@ -119,7 +119,7 @@ public class ModuleInstall extends AbstractTask {
                 }
             }
         } else if(distro != null) {
-            upgrader.upgradeDistro(server, distro);
+            upgrader.upgradeToDistro(server, distro);
         } else {
             upgrader.upgradePlatform(server, platform);
         }

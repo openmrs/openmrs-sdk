@@ -1,6 +1,5 @@
 package org.openmrs.maven.plugins;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.openmrs.maven.plugins.model.Artifact;
@@ -11,10 +10,7 @@ import org.openmrs.maven.plugins.utility.DBConnector;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 
 import java.io.File;
-import java.io.IOException;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  *
@@ -198,7 +194,7 @@ public class Setup extends AbstractTask {
         }
     }
     private boolean connectMySqlDatabase(Server server) throws MojoExecutionException {
-        String uri = server.getDbUri();
+	    String uri = server.getDbUri();
         uri = uri.substring(0, uri.lastIndexOf("/"));
         DBConnector connector = null;
         try {
@@ -228,7 +224,7 @@ public class Setup extends AbstractTask {
             if (dbNameStart < 0) {
                 throw new MojoExecutionException("The uri is in a wrong format: " + uri);
             }
-            int dbNameEnd = uri.indexOf("?");
+            int dbNameEnd = uri.indexOf(";");
             dbName = dbNameEnd < 0 ? uri.substring(dbNameStart + 1) : uri.substring(dbNameStart + 1, dbNameEnd);
 
             if (!dbName.matches("^[A-Za-z0-9_\\-]+$")) {
