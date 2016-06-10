@@ -71,7 +71,7 @@ public class Reset extends AbstractTask {
             try {
                 Setup platform = new Setup(this);
                 FileUtils.deleteDirectory(server.getServerDirectory());
-                platform.setup(server, isPlatform, true);
+                platform.setup(server, isPlatform, true, null);
                 getLog().info(String.format(TEMPLATE_SUCCESS_FULL, server.getServerId()));
             } catch (IOException e) {
                 throw new MojoExecutionException(e.getMessage());

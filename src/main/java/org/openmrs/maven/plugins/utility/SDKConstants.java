@@ -201,7 +201,6 @@ public class SDKConstants {
     /**
      * Get core modules with required versions
      * @param version - openmrs version
-     * @param isPlatform - is platform server
      * @return
      */
     public static List<Artifact> getCoreModules(String version, boolean isPlatform) {
