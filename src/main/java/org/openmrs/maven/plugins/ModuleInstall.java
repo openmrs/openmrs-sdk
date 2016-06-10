@@ -31,6 +31,9 @@ public class ModuleInstall extends AbstractTask {
     private static final String TEMPLATE_DOWNGRADE = "Installed version '%s' of module higher than target '%s'";
     private static final String TEMPLATE_CURRENT_VERSION = "The server currently has the OpenMRS %s in version %s installed.";
 
+    private static final String INSTALL_MODULE_OPTION = "Install module";
+    private static final String INSTALL_DISTRO_OPTION = "Install OpenMRS distribution";
+    private static final String INSTALL_PLATFORM_OPTION = "Install OpenMRS platform";
     /**
      * @parameter expression="${serverId}"
      */
@@ -42,7 +45,7 @@ public class ModuleInstall extends AbstractTask {
     private String artifactId;
 
     /**
-     * @parameter expression="${groupId}" default-value="org.openmrs.module"
+     * @parameter expression="${groupId}"
      */
     private String groupId;
 
@@ -84,7 +87,7 @@ public class ModuleInstall extends AbstractTask {
          * -if user specified distro or platform, always upgrade distro/platform
          * -if user don't specify any:
          * -- if in module project dir/ core dir, install it
-         * -- if not, start interactive mode for upgrading platform/distro
+         * -- if not, start interactive mode
          */
         ServerUpgrader upgrader = new ServerUpgrader(this);
         if(platform!=null&&distro!=null) {
@@ -99,27 +102,46 @@ public class ModuleInstall extends AbstractTask {
             } else if(checkCurrentDirForModuleProject()) {
                 deployModule(groupId, artifactId, version, server);
             } else {
-                boolean installDistro = wizard.promptForInstallDistro();
-                if(installDistro){
-                    wizard.showMessage(String.format(
-                            TEMPLATE_CURRENT_VERSION,
-                            "Reference Application distribution",
-                            server.getVersion()));
+                List<String> options = new ArrayList<>(Arrays.asList(
+                        INSTALL_MODULE_OPTION,
+                        INSTALL_DISTRO_OPTION,
+                        INSTALL_PLATFORM_OPTION));
+                String choice = wizard.promptForMissingValueWithOptions("What would You like to do?%s", null, "", options, false);
+                switch(choice){
+                    case(INSTALL_MODULE_OPTION):{
+                        installModule(serverId, groupId, artifactId, version);
+                        break;
+                    }
+                    case(INSTALL_DISTRO_OPTION):{
+                        wizard.showMessage(String.format(
+                                TEMPLATE_CURRENT_VERSION,
+                                "Reference Application distribution",
+                                server.getVersion()));
 
-                    distro = wizard.promptForDistroVersion();
-                    upgrader.upgradeToDistro(server, distro);
-                } else {
-                    wizard.showMessage(String.format(
-                            TEMPLATE_CURRENT_VERSION,
-                            "platform",
-                            server.getPlatformVersion()));
-                    Artifact webapp = new Artifact(SDKConstants.WEBAPP_ARTIFACT_ID, SDKConstants.SETUP_DEFAULT_PLATFORM_VERSION, Artifact.GROUP_WEB);
-                    platform = wizard.promptForPlatformVersion(versionsHelper.getVersionAdvice(webapp, 3));
-                    upgrader.upgradePlatform(server, platform);
+                        distro = wizard.promptForDistroVersion();
+                        Artifact distroArtifact = wizard.parseDistro(distro);
+                        upgrader.upgradeToDistro(server, distroArtifact);
+                        break;
+                    }
+                    case(INSTALL_PLATFORM_OPTION):{
+                        wizard.showMessage(String.format(
+                                TEMPLATE_CURRENT_VERSION,
+                                "platform",
+                                server.getPlatformVersion()));
+                        Artifact webapp = new Artifact(SDKConstants.WEBAPP_ARTIFACT_ID, SDKConstants.SETUP_DEFAULT_PLATFORM_VERSION, Artifact.GROUP_WEB);
+                        platform = wizard.promptForPlatformVersion(versionsHelper.getVersionAdvice(webapp, 3));
+                        upgrader.upgradePlatform(server, platform);
+                        break;
+                    }
+                    default: {
+                        throw new MojoExecutionException(String.format("Invalid installation option only '%s', '%s', '%s' are available",
+                                INSTALL_MODULE_OPTION ,INSTALL_DISTRO_OPTION, INSTALL_PLATFORM_OPTION));
+                    }
                 }
             }
         } else if(distro != null) {
-            upgrader.upgradeToDistro(server, distro);
+            Artifact distroArtifact = wizard.parseDistro(distro);
+            upgrader.upgradeToDistro(server, distroArtifact);
         } else {
             upgrader.upgradePlatform(server, platform);
         }
@@ -168,11 +190,7 @@ public class ModuleInstall extends AbstractTask {
         File openmrsCorePath = new File(server.getServerDirectory(), "openmrs-" + server.getOpenmrsCoreVersion() + ".war");
         openmrsCorePath.delete();
 
-        if(server.getVersion()!=null){
-            server.setVersion(mavenProject.getVersion());
-        } else {
-            server.setPlatformVersion(mavenProject.getVersion());
-        }
+        server.setPlatformVersion(mavenProject.getVersion());
         server.save();
         getLog().info("OpenMRS war has been successfully deployed");
     }
@@ -189,7 +207,6 @@ public class ModuleInstall extends AbstractTask {
         List<Element> artifactItems = new ArrayList<Element>();
         Artifact artifact = getArtifactForSelectedParameters(groupId, artifactId, version);
 
-        artifact.setArtifactId(artifact.getArtifactId() + "-omod");
         File modules = new File(server.getServerDirectory(), SDKConstants.OPENMRS_SERVER_MODULES);
         modules.mkdirs();
         artifactItems.add(artifact.toElement(modules.getPath()));
@@ -314,9 +331,14 @@ public class ModuleInstall extends AbstractTask {
             }
         }
         else {
-            moduleGroupId = groupId;
+            moduleGroupId = wizard.promptForValueIfMissingWithDefault(null, groupId, "groupId", "org.openmrs.module");
             moduleArtifactId = wizard.promptForValueIfMissing(artifactId, "artifactId");
-            moduleVersion = wizard.promptForValueIfMissing(version, "version");
+            if(!moduleArtifactId.endsWith("-omod")){
+                moduleArtifactId += "-omod";
+            }
+            List<String> availableVersions = versionsHelper.getVersionAdvice(new Artifact(moduleArtifactId, "1.0",moduleGroupId), 5);
+            moduleVersion = wizard.promptForMissingValueWithOptions(
+                    "You can install following versions of module", null, "version", availableVersions, true);
         }
         return new Artifact(moduleArtifactId, moduleVersion, moduleGroupId);
     }
@@ -327,6 +349,11 @@ public class ModuleInstall extends AbstractTask {
         if (Project.hasProject(dir)) {
             project = Project.loadProject(dir);
         }
-        return (project != null && project.isOpenmrsModule());
+        boolean hasProject = (project != null && project.isOpenmrsModule());
+        if(hasProject){
+            hasProject = wizard.promptYesNo(String.format("Would you like to install %s %s from this directory?",
+                    project.getArtifactId(), project.getVersion()));
+        }
+        return hasProject;
     }
 }

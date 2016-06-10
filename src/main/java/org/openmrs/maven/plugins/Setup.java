@@ -135,7 +135,7 @@ public class Setup extends AbstractTask {
         }
         
         if(dbDriver == null){
-            if(distroProperties.isH2Supported()){
+            if(distroProperties!= null && distroProperties.isH2Supported()){
                 wizard.promptForH2Db(server);
             }else {
                 wizard.promptForMySQLDb(server);
@@ -147,7 +147,9 @@ public class Setup extends AbstractTask {
         }
 
         if(server.getDbDriver() != null){
-            server.setDbName(determineDbName(server.getDbUri(), server.getServerId()));
+            if(server.getDbName() == null){
+                server.setDbName(determineDbName(server.getDbUri(), server.getServerId()));
+            }
             if (server.getDbDriver().equals(SDKConstants.DRIVER_MYSQL)){
                 if(!connectMySqlDatabase(server)){
                     wizard.showMessage("The specified database "+server.getDbName()+" does not exist and it will be created for you.");
@@ -167,7 +169,7 @@ public class Setup extends AbstractTask {
 
     private DistroProperties extractDistroToServer(Server server, boolean isCreatePlatform, File serverPath) throws MojoExecutionException, MojoFailureException {
         DistroProperties distroProperties;
-        if(new Version(server.getVersion()).lower(new Version("2.4-SNAPSHOT"))){
+        if(isSupportedOldRefapp(server)){
             distroProperties = new DistroProperties(server.getVersion());
         } else {
             distroProperties = moduleInstaller.downloadDistroProperties(serverPath, server);
@@ -177,8 +179,10 @@ public class Setup extends AbstractTask {
     }
 
     private void configureVersion(Server server, boolean isCreatePlatform){
-        server.setPlatformVersion(server.getVersion());
-        if (!isCreatePlatform) {
+        if (isCreatePlatform){
+            server.setPlatformVersion(server.getVersion());
+            server.setParam(Server.PROPERTY_VERSION, "");
+        } else {
             // set web app version for OpenMRS 2.2 and higher
             if (new Version(server.getVersion()).higher(new Version(Version.PRIOR))) {
                 for (File f: server.getServerDirectory().listFiles()) {
@@ -192,6 +196,17 @@ public class Setup extends AbstractTask {
                 server.setPlatformVersion(SDKConstants.WEBAPP_VERSIONS.get(server.getVersion()));
             }
         }
+    }
+
+    /**
+     * openmrs-sdk has hardcoded distro properties for certain versions of refapp which don't include them
+     * @param server
+     * @return
+     */
+    private boolean isSupportedOldRefapp(Server server){
+        if(server.getDistroArtifactId()!=null&&server.getDistroArtifactId().equals(SDKConstants.REFERENCEAPPLICATION_ARTIFACT_ID)){
+            return SDKConstants.SUPPPORTED_OLD_REFAPP_VERSIONS.contains(server.getVersion());
+        } else return false;
     }
     private boolean connectMySqlDatabase(Server server) throws MojoExecutionException {
 	    String uri = server.getDbUri();

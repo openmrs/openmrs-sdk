@@ -1,5 +1,6 @@
 package org.openmrs.maven.plugins.utility;
 
+import edu.emory.mathcs.backport.java.util.Arrays;
 import org.apache.commons.io.IOUtils;
 import org.openmrs.maven.plugins.model.Artifact;
 
@@ -64,6 +65,9 @@ public class SDKConstants {
     }};
     public static final String SETUP_DEFAULT_VERSION = "2.3";
     public static final String SETUP_DEFAULT_PLATFORM_VERSION = "1.11.5";
+
+    public static final String REFERENCEAPPLICATION_ARTIFACT_ID = "referenceapplication-package";
+    public static final List<String> SUPPPORTED_OLD_REFAPP_VERSIONS = java.util.Arrays.asList("2.1", "2.2", "2.3.1");
 
     // modules 2.x
     public static final List<Artifact> ARTIFACTS_2_0 = new ArrayList<Artifact>() {{

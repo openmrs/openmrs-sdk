@@ -82,7 +82,7 @@ public class Reset extends AbstractTask {
 	        if(isPlatform){
 		        serverUpgrader.upgradePlatform(server, server.getVersion());
 	        } else {
-		        serverUpgrader.upgradeToDistro(server, server.getVersion());
+		        serverUpgrader.upgradeToDistro(server);
 	        }
             getLog().info(String.format(TEMPLATE_SUCCESS, server.getServerId()));
         }

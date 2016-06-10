@@ -1,6 +1,7 @@
 package org.openmrs.maven.plugins.utility;
 
 import org.apache.maven.plugin.MojoExecutionException;
+import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.Server;
 
 import java.io.File;
@@ -26,6 +27,8 @@ public interface Wizard {
 
     String promptForDistroVersion();
 
+    String promptForMissingValueWithOptions(String message, String value, String parameterName, List<String> options, boolean allowCustom);
+
     void showMessage(String message);
 
     String promptForValueIfMissingWithDefault(String message, String value, String parameterName, String defValue);
@@ -35,6 +38,8 @@ public interface Wizard {
     String promptForValueWithDefaultList(String value, String parameterName, String defaultValue, List<String> values);
 
     String promptForValueIfMissing(String value, String parameterName);
+
+    Artifact parseDistro(String distro);
 
     boolean promptForInstallDistro();
 

@@ -34,36 +34,45 @@ public class ServerUpgrader {
      */
     public void upgradePlatform(Server server, String version) throws MojoExecutionException, MojoFailureException {
         saveBackupProperties(server);
-        //upgrade distro's war
-        if (server.getVersion() != null) {
-            confirmUpgrade(server.getVersion(), version);
-            replaceWebapp(server, Server.PROPERTY_VERSION, version);
-        } else {
-            confirmUpgrade(server.getPlatformVersion(), version);
-            replaceWebapp(server, Server.PROPERTY_PLATFORM, version);
-        }
+		confirmUpgrade(server.getPlatformVersion(), version);
+		replaceWebapp(server, version);
 	    deleteBackupProperties(server);
         parentTask.getLog().info(String.format("Server %s has been successfully upgraded to %s", server.getServerId(), version));
     }
 
+	public void upgradeToDistro(Server server) throws MojoExecutionException, MojoFailureException {
+		Artifact distro = new Artifact(server.getDistroArtifactId(), server.getVersion(), server.getDistroGroupId());
+		upgradeToDistro(server, distro);
+	}
+
 	/**
 	 * @param server server to be upgraded
-	 * @param version target version of distro
+	 * @param distro
 	 * @throws MojoExecutionException
 	 * @throws MojoFailureException
 	 */
-    public void upgradeToDistro(Server server, String version) throws MojoExecutionException, MojoFailureException {
-	    Setup setup = new Setup(parentTask);
+    public void upgradeToDistro(Server server, Artifact distro) throws MojoExecutionException, MojoFailureException {
+	    if(distro.getArtifactId().equals(server.getDistroArtifactId())){
+			confirmUpgrade(server.getVersion(), distro.getVersion());
+		}
+		Setup setup = new Setup(parentTask);
 	    saveBackupProperties(server);
 	    //delete webapp and modules of existing server version, leave out modules installed by user
 	    List<Artifact> userModules = parseUserModules(server);
+	    if(server.getDbDriver().equals(SDKConstants.DRIVER_H2)){
+		    userModules.add(SDKConstants.H2_ARTIFACT);
+	    }
 	    File modulesFolder = new File(server.getServerDirectory(), SDKConstants.OPENMRS_SERVER_MODULES);
 	    deleteNonUserModulesFromDir(userModules, server.getServerDirectory());
 	    deleteNonUserModulesFromDir(userModules, modulesFolder);
 	    //delete installation.properties file on server to avoid Setup task errors with already existing server
 	    server.delete();
-	    server.setVersion(version);
-	    setup.setup(server, false, true);
+
+		server.setVersion(distro.getVersion());
+		server.setDistroGroupId(distro.getGroupId());
+		server.setDistroArtifactId(distro.getArtifactId());
+
+	    setup.setup(server, false, true, null);
 	    deleteBackupProperties(server);
 	    deleteDependencyPluginMarker();
     }
@@ -143,16 +152,15 @@ public class ServerUpgrader {
 
     /**
      * @param server server to upgrade
-     * @param versionParam key used to obtain and replace old version from server
      * @throws MojoFailureException
      * @throws MojoExecutionException
      */
-    private void replaceWebapp(Server server, String versionParam, String version) throws MojoFailureException, MojoExecutionException {
-        File webapp = new File(server.getServerDirectory(), "openmrs-"+server.getParam(versionParam)+".war");
+    private void replaceWebapp(Server server, String version) throws MojoFailureException, MojoExecutionException {
+        File webapp = new File(server.getServerDirectory(), "openmrs-"+server.getPlatformVersion()+".war");
         webapp.delete();
         Artifact webappArtifact = new Artifact(SDKConstants.WEBAPP_ARTIFACT_ID, version, Artifact.GROUP_WEB, Artifact.TYPE_WAR);
         parentTask.moduleInstaller.installModule(webappArtifact, server.getServerDirectory().getPath());
-        server.setParam(versionParam, version);
+        server.setPlatformVersion(version);
         server.save();
     }
 	/**
@@ -160,7 +168,7 @@ public class ServerUpgrader {
 	 * @param name of file which id will be obtained
 	 * @return
 	 */
-	private String getId(String name) {
+	public String getId(String name) {
 		int index = name.indexOf('-');
 		if (index == -1) return name;
 		return name.substring(0, index);
@@ -171,7 +179,7 @@ public class ServerUpgrader {
 	 * @return list of modules installed by user on given server
 	 * @throws MojoExecutionException
 	 */
-	private List<Artifact> parseUserModules(Server server) throws MojoExecutionException {
+	public List<Artifact> parseUserModules(Server server) throws MojoExecutionException {
 		String values = server.getParam(Server.PROPERTY_USER_MODULES);
 		List<Artifact> result = new ArrayList<>();
 		if (values != null) {
@@ -180,7 +188,7 @@ public class ServerUpgrader {
 				String[] params = mod.split(Server.SLASH);
 				// check
 				if (params.length == 3) {
-					result.add(new Artifact(params[0], params[1], params[2]));
+					result.add(new Artifact(params[1], params[2], params[0]));
 				}
 				else throw new MojoExecutionException("Properties file parse error - cannot read user modules list");
 			}

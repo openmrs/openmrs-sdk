@@ -1,5 +1,6 @@
 package org.openmrs.maven.plugins.utility;
 
+import com.google.common.collect.Lists;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -26,17 +27,19 @@ import java.util.Map.Entry;
 public class DefaultWizard implements Wizard {
     private static final String EMPTY_STRING = "";
     private static final String NONE = "(none)";
-    private static final String DEFAULT_CHOICE_TMPL = "Which one do You choose? [";
+    private static final String DEFAULT_CHOICE_TMPL = "Which one do you choose? [";
     private static final String DEFAULT_OPTION_TMPL = "%d) %s";
     private static final String DEFAULT_CUSTOM_OPTION_TMPL = "%d) Custom";
     private static final String DEFAULT_SERVER_NAME = "server";
-    private static final String DEFAULT_VALUE_TMPL = "Define value for property '%s'";
-    private static final String DEFAULT_VALUE_TMPL_WITH_DEFAULT = "Define value for property '%s': (default: '%s')";
+    private static final String DEFAULT_VALUE_TMPL = "Please specify '%s'";
+    private static final String DEFAULT_VALUE_TMPL_WITH_DEFAULT = "Please specify '%s': (default: '%s')";
     private static final String DEFAULT_FAIL_MESSAGE = "Server with such serverId is not exists";
     private static final String INVALID_SERVER = "Invalid server Id";
     private static final String YESNO = " [Y/n]";
     private static final String REFERENCEAPPLICATION_2_3 = "org.openmrs.distro:referenceapplication-package:2.3.1";
     private static final String DEFAULT_CUSTOM_DIST_ARTIFACT = "Please specify custom distribution artifact%s (default: '%s')";
+    private static final String REFAPP_OPTION_TMPL = "Reference Application %s";
+    private static final String REFAPP_ARTIFACT_TMPL = "org.openmrs.distro:referenceapplication-package:%s";
 
     @Requirement
     Prompter prompter;
@@ -49,12 +52,6 @@ public class DefaultWizard implements Wizard {
     public DefaultWizard(Prompter prompter) {
         this.prompter = prompter;
     }
-
-    private List<String> distroOptions = Arrays.asList(
-            "2.1",
-            "2.2",
-            "2.3",
-            "2.4-SNAPSHOT");
 
     /**
      * Prompt for serverId, and get default serverId which is not exists,
@@ -107,7 +104,8 @@ public class DefaultWizard implements Wizard {
         return val;
     }
 
-    private String promptForMissingValueWithOptions(String message, String value, String parameterName, List<String> options){
+    @Override
+    public String promptForMissingValueWithOptions(String message, String value, String parameterName, List<String> options, boolean allowCustom){
         if (value != null) {
             return value;
         }
@@ -122,8 +120,10 @@ public class DefaultWizard implements Wizard {
             choiceBuilder.append((i)+"/");
             i++;
         }
-        System.out.println(String.format(DEFAULT_CUSTOM_OPTION_TMPL, i));
-        choiceBuilder.append((i));
+        if(allowCustom){
+            System.out.println(String.format(DEFAULT_CUSTOM_OPTION_TMPL, i));
+            choiceBuilder.append((i));
+        }
         String val = prompt(choiceBuilder.toString()+"]");
         if (val.equals(EMPTY_STRING)) {
             return options.get(0);
@@ -131,12 +131,12 @@ public class DefaultWizard implements Wizard {
             if(StringUtils.isNumeric(val)){
                 if(Integer.parseInt(val)<i){
                     return options.get(Integer.parseInt(val)-1);
-                } else if(Integer.parseInt(val)==i) {
+                } else if(Integer.parseInt(val)==i && allowCustom) {
                     return promptForValueIfMissingWithDefault(DEFAULT_CUSTOM_DIST_ARTIFACT, null, "", REFERENCEAPPLICATION_2_3);
                 }
             }
             System.out.println("\nPlease insert valid option number!");
-            return promptForMissingValueWithOptions(message, value, parameterName, options);
+            return promptForMissingValueWithOptions(message, value, parameterName, options, allowCustom);
         }
     }
 
@@ -240,45 +240,70 @@ public class DefaultWizard implements Wizard {
     @Override
     public void promptForPlatformVersionIfMissing(Server server, List<String> versions) {
         String version = promptForMissingValueWithOptions("You can install the following versions of a platform",
-                server.getVersion(), "version", versions);
+                server.getVersion(), "version", versions, true);
         server.setVersion(version);
     }
 
 	@Override
 	public String promptForPlatformVersion(List<String> versions) {
-		return null;
+        String version = promptForMissingValueWithOptions("You can install the following versions of a platform",
+                null, "version", versions, true);
+        return version;
 	}
 
 	@Override
     public void promptForDistroVersionIfMissing(Server server) {
-        List<String> options = Arrays.asList(
-                "2.1",
-                "2.2",
-                "2.3.1",
-                "2.4-SNAPSHOT");
-
-        String version = promptForMissingValueWithOptions ("You can install the following versions of distribution",
-                server.getVersion(), "version", options);
-        String[] split = version.split(":");
-        if(split.length > 1){
-            if(split.length == 3 ) {
-                server.setVersion(split[2]);
-                server.setDistroArtifactId(split[1]);
-                server.setDistroGroupId(split[0]);
-            }else {
-                getLog().error(String.format("Wrong distribution format '%s'. Please specify distribution in format groupId:artifactId:version", version));
+        if(server.getVersion()==null){
+            String choice = promptForDistroVersion();
+            Artifact distro = parseDistro(choice);
+            if(distro != null){
+                server.setVersion(distro.getVersion());
+                server.setDistroArtifactId(distro.getArtifactId());
+                server.setDistroGroupId(distro.getGroupId());
+            } else {
+                server.setDistroArtifactId(SDKConstants.REFERENCEAPPLICATION_ARTIFACT_ID);
+                server.setDistroGroupId(Artifact.GROUP_DISTRO);
+                server.setVersion(choice);
             }
-        } else {
-            server.setDistroArtifactId("referenceapplication-package");
-            server.setDistroGroupId(Artifact.GROUP_DISTRO);
-            server.setVersion(version);
         }
     }
 
     public String promptForDistroVersion() {
+        Map<String, String> optionsMap = new HashMap<>();
+        optionsMap.put(String.format(REFAPP_OPTION_TMPL, "2.1"), String.format(REFAPP_ARTIFACT_TMPL, "2.1"));
+        optionsMap.put(String.format(REFAPP_OPTION_TMPL, "2.2"), String.format(REFAPP_ARTIFACT_TMPL, "2.2"));
+        optionsMap.put(String.format(REFAPP_OPTION_TMPL, "2.3.1"), String.format(REFAPP_ARTIFACT_TMPL, "2.3.1"));
+        optionsMap.put(String.format(REFAPP_OPTION_TMPL, "2.4-SNAPSHOT"), String.format(REFAPP_ARTIFACT_TMPL, "2.4-SNAPSHOT"));
+
         String version = promptForMissingValueWithOptions ("You can install the following versions of distribution",
-                null, "version", distroOptions);
-        return version;
+                null, "version", Lists.newArrayList(optionsMap.keySet()), true);
+        return optionsMap.get(version);
+    }
+
+    /**
+     * valid format is groupId:artifactId:version
+     * @param distro
+     * @return
+     */
+    @Override
+    public Artifact parseDistro(String distro){
+        String[] split = distro.split(":");
+        if(split.length == 2){
+            return new Artifact(inferDistroArtifactId(split[0], Artifact.GROUP_DISTRO), split[1], Artifact.GROUP_DISTRO);
+        } else if (split.length == 3){
+            return new Artifact(inferDistroArtifactId(split[1], split[0]), split[2], split[0]);
+        } else if(split.length<=1){
+            return null;
+        } else {
+            throw new IllegalArgumentException(String.format("Invalid distro string: %s format", distro));
+        }
+    }
+
+    private String inferDistroArtifactId(String artifactId, String groupId){
+        if(Artifact.GROUP_DISTRO.equals(groupId)&&"referenceapplication".equals(artifactId)){
+            return SDKConstants.REFERENCEAPPLICATION_ARTIFACT_ID;
+        }
+        else return artifactId;
     }
 
     @Override
