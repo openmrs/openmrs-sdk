@@ -239,7 +239,7 @@ public class Setup extends AbstractTask {
             if (dbNameStart < 0) {
                 throw new MojoExecutionException("The uri is in a wrong format: " + uri);
             }
-            int dbNameEnd = uri.indexOf(";");
+            int dbNameEnd = uri.indexOf("?");
             dbName = dbNameEnd < 0 ? uri.substring(dbNameStart + 1) : uri.substring(dbNameStart + 1, dbNameEnd);
 
             if (!dbName.matches("^[A-Za-z0-9_\\-]+$")) {
