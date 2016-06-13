@@ -1,6 +1,5 @@
 package org.openmrs.maven.plugins;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.openmrs.maven.plugins.model.Artifact;
@@ -11,10 +10,7 @@ import org.openmrs.maven.plugins.utility.DBConnector;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 
 import java.io.File;
-import java.io.IOException;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  *
@@ -139,7 +135,7 @@ public class Setup extends AbstractTask {
         }
         
         if(dbDriver == null){
-            if(distroProperties.isH2Supported()){
+            if(distroProperties!= null && distroProperties.isH2Supported()){
                 wizard.promptForH2Db(server);
             }else {
                 wizard.promptForMySQLDb(server);
@@ -151,7 +147,9 @@ public class Setup extends AbstractTask {
         }
 
         if(server.getDbDriver() != null){
-            server.setDbName(determineDbName(server.getDbUri(), server.getServerId()));
+            if(server.getDbName() == null){
+                server.setDbName(determineDbName(server.getDbUri(), server.getServerId()));
+            }
             if (server.getDbDriver().equals(SDKConstants.DRIVER_MYSQL)){
                 if(!connectMySqlDatabase(server)){
                     wizard.showMessage("The specified database "+server.getDbName()+" does not exist and it will be created for you.");
@@ -171,7 +169,7 @@ public class Setup extends AbstractTask {
 
     private DistroProperties extractDistroToServer(Server server, boolean isCreatePlatform, File serverPath) throws MojoExecutionException, MojoFailureException {
         DistroProperties distroProperties;
-        if(new Version(server.getVersion()).lower(new Version("2.4-SNAPSHOT"))){
+        if(isSupportedOldRefapp(server)){
             distroProperties = new DistroProperties(server.getVersion());
         } else {
             distroProperties = moduleInstaller.downloadDistroProperties(serverPath, server);
@@ -181,8 +179,10 @@ public class Setup extends AbstractTask {
     }
 
     private void configureVersion(Server server, boolean isCreatePlatform){
-        server.setPlatformVersion(server.getVersion());
-        if (!isCreatePlatform) {
+        if (isCreatePlatform){
+            server.setPlatformVersion(server.getVersion());
+            server.setParam(Server.PROPERTY_VERSION, "");
+        } else {
             // set web app version for OpenMRS 2.2 and higher
             if (new Version(server.getVersion()).higher(new Version(Version.PRIOR))) {
                 for (File f: server.getServerDirectory().listFiles()) {
@@ -197,8 +197,19 @@ public class Setup extends AbstractTask {
             }
         }
     }
+
+    /**
+     * openmrs-sdk has hardcoded distro properties for certain versions of refapp which don't include them
+     * @param server
+     * @return
+     */
+    private boolean isSupportedOldRefapp(Server server){
+        if(server.getDistroArtifactId()!=null&&server.getDistroArtifactId().equals(SDKConstants.REFERENCEAPPLICATION_ARTIFACT_ID)){
+            return SDKConstants.SUPPPORTED_OLD_REFAPP_VERSIONS.contains(server.getVersion());
+        } else return false;
+    }
     private boolean connectMySqlDatabase(Server server) throws MojoExecutionException {
-        String uri = server.getDbUri();
+	    String uri = server.getDbUri();
         uri = uri.substring(0, uri.lastIndexOf("/"));
         DBConnector connector = null;
         try {
@@ -228,7 +239,7 @@ public class Setup extends AbstractTask {
             if (dbNameStart < 0) {
                 throw new MojoExecutionException("The uri is in a wrong format: " + uri);
             }
-            int dbNameEnd = uri.indexOf("?");
+            int dbNameEnd = uri.indexOf(";");
             dbName = dbNameEnd < 0 ? uri.substring(dbNameStart + 1) : uri.substring(dbNameStart + 1, dbNameEnd);
 
             if (!dbName.matches("^[A-Za-z0-9_\\-]+$")) {
@@ -270,6 +281,7 @@ public class Setup extends AbstractTask {
             } else {
                 createPlatform = !wizard.promptYesNo(DEFAULT_DISTRIBUTION);
             }
+
         } else if(platform != null){
             version = platform;
             createPlatform = true;

@@ -4,7 +4,6 @@ import org.apache.maven.artifact.versioning.ArtifactVersion;
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 import org.junit.Before;
 import org.junit.Test;
-import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.utility.VersionsHelper;
 
 import java.util.ArrayList;

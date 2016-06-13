@@ -78,8 +78,12 @@ public class Reset extends AbstractTask {
             }
         }
         else {
-            UpgradePlatform upgradePlatform = new UpgradePlatform(this);
-            upgradePlatform.upgradeServer(server.getServerId(), server.getVersion(), isPlatform);
+	        ServerUpgrader serverUpgrader = new ServerUpgrader(this);
+	        if(isPlatform){
+		        serverUpgrader.upgradePlatform(server, server.getVersion());
+	        } else {
+		        serverUpgrader.upgradeToDistro(server);
+	        }
             getLog().info(String.format(TEMPLATE_SUCCESS, server.getServerId()));
         }
     }

@@ -144,7 +144,6 @@ public class VersionsHelper {
      */
     public List<String> getVersionAdvice(Artifact artifact, int maxReleases){
         return getVersionAdvice(getVersions(artifact), maxReleases);
-
     }
 
     public List<String> getVersionAdvice(List<ArtifactVersion> allVersions, int maxSize){
