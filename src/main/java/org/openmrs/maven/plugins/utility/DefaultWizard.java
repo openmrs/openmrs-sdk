@@ -332,11 +332,11 @@ public class DefaultWizard implements Wizard {
                 "Would you like to use the h2 database (-DdbDriver) (note that some modules do not support it)?");
         if(h2){
             server.setDbDriver(SDKConstants.DRIVER_H2);
-            String dbUri = promptForValueIfMissingWithDefault(
-                    "Please specify database uri (-D%s) (default: '%s')",
-                    server.getDbUri(), "dbUri", SDKConstants.URI_H2);
-            server.setDbUri(dbUri);
-            promptForDbCredentialsIfMissing(server);
+            if (server.getDbUri() == null) {
+                server.setDbUri(SDKConstants.URI_H2);
+            }
+            server.setDbUser("root");
+            server.setDbPassword("root");
         }
     }
 

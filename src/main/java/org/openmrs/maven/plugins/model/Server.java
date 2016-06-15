@@ -1,5 +1,6 @@
 package org.openmrs.maven.plugins.model;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -507,5 +508,20 @@ public class Server {
 
     public File getServerDirectory() {
         return serverDirectory;
+    }
+
+    public File getServerTmpDirectory() {
+        return new File(serverDirectory, "tmp");
+    }
+
+    public void deleteServerTmpDirectory() {
+        File tmpDirectory = getServerTmpDirectory();
+        if (tmpDirectory.exists()) {
+            try {
+                FileUtils.deleteDirectory(tmpDirectory);
+            } catch (IOException e) {
+                System.out.println("Could not delete tmp directory");
+            }
+        }
     }
 }

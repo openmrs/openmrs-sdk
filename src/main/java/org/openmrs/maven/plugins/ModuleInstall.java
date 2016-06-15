@@ -189,6 +189,7 @@ public class ModuleInstall extends AbstractTask {
 
         File openmrsCorePath = new File(server.getServerDirectory(), "openmrs-" + server.getOpenmrsCoreVersion() + ".war");
         openmrsCorePath.delete();
+        server.deleteServerTmpDirectory();
 
         server.setPlatformVersion(mavenProject.getVersion());
         server.save();
@@ -316,21 +317,18 @@ public class ModuleInstall extends AbstractTask {
         Project project = null;
         if (Project.hasProject(userDir)) {
         	project = Project.loadProject(userDir);
-        }
-        
-        if (artifactId == null && project.isOpenmrsModule()) {
-            if (project.getParent() != null) {
-                moduleGroupId = project.getParent().getGroupId();
-                moduleArtifactId = project.getParent().getArtifactId();
-                moduleVersion = (version != null) ? version : project.getParent().getVersion();
+            if (artifactId == null && project.isOpenmrsModule()) {
+                if (project.getParent() != null) {
+                    moduleGroupId = project.getParent().getGroupId();
+                    moduleArtifactId = project.getParent().getArtifactId();
+                    moduleVersion = (version != null) ? version : project.getParent().getVersion();
+                } else {
+                    moduleGroupId = project.getGroupId();
+                    moduleArtifactId = project.getArtifactId();
+                    moduleVersion = (version != null) ? version : project.getVersion();
+                }
             }
-            else {
-                moduleGroupId = project.getGroupId();
-                moduleArtifactId = project.getArtifactId();
-                moduleVersion = (version != null) ? version: project.getVersion();
-            }
-        }
-        else {
+        } else {
             moduleGroupId = wizard.promptForValueIfMissingWithDefault(null, groupId, "groupId", "org.openmrs.module");
             moduleArtifactId = wizard.promptForValueIfMissing(artifactId, "artifactId");
             if(!moduleArtifactId.endsWith("-omod")){

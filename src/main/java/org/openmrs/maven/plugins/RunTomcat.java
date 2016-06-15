@@ -4,6 +4,7 @@ import org.apache.catalina.Context;
 import org.apache.catalina.LifecycleException;
 import org.apache.catalina.loader.WebappLoader;
 import org.apache.catalina.startup.Tomcat;
+import org.apache.commons.io.FileUtils;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -16,6 +17,7 @@ import org.openmrs.maven.plugins.utility.SDKConstants;
 import org.openmrs.maven.plugins.utility.Wizard;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Set;
 
 /**
@@ -53,19 +55,17 @@ public class RunTomcat extends AbstractMojo {
 	public void execute() throws MojoExecutionException, MojoFailureException {
 		serverId = wizard.promptForExistingServerIdIfMissing(serverId);
 		Server server = Server.loadServer(serverId);
-		File serverPath = server.getServerDirectory();
-		File tempDirectory = new File(serverPath, "tmp");
+		File tempDirectory = server.getServerTmpDirectory();
 		tempDirectory.mkdirs();
 
 		String warFile = "openmrs.war";
+		File serverPath = server.getServerDirectory();
 		for (File file : serverPath.listFiles()) {
 			if ((file.getName().endsWith(".war"))) {
 				warFile = file.getName();
 				break;
 			}
 		}
-
-		getLog().info(warFile + " will be deployed");
 
 		Tomcat tomcat = new Tomcat();
 		if (port == null) {
