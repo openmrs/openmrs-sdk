@@ -1,4 +1,4 @@
-package org.openmrs.maven.plugins;
+package org.openmrs.maven.plugins.utility;
 
 import org.apache.maven.artifact.versioning.ArtifactVersion;
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;

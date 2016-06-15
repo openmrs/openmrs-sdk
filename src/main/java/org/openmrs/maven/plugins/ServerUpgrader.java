@@ -3,22 +3,19 @@ package org.openmrs.maven.plugins;
 import org.apache.commons.io.FileUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
-import org.openmrs.maven.plugins.model.Artifact;
-import org.openmrs.maven.plugins.model.Server;
-import org.openmrs.maven.plugins.model.Version;
+import org.openmrs.maven.plugins.model.*;
+import org.openmrs.maven.plugins.utility.DistroHelper;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  *
  */
 public class ServerUpgrader {
-    private static final String OLD_PROPERTIES_FILENAME = "old.properties";
-	private final static String[] SUPPORTED = new String[]{Artifact.TYPE_WAR, Artifact.TYPE_JAR, Artifact.TYPE_OMOD};
     private AbstractTask parentTask;
 
 
@@ -33,91 +30,50 @@ public class ServerUpgrader {
      * @throws MojoFailureException
      */
     public void upgradePlatform(Server server, String version) throws MojoExecutionException, MojoFailureException {
-        saveBackupProperties(server);
+        server.saveBackupProperties();
 		confirmUpgrade(server.getPlatformVersion(), version);
 		replaceWebapp(server, version);
-	    deleteBackupProperties(server);
+	    server.deleteBackupProperties();
         parentTask.getLog().info(String.format("Server %s has been successfully upgraded to %s", server.getServerId(), version));
     }
 
-	public void upgradeToDistro(Server server) throws MojoExecutionException, MojoFailureException {
-		Artifact distro = new Artifact(server.getDistroArtifactId(), server.getVersion(), server.getDistroGroupId());
-		upgradeToDistro(server, distro);
-	}
+	public void upgradeToDistro(Server server, DistroProperties distroProperties) throws MojoExecutionException, MojoFailureException {
+        UpgradeDifferential upgradeDifferential = DistroHelper.calculateUpdateDifferential(server, distroProperties);
+        boolean confirmed = parentTask.wizard.promptForConfirmDistroUpgrade(upgradeDifferential, server, distroProperties);
+		if(confirmed){
+			server.saveBackupProperties();
+			List<Artifact> userModules = server.getUserModules();
 
-	/**
-	 * @param server server to be upgraded
-	 * @param distro
-	 * @throws MojoExecutionException
-	 * @throws MojoFailureException
-	 */
-    public void upgradeToDistro(Server server, Artifact distro) throws MojoExecutionException, MojoFailureException {
-	    if(distro.getArtifactId().equals(server.getDistroArtifactId())){
-			confirmUpgrade(server.getVersion(), distro.getVersion());
-		}
-		Setup setup = new Setup(parentTask);
-	    saveBackupProperties(server);
-	    //delete webapp and modules of existing server version, leave out modules installed by user
-	    List<Artifact> userModules = parseUserModules(server);
-	    if(server.getDbDriver().equals(SDKConstants.DRIVER_H2)){
-		    userModules.add(SDKConstants.H2_ARTIFACT);
-	    }
-	    File modulesFolder = new File(server.getServerDirectory(), SDKConstants.OPENMRS_SERVER_MODULES);
-	    deleteNonUserModulesFromDir(userModules, server.getServerDirectory());
-	    deleteNonUserModulesFromDir(userModules, modulesFolder);
-	    //delete installation.properties file on server to avoid Setup task errors with already existing server
-	    server.delete();
-
-		server.setVersion(distro.getVersion());
-		server.setDistroGroupId(distro.getGroupId());
-		server.setDistroArtifactId(distro.getArtifactId());
-
-	    setup.setup(server, false, true, null);
-	    deleteBackupProperties(server);
-	    deleteDependencyPluginMarker();
-    }
-
-	private void deleteNonUserModulesFromDir(List<Artifact> userModules, File dir) {
-		File[] files = dir.listFiles();
-		if(files != null){
-			for (File f: files) {
-				String type = f.getName().substring(f.getName().lastIndexOf(".") + 1);
-				if (isSupported(type)) {
-					boolean toDelete = true;
-					String id = getId(f.getName());
-					for(Artifact userModule : userModules){
-						if(userModule.getArtifactId().equals(id)){
-							toDelete = false;
-							break;
-						}
-					}
-					if(toDelete){
-						f.delete();
+			String modulesDir = server.getServerDirectory().getPath()+"/"+SDKConstants.OPENMRS_SERVER_MODULES;
+			if(upgradeDifferential.getPlatformArtifact()!=null){
+				replaceWebapp(server, upgradeDifferential.getPlatformArtifact().getVersion());
+			}
+			if(!upgradeDifferential.getModulesToAdd().isEmpty()){
+				parentTask.moduleInstaller.installModules(upgradeDifferential.getModulesToAdd(), modulesDir);
+			}
+			if(!upgradeDifferential.getUpdateOldToNewMap().isEmpty()){
+				for(Map.Entry<Artifact, Artifact> updateEntry : upgradeDifferential.getUpdateOldToNewMap().entrySet()){
+					File oldModule = new File(modulesDir, updateEntry.getKey().getDestFileName());
+					oldModule.delete();
+					parentTask.moduleInstaller.installModule(updateEntry.getValue(), modulesDir);
+					if(userModules.contains(updateEntry.getKey())){
+						userModules.remove(updateEntry.getKey());
 					}
 				}
 			}
+
+			server.setUserModules(userModules);
+			server.setVersion(distroProperties.getServerVersion());
+			server.save();
+
+			server.deleteBackupProperties();
+			deleteDependencyPluginMarker();
+			parentTask.getLog().info("Server upgraded successfully");
+		} else {
+			parentTask.wizard.showMessage("\nServer upgrade aborted");
 		}
-	}
 
-	private boolean isSupported(String type) {
-		return type.equals(SUPPORTED[0]) || type.equals(SUPPORTED[1]) || type.equals(SUPPORTED[2]);
 	}
-
-	/**
-	 * saves current properties in backup file to make restoring server available
-	 * in case of error occurence during upgrading
-	 *
-	 * @param server
-	 * @throws MojoExecutionException
-	 */
-    private void saveBackupProperties(Server server) throws MojoExecutionException {
-        File backupProperties = new File(server.getServerDirectory(), OLD_PROPERTIES_FILENAME);
-        server.saveTo(backupProperties);
-    }
-    private void deleteBackupProperties(Server server) throws MojoExecutionException {
-        File backupProperties = new File(server.getServerDirectory(), OLD_PROPERTIES_FILENAME);
-        backupProperties.delete();
-    }
 
 	/**
 	 * Maven dependency plugin leaves directory with marker in directory from which it was executed
@@ -163,36 +119,4 @@ public class ServerUpgrader {
         server.setPlatformVersion(version);
         server.save();
     }
-	/**
-	 * Get artifact id from module name (without -omod, etc)
-	 * @param name of file which id will be obtained
-	 * @return
-	 */
-	public String getId(String name) {
-		int index = name.indexOf('-');
-		if (index == -1) return name;
-		return name.substring(0, index);
-	}
-
-	/**
-	 * @param server
-	 * @return list of modules installed by user on given server
-	 * @throws MojoExecutionException
-	 */
-	public List<Artifact> parseUserModules(Server server) throws MojoExecutionException {
-		String values = server.getParam(Server.PROPERTY_USER_MODULES);
-		List<Artifact> result = new ArrayList<>();
-		if (values != null) {
-			String[] modules = values.split(Server.COMMA);
-			for (String mod: modules) {
-				String[] params = mod.split(Server.SLASH);
-				// check
-				if (params.length == 3) {
-					result.add(new Artifact(params[1], params[2], params[0]));
-				}
-				else throw new MojoExecutionException("Properties file parse error - cannot read user modules list");
-			}
-		}
-		return result;
-	}
 }

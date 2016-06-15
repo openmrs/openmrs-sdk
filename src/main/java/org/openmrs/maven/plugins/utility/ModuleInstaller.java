@@ -97,56 +97,6 @@ public class ModuleInstaller {
         prepareModule(artifact, outputDir, goal);
     }
 
-    public DistroProperties downloadDistroProperties(File serverPath, Server server) throws MojoExecutionException {
-
-        Artifact artifact = new Artifact(server.getDistroArtifactId(), server.getVersion(), server.getDistroGroupId(), "jar");
-        artifact.setDestFileName("openmrs-distro.jar");
-        List<Element> artifactItems = new ArrayList<Element>();
-        Element element = artifact.toElement(serverPath.toString());
-        artifactItems.add(element);
-
-        executeMojo(
-                plugin(
-                        groupId(SDKConstants.PLUGIN_DEPENDENCIES_GROUP_ID),
-                        artifactId(SDKConstants.PLUGIN_DEPENDENCIES_ARTIFACT_ID),
-                        version(SDKConstants.PLUGIN_DEPENDENCIES_VERSION)
-                ),
-                goal("copy"),
-                configuration(
-                        element(name("artifactItems"), artifactItems.toArray(new Element[0]))
-                ),
-                executionEnvironment(mavenProject, mavenSession, pluginManager)
-        );
-
-        DistroProperties distroProperties = null;
-        File file = new File(serverPath, artifact.getDestFileName());
-        ZipFile zipFile = null;
-        try {
-            zipFile = new ZipFile(file);
-
-            Enumeration<? extends ZipEntry> entries = zipFile.entries();
-
-            while(entries.hasMoreElements()){
-                ZipEntry zipEntry = entries.nextElement();
-                if("openmrs-distro.properties".equals(zipEntry.getName())){
-                    Properties properties = new Properties();
-                    properties.load(zipFile.getInputStream(zipEntry));
-                    distroProperties = new DistroProperties(properties);
-                }
-            }
-
-            zipFile.close();
-
-
-        } catch (IOException e) {
-            throw new RuntimeException("Could not read " + file.toString(), e);
-        } finally {
-            IOUtils.closeQuietly(zipFile);
-        }
-
-        return distroProperties;
-    }
-
     /**
      * Extract selected Artifact list
      * @param artifacts

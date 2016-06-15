@@ -1,4 +1,4 @@
-package org.openmrs.maven.plugins;
+package org.openmrs.maven.plugins.utility;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;

@@ -11,7 +11,9 @@ import org.codehaus.plexus.component.annotations.Requirement;
 import org.codehaus.plexus.components.interactivity.Prompter;
 import org.codehaus.plexus.components.interactivity.PrompterException;
 import org.openmrs.maven.plugins.model.Artifact;
+import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.Server;
+import org.openmrs.maven.plugins.model.UpgradeDifferential;
 
 import java.io.File;
 import java.io.UnsupportedEncodingException;
@@ -43,6 +45,10 @@ public class DefaultWizard implements Wizard {
     private static final String JDK_ERROR_TMPL = "\n\nThe JDK %s is not compatible with OpenMRS Platform %s. " +
             "Please use %s to run this server.\n\nIf you are running " +
             "in a forked mode, correct the jdk property in %s\n\n";
+    private static final String UPGRADE_CONFIRM_TMPL = "The %s %s introduces the following changes";
+    private static final String UPDATE_MODULE_TMPL = "^ upgrades %s %s to %s";
+    private static final String ADD_MODULE_TMPL = "+ adds %s %s";
+    private static final String NO_DIFFERENTIAL = "\nNo modules to update or add found";
 
     @Requirement
     Prompter prompter;
@@ -255,10 +261,10 @@ public class DefaultWizard implements Wizard {
 	}
 
 	@Override
-    public void promptForDistroVersionIfMissing(Server server) {
+    public void promptForDistroVersionIfMissing(Server server) throws MojoExecutionException {
         if(server.getVersion()==null){
             String choice = promptForDistroVersion();
-            Artifact distro = parseDistro(choice);
+            Artifact distro = DistroHelper.parseDistroArtifact(choice);
             if(distro != null){
                 server.setVersion(distro.getVersion());
                 server.setDistroArtifactId(distro.getArtifactId());
@@ -273,40 +279,14 @@ public class DefaultWizard implements Wizard {
 
     public String promptForDistroVersion() {
         Map<String, String> optionsMap = new HashMap<>();
-        optionsMap.put(String.format(REFAPP_OPTION_TMPL, "2.1"), String.format(REFAPP_ARTIFACT_TMPL, "2.1"));
-        optionsMap.put(String.format(REFAPP_OPTION_TMPL, "2.2"), String.format(REFAPP_ARTIFACT_TMPL, "2.2"));
-        optionsMap.put(String.format(REFAPP_OPTION_TMPL, "2.3.1"), String.format(REFAPP_ARTIFACT_TMPL, "2.3.1"));
+        for(String version : SDKConstants.SUPPPORTED_REFAPP_VERSIONS_2_3_1_OR_LOWER){
+            optionsMap.put(String.format(REFAPP_OPTION_TMPL, version), String.format(REFAPP_ARTIFACT_TMPL, version));
+        }
         optionsMap.put(String.format(REFAPP_OPTION_TMPL, "2.4-SNAPSHOT"), String.format(REFAPP_ARTIFACT_TMPL, "2.4-SNAPSHOT"));
 
         String version = promptForMissingValueWithOptions ("You can install the following versions of distribution",
                 null, "version", Lists.newArrayList(optionsMap.keySet()), true);
         return optionsMap.get(version);
-    }
-
-    /**
-     * valid format is groupId:artifactId:version
-     * @param distro
-     * @return
-     */
-    @Override
-    public Artifact parseDistro(String distro){
-        String[] split = distro.split(":");
-        if(split.length == 2){
-            return new Artifact(inferDistroArtifactId(split[0], Artifact.GROUP_DISTRO), split[1], Artifact.GROUP_DISTRO);
-        } else if (split.length == 3){
-            return new Artifact(inferDistroArtifactId(split[1], split[0]), split[2], split[0]);
-        } else if(split.length<=1){
-            return null;
-        } else {
-            throw new IllegalArgumentException(String.format("Invalid distro string: %s format", distro));
-        }
-    }
-
-    private String inferDistroArtifactId(String artifactId, String groupId){
-        if(Artifact.GROUP_DISTRO.equals(groupId)&&"referenceapplication".equals(artifactId)){
-            return SDKConstants.REFERENCEAPPLICATION_ARTIFACT_ID;
-        }
-        else return artifactId;
     }
 
     @Override
@@ -444,8 +424,64 @@ public class DefaultWizard implements Wizard {
         }
         return log;
     }
+
     @Override
-    public void showJdkErrorMessage(String jdk, String platform, String recommendedJdk, String pathToServerProperties){
+    public void showJdkErrorMessage(String jdk, String platform, String recommendedJdk, String pathToServerProperties) {
         System.out.print(String.format(JDK_ERROR_TMPL, jdk, platform, recommendedJdk, pathToServerProperties));
+    }
+
+    /**
+     * Show confirmation prompt if there is any change besides updating modules with SNAPSHOT versions
+     * @return
+     */
+    @Override
+    public boolean promptForConfirmDistroUpgrade(UpgradeDifferential upgradeDifferential, Server server, DistroProperties distroProperties){
+        if(upgradeDifferential.isEmpty()){
+            showMessage(NO_DIFFERENTIAL);
+            return false;
+        }
+
+        boolean needConfirmation = false;
+
+        if(upgradeDifferential.getPlatformArtifact() !=null){
+            if(!needConfirmation){
+                System.out.println(String.format(UPGRADE_CONFIRM_TMPL, distroProperties.getName(), distroProperties.getServerVersion()));
+                needConfirmation = true;
+            }
+            System.out.println(String.format(UPDATE_MODULE_TMPL,
+                    upgradeDifferential.getPlatformArtifact().getArtifactId(),
+                    server.getPlatformVersion(),
+                    upgradeDifferential.getPlatformArtifact().getVersion()));
+        }
+        for(Entry<Artifact, Artifact> updateEntry : upgradeDifferential.getUpdateOldToNewMap().entrySet()){
+            //update map should contain entry with equal versions only when they are same snapshots
+            //(e.g. update 'appui 0.2-SNAPSHOT' to 'appui 0.2-SNAPSHOT')
+            //updating to same SNAPSHOT doesn't require confirmation, they are not shown
+            if(!updateEntry.getKey().getVersion().equals(updateEntry.getValue().getVersion())){
+                if(!needConfirmation){
+                    System.out.println(String.format(UPGRADE_CONFIRM_TMPL, distroProperties.getName(), distroProperties.getServerVersion()));
+                    needConfirmation = true;
+                }
+                System.out.println(String.format(UPDATE_MODULE_TMPL,
+                        updateEntry.getKey().getArtifactId(),
+                        updateEntry.getKey().getVersion(),
+                        updateEntry.getValue().getVersion()));
+            }
+        }
+
+        for(Artifact addArtifact : upgradeDifferential.getModulesToAdd()){
+            if(!needConfirmation){
+                System.out.println(String.format(UPGRADE_CONFIRM_TMPL, distroProperties.getName(), distroProperties.getServerVersion()));
+                needConfirmation = true;
+            }
+            System.out.println(String.format(ADD_MODULE_TMPL,
+                    addArtifact.getArtifactId(),
+                    addArtifact.getVersion()));
+        }
+
+        if(needConfirmation){
+            return promptYesNo(String.format("Would you like to apply those changes to the %s server?", server.getServerId()));
+        }
+        else return true;
     }
 }

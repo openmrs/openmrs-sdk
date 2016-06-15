@@ -43,13 +43,9 @@ public class DistroProperties {
         this.properties = properties;
     }
 
-    public DistroProperties(File file){
+    public DistroProperties(File file) throws MojoExecutionException{
         this.properties = new Properties();
-        try {
-            loadPropertiesFromFile(file);
-        } catch (MojoExecutionException e) {
-            e.printStackTrace();
-        }
+        loadPropertiesFromFile(file);
     }
 
     private String createFileName(String version){
