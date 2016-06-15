@@ -65,6 +65,8 @@ public class RunTomcat extends AbstractMojo {
 			}
 		}
 
+		getLog().info(warFile + " will be deployed");
+
 		Tomcat tomcat = new Tomcat();
 		if (port == null) {
 			port = 8080;

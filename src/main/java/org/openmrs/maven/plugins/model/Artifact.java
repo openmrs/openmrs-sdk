@@ -14,8 +14,9 @@ public class Artifact {
     private String groupId;
     private String artifactId;
     private String type;
-    private String destFileName;
     private String classifier;
+    private String fileExtension;
+    private String destFileName;
 
     public static final String GROUP_MODULE = "org.openmrs.module";
     public static final String GROUP_WEB = "org.openmrs.web";
@@ -46,7 +47,11 @@ public class Artifact {
      * @param groupId
      */
     public Artifact(String artifactId, String version, String groupId) {
-        this(artifactId, version, groupId, null);
+        this(artifactId, version, groupId, TYPE_JAR);
+    }
+
+    public Artifact(String artifactId, String version, String groupId, String type) {
+        this(artifactId, version, groupId, type, type);
     }
 
     /**
@@ -56,40 +61,21 @@ public class Artifact {
      * @param groupId
      * @param type
      */
-    public Artifact(String artifactId, String version, String groupId, String type) {
+    public Artifact(String artifactId, String version, String groupId, String type, String fileExtension) {
         this.groupId = groupId;
         this.artifactId = artifactId;
         this.version = version;
-        // get values for destination FileName
-        String artifactType = (type != null) ? type : TYPE_OMOD;
-        String id = artifactId.split("-")[0];
-        // make destination FileName
-        this.destFileName = String.format(DEST_TEMPLATE, id, version, artifactType);
-        // set type if not null
-        if (type != null) this.type = type;
+        this.type = type;
+        this.fileExtension = fileExtension;
         classifier = null;
     }
+
     public String getVersion() {
         return version;
     }
 
     public void setVersion(String version) {
         this.version = version;
-        String artifactType = (type != null) ? type : TYPE_OMOD;
-        String id = artifactId.split("-")[0];
-        // update file name
-        this.destFileName = Artifact.getFileName(id, version, artifactType);
-    }
-
-    /**
-     * Generate dest file name for artifact
-     * @param id
-     * @param version
-     * @param type
-     * @return
-     */
-    public static String getFileName(String id, String version, String type) {
-        return String.format(DEST_TEMPLATE, id, version, type);
     }
 
     public String getGroupId() { return groupId; }
@@ -106,13 +92,33 @@ public class Artifact {
 
     public void setType(String type) { this.type = type; }
 
-    public String getDestFileName() { return destFileName; }
+    public String getDestFileName() {
+        if (destFileName == null) {
+            String id = artifactId.split("-")[0];
+            return String.format(DEST_TEMPLATE, id, version, fileExtension);
+        } else {
+            return destFileName;
+        }
+    }
 
-    public void setDestFileName(String destFileName) { this.destFileName = destFileName; }
+    public void setDestFileName(String destFileName) {
+        this.destFileName = destFileName;
+    }
 
-    public Artifact putClassifier(String classifier) {
+    public void setClassifier(String classifier) {
         this.classifier = classifier;
-        return this;
+    }
+
+    public String getClassifier() {
+        return classifier;
+    }
+
+    public String getFileExtension() {
+        return fileExtension;
+    }
+
+    public void setFileExtension(String fileExtension) {
+        this.fileExtension = fileExtension;
     }
 
     /**
@@ -125,7 +131,7 @@ public class Artifact {
         attributes.add(element("groupId", groupId));
         attributes.add(element("artifactId", artifactId));
         attributes.add(element("version", version));
-        attributes.add(element("destFileName", destFileName));
+        attributes.add(element("destFileName", getDestFileName()));
         if (type != null) {
             attributes.add(element("type", type));
         }

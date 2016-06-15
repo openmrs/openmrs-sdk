@@ -1,6 +1,5 @@
 package org.openmrs.maven.plugins.utility;
 
-import edu.emory.mathcs.backport.java.util.Arrays;
 import org.apache.commons.io.IOUtils;
 import org.openmrs.maven.plugins.model.Artifact;
 
@@ -221,7 +220,10 @@ public class SDKConstants {
      * @return
      */
     public static Artifact getReferenceModule(String version) {
-        return new Artifact("referenceapplication-package", version, Artifact.GROUP_DISTRO, Artifact.TYPE_ZIP).putClassifier("distro");
+        Artifact artifact = new Artifact("referenceapplication-package", version, Artifact.GROUP_DISTRO, Artifact.TYPE_ZIP);
+        artifact.setClassifier("distro");
+        return artifact;
+
     }
 
     public static Artifact getSDKInfo() {

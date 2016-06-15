@@ -96,7 +96,7 @@ public class ModuleInstall extends AbstractTask {
             distro = null;
         }
         if((platform == null && distro == null)){
-            Artifact artifact = checkCurrentDirectoryForOpenmrsCoreVersion(server);
+            Artifact artifact = checkCurrentDirectoryForOpenmrsWebappUpdate(server);
             if(artifact != null){
                 deployOpenmrsWar(server, artifact);
             } else if(checkCurrentDirForModuleProject()) {
@@ -165,7 +165,7 @@ public class ModuleInstall extends AbstractTask {
 
         serverId = wizard.promptForExistingServerIdIfMissing(serverId);
         Server server = Server.loadServer(serverId);
-        Artifact artifact = checkCurrentDirectoryForOpenmrsCoreVersion(server);
+        Artifact artifact = checkCurrentDirectoryForOpenmrsWebappUpdate(server);
 
         if(artifact != null){
             deployOpenmrsWar(server, artifact);
@@ -205,7 +205,7 @@ public class ModuleInstall extends AbstractTask {
      */
     private void deployModule(String groupId, String artifactId, String version, Server server) throws MojoExecutionException {
         List<Element> artifactItems = new ArrayList<Element>();
-        Artifact artifact = getArtifactForSelectedParameters(groupId, artifactId, version);
+        Artifact artifact = getModuleArtifactForSelectedParameters(groupId, artifactId, version);
 
         File modules = new File(server.getServerDirectory(), SDKConstants.OPENMRS_SERVER_MODULES);
         modules.mkdirs();
@@ -282,11 +282,11 @@ public class ModuleInstall extends AbstractTask {
     /**
      * Check if the command openmrs-sdk:install was invoked from the openmrs-core directory and then check the version
      * @param server
-     * @return
+     * @return artifact to update, if update requested or null
      * @throws MojoExecutionException
      * @throws MojoFailureException
      */
-    public Artifact checkCurrentDirectoryForOpenmrsCoreVersion(Server server) throws MojoExecutionException, MojoFailureException {
+    public Artifact checkCurrentDirectoryForOpenmrsWebappUpdate(Server server) throws MojoExecutionException, MojoFailureException {
         String moduleName = mavenProject.getArtifactId();
         if(moduleName.equals("openmrs")){
             if(!new Version(mavenProject.getVersion()).equals(new Version(server.getOpenmrsCoreVersion()))){
@@ -307,7 +307,7 @@ public class ModuleInstall extends AbstractTask {
      * @param version
      * @return
      */
-    public Artifact getArtifactForSelectedParameters(String groupId, String artifactId, String version) throws MojoExecutionException {
+    public Artifact getModuleArtifactForSelectedParameters(String groupId, String artifactId, String version) throws MojoExecutionException {
         String moduleGroupId = null;
         String moduleArtifactId = null;
         String moduleVersion = null;
@@ -340,7 +340,7 @@ public class ModuleInstall extends AbstractTask {
             moduleVersion = wizard.promptForMissingValueWithOptions(
                     "You can install following versions of module", null, "version", availableVersions, true);
         }
-        return new Artifact(moduleArtifactId, moduleVersion, moduleGroupId);
+        return new Artifact(moduleArtifactId, moduleVersion, moduleGroupId, "jar", "omod");
     }
 
     public boolean checkCurrentDirForModuleProject() throws MojoExecutionException {
