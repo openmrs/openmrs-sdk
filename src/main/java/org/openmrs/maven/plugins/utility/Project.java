@@ -81,6 +81,8 @@ public class Project {
 	public Parent getParent() {
 		return model.getParent();
 	}
+
+
 	
 	/**
 	 * Get artifactId

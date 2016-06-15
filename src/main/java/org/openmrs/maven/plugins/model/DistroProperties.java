@@ -92,13 +92,13 @@ public class DistroProperties {
             String key = keyObject.toString();
             String artifactType = getArtifactType(key);
             if(artifactType.equals(TYPE_OMOD)) {
-                artifactList.add(new Artifact(checkIfOverwritten(key, ARTIFACT_ID), getParam(key), checkIfOverwritten(key, GROUP_ID), checkIfOverwritten(key, TYPE)));
+                artifactList.add(new Artifact(checkIfOverwritten(key, ARTIFACT_ID), getParam(key), checkIfOverwritten(key, GROUP_ID), checkIfOverwritten(key, TYPE), "omod"));
             }
         }
         return  artifactList;
     }
 
-    public List<Artifact> getCoreModuleArtifacts(){
+    public List<Artifact> getWarArtifacts(){
         List<Artifact> artifactList = new ArrayList<>();
         for (Object keyObject: getAllKeys()) {
             String key = keyObject.toString();

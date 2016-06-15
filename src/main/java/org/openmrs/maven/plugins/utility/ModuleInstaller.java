@@ -52,7 +52,7 @@ public class ModuleInstaller {
         List<Artifact> coreModules;
         // install other modules
         if (!isCreatePlatform && properties != null) {
-            coreModules = properties.getCoreModuleArtifacts();
+            coreModules = properties.getWarArtifacts();
             if (coreModules == null) {
                 throw new MojoExecutionException(String.format("Invalid version: '%s'", server.getVersion()));
             }
