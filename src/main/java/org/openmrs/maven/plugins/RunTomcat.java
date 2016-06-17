@@ -12,6 +12,7 @@ import org.codehaus.plexus.classworlds.ClassWorld;
 import org.codehaus.plexus.classworlds.realm.ClassRealm;
 import org.codehaus.plexus.classworlds.realm.DuplicateRealmException;
 import org.openmrs.maven.plugins.model.Server;
+import org.openmrs.maven.plugins.model.Version;
 import org.openmrs.maven.plugins.utility.Project;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 import org.openmrs.maven.plugins.utility.Wizard;
@@ -54,7 +55,28 @@ public class RunTomcat extends AbstractMojo {
 	@Override
 	public void execute() throws MojoExecutionException, MojoFailureException {
 		serverId = wizard.promptForExistingServerIdIfMissing(serverId);
+
 		Server server = Server.loadServer(serverId);
+
+		String jdk = System.getProperty("java.version");
+		boolean isJdkValid = false;
+		String recommendedJdk = null;
+
+		Version platformVersion = new Version(server.getPlatformVersion());
+		if(platformVersion.getMajorVersion() == 1){
+			isJdkValid = (jdk.startsWith("1.7"));
+			recommendedJdk = "JDK 1.7";
+		} else if (platformVersion.getMajorVersion() == 2){
+			isJdkValid =  (jdk.startsWith("1.8"));
+			recommendedJdk = "JDK 1.8";
+		} else throw new MojoExecutionException("Invalid server platform version: "+platformVersion.toString());
+
+		if(!isJdkValid){
+			wizard.showJdkErrorMessage(jdk, server.getPlatformVersion(), recommendedJdk, server.getPropertiesFile().getPath());
+			throw new MojoExecutionException(String.format("The JDK %s is not compatible with OpenMRS Platform %s. ",
+					jdk, server.getPlatformVersion()));
+		}
+
 		File tempDirectory = server.getServerTmpDirectory();
 		tempDirectory.mkdirs();
 

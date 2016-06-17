@@ -40,6 +40,9 @@ public class DefaultWizard implements Wizard {
     private static final String DEFAULT_CUSTOM_DIST_ARTIFACT = "Please specify custom distribution artifact%s (default: '%s')";
     private static final String REFAPP_OPTION_TMPL = "Reference Application %s";
     private static final String REFAPP_ARTIFACT_TMPL = "org.openmrs.distro:referenceapplication-package:%s";
+    private static final String JDK_ERROR_TMPL = "\n\nThe JDK %s is not compatible with OpenMRS Platform %s. " +
+            "Please use %s to run this server.\n\nIf you are running " +
+            "in a forked mode, correct the jdk property in %s\n\n";
 
     @Requirement
     Prompter prompter;
@@ -440,5 +443,9 @@ public class DefaultWizard implements Wizard {
             log = new SystemStreamLog();
         }
         return log;
+    }
+    @Override
+    public void showJdkErrorMessage(String jdk, String platform, String recommendedJdk, String pathToServerProperties){
+        System.out.print(String.format(JDK_ERROR_TMPL, jdk, platform, recommendedJdk, pathToServerProperties));
     }
 }

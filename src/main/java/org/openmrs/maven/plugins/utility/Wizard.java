@@ -54,4 +54,6 @@ public interface Wizard {
     List<String> getListOf5RecentServers();
 
     String addMySQLParamsIfMissing(String dbUri);
+
+    void showJdkErrorMessage(String jdk, String platform, String recommendedJdk, String pathToProps);
 }
