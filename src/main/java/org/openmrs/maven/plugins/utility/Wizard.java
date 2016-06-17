@@ -1,15 +1,13 @@
 package org.openmrs.maven.plugins.utility;
 
 import org.apache.maven.plugin.MojoExecutionException;
-import org.openmrs.maven.plugins.model.Artifact;
+import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.Server;
+import org.openmrs.maven.plugins.model.UpgradeDifferential;
 
 import java.io.File;
 import java.util.List;
 
-/**
- * Created by user on 30.05.16.
- */
 public interface Wizard {
     void promptForNewServerIfMissing(Server server);
 
@@ -23,7 +21,7 @@ public interface Wizard {
 
     String promptForPlatformVersion(List<String> versions);
 
-    void promptForDistroVersionIfMissing(Server server);
+    void promptForDistroVersionIfMissing(Server server) throws MojoExecutionException;
 
     String promptForDistroVersion();
 
@@ -38,8 +36,6 @@ public interface Wizard {
     String promptForValueWithDefaultList(String value, String parameterName, String defaultValue, List<String> values);
 
     String promptForValueIfMissing(String value, String parameterName);
-
-    Artifact parseDistro(String distro);
 
     boolean promptForInstallDistro();
 
@@ -56,4 +52,7 @@ public interface Wizard {
     String addMySQLParamsIfMissing(String dbUri);
 
     void showJdkErrorMessage(String jdk, String platform, String recommendedJdk, String pathToProps);
+
+    boolean promptForConfirmDistroUpgrade(UpgradeDifferential upgradeDifferential, Server server, DistroProperties distroProperties);
+
 }

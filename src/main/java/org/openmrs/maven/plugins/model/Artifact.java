@@ -1,5 +1,7 @@
 package org.openmrs.maven.plugins.model;
 
+import com.google.common.base.Objects;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,7 +31,7 @@ public class Artifact {
     public static final String TYPE_ZIP = "zip";
     public static final String DEST_TEMPLATE = "%s-%s.%s";
 
-    public Artifact() {};
+    public Artifact() {}
 
     /**
      * Constructor if type is not set, and groupId is default
@@ -141,5 +143,20 @@ public class Artifact {
         attributes.add(element("outputDirectory", outputDir));
         Element[] arrayElements = attributes.toArray(new Element[0]);
         return element("artifactItem", arrayElements);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Artifact artifact = (Artifact) o;
+        return Objects.equal(version, artifact.version) &&
+                Objects.equal(groupId, artifact.groupId) &&
+                Objects.equal(artifactId, artifact.artifactId);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(version, groupId, artifactId);
     }
 }

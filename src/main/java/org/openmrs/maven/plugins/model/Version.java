@@ -34,4 +34,7 @@ public class Version extends DefaultArtifactVersion {
         }
         else return parts[parts.length - 1];
     }
+    public boolean isSnapshot(){
+        return getQualifier()!= null && getQualifier().contains("SNAPSHOT");
+    }
 }

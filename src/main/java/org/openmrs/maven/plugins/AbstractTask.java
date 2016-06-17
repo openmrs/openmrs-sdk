@@ -6,6 +6,7 @@ import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.project.MavenProject;
+import org.openmrs.maven.plugins.utility.DistroHelper;
 import org.openmrs.maven.plugins.utility.ModuleInstaller;
 import org.openmrs.maven.plugins.utility.VersionsHelper;
 import org.openmrs.maven.plugins.utility.Wizard;
@@ -66,9 +67,14 @@ public abstract class AbstractTask extends AbstractMojo {
     VersionsHelper versionsHelper;
 
     /**
-     *
+     * handles installing modules on server
      */
     ModuleInstaller moduleInstaller;
+
+    /**
+     * handles distro-properties
+     */
+    DistroHelper distroHelper;
 
     public AbstractTask(){}
 
@@ -81,6 +87,7 @@ public abstract class AbstractTask extends AbstractMojo {
         this.artifactMetadataSource = other.artifactMetadataSource;
         this.moduleInstaller = other.moduleInstaller;
         this.versionsHelper = other.versionsHelper;
+        this.distroHelper = other.distroHelper;
         initUtilities();
     }
 
@@ -90,6 +97,9 @@ public abstract class AbstractTask extends AbstractMojo {
         }
         if(moduleInstaller==null){
             moduleInstaller = new ModuleInstaller(mavenProject, mavenSession, pluginManager, versionsHelper);
+        }
+        if(distroHelper == null){
+            distroHelper = new DistroHelper(mavenProject, mavenSession, pluginManager);
         }
     }
 }

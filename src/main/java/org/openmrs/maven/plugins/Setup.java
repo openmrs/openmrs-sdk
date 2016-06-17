@@ -7,6 +7,7 @@ import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.model.Version;
 import org.openmrs.maven.plugins.utility.DBConnector;
+import org.openmrs.maven.plugins.utility.DistroHelper;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 
 import java.io.File;
@@ -169,10 +170,10 @@ public class Setup extends AbstractTask {
 
     private DistroProperties extractDistroToServer(Server server, boolean isCreatePlatform, File serverPath) throws MojoExecutionException, MojoFailureException {
         DistroProperties distroProperties;
-        if(isSupportedOldRefapp(server)){
+        if(DistroHelper.isRefapp2_3_1orLower(server.getDistroArtifactId(), server.getVersion())){
             distroProperties = new DistroProperties(server.getVersion());
         } else {
-            distroProperties = moduleInstaller.downloadDistroProperties(serverPath, server);
+            distroProperties = distroHelper.downloadDistroProperties(serverPath, server);
         }
         moduleInstaller.installCoreModules(server, isCreatePlatform, distroProperties);
         return distroProperties;
@@ -198,16 +199,6 @@ public class Setup extends AbstractTask {
         }
     }
 
-    /**
-     * openmrs-sdk has hardcoded distro properties for certain versions of refapp which don't include them
-     * @param server
-     * @return
-     */
-    private boolean isSupportedOldRefapp(Server server){
-        if(server.getDistroArtifactId()!=null&&server.getDistroArtifactId().equals(SDKConstants.REFERENCEAPPLICATION_ARTIFACT_ID)){
-            return SDKConstants.SUPPPORTED_OLD_REFAPP_VERSIONS.contains(server.getVersion());
-        } else return false;
-    }
     private boolean connectMySqlDatabase(Server server) throws MojoExecutionException {
 	    String uri = server.getDbUri();
         uri = uri.substring(0, uri.lastIndexOf("/"));
@@ -267,9 +258,8 @@ public class Setup extends AbstractTask {
         DistroProperties distroProperties = null;
         wizard.showMessage("\nCreating a new server...");
         if(platform == null && distro == null){
-            File distroFile = new File(new File(System.getProperty("user.dir")), "openmrs-distro.properties");
-            if(distroFile.exists()){
-                distroProperties = new DistroProperties(distroFile);
+            distroProperties = DistroHelper.getDistroPropertiesFromDir();
+            if(distroProperties!=null){
                 installDistFromFile = wizard.promptYesNo(String.format(CUSTOM_DISTRIBUTION, distroProperties.getName(), distroProperties.getServerVersion()));
                 if(installDistFromFile){
                     createPlatform = false;

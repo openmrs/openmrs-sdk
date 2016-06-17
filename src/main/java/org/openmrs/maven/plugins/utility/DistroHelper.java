@@ -1,0 +1,252 @@
+package org.openmrs.maven.plugins.utility;
+
+import org.apache.commons.io.IOUtils;
+import org.apache.maven.execution.MavenSession;
+import org.apache.maven.plugin.BuildPluginManager;
+import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.project.MavenProject;
+import org.openmrs.maven.plugins.model.Artifact;
+import org.openmrs.maven.plugins.model.DistroProperties;
+import org.openmrs.maven.plugins.model.Server;
+import org.openmrs.maven.plugins.model.UpgradeDifferential;
+import org.openmrs.maven.plugins.model.Version;
+import org.twdata.maven.mojoexecutor.MojoExecutor;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.*;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+
+import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
+
+public class DistroHelper {
+    /**
+     * The project currently being build.
+     */
+    MavenProject mavenProject;
+
+    /**
+     * The current Maven session.
+     */
+    MavenSession mavenSession;
+
+    /**
+     * The Maven BuildPluginManager component.
+     */
+    BuildPluginManager pluginManager;
+
+    public DistroHelper(MavenProject mavenProject, MavenSession mavenSession, BuildPluginManager pluginManager) {
+        this.mavenProject = mavenProject;
+        this.mavenSession = mavenSession;
+        this.pluginManager = pluginManager;
+    }
+
+    /**
+     * @return distro properties from openmrs-distro.properties file in current directory or null if not exist
+     */
+    public static DistroProperties getDistroPropertiesFromDir() {
+        File distroFile = new File(new File(System.getProperty("user.dir")), "openmrs-distro.properties");
+        return getDistroPropertiesFromDir(distroFile);
+    }
+
+    /**
+     * @param distroFile file which contains distro properties
+     * @return distro properties loaded from specified file or null if file is not distro properties
+     */
+    public static DistroProperties getDistroPropertiesFromDir(File distroFile) {
+        if(distroFile.exists()){
+            try {
+                return new DistroProperties(distroFile);
+            } catch (MojoExecutionException e) {
+                return null;
+            }
+        }
+        else {
+            return null;
+        }
+    }
+
+    /**
+     * valid formats are 'groupId:artifactId:version' and 'artifactId:version'
+     * parser makes user-friendly assumptions, like inferring default groupId or full artifactId for referenceapplication
+     * returns null if string is invalid
+     */
+    public static Artifact parseDistroArtifact(String distro) throws MojoExecutionException {
+        String[] split = distro.split(":");
+        if(split.length == 2){
+            return new Artifact(inferDistroArtifactId(split[0], Artifact.GROUP_DISTRO), split[1], Artifact.GROUP_DISTRO);
+        } else if (split.length == 3){
+            return new Artifact(inferDistroArtifactId(split[1], split[0]), split[2], split[0]);
+        } else {
+            throw new MojoExecutionException("Invalid distro: "+distro);
+        }
+    }
+
+    private static String inferDistroArtifactId(String artifactId, String groupId){
+        if(Artifact.GROUP_DISTRO.equals(groupId)&&"referenceapplication".equals(artifactId)){
+            return SDKConstants.REFERENCEAPPLICATION_ARTIFACT_ID;
+        }
+        else return artifactId;
+    }
+    /**
+     * openmrs-sdk has hardcoded distro properties for certain versions of refapp which don't include them
+     * @return
+     */
+    public static boolean isRefapp2_3_1orLower(String artifactId, String version){
+        if(artifactId!=null&&artifactId.equals(SDKConstants.REFERENCEAPPLICATION_ARTIFACT_ID)){
+            return SDKConstants.SUPPPORTED_REFAPP_VERSIONS_2_3_1_OR_LOWER.contains(version);
+        } else return false;
+    }
+    public static boolean isRefapp2_3_1orLower(Artifact artifact){
+        return isRefapp2_3_1orLower(artifact.getArtifactId(), artifact.getVersion());
+    }
+
+    public DistroProperties downloadDistroProperties(File path, Artifact artifact) throws MojoExecutionException {
+        artifact.setDestFileName("openmrs-distro.jar");
+        List<MojoExecutor.Element> artifactItems = new ArrayList<MojoExecutor.Element>();
+        MojoExecutor.Element element = artifact.toElement(path.toString());
+        artifactItems.add(element);
+
+        executeMojo(
+                plugin(
+                        groupId(SDKConstants.PLUGIN_DEPENDENCIES_GROUP_ID),
+                        artifactId(SDKConstants.PLUGIN_DEPENDENCIES_ARTIFACT_ID),
+                        version(SDKConstants.PLUGIN_DEPENDENCIES_VERSION)
+                ),
+                goal("copy"),
+                configuration(
+                        element(name("artifactItems"), artifactItems.toArray(new Element[0]))
+                ),
+                executionEnvironment(mavenProject, mavenSession, pluginManager)
+        );
+
+        DistroProperties distroProperties = null;
+        File file = new File(path, artifact.getDestFileName());
+        ZipFile zipFile = null;
+        try {
+            zipFile = new ZipFile(file);
+
+            Enumeration<? extends ZipEntry> entries = zipFile.entries();
+
+            while(entries.hasMoreElements()){
+                ZipEntry zipEntry = entries.nextElement();
+                if("openmrs-distro.properties".equals(zipEntry.getName())){
+                    Properties properties = new Properties();
+                    properties.load(zipFile.getInputStream(zipEntry));
+                    distroProperties = new DistroProperties(properties);
+                }
+            }
+
+            zipFile.close();
+
+
+        } catch (IOException e) {
+            throw new RuntimeException("Could not read " + file.toString(), e);
+        } finally {
+            IOUtils.closeQuietly(zipFile);
+            file.delete();
+        }
+
+        return distroProperties;
+    }
+
+    public DistroProperties downloadDistroProperties(File serverPath, Server server) throws MojoExecutionException {
+        Artifact artifact = new Artifact(server.getDistroArtifactId(), server.getVersion(), server.getDistroGroupId(), "jar");
+        return downloadDistroProperties(serverPath, artifact);
+    }
+
+    /**
+     * Distro can be passed in two ways: either as maven artifact identifier or path to distro file
+     * Returns null if string is invalid as path or identifier
+     * @param distro
+     * @return
+     */
+    public DistroProperties retrieveDistroProperties(String distro) throws MojoExecutionException {
+        DistroProperties result;
+        result = getDistroPropertiesFromDir(new File(distro));
+        if(result==null){
+            Artifact artifact = parseDistroArtifact(distro);
+            if(isRefapp2_3_1orLower(artifact)){
+                result = new DistroProperties(artifact.getVersion());
+            } else {
+                result = downloadDistroProperties(new File(System.getProperty("user.dir")), artifact);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * should:
+     * - ignore modules which are already on server, but not included in distro properties of upgrade
+     * - keep new platform artifact if distro properties declares newer version
+     * - updateMap include modules which are already on server with newer/equal SNAPSHOT version
+     * - add modules which are not installed on server yet
+     */
+    public static UpgradeDifferential calculateUpdateDifferential(Server server, DistroProperties distroProperties){
+        List<Artifact> newList = new ArrayList<>(distroProperties.getWarArtifacts());
+        newList.addAll(distroProperties.getModuleArtifacts());
+        return calculateUpdateDifferential(server.getServerModules(), newList);
+    }
+
+    static UpgradeDifferential calculateUpdateDifferential(List<Artifact> oldList, List<Artifact> newList){
+        UpgradeDifferential upgradeDifferential = new UpgradeDifferential();
+        for(Artifact newListModule: newList){
+            boolean toAdd = true;
+            for(Artifact oldListModule : oldList){
+                if(isSameArtifact(oldListModule, newListModule)){
+                    if(isHigherVersion(oldListModule, newListModule)){
+                        if(isOpenmrsWebapp(newListModule)){
+                            upgradeDifferential.setPlatformArtifact(newListModule);
+                        } else {
+                            upgradeDifferential.putUpdateEntry(oldListModule, newListModule);
+                        }
+                    }
+                    toAdd = false;
+                    break;
+                }
+            }
+            if(toAdd){
+                upgradeDifferential.addModuleToAdd(newListModule);
+            }
+        }
+        return upgradeDifferential;
+    }
+
+    private static boolean isOpenmrsWebapp(Artifact artifact) {
+        return Artifact.TYPE_WAR.equals(artifact.getType())&&SDKConstants.WEBAPP_ARTIFACT_ID.equals(artifact.getArtifactId());
+    }
+
+    private static boolean isSameArtifact(Artifact left, Artifact right){
+        return getId(left.getDestFileName()).equals(getId(right.getDestFileName()));
+    }
+
+    private static String getId(String name) {
+        int index = name.indexOf('-');
+        if (index == -1) return name;
+        return name.substring(0, index);
+    }
+    /**
+     * checks if next artifact is higher version of the same artifact
+     * returns true for equal version snapshots
+     */
+    private static boolean isHigherVersion(Artifact previous, Artifact next){
+        if(previous==null||next==null
+                ||previous.getArtifactId()==null||next.getArtifactId()==null
+                ||previous.getVersion()==null||next.getVersion()==null
+                ||!isSameArtifact(previous, next)){
+            return false;
+        }
+        Version previousVersion = new Version(previous.getVersion());
+        Version nextVersion = new Version(next.getVersion());
+
+        if(nextVersion.higher(previousVersion)){
+            return true;
+        } else if(nextVersion.equal(previousVersion)){
+            return(previousVersion.isSnapshot()&&nextVersion.isSnapshot());
+        } else {
+            return false;
+        }
+    }
+
+}
