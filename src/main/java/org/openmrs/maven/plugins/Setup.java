@@ -14,10 +14,8 @@ import java.io.File;
 import java.sql.SQLException;
 
 /**
- *
  * @goal setup
  * @requiresProject false
- *
  */
 public class Setup extends AbstractTask {
 
