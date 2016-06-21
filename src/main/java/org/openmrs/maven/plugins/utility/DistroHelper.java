@@ -183,7 +183,7 @@ public class DistroHelper {
      * - updateMap include modules which are already on server with newer/equal SNAPSHOT version
      * - add modules which are not installed on server yet
      */
-    public static UpgradeDifferential calculateUpdateDifferential(Server server, DistroProperties distroProperties){
+    public static UpgradeDifferential calculateUpdateDifferential(Server server, DistroProperties distroProperties) throws MojoExecutionException {
         List<Artifact> newList = new ArrayList<>(distroProperties.getWarArtifacts());
         newList.addAll(distroProperties.getModuleArtifacts());
         return calculateUpdateDifferential(server.getServerModules(), newList);

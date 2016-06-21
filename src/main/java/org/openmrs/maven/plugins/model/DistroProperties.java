@@ -3,8 +3,10 @@ package org.openmrs.maven.plugins.model;
 import org.apache.commons.io.IOUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 
+
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -24,6 +26,7 @@ public class DistroProperties {
     private static final String ARTIFACT_ID = "artifactId";
     private static final String TYPE = "type";
     private static final String GROUP_ID = "groupId";
+    public static final String DISTRO_FILE_NAME = "openmrs-disrto.properties";
 
 
 
@@ -185,6 +188,21 @@ public class DistroProperties {
      * @return
      */
     public String getParam(String key) {return properties.getProperty(key); }
+
+    public void saveTo(File path) throws MojoExecutionException {
+        FileOutputStream out = null;
+        try {
+            out = new FileOutputStream(new File(path, DISTRO_FILE_NAME));
+            properties.store(out, null);
+            out.close();
+        }
+        catch (IOException e) {
+            throw new MojoExecutionException(e.getMessage());
+        }
+        finally {
+            IOUtils.closeQuietly(out);
+        }
+    }
 
 
 }

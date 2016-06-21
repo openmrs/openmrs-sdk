@@ -4,6 +4,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.openmrs.maven.plugins.utility.DistroHelper;
 import org.openmrs.maven.plugins.utility.Project;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 
@@ -211,6 +212,10 @@ public class Server {
         backupProperties.delete();
     }
 
+    public File getDistroPropertiesFile(){
+        return new File(getServerDirectory(), DistroProperties.DISTRO_FILE_NAME);
+    }
+
     public void delete() {
         propertiesFile.delete();
     }
@@ -355,6 +360,9 @@ public class Server {
                     String[] params = mod.split(Server.SLASH);
                     // check
                     if (params.length == 3) {
+                        if(!params[1].endsWith("-omod")){
+                            params[1] += "-omod";
+                        }
                         result.add(new Artifact(params[1], params[2], params[0]));
                     }
                     else throw new MojoExecutionException("Properties file parse error - cannot read user modules list");
@@ -367,38 +375,16 @@ public class Server {
     /**
      * Get artifacts of core and all modules on server
      */
-    public List<Artifact> getServerModules() {
-        List<Artifact> artifacts = new ArrayList<>();
-        File mainDir = serverDirectory;
-        File modulesDir = new File(serverDirectory, SDKConstants.OPENMRS_SERVER_MODULES);
-        artifacts.addAll(getArtifactsFromDir(mainDir));
-        artifacts.addAll(getArtifactsFromDir(modulesDir));
+
+    public List<Artifact> getServerModules() throws MojoExecutionException {
+        List<Artifact> artifacts;
+        DistroProperties distroProperties = new DistroProperties(getDistroPropertiesFile());
+        artifacts = distroProperties.getModuleArtifacts();
+        artifacts.addAll(distroProperties.getWarArtifacts());
+        artifacts.addAll(getUserModules());
         return artifacts;
     }
-    private List<Artifact> getArtifactsFromDir(File dir){
-        List<Artifact> artifacts = new ArrayList<>();
-        if(dir.listFiles()!=null){
-            for (File file: dir.listFiles()) {
-                String type = getArtifactType(file.getName());
-                if (SDKConstants.isExtensionSupported(type)) {
-                    String artifactId = getArtifactId(file.getName());
-                    if(type.equals(Artifact.TYPE_OMOD)){
-                        artifactId += "-omod";
-                    }
-                    String version = Version.parseVersionFromFile(file.getName());
-                    Artifact artifact = new Artifact(artifactId, version);
-                    if(type.equals(Artifact.TYPE_WAR)){
-                        artifact.setGroupId(Artifact.GROUP_WEB);
-                    }
-                    artifact.setType(type);
-                    artifact.setFileExtension(type);
-                    artifact.setDestFileName(file.getName());
-                    artifacts.add(artifact);
-                }
-            }
-        }
-        return artifacts;
-    }
+
     public String getArtifactId(String filename) {
         int index = filename.indexOf('-');
         if (index == -1){
@@ -410,10 +396,6 @@ public class Server {
             }
             else return id;
         }
-    }
-
-    public String getArtifactType(String filename) {
-        return filename.substring(filename.lastIndexOf(".") + 1);
     }
 
     /**

@@ -65,7 +65,8 @@ public class ServerUpgrader {
 			server.setUserModules(userModules);
 			server.setVersion(distroProperties.getServerVersion());
 			server.save();
-
+			server.getDistroPropertiesFile().delete();
+			distroProperties.saveTo(server.getServerDirectory());
 			server.deleteBackupProperties();
 			deleteDependencyPluginMarker();
 			parentTask.getLog().info("Server upgraded successfully");
