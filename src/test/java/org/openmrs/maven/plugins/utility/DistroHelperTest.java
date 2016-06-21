@@ -1,5 +1,6 @@
 package org.openmrs.maven.plugins.utility;
 
+import org.apache.maven.plugin.MojoExecutionException;
 import org.junit.Test;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.UpgradeDifferential;
@@ -35,11 +36,10 @@ public class DistroHelperTest {
 
         assertThat(artifact.getGroupId(), is(Artifact.GROUP_DISTRO));
     }
-    @Test
+    @Test(expected = MojoExecutionException.class)
     public void parseDistroArtifactShouldReturnNullIfInvalidFormat() throws Exception{
         String distro = "referenceapplication:2.3:fsf:444";
-        Artifact artifact = DistroHelper.parseDistroArtifact(distro);
-        assertThat(artifact, is(nullValue()));
+        DistroHelper.parseDistroArtifact(distro);
     }
     @Test
     public void parseDistroArtifactShouldCreateProperArtifact() throws Exception{
