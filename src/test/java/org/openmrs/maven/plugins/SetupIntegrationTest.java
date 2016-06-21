@@ -11,13 +11,6 @@ import static org.openmrs.maven.plugins.SdkMatchers.serverHasVersion;
 
 public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
 
-    private void addMockDbSettings() {
-        addMojoParam("dbDriver", "mysql");
-        addMojoParam("dbUser", "mysql");
-        addMojoParam("dbPassword", "mysql");
-        addMojoParam("dbUri", "@DBNAME@");
-    }
-
     @Test
     public void setup_shouldInstallRefapp2_3_1() throws Exception{
         String serverId = UUID.randomUUID().toString();

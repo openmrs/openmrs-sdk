@@ -36,6 +36,14 @@ public class Deploy extends AbstractTask {
     private static final String INSTALL_MODULE_OPTION = "Install module";
     private static final String INSTALL_DISTRO_OPTION = "Install OpenMRS distribution";
     private static final String INSTALL_PLATFORM_OPTION = "Install OpenMRS platform";
+
+    /**
+     * Interactive mode param
+     *
+     * @parameter expression="${interactiveMode}" default-value=true
+     */
+    private String interactiveMode;
+
     /**
      * @parameter expression="${serverId}"
      */
@@ -85,9 +93,7 @@ public class Deploy extends AbstractTask {
 
     public void execute() throws MojoExecutionException, MojoFailureException {
         initUtilities();
-        if(StringUtils.isNotBlank(openMRSPath)){
-            Server.setServersPath(openMRSPath);
-        }
+        setGlobalContext(openMRSPath, interactiveMode);
 
         if (serverId == null) {
             File currentProperties = wizard.getCurrentServerPath();

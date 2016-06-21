@@ -259,12 +259,7 @@ public class Setup extends AbstractTask {
 
     public void execute() throws MojoExecutionException, MojoFailureException {
         initUtilities();
-        if(StringUtils.isNotBlank(openMRSPath)){
-            Server.setServersPath(openMRSPath);
-        }
-        if(interactiveMode.equals("false")){
-            wizard.setInteractiveMode(false);
-        }
+        setGlobalContext(openMRSPath, interactiveMode);
 
         boolean createPlatform;
         boolean installDistFromFile;

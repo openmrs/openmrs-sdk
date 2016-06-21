@@ -5,12 +5,12 @@
                       http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>org.openmrs.maven.plugins</groupId>
-    <artifactId>SdkProjectStub</artifactId>
-    <version>1.0</version>
+    <groupId>org.openmrs.modules</groupId>
+    <artifactId>owa-omod</artifactId>
+    <version>1.4</version>
 
-    <name>SdkProjectStub</name>
-    <description>mock description</description>
+    <name>org.openmrs.modules</name>
+    <description>mock pom</description>
     <url>https://fake-url</url>
 
     <build>

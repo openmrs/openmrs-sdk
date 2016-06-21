@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -64,12 +65,40 @@ public abstract class AbstractSdkIntegrationTest {
         }
     }
 
+    public static String setupTestServer() throws Exception{
+        File testDir = ResourceExtractor.simpleExtractResources(AbstractSdkIntegrationTest.class, TEST_DIRECTORY);
+        Verifier verifier = new Verifier(testDir.getAbsolutePath());
+        String serverId = UUID.randomUUID().toString();
+
+        verifier.addCliOption("-o");
+        addMojoParam(verifier, "serverId", serverId);
+        addMojoParam(verifier, "distro", "referenceapplication:2.2");
+        addMojoParam(verifier, "openMRSPath", testDir.getAbsolutePath());
+        addMockDbSettings(verifier);
+        verifier.executeGoal("org.openmrs.maven.plugins:openmrs-sdk-maven-plugin:2.1.3-SNAPSHOT:setup");
+        return serverId;
+    }
+
+    public static void deleteTestServer(String serverId) throws Exception{
+        File testDir = ResourceExtractor.simpleExtractResources(AbstractSdkIntegrationTest.class, TEST_DIRECTORY);
+        FileUtils.deleteDirectory(testDir.getAbsolutePath()+"/"+serverId);
+    }
+
     /**
      * Adds CLI parameter to executed Mojo in format -D'param'='value'
      * @param param name of parameter, eg. "serverId"
      * @param value value of parameter
      */
     public void addMojoParam(String param, String value){
+       addMojoParam(verifier, param, value);
+    }
+
+    /**
+     * Adds CLI parameter to executed Mojo in format -D'param'='value'
+     * @param param name of parameter, eg. "serverId"
+     * @param value value of parameter
+     */
+    public static void addMojoParam(Verifier verifier, String param, String value){
         verifier.addCliOption(String.format(MOJO_OPTION_TMPL, param, value));
     }
 
@@ -102,10 +131,9 @@ public abstract class AbstractSdkIntegrationTest {
     /**
      * check whether build ended with success
      */
-    protected void assertSuccess() throws IOException {
-        File log = getLogFile();
-        String logContent = FileUtils.fileRead(log);
-        assertThat(logContent, containsString("[INFO] BUILD SUCCESS"));
+    protected void assertSuccess() throws Exception {
+        verifier.verifyErrorFreeLog();
+        verifier.verifyTextInLog("[INFO] BUILD SUCCESS");
     }
 
     /**
@@ -134,5 +162,16 @@ public abstract class AbstractSdkIntegrationTest {
             moduleFilenames.add(module.getDestFileName());
         }
         assertModulesInstalled(serverId, moduleFilenames);
+    }
+
+    protected void addMockDbSettings() {
+        addMockDbSettings(verifier);
+    }
+
+    protected static void addMockDbSettings(Verifier verifier) {
+        addMojoParam(verifier, "dbDriver", "mysql");
+        addMojoParam(verifier, "dbUser", "mysql");
+        addMojoParam(verifier, "dbPassword", "mysql");
+        addMojoParam(verifier, "dbUri", "@DBNAME@");
     }
 }

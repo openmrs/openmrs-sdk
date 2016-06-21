@@ -6,6 +6,8 @@ import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.project.MavenProject;
+import org.apache.maven.shared.utils.StringUtils;
+import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.utility.DistroHelper;
 import org.openmrs.maven.plugins.utility.ModuleInstaller;
 import org.openmrs.maven.plugins.utility.VersionsHelper;
@@ -100,6 +102,14 @@ public abstract class AbstractTask extends AbstractMojo {
         }
         if(distroHelper == null){
             distroHelper = new DistroHelper(mavenProject, mavenSession, pluginManager);
+        }
+    }
+    public void setGlobalContext(String openMRSPath, String interactiveMode){
+        if(StringUtils.isNotBlank(openMRSPath)){
+            Server.setServersPath(openMRSPath);
+        }
+        if(interactiveMode.equals("false")){
+            wizard.setInteractiveMode(false);
         }
     }
 }
