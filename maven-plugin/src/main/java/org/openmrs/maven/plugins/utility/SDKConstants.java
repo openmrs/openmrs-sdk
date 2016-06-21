@@ -41,7 +41,13 @@ public class SDKConstants {
     public static final String OPENMRS_MODULE_POM = "pom.xml";
     public static final String OPENMRS_SERVER_PATH = "openmrs";
     public static final String OPENMRS_SERVER_PROPERTIES = "openmrs-server.properties";
+    public static final String OPENMRS_SDK_JDK_OPTION = "Which JDK would you like to use to run this server?";
+    public static final String OPENMRS_SDK_JDK_CUSTOM = "Custom JDK path";
+    public static final String OPENMRS_SDK_JDK_CUSTOM_INVALID = "JDK path is invalid";
+    public static final String OPENMRS_SDK_PROPERTIES = "sdk.properties";
     public static final String OPENMRS_SERVER_MODULES = "modules";
+    // properties names
+    public static final String OPENMRS_SDK_PROPERTIES_JDK_HOME = "jdk.home";
     // dbUri for different db
     public static final String URI_MYSQL = "jdbc:mysql://localhost:3306/@DBNAME@";
     public static final String URI_POSTGRESQL = "jdbc:postgresql://localhost:5740/@DBNAME@";
