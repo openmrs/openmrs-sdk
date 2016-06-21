@@ -13,13 +13,11 @@ import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.DistroProperties;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
-import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @RunWith(BlockJUnit4ClassRunner.class)
@@ -51,9 +49,8 @@ public abstract class AbstractSdkIntegrationTest {
 
         testFilesToPersist = new ArrayList<>(Arrays.asList(testDirectory.listFiles()));
 
-        verifier.addCliOption("-o");
-        addMojoParam("interactiveMode","false");
-        addMojoParam("openMRSPath",testDirectory.getAbsolutePath());
+        addTaskParam("interactiveMode","false");
+        addTaskParam("openMRSPath",testDirectory.getAbsolutePath());
     }
 
     @After
@@ -70,10 +67,9 @@ public abstract class AbstractSdkIntegrationTest {
         Verifier verifier = new Verifier(testDir.getAbsolutePath());
         String serverId = UUID.randomUUID().toString();
 
-        verifier.addCliOption("-o");
-        addMojoParam(verifier, "serverId", serverId);
-        addMojoParam(verifier, "distro", "referenceapplication:2.2");
-        addMojoParam(verifier, "openMRSPath", testDir.getAbsolutePath());
+        addTaskParam(verifier, "serverId", serverId);
+        addTaskParam(verifier, "distro", "referenceapplication:2.2");
+        addTaskParam(verifier, "openMRSPath", testDir.getAbsolutePath());
         addMockDbSettings(verifier);
         verifier.executeGoal("org.openmrs.maven.plugins:openmrs-sdk-maven-plugin:2.1.3-SNAPSHOT:setup");
         return serverId;
@@ -89,8 +85,8 @@ public abstract class AbstractSdkIntegrationTest {
      * @param param name of parameter, eg. "serverId"
      * @param value value of parameter
      */
-    public void addMojoParam(String param, String value){
-       addMojoParam(verifier, param, value);
+    public void addTaskParam(String param, String value){
+       addTaskParam(verifier, param, value);
     }
 
     /**
@@ -98,7 +94,7 @@ public abstract class AbstractSdkIntegrationTest {
      * @param param name of parameter, eg. "serverId"
      * @param value value of parameter
      */
-    public static void addMojoParam(Verifier verifier, String param, String value){
+    public static void addTaskParam(Verifier verifier, String param, String value){
         verifier.addCliOption(String.format(MOJO_OPTION_TMPL, param, value));
     }
 
@@ -169,9 +165,9 @@ public abstract class AbstractSdkIntegrationTest {
     }
 
     protected static void addMockDbSettings(Verifier verifier) {
-        addMojoParam(verifier, "dbDriver", "mysql");
-        addMojoParam(verifier, "dbUser", "mysql");
-        addMojoParam(verifier, "dbPassword", "mysql");
-        addMojoParam(verifier, "dbUri", "@DBNAME@");
+        addTaskParam(verifier, "dbDriver", "mysql");
+        addTaskParam(verifier, "dbUser", "mysql");
+        addTaskParam(verifier, "dbPassword", "mysql");
+        addTaskParam(verifier, "dbUri", "@DBNAME@");
     }
 }

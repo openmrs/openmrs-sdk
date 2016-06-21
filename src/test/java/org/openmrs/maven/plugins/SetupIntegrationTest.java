@@ -15,8 +15,8 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
     public void setup_shouldInstallRefapp2_3_1() throws Exception{
         String serverId = UUID.randomUUID().toString();
 
-        addMojoParam("serverId", serverId);
-        addMojoParam("distro", "referenceapplication:2.3.1");
+        addTaskParam("serverId", serverId);
+        addTaskParam("distro", "referenceapplication:2.3.1");
         addMockDbSettings();
 
         executeTask("setup");
@@ -39,8 +39,8 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
     public void setup_shouldInstallPlatform1_11_5() throws Exception{
         String serverId = UUID.randomUUID().toString();
 
-        addMojoParam("serverId", serverId);
-        addMojoParam("platform", "1.11.5");
+        addTaskParam("serverId", serverId);
+        addTaskParam("platform", "1.11.5");
         addMockDbSettings();
 
         executeTask("setup");
@@ -60,9 +60,9 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
     @Test
     public void setup_shouldInstallServerFromGivenDistroProperties() throws Exception{
         String serverId = UUID.randomUUID().toString();
-        addMojoParam("serverId", serverId);
+        addTaskParam("serverId", serverId);
 
-        addMojoParam("distro", testDirectory.getAbsolutePath()+"/openmrs-distro.properties");
+        addTaskParam("distro", testDirectory.getAbsolutePath()+"/openmrs-distro.properties");
         addMockDbSettings();
 
         executeTask("setup");
@@ -77,7 +77,7 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
     @Test
     public void setup_shouldInstallServerFromDistroPropertiesDir() throws Exception{
         String serverId = UUID.randomUUID().toString();
-        addMojoParam("serverId", serverId);
+        addTaskParam("serverId", serverId);
 
         addMockDbSettings();
 

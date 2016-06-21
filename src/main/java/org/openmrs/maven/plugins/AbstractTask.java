@@ -64,6 +64,20 @@ public abstract class AbstractTask extends AbstractMojo {
     Wizard wizard;
 
     /**
+     * Interactive mode param
+     *
+     * @parameter expression="${interactiveMode}" default-value=true
+     */
+    String interactiveMode;
+
+    /**
+     * path to openmrs directory
+     *
+     * @parameter expression="${openMRSPath}"
+     */
+    String openMRSPath;
+
+    /**
      * wizard for resolving artifact available versions
      */
     VersionsHelper versionsHelper;
@@ -90,10 +104,10 @@ public abstract class AbstractTask extends AbstractMojo {
         this.moduleInstaller = other.moduleInstaller;
         this.versionsHelper = other.versionsHelper;
         this.distroHelper = other.distroHelper;
-        initUtilities();
+        initTask();
     }
 
-    public void initUtilities() {
+    public void initTask() {
         if(versionsHelper == null){
             versionsHelper = new VersionsHelper(artifactFactory, mavenProject, mavenSession, artifactMetadataSource);
         }
@@ -103,8 +117,6 @@ public abstract class AbstractTask extends AbstractMojo {
         if(distroHelper == null){
             distroHelper = new DistroHelper(mavenProject, mavenSession, pluginManager);
         }
-    }
-    public void setGlobalContext(String openMRSPath, String interactiveMode){
         if(StringUtils.isNotBlank(openMRSPath)){
             Server.setServersPath(openMRSPath);
         }

@@ -2,7 +2,6 @@ package org.openmrs.maven.plugins;
 
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
-import org.apache.maven.shared.utils.StringUtils;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.Server;
@@ -23,13 +22,6 @@ public class Setup extends AbstractTask {
     private static final String GOAL_UNPACK = "unpack";
     private static final String DEFAULT_DISTRIBUTION = "\n\nWould you like to install OpenMRS distribution?";
     private static final String CUSTOM_DISTRIBUTION = "\n\nWould you like to install %s %s distribution?";
-
-    /**
-     * Interactive mode param
-     *
-     * @parameter expression="${interactiveMode}" default-value=true
-     */
-    private String interactiveMode;
 
     /**
      * Server id (folder name)
@@ -89,14 +81,6 @@ public class Setup extends AbstractTask {
      * @parameter expression="${platform}"
      */
     private String platform;
-
-    /**
-     * path to openmrs directory
-     *
-     * @parameter expression="${openMRSPath}"
-     */
-    private String openMRSPath;
-
 
     public Setup() {
         super();
@@ -258,8 +242,7 @@ public class Setup extends AbstractTask {
 
 
     public void execute() throws MojoExecutionException, MojoFailureException {
-        initUtilities();
-        setGlobalContext(openMRSPath, interactiveMode);
+        initTask();
 
         boolean createPlatform;
         boolean installDistFromFile;

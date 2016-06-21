@@ -50,7 +50,7 @@ public class Run extends AbstractTask {
 
 
 	public void execute() throws MojoExecutionException, MojoFailureException {
-        initUtilities();
+        initTask();
 		if (serverId == null) {
 			File currentProperties = wizard.getCurrentServerPath();
 			if (currentProperties != null) serverId = currentProperties.getName();

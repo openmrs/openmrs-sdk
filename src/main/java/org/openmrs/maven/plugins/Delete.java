@@ -16,7 +16,7 @@ import java.sql.SQLException;
  * @goal delete
  * @requiresProject false
  */
-public class Delete extends AbstractMojo{
+public class Delete extends AbstractTask{
 
     private static final String TEMPLATE_SUCCESS = "Server '%s' removed successfully";
 
@@ -25,13 +25,8 @@ public class Delete extends AbstractMojo{
      */
     private String serverId;
 
-    /**
-     * @required
-     * @component
-     */
-    Wizard wizard;
-
     public void execute() throws MojoExecutionException, MojoFailureException {
+        initTask();
         serverId = wizard.promptForExistingServerIdIfMissing(serverId);
         try {
             Server props = Server.loadServer(serverId);

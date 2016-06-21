@@ -10,7 +10,7 @@ import org.openmrs.maven.plugins.model.Server;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.openmrs.maven.plugins.SdkMatchers.serverHasVersion;
 
-public class ModuleInstallIntegrationTest extends AbstractSdkIntegrationTest {
+public class DeployIntegrationTest extends AbstractSdkIntegrationTest {
 
     private static String testServerId;
 
@@ -28,10 +28,10 @@ public class ModuleInstallIntegrationTest extends AbstractSdkIntegrationTest {
 
     @Test
     public void moduleInstall_shouldReplaceWebapp() throws Exception {
-        addMojoParam("serverId", testServerId);
-        addMojoParam("platform", "1.11.5");
+        addTaskParam("serverId", testServerId);
+        addTaskParam("platform", "1.11.5");
 
-        executeTask("install");
+        executeTask("deploy");
 
         assertSuccess();
         assertFilePresent(testServerId+"/openmrs-1.11.5.war");
@@ -39,10 +39,10 @@ public class ModuleInstallIntegrationTest extends AbstractSdkIntegrationTest {
 
     @Test
     public void moduleInstall_shouldUpgradeDistroTo2_3_1() throws Exception {
-        addMojoParam("serverId", testServerId);
-        addMojoParam("distro", "referenceapplication:2.3.1");
+        addTaskParam("serverId", testServerId);
+        addTaskParam("distro", "referenceapplication:2.3.1");
 
-        executeTask("install");
+        executeTask("deploy");
 
         assertSuccess();
         assertFilePresent(testServerId+"/openmrs-1.11.5.war");
@@ -56,9 +56,9 @@ public class ModuleInstallIntegrationTest extends AbstractSdkIntegrationTest {
 
     @Test
     public void moduleInstall_shouldUpgradeDistroFromDistroProperties() throws Exception {
-        addMojoParam("serverId", testServerId);
+        addTaskParam("serverId", testServerId);
 
-        executeTask("install");
+        executeTask("deploy");
 
         assertSuccess();
         assertFilePresent(testServerId+"/openmrs-1.11.5.war");
@@ -67,12 +67,12 @@ public class ModuleInstallIntegrationTest extends AbstractSdkIntegrationTest {
 
     @Test
     public void moduleInstall_shouldInstallModule() throws Exception {
-        addMojoParam("serverId", testServerId);
-        addMojoParam("artifactId", "owa");
-        addMojoParam("groupId", Artifact.GROUP_MODULE);
-        addMojoParam("version", "1.4");
+        addTaskParam("serverId", testServerId);
+        addTaskParam("artifactId", "owa");
+        addTaskParam("groupId", Artifact.GROUP_MODULE);
+        addTaskParam("version", "1.4");
 
-        executeTask("install");
+        executeTask("deploy");
 
         assertSuccess();
         assertModulesInstalled(testServerId, "owa-1.4.omod");
@@ -80,9 +80,9 @@ public class ModuleInstallIntegrationTest extends AbstractSdkIntegrationTest {
 
     @Test
     public void moduleInstall_shouldInstallModuleFromPomInDir() throws Exception {
-        addMojoParam("serverId", testServerId);
+        addTaskParam("serverId", testServerId);
 
-        executeTask("install");
+        executeTask("deploy");
 
         assertSuccess();
         assertModulesInstalled(testServerId, "owa-1.4.omod");
