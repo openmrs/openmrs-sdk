@@ -67,6 +67,14 @@ public class Deploy extends AbstractTask {
 
     public Deploy() {}
 
+    /**
+     * path to openmrs directory
+     *
+     * @parameter expression="${openMRSPath}"
+     */
+    private String openMRSPath;
+
+
     public Deploy(AbstractTask other) {super(other);}
 
     public Deploy(MavenProject project, MavenSession session, BuildPluginManager manager) {
@@ -77,6 +85,10 @@ public class Deploy extends AbstractTask {
 
     public void execute() throws MojoExecutionException, MojoFailureException {
         initUtilities();
+        if(StringUtils.isNotBlank(openMRSPath)){
+            Server.setServersPath(openMRSPath);
+        }
+
         if (serverId == null) {
             File currentProperties = wizard.getCurrentServerPath();
             if (currentProperties != null) serverId = currentProperties.getName();

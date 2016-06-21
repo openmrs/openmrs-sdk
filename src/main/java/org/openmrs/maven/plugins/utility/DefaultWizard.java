@@ -53,13 +53,24 @@ public class DefaultWizard implements Wizard {
     @Requirement
     Prompter prompter;
 
-
     Log log;
+
+    private boolean interactiveMode = true;
 
     public DefaultWizard(){};
 
     public DefaultWizard(Prompter prompter) {
         this.prompter = prompter;
+    }
+
+    @Override
+    public boolean isInteractiveMode() {
+        return interactiveMode;
+    }
+
+    @Override
+    public void setInteractiveMode(boolean interactiveMode) {
+        this.interactiveMode = interactiveMode;
     }
 
     /**
@@ -73,7 +84,7 @@ public class DefaultWizard implements Wizard {
     public void promptForNewServerIfMissing(Server server) {
         String defaultServerId = DEFAULT_SERVER_NAME;
         int indx = 0;
-        while (new File(Server.getDefaultServersPath(), defaultServerId).exists()) {
+        while (new File(Server.getServersPath(), defaultServerId).exists()) {
             indx++;
             defaultServerId = DEFAULT_SERVER_NAME + String.valueOf(indx);
         }
@@ -210,9 +221,13 @@ public class DefaultWizard implements Wizard {
      */
     @Override
     public boolean promptYesNo(String text) {
-        String yesNo = null;
-        yesNo = prompt(text.concat(YESNO));
-        return yesNo.equals("") || yesNo.toLowerCase().equals("y");
+        if(interactiveMode){
+            String yesNo = null;
+            yesNo = prompt(text.concat(YESNO));
+            return yesNo.equals("") || yesNo.toLowerCase().equals("y");
+        } else {
+            return true;
+        }
     }
 
     /**
@@ -233,7 +248,7 @@ public class DefaultWizard implements Wizard {
      */
     @Override
     public String promptForExistingServerIdIfMissing(String serverId) {
-        File omrsHome = new File(System.getProperty("user.home"), SDKConstants.OPENMRS_SERVER_PATH);
+        File omrsHome = new File(Server.getServersPath());
         List<String> servers = getListOf5RecentServers();
         serverId = promptForValueWithDefaultList(serverId, "serverId", servers);
         if (serverId.equals(NONE)) {
@@ -344,7 +359,7 @@ public class DefaultWizard implements Wizard {
     @Override
     public File getCurrentServerPath() throws MojoExecutionException {
         File currentFolder = new File(System.getProperty("user.dir"));
-        File openmrsHome = new File(System.getProperty("user.home"), SDKConstants.OPENMRS_SERVER_PATH);
+        File openmrsHome = Server.getServersPathFile();
         File current = new File(currentFolder, SDKConstants.OPENMRS_SERVER_PROPERTIES);
         File parent = new File(currentFolder.getParent(), SDKConstants.OPENMRS_SERVER_PROPERTIES);
         File propertiesFile = null;

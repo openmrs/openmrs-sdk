@@ -9,6 +9,10 @@ import java.io.File;
 import java.util.List;
 
 public interface Wizard {
+    boolean isInteractiveMode();
+
+    void setInteractiveMode(boolean interactiveMode);
+
     void promptForNewServerIfMissing(Server server);
 
     void promptForMySQLDb(Server server);

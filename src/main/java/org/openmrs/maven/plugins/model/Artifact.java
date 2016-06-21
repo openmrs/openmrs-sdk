@@ -159,4 +159,9 @@ public class Artifact {
     public int hashCode() {
         return Objects.hashCode(version, groupId, artifactId);
     }
+
+    @Override
+    public String toString() {
+        return artifactId + ':' + version + ':' + groupId;
+    }
 }

@@ -36,6 +36,8 @@ public class Server {
 
     public static final String SLASH = "/";
 
+    private static String serversPath = System.getProperty("user.home")+"/"+SDKConstants.OPENMRS_SERVER_PATH;
+
     private Properties properties;
 
     private File propertiesFile;
@@ -110,8 +112,16 @@ public class Server {
         this.properties = properties;
     }
 
-    public static File getDefaultServersPath(){
-        return new File(System.getProperty("user.home"), SDKConstants.OPENMRS_SERVER_PATH);
+    public static File getServersPathFile(){
+        return new File(serversPath);
+    }
+
+    public static String getServersPath(){
+        return serversPath;
+    }
+
+    public static void setServersPath(String serversPath){
+        Server.serversPath = serversPath;
     }
 
     public static boolean hasServerConfig(File dir) {
@@ -129,7 +139,7 @@ public class Server {
     }
 
     public static Server loadServer(String serverId) throws MojoExecutionException {
-        File serversPath = getDefaultServersPath();
+        File serversPath = getServersPathFile();
         File serverPath = new File(serversPath, serverId);
         return loadServer(serverPath);
     }
@@ -372,6 +382,9 @@ public class Server {
                 String type = getArtifactType(file.getName());
                 if (SDKConstants.isExtensionSupported(type)) {
                     String artifactId = getArtifactId(file.getName());
+                    if(type.equals(Artifact.TYPE_OMOD)){
+                        artifactId += "-omod";
+                    }
                     String version = Version.parseVersionFromFile(file.getName());
                     Artifact artifact = new Artifact(artifactId, version);
                     if(type.equals(Artifact.TYPE_WAR)){
