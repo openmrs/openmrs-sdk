@@ -6,7 +6,10 @@ import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.model.UpgradeDifferential;
 
 import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 
 public interface Wizard {
     boolean isInteractiveMode();
@@ -41,6 +44,8 @@ public interface Wizard {
 
     String promptForValueIfMissing(String value, String parameterName);
 
+    String promptForJdkPath(Server server);
+
     boolean promptYesNo(String text);
 
     boolean checkYes(String value);
@@ -48,6 +53,12 @@ public interface Wizard {
     File getCurrentServerPath() throws MojoExecutionException;
 
     String promptForExistingServerIdIfMissing(String serverId);
+
+    List<String> getJdkPaths();
+
+    Properties getSdkProperties() throws IOException;
+
+    public boolean isThereJdkUnderPath(String jdkPath);
 
     List<String> getListOfServers();
 

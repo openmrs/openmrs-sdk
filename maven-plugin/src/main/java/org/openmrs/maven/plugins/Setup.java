@@ -81,6 +81,13 @@ public class Setup extends AbstractTask {
     private String dbSql;
 
     /**
+     * Path to JDK Version
+     *
+     * @parameter expression="${java.home}"
+     */
+    private String jdk;
+
+    /**
      * Path to installation.properties
      *
      * @parameter expression="${file}"
@@ -179,6 +186,18 @@ public class Setup extends AbstractTask {
             } else {
                 moduleInstaller.installModule(SDKConstants.H2_ARTIFACT, server.getServerDirectory().getPath());
                 wizard.showMessage("The specified database "+server.getDbName()+" does not exist and it will be created for you.");
+            }
+        }
+
+        if (server.getJavaHome() == null || server.getJavaHome().equals(System.getProperty("java.home"))) {
+            wizard.promptForJdkPath(server);
+            if (server.getJavaHome() == null) {
+                server.setJavaHome(System.getProperty("java.home"));
+            }
+        }
+        else {
+            if (!wizard.isThereJdkUnderPath(server.getJavaHome())) {
+                throw new IllegalArgumentException("Given -Djdk property is invalid");
             }
         }
 
@@ -341,6 +360,7 @@ public class Setup extends AbstractTask {
                 .setDbUser(dbUser)
                 .setDbPassword(dbPassword)
                 .setInteractiveMode(interactiveMode)
+                .setJavaHome(jdk)
                 .build();
         wizard.promptForNewServerIfMissing(server);
 
