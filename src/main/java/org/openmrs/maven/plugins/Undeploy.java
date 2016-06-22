@@ -11,10 +11,10 @@ import org.openmrs.maven.plugins.utility.Wizard;
 import java.io.File;
 
 /**
- * @goal uninstall
+ * @goal undeploy
  * @requiresProject false
  */
-public class ModuleUninstall extends AbstractMojo {
+public class Undeploy extends AbstractMojo {
 
     /**
      * @parameter expression="${serverId}"
@@ -38,7 +38,7 @@ public class ModuleUninstall extends AbstractMojo {
     Wizard wizard;
 
     public void execute() throws MojoExecutionException, MojoFailureException {
-        ModuleInstall installer = new ModuleInstall();
+        Deploy installer = new Deploy();
         if (serverId == null) {
             File currentProperties = wizard.getCurrentServerPath();
             if (currentProperties != null) serverId = currentProperties.getName();

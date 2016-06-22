@@ -1,25 +1,19 @@
 package org.openmrs.maven.plugins.utility;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.project.MavenProject;
-import org.openmrs.maven.plugins.ModuleInstall;
+import org.openmrs.maven.plugins.Deploy;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.Server;
 import org.twdata.maven.mojoexecutor.MojoExecutor;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.List;
-import java.util.Properties;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
 
@@ -73,13 +67,13 @@ public class ModuleInstaller {
         if (server != null) {
             String values = server.getParam(Server.PROPERTY_USER_MODULES);
             if (values != null) {
-                ModuleInstall installer = new ModuleInstall(mavenProject, mavenSession, pluginManager);
+                Deploy installer = new Deploy(mavenProject, mavenSession, pluginManager);
                 String[] modules = values.split(Server.COMMA);
                 for (String mod: modules) {
                     String[] params = mod.split(Server.SLASH);
                     // check
                     if (params.length == 3) {
-                        installer.installModule(server.getServerId(), params[0], params[1], params[2]);
+                        installer.deployModule(server.getServerId(), params[0], params[1], params[2]);
                     }
                     else throw new MojoExecutionException("Properties file parse error - cannot read user modules list");
                 }
