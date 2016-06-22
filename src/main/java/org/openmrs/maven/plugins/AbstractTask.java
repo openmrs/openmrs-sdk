@@ -5,6 +5,8 @@ import org.apache.maven.artifact.metadata.ArtifactMetadataSource;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.BuildPluginManager;
+import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.shared.utils.StringUtils;
 import org.openmrs.maven.plugins.model.Server;
@@ -64,7 +66,8 @@ public abstract class AbstractTask extends AbstractMojo {
     Wizard wizard;
 
     /**
-     * Interactive mode param
+     * Interactive mode flag, set for 'false' allows automatic testing in batch mode,
+     * as it makes all 'yes/no' prompts return 'yes'
      *
      * @parameter expression="${interactiveMode}" default-value=true
      */
@@ -124,4 +127,12 @@ public abstract class AbstractTask extends AbstractMojo {
             wizard.setInteractiveMode(false);
         }
     }
+
+    @Override
+    public void execute() throws MojoExecutionException, MojoFailureException {
+        initTask();
+        executeTask();
+    }
+
+    abstract public void executeTask() throws MojoExecutionException, MojoFailureException;
 }

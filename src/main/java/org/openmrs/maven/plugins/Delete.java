@@ -25,8 +25,7 @@ public class Delete extends AbstractTask{
      */
     private String serverId;
 
-    public void execute() throws MojoExecutionException, MojoFailureException {
-        initTask();
+    public void executeTask() throws MojoExecutionException, MojoFailureException {
         serverId = wizard.promptForExistingServerIdIfMissing(serverId);
         try {
             Server props = Server.loadServer(serverId);

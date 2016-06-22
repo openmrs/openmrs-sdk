@@ -243,9 +243,7 @@ public class Setup extends AbstractTask {
     }
 
 
-    public void execute() throws MojoExecutionException, MojoFailureException {
-        initTask();
-
+    public void executeTask() throws MojoExecutionException, MojoFailureException {
         boolean createPlatform;
         boolean installDistFromFile;
         String version = null;

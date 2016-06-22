@@ -49,8 +49,7 @@ public class Run extends AbstractTask {
 	private Boolean fork;
 
 
-	public void execute() throws MojoExecutionException, MojoFailureException {
-        initTask();
+	public void executeTask() throws MojoExecutionException, MojoFailureException {
 		if (serverId == null) {
 			File currentProperties = wizard.getCurrentServerPath();
 			if (currentProperties != null) serverId = currentProperties.getName();
