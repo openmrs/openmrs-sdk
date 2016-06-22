@@ -14,7 +14,7 @@ import java.io.File;
  * @goal undeploy
  * @requiresProject false
  */
-public class Undeploy extends AbstractMojo {
+public class Undeploy extends AbstractTask {
 
     /**
      * @parameter expression="${serverId}"
@@ -31,21 +31,16 @@ public class Undeploy extends AbstractMojo {
      */
     private String groupId;
 
-    /**
-     * @required
-     * @component
-     */
-    Wizard wizard;
-
     public void execute() throws MojoExecutionException, MojoFailureException {
-        Deploy installer = new Deploy();
+        initTask();
+        Deploy deployer = new Deploy();
         if (serverId == null) {
             File currentProperties = wizard.getCurrentServerPath();
             if (currentProperties != null) serverId = currentProperties.getName();
         }
         serverId = wizard.promptForExistingServerIdIfMissing(serverId);
         Server server = Server.loadServer(serverId);
-        Artifact artifact = installer.getModuleArtifactForSelectedParameters(groupId, artifactId, "default");
+        Artifact artifact = deployer.getModuleArtifactForSelectedParameters(groupId, artifactId, "default");
         File modules = new File(server.getServerDirectory(), SDKConstants.OPENMRS_SERVER_MODULES);
         File[] listOfModules = modules.listFiles();
         for (File mod : listOfModules) {

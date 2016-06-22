@@ -36,6 +36,7 @@ public class Deploy extends AbstractTask {
     private static final String INSTALL_MODULE_OPTION = "Install module";
     private static final String INSTALL_DISTRO_OPTION = "Install OpenMRS distribution";
     private static final String INSTALL_PLATFORM_OPTION = "Install OpenMRS platform";
+
     /**
      * @parameter expression="${serverId}"
      */
@@ -76,7 +77,8 @@ public class Deploy extends AbstractTask {
     }
 
     public void execute() throws MojoExecutionException, MojoFailureException {
-        initUtilities();
+        initTask();
+
         if (serverId == null) {
             File currentProperties = wizard.getCurrentServerPath();
             if (currentProperties != null) serverId = currentProperties.getName();
@@ -167,8 +169,9 @@ public class Deploy extends AbstractTask {
      * @throws MojoExecutionException
      * @throws MojoFailureException
      */
+
     public void deployModule(String serverId, String groupId, String artifactId, String version) throws MojoExecutionException, MojoFailureException {
-        initUtilities();
+        initTask();
         if (serverId == null) {
             File currentProperties = wizard.getCurrentServerPath();
             if (currentProperties != null) serverId = currentProperties.getName();

@@ -50,7 +50,7 @@ public class Run extends AbstractTask {
 
 
 	public void execute() throws MojoExecutionException, MojoFailureException {
-        initUtilities();
+        initTask();
 		if (serverId == null) {
 			File currentProperties = wizard.getCurrentServerPath();
 			if (currentProperties != null) serverId = currentProperties.getName();
@@ -88,7 +88,7 @@ public class Run extends AbstractTask {
 		}
 
 		if (server.hasWatchedProjects()) {
-			File serversPath = Server.getDefaultServersPath();
+			File serversPath = Server.getServersPathFile();
 			File springloadedJar = new File(serversPath, "springloaded.jar");
 			if (!springloadedJar.exists()) {
 				Artifact artifact = new Artifact("springloaded", "1.2.5.RELEASE", "org.springframework", "jar");
@@ -116,7 +116,7 @@ public class Run extends AbstractTask {
 			mavenOpts += " -XX:MaxPermSize=1024m";
 		}
 		if (server.hasWatchedProjects()) {
-			mavenOpts += " -javaagent:" + new File(Server.getDefaultServersPath(), "springloaded.jar").getAbsolutePath() + " -noverify";
+			mavenOpts += " -javaagent:" + new File(Server.getServersPath(), "springloaded.jar").getAbsolutePath() + " -noverify";
 		}
 
 		if (debug != null) {
