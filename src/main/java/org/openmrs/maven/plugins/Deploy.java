@@ -22,10 +22,10 @@ import java.util.List;
 import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
 
 /**
- * @goal install
+ * @goal deploy
  * @requiresProject false
  */
-public class ModuleInstall extends AbstractTask {
+public class Deploy extends AbstractTask {
 
     private static final String DEFAULT_OK_MESSAGE = "Module '%s' installed successfully";
     private static final String DEFAULT_UPDATE_MESSAGE = "Module '%s' was updated to version '%s'";
@@ -65,11 +65,11 @@ public class ModuleInstall extends AbstractTask {
      */
     private String platform;
 
-    public ModuleInstall() {}
+    public Deploy() {}
 
-    public ModuleInstall(AbstractTask other) {super(other);}
+    public Deploy(AbstractTask other) {super(other);}
 
-    public ModuleInstall(MavenProject project, MavenSession session, BuildPluginManager manager) {
+    public Deploy(MavenProject project, MavenSession session, BuildPluginManager manager) {
         super.mavenProject = project;
         super.mavenSession = session;
         super.pluginManager = manager;
@@ -127,7 +127,7 @@ public class ModuleInstall extends AbstractTask {
         String choice = wizard.promptForMissingValueWithOptions("What would You like to do?%s", null, "", options, false);
         switch(choice){
             case(INSTALL_MODULE_OPTION):{
-                installModule(serverId, groupId, artifactId, version);
+                deployModule(serverId, groupId, artifactId, version);
                 break;
             }
             case(INSTALL_DISTRO_OPTION):{
@@ -167,7 +167,7 @@ public class ModuleInstall extends AbstractTask {
      * @throws MojoExecutionException
      * @throws MojoFailureException
      */
-    public void installModule(String serverId, String groupId, String artifactId, String version) throws MojoExecutionException, MojoFailureException {
+    public void deployModule(String serverId, String groupId, String artifactId, String version) throws MojoExecutionException, MojoFailureException {
         initUtilities();
         if (serverId == null) {
             File currentProperties = wizard.getCurrentServerPath();

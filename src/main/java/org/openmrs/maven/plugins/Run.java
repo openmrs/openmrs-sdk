@@ -68,8 +68,8 @@ public class Run extends AbstractTask {
 				String version = config.getVersion();
 				if ((artifactId != null) && (groupId != null) && version != null) {
 					getLog().info("OpenMRS module detected, installing before run...");
-					ModuleInstall installer = new ModuleInstall(this);
-					installer.installModule(serverPath.getName(), groupId, artifactId, version);
+					Deploy deployer = new Deploy(this);
+					deployer.deployModule(serverPath.getName(), groupId, artifactId, version);
 				}
 			}
 		}
