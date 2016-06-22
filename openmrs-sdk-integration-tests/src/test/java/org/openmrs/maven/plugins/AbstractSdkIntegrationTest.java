@@ -66,7 +66,7 @@ public abstract class AbstractSdkIntegrationTest {
         testDirectory = ResourceExtractor.simpleExtractResources(getClass(), TEST_DIRECTORY);
         verifier = new Verifier(testDirectory.getAbsolutePath());
 
-        testFilesToPersist = new ArrayList<>(Arrays.asList(testDirectory.listFiles()));
+        testFilesToPersist = new ArrayList<File>(Arrays.asList(testDirectory.listFiles()));
 
         addTaskParam("interactiveMode","false");
         addTaskParam("openMRSPath",testDirectory.getAbsolutePath());
@@ -173,7 +173,7 @@ public abstract class AbstractSdkIntegrationTest {
 
     protected void assertModulesInstalled(String serverId, DistroProperties distroProperties) {
         List<Artifact> modules = distroProperties.getModuleArtifacts();
-        List<String> moduleFilenames = new ArrayList<>();
+        List<String> moduleFilenames = new ArrayList<String>();
 
         for(Artifact module : modules){
             moduleFilenames.add(module.getDestFileName());

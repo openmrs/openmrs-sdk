@@ -1,5 +1,6 @@
 package org.openmrs.maven.plugins;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.maven.artifact.factory.ArtifactFactory;
 import org.apache.maven.artifact.metadata.ArtifactMetadataSource;
 import org.apache.maven.execution.MavenSession;
@@ -8,7 +9,6 @@ import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.project.MavenProject;
-import org.apache.maven.shared.utils.StringUtils;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.utility.DistroHelper;
 import org.openmrs.maven.plugins.utility.ModuleInstaller;
@@ -123,7 +123,7 @@ public abstract class AbstractTask extends AbstractMojo {
         if(StringUtils.isNotBlank(openMRSPath)){
             Server.setServersPath(openMRSPath);
         }
-        if(interactiveMode.equals("false")){
+        if("false".equals(interactiveMode)){
             wizard.setInteractiveMode(false);
         }
     }
