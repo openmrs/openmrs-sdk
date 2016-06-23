@@ -38,31 +38,31 @@ public class Deploy extends AbstractTask {
     private static final String INSTALL_PLATFORM_OPTION = "Install OpenMRS platform";
 
     /**
-     * @parameter expression="${serverId}"
+     * @parameter property="serverId"
      */
     private String serverId;
 
     /**
-     * @parameter expression="${artifactId}"
+     * @parameter property="artifactId"
      */
     private String artifactId;
 
     /**
-     * @parameter expression="${groupId}"
+     * @parameter property="groupId"
      */
     private String groupId;
 
     /**
-     * @parameter expression="${version}"
+     * @parameter property="version"
      */
     private String version;
     /**
-     * @parameter expression="${distro}"
+     * @parameter property="distro"
      */
     private String distro;
 
     /**
-     * @parameter expression="${platform}"
+     * @parameter property="platform"
      */
     private String platform;
 

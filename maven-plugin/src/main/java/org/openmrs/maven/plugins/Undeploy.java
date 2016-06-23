@@ -17,17 +17,17 @@ import java.io.File;
 public class Undeploy extends AbstractTask {
 
     /**
-     * @parameter expression="${serverId}"
+     * @parameter property="serverId"
      */
     private String serverId;
 
     /**
-     * @parameter expression="${artifactId}"
+     * @parameter property="artifactId"
      */
     private String artifactId;
 
     /**
-     * @parameter expression="${groupId}" default-value="org.openmrs.module"
+     * @parameter property="groupId" default-value="org.openmrs.module"
      */
     private String groupId;
 

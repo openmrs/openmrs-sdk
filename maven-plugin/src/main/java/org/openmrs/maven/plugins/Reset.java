@@ -23,12 +23,12 @@ public class Reset extends AbstractTask {
     private static final String TEMPLATE_SUCCESS_FULL = "Server '%s' has been reset, user modules were removed";
 
     /**
-     * @parameter expression="${serverId}"
+     * @parameter property="serverId"
      */
     private String serverId;
 
     /**
-     * @parameter expression="${full}" default-value=false
+     * @parameter property="full" default-value=false
      */
     private String full;
 

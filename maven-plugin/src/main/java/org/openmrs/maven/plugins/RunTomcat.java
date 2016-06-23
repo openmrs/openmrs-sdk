@@ -28,12 +28,12 @@ import java.util.Set;
 public class RunTomcat extends AbstractMojo {
 
 	/**
-	 * @parameter expression="${serverId}"
+	 * @parameter property="serverId"
 	 */
 	private String serverId;
 
 	/**
-	 * @parameter expression="${port}"
+	 * @parameter property="port"
 	 */
 	private Integer port;
 

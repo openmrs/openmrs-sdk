@@ -26,59 +26,59 @@ public class Setup extends AbstractTask {
     /**
      * Server id (folder name)
      *
-     * @parameter expression="${serverId}"
+     * @parameter property="serverId"
      */
     private String serverId;
 
     /**
      * DB Driver type
      *
-     * @parameter expression="${dbDriver}"
+     * @parameter property="dbDriver"
      */
     private String dbDriver;
 
     /**
      * DB Uri
      *
-     * @parameter expression="${dbUri}"
+     * @parameter property="dbUri"
      */
     private String dbUri;
 
     /**
      * DB User
      *
-     * @parameter expression="${dbUser}"
+     * @parameter property="dbUser"
      */
     private String dbUser;
 
     /**
      * DB Pass
      *
-     * @parameter expression="${dbPassword}"
+     * @parameter property="dbPassword"
      */
     private String dbPassword;
 
     /**
      * Path to installation.properties
      *
-     * @parameter expression="${file}"
+     * @parameter property="file"
      */
     private String file;
 
     /**
      * Option to include demo data
      *
-     * @parameter expression="${addDemoData}" default-value=false
+     * @parameter property="addDemoData" default-value="false"
      */
     private boolean addDemoData;
 
     /**
-     * @parameter expression="${distro}"
+     * @parameter property="distro"
      */
     private String distro;
 
     /**
-     * @parameter expression="${platform}"
+     * @parameter property="platform"
      */
     private String platform;
 

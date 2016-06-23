@@ -20,7 +20,7 @@ public class CreatePlatformModule extends AbstractMojo{
     /**
      * The project currently being build.
      *
-     * @parameter expression="${project}"
+     * @parameter property="project"
      * @required
      */
     private MavenProject mavenProject;
@@ -28,7 +28,7 @@ public class CreatePlatformModule extends AbstractMojo{
     /**
      * The current Maven session.
      *
-     * @parameter expression="${session}"
+     * @parameter property="session"
      * @required
      */
     private MavenSession mavenSession;
