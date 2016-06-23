@@ -58,9 +58,9 @@
     </developers>
 
     <scm>
-        <connection>scm:git:https://github.com/openmrs/openmrs-contrib-sdk-maven-plugin</connection>
-        <developerConnection>scm:git:https://github.com/openmrs/openmrs-contrib-sdk-maven-plugin</developerConnection>
-        <url>https://github.com/openmrs/openmrs-contrib-sdk-maven-plugin</url>
+        <connection>scm:git:https://github.com/openmrs/openmrs-sdk</connection>
+        <developerConnection>scm:git:https://github.com/openmrs/openmrs-sdk</developerConnection>
+        <url>https://github.com/openmrs/openmrs-sdk</url>
         <tag>HEAD</tag>
     </scm>
 
