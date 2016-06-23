@@ -1,39 +1,19 @@
-# openmrs-contrib-sdk-maven-plugin
-A maven plugin for the OpenMRS 2.x SDK
+It is a repository of OpenMRS Software Development Kit (SDK).
+
+For more details visit [the project page](https://wiki.openmrs.org/display/docs/OpenMRS+SDK).
 
 ## Requirements
  * Maven 3.x
  
 ## Installation
-For installing sdk, just run: <br/>
+In order to install the latest version of the sdk run: <br/>
 
 `mvn org.openmrs.maven.plugins:openmrs-sdk-maven-plugin:setup-sdk`
 
-## List of supported commands:
-All commands can be executed by `mvn openmrs-sdk:<command>`
+## Usage
+All commands can be run with `mvn openmrs-sdk:<command>`.
 
-* `create-module` - Create OpenMRS module <br/>
-Options: none (only interactive mode)
-* `create-platform-module` - Create OpenMRS platform module <br/>
-Options: none (only interactive mode)
-* `setup-platform` - Setup platform server <br/>
-Options: serverId, version, dbDriver, dbUri, dbUser, dbPassword, file, addDemoData
-* `setup` - Setup server with modules <br/>
-Options: serverId, version, dbDriver, dbUri, dbUser, dbPassword, file
-* `install` - Install selected module to server <br/>
-Options: serverId, groupId, artifactId, version
-* `uninstall` - Uninstall selected module from server <br/>
-Options: serverId, groupId, artifactId
-* `upgrade` - Upgrade server or platform server to selected version <br/>
-Options: serverId, version
-* `upgrade-platform` - Upgrade platform server to selected version <br/>
-Options: serverId, version
-* `reset` - Reset server to default state (and drop db data) <br/>
-Options: serverId, full
-* `delete` - Delete server <br/>
-Options: serverId
-* `run` - Start server <br/>
-Options: serverId, jetty.port
+Run `mvn openmrs-sdk:help` for the list of supported commands.
 
 ## Development
 
