@@ -119,9 +119,11 @@ public class Setup extends AbstractTask {
             } else {
                 wizard.promptForDistroVersionIfMissing(server);
                 distroProperties = extractDistroToServer(server, isCreatePlatform, serverPath);
+                distroProperties.saveTo(server.getServerDirectory());
             }
         } else {
             moduleInstaller.installCoreModules(server, isCreatePlatform, distroProperties);
+            distroProperties.saveTo(server.getServerDirectory());
         }
         
         if(dbDriver == null){

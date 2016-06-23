@@ -27,7 +27,7 @@ public class ServerTest {
 	public void testParseUserModules() throws Exception{
 		String testUserModules = "org.openmrs.module/owa/1.4-SNAPSHOT," +
 				"org.openmrs.module/uicommons/1.7,org.openmrs.module/webservices.rest/2.15-SNAPSHOT";
-		Artifact owaModule = new Artifact("owa", "1.4-SNAPSHOT", "org.openmrs.module");
+		Artifact owaModule = new Artifact("owa-omod","1.4-SNAPSHOT", "org.openmrs.module");
 
 		server.setParam(Server.PROPERTY_USER_MODULES, testUserModules);
 		List<Artifact> artifacts = server.getUserModules();
