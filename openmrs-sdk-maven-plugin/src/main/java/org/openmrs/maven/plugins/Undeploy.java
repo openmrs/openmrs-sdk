@@ -31,8 +31,7 @@ public class Undeploy extends AbstractTask {
      */
     private String groupId;
 
-    public void execute() throws MojoExecutionException, MojoFailureException {
-        initTask();
+    public void executeTask() throws MojoExecutionException, MojoFailureException {
         Deploy deployer = new Deploy();
         if (serverId == null) {
             File currentProperties = wizard.getCurrentServerPath();
