@@ -1,0 +1,102 @@
+version: ${version}
+help:
+  - name: create-module
+    desc: Create OpenMRS module
+
+  - name: create-platform-module
+    desc: Create OpenMRS platform module
+
+  - name: setup
+    desc: Setup server with modules
+    options:
+      - name: DserverId
+        desc: Id (server name) for server
+      - name: Dversion
+        desc: OpenMRS version (default value '2.2')
+      - name: DdbDriver
+        desc: Driver class (default value 'mysql')
+      - name: DdbUri
+        desc: Uri for JDBC connection with database (default value matches dbDriver)
+      - name: DdbUser
+        desc: Username for database (default value 'root')
+      - name: DdbPassword
+        desc: Password for dbUser
+      - name: Dfile
+        desc: File to get required attributes (server properties)
+
+  - name: setup-platform
+    desc: Setup platform server
+    options:
+      - name: DserverId
+        desc: Id (server name) for server
+      - name: Dversion
+        desc: OpenMRS version (default value '1.11.2')
+      - name: DdbDriver
+        desc: Driver class (default value 'mysql') (optional)
+      - name: DdbUri
+        desc: Uri for JDBC connection with database (default value matches dbDriver) (optional)
+      - name: DdbUser
+        desc: Username for database (default value 'root') (optional)
+      - name: DdbPassword
+        desc: Password for dbUser (optional)
+      - name: DaddDemoData
+        desc: Add demo data to server
+      - name: Dfile
+        desc: File to get required attributes (server properties)
+
+  - name: install
+    desc: Install selected module to server
+    options:
+      - name: DserverId
+        desc: Server id of selected server
+      - name: DgroupId
+        desc: GroupId of module which will be installed (default value 'org.openmrs.module')
+      - name: DartifactId
+        desc: ArtifactId of module which will be installed
+      - name: Dversion
+        desc: Version of module which will be installed
+
+  - name: uninstall
+    desc: Uninstall selected module from server
+    options:
+      - name: DserverId
+        desc: Server id of selected server
+      - name: DgroupId
+        desc: GroupId of module which will be removed (default value 'org.openmrs.module')
+      - name: DartifactId
+        desc: ArtifactId of module which will be removed
+  - name: upgrade
+    desc: Upgrade server or platform server to selected version
+    options:
+      - name: DserverId
+        desc: Server if of selected server
+      - name: Dversion
+        desc: Target version to upgrade
+
+  - name: upgrade-platform
+    desc: Upgrade platform server to selected version
+    options:
+      - name: DserverId
+        desc: Server if of selected server
+      - name: Dversion
+        desc: Target version to upgrade
+
+  - name: reset
+    desc: Reset server to default state
+    options:
+      - name: Dserverid
+        desc: Server if of selected server
+      - name: Dfull
+        desc: Remove user modules if "true" or "yes" (default value - "false")
+
+  - name: delete
+    desc: Delete selected server
+    options:
+      - name: DserverId
+        desc: Server if of selected server
+
+  - name: run
+    desc: Start selected server
+    options:
+      - name: DserverId
+        desc: ServerId of server which will be launched
