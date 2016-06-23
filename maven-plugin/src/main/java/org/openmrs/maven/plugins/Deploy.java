@@ -6,6 +6,9 @@ import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.project.MavenProject;
+import org.openmrs.maven.plugins.bintray.BintrayId;
+import org.openmrs.maven.plugins.bintray.BintrayPackage;
+import org.openmrs.maven.plugins.bintray.OpenmrsBintray;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.Server;
@@ -33,9 +36,10 @@ public class Deploy extends AbstractTask {
     private static final String TEMPLATE_DOWNGRADE = "Installed version '%s' of module higher than target '%s'";
     private static final String TEMPLATE_CURRENT_VERSION = "The server currently has the OpenMRS %s in version %s installed.";
 
-    private static final String INSTALL_MODULE_OPTION = "Install module";
-    private static final String INSTALL_DISTRO_OPTION = "Install OpenMRS distribution";
-    private static final String INSTALL_PLATFORM_OPTION = "Install OpenMRS platform";
+    private static final String DEPLOY_MODULE_OPTION = "Deploy module";
+    private static final String DEPLOY_DISTRO_OPTION = "Deploy OpenMRS distribution";
+    private static final String DEPLOY_PLATFORM_OPTION = "Deploy OpenMRS platform";
+    private static final String DEPLOY_OWA_OPTION = "Deploy OpenMRS OWA";
 
     /**
      * @parameter property="serverId"
@@ -66,6 +70,11 @@ public class Deploy extends AbstractTask {
      */
     private String platform;
 
+    /**
+     * @parameter property="owa"
+     */
+    private String owa;
+
     public Deploy() {}
 
     public Deploy(AbstractTask other) {super(other);}
@@ -94,12 +103,7 @@ public class Deploy extends AbstractTask {
          */
         ServerUpgrader serverUpgrader = new ServerUpgrader(this);
 
-        if(platform!=null&&distro!=null) {
-            if(platform!=null&&distro!=null) getLog().error("platform and distro both specified, starting interactive mode");
-            platform = null;
-            distro = null;
-        }
-        if((platform == null && distro == null)){
+        if((platform == null && distro == null && owa == null)){
             Artifact artifact = checkCurrentDirectoryForOpenmrsWebappUpdate(server);
             DistroProperties distroProperties = checkCurrentDirectoryForDistroProperties(server);
             if(artifact != null){
@@ -114,23 +118,28 @@ public class Deploy extends AbstractTask {
         } else if(distro != null) {
             DistroProperties distroProperties = distroHelper.retrieveDistroProperties(distro);
             serverUpgrader.upgradeToDistro(server, distroProperties);
-        } else {
+        } else if(platform != null) {
             serverUpgrader.upgradePlatform(server, platform);
-        }
+        } else if(owa != null){
+            BintrayId id = OpenmrsBintray.parseOwa(owa);
+            deployOwa(server, id.getName(), id.getVersion());
+        } else throw new MojoExecutionException("Invalid installation option");
     }
 
     private void runInteractiveMode(Server server, ServerUpgrader upgrader) throws MojoExecutionException, MojoFailureException {
-        DistroProperties distroProperties;List<String> options = new ArrayList<>(Arrays.asList(
-                INSTALL_MODULE_OPTION,
-                INSTALL_DISTRO_OPTION,
-                INSTALL_PLATFORM_OPTION));
+        DistroProperties distroProperties;
+        List<String> options = new ArrayList<>(Arrays.asList(
+                DEPLOY_MODULE_OPTION,
+                DEPLOY_DISTRO_OPTION,
+                DEPLOY_PLATFORM_OPTION,
+                DEPLOY_OWA_OPTION));
         String choice = wizard.promptForMissingValueWithOptions("What would You like to do?%s", null, "", options, false);
         switch(choice){
-            case(INSTALL_MODULE_OPTION):{
+            case(DEPLOY_MODULE_OPTION):{
                 deployModule(serverId, groupId, artifactId, version);
                 break;
             }
-            case(INSTALL_DISTRO_OPTION):{
+            case(DEPLOY_DISTRO_OPTION):{
                 wizard.showMessage(String.format(
                         TEMPLATE_CURRENT_VERSION,
                         "Reference Application distribution",
@@ -141,7 +150,7 @@ public class Deploy extends AbstractTask {
                 upgrader.upgradeToDistro(server, distroProperties);
                 break;
             }
-            case(INSTALL_PLATFORM_OPTION):{
+            case(DEPLOY_PLATFORM_OPTION):{
                 wizard.showMessage(String.format(
                         TEMPLATE_CURRENT_VERSION,
                         "platform",
@@ -151,11 +160,49 @@ public class Deploy extends AbstractTask {
                 upgrader.upgradePlatform(server, platform);
                 break;
             }
+            case(DEPLOY_OWA_OPTION):{
+                deployOwa(server, null, null);
+                break;
+            }
             default: {
                 throw new MojoExecutionException(String.format("Invalid installation option only '%s', '%s', '%s' are available",
-                        INSTALL_MODULE_OPTION, INSTALL_DISTRO_OPTION, INSTALL_PLATFORM_OPTION));
+                        DEPLOY_MODULE_OPTION, DEPLOY_DISTRO_OPTION, DEPLOY_PLATFORM_OPTION));
             }
         }
+    }
+
+    private void deployOwa(Server server, String name, String version) throws MojoExecutionException {
+        OpenmrsBintray bintray = new OpenmrsBintray();
+        if(name == null){
+            List<String> owas = new ArrayList<>();
+            for(BintrayId id : bintray.getAvailableOWA()){
+                owas.add(id.getName());
+            }
+            name = wizard.promptForMissingValueWithOptions("Which OWA would you like to deploy?%s", name, "", owas, true);
+        }
+        if(version == null){
+            List<String> versions = bintray.getOwaMetadata(name).getVersions();
+            version = wizard.promptForMissingValueWithOptions("Which version would you like to deploy?%s", version, "", versions, true);
+        }
+        wizard.showMessage("Please remember that to run OWA you need to have openmrs-owa-module installed on the server");
+        File owaDir = new File(server.getServerDirectory(), "owa");
+        if(!owaDir.exists()){
+            //couldn't find place where owa dir is saved yet
+            boolean useDefaultDir = wizard.promptYesNo(String.format(
+                    "\nThere is no default directory '%s' on server %s, would you like to create it? (if not, you will be asked for path to custom directory)",
+                    Server.OWA_DIRECTORY,
+                    server.getServerId()));
+            if(useDefaultDir){
+                owaDir.mkdir();
+            } else {
+                String path = wizard.promptForValueIfMissing(null, "owa directory path");
+                owaDir = new File(path);
+            }
+        }
+        bintray.downloadOWA(owaDir, name, version);
+        server.saveUserOWA(new BintrayId(name, version));
+        server.save();
+        getLog().info(String.format("OWA %s %s was successfully deployed on server %s", name, version, server.getServerId()));
     }
 
     /**
