@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.openmrs.maven</groupId>
+        <artifactId>openmrs-sdk</artifactId>
+        <version>2.1.3-SNAPSHOT</version>
+    </parent>
+
+    <groupId>org.openmrs.maven.plugins</groupId>
+    <artifactId>openmrs-sdk-maven-plugin</artifactId>
+    <packaging>maven-plugin</packaging>
+    <version>${project.parent.version}</version>
+
+    <name>OpenMRS SDK Maven Plugin</name>
+    <description>OpenMRS SDK allows for rapid development of OpenMRS modules.</description>
+    <url>https://wiki.openmrs.org/display/docs/OpenMRS+SDK</url>
+
+    <dependencies>
+        <!-- Maven -->
+        <dependency>
+            <groupId>org.apache.maven</groupId>
+            <artifactId>maven-model</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.maven</groupId>
+            <artifactId>maven-plugin-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.codehaus.plexus</groupId>
+            <artifactId>plexus-utils</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.codehaus.plexus</groupId>
+            <artifactId>plexus-component-annotations</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.codehaus.plexus</groupId>
+            <artifactId>plexus-container-default</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.twdata.maven</groupId>
+            <artifactId>mojo-executor</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-archetype-plugin</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.codehaus.plexus</groupId>
+            <artifactId>plexus-interactivity-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>commons-cli</groupId>
+            <artifactId>commons-cli</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.jyaml</groupId>
+            <artifactId>jyaml</artifactId>
+        </dependency>
+
+        <!-- Archetypes -->
+        <dependency>
+            <groupId>org.openmrs.maven.plugins</groupId>
+            <artifactId>module-wizard-plugin</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.openmrs.maven.archetypes</groupId>
+            <artifactId>maven-archetype-openmrs-project</artifactId>
+        </dependency>
+
+        <!-- DBs -->
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+        </dependency>
+
+        <!-- Tomcat -->
+        <dependency>
+            <groupId>org.apache.tomcat.embed</groupId>
+            <artifactId>tomcat-embed-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.tomcat.embed</groupId>
+            <artifactId>tomcat-embed-logging-juli</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.tomcat.embed</groupId>
+            <artifactId>tomcat-embed-jasper</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.tomcat</groupId>
+            <artifactId>tomcat-jasper</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.tomcat</groupId>
+            <artifactId>tomcat-jasper-el</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.tomcat</groupId>
+            <artifactId>tomcat-jsp-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>jstl</artifactId>
+        </dependency>
+
+        <!--Testing-->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-library</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+                <includes>
+                    <include>**/*.yaml</include>
+                    <include>sdk.properties</include>
+                </includes>
+            </resource>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>false</filtering>
+                <excludes>
+                    <exclude>**/*.yaml</exclude>
+                    <exclude>sdk.properties</exclude>
+                </excludes>
+            </resource>
+        </resources>
+        <plugins>
+            <plugin>
+                <groupId>org.codehaus.plexus</groupId>
+                <artifactId>plexus-component-metadata</artifactId>
+                <executions>
+                    <execution>
+                        <id>process-classes</id>
+                        <goals>
+                            <goal>generate-metadata</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>process-test-classes</id>
+                        <goals>
+                            <goal>generate-test-metadata</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+    
+</project>
