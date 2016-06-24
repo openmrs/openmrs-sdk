@@ -1,100 +1,100 @@
-version: ${version}
+version: "${version}"
 help:
-  - name: create-module
-    desc: Create OpenMRS Reference Application module.
+  - name: "create-module"
+    desc: "Create OpenMRS Reference Application module."
 
-  - name: create-platform-module
-    desc: Create OpenMRS Platform module.
+  - name: "create-platform-module"
+    desc: "Create OpenMRS Platform module."
 
-  - name: setup
-    desc: Setup a new instance of OpenMRS server. It can be used for setting up a platform or a distribution. It prompts for any missing, but required parameters.
+  - name: "setup"
+    desc: "Setup a new instance of OpenMRS server. It can be used for setting up a platform or a distribution. It prompts for any missing, but required parameters."
     options:
-      - name: DserverId
-        desc: Unique id of a server.
-      - name: Dplatform
-        desc: OpenMRS Platform version to setup e.g. '1.11.5'.
-      - name: Ddistro
-        desc: OpenMRS Distribution to setup in a format 'groupId:artifactId:version'. You can skip groupId, if it is 'org.openmrs.distro'.
-      - name: DdbDriver
-        desc: Database driver e.g. 'mysql' or 'h2'.
-      - name: DdbUri
-        desc: Uri for JDBC connection to the database (default value matches dbDriver)
-      - name: DdbUser
-        desc: Username for the database (defaults to 'root').
-      - name: DdbPassword
-        desc: Password for the database user.
-      - name: DaddDemoData
-        desc: Add demo data when setting up a platform server.
-      - name: Dfile
-        desc: Path to installation.properties file for batch setup.
+      - name: "DserverId"
+        desc: "Unique id of a server."
+      - name: "Dplatform"
+        desc: "OpenMRS Platform version to setup e.g. '1.11.5'."
+      - name: "Ddistro"
+        desc: "OpenMRS Distribution to setup in a format 'groupId:artifactId:version'. You can skip groupId, if it is 'org.openmrs.distro'."
+      - name: "DdbDriver"
+        desc: "Database driver e.g. 'mysql' or 'h2'."
+      - name: "DdbUri"
+        desc: "Uri for JDBC connection to the database (default value matches dbDriver)"
+      - name: "DdbUser"
+        desc: "Username for the database (defaults to 'root')."
+      - name: "DdbPassword"
+        desc: "Password for the database user."
+      - name: "DaddDemoData"
+        desc: "Add demo data when setting up a platform server."
+      - name: "Dfile"
+        desc: "Path to installation.properties file for batch setup."
 
-  - name: deploy
-    desc: Deploy a module/distribution/platform to a server. It can be used for deploying a new artifact or upgrading/downgrading an artifact, which was previosly deployed.
+  - name: "deploy"
+    desc: "Deploy a module/distribution/platform to a server. It can be used for deploying a new artifact or upgrading/downgrading an artifact, which was previosly deployed."
     options:
-      - name: DserverId
-        desc: Unique id of a server.
-      - name: DgroupId
-        desc: Group id of an artifact, which you want to deploy (defaults to 'org.openmrs.module').
-      - name: DartifactId
-        desc: Artifact id of an artifact, which you want to deploy.
-      - name: Dversion
-        desc: Version of an artifact, which you want to deploy.
+      - name: "DserverId"
+        desc: "Unique id of a server."
+      - name: "DgroupId"
+        desc: "Group id of an artifact, which you want to deploy (defaults to 'org.openmrs.module')."
+      - name: "DartifactId"
+        desc: "Artifact id of an artifact, which you want to deploy."
+      - name: "Dversion"
+        desc: "Version of an artifact, which you want to deploy."
 
-  - name: undeploy
-    desc: Undeploy a module from a server.
+  - name: "undeploy"
+    desc: "Undeploy a module from a server."
     options:
-      - name: DserverId
-        desc: Unique id of a server.
-      - name: DgroupId
-        desc: Group id of a module, which you want to undeploy (defaults to 'org.openmrs.module').
-      - name: DartifactId
-        desc: Artifact id of a module, which you want to undeploy.
+      - name: "DserverId"
+        desc: "Unique id of a server."
+      - name: "DgroupId"
+        desc: "Group id of a module, which you want to undeploy (defaults to 'org.openmrs.module')."
+      - name: "DartifactId"
+        desc: "Artifact id of a module, which you want to undeploy."
 
 
-  - name: reset
-    desc: Reset server and its database to the initial state.
+  - name: "reset"
+    desc: "Reset server and its database to the initial state."
     options:
-      - name: Dserverid
-        desc: Unique id of a server.
-      - name: Dfull
-        desc: If 'true', delete modules installed manually (defaults to 'false').
+      - name: "Dserverid"
+        desc: "Unique id of a server."
+      - name: "Dfull"
+        desc: "If 'true', delete modules installed manually (defaults to 'false')."
 
-  - name: delete
-    desc: Delete a server and its database.
+  - name: "delete"
+    desc: "Delete a server and its database."
     options:
-      - name: DserverId
-        desc: Unique id of a server.
+      - name: "DserverId"
+        desc: "Unique id of a server."
 
-  - name: run
-    desc: Start a server. If it is run from a module/distro/platform project, the project will be redeployed before launching.
+  - name: "run"
+    desc: "Start a server. If it is run from a module/distro/platform project, the project will be redeployed before launching."
     options:
-      - name: DserverId
-        desc: Unique id of a server.
-      - name: Dport
-        desc: Port to use for running the server (defaults to '8080').
-      - name: Ddebug
-        desc: Enable remote debugging on the given port (defaults to '1044' if empty).
-      - name: Dfork
-        desc: Set to 'false' to disable forking a process for running the server (defaults to 'true'). Useful for debugging within an IDE without a remote debugger. Not that 'false' disables the live-reloading feature.
+      - name: "DserverId"
+        desc: "Unique id of a server."
+      - name: "Dport"
+        desc: "Port to use for running the server (defaults to '8080')."
+      - name: "Ddebug"
+        desc: "Enable remote debugging on the given port (defaults to '1044' if empty)."
+      - name: "Dfork"
+        desc: "Set to 'false' to disable forking a process for running the server (defaults to 'true'). Useful for debugging within an IDE without a remote debugger. Not that 'false' disables the live-reloading feature."
 
-  - name: watch
-    desc: Add a module from the current directory to the list of watched projects. It enables the live-reloading feature for a module.
+  - name: "watch"
+    desc: "Add a module from the current directory to the list of watched projects. It enables the live-reloading feature for a module."
     options:
-     - name: DserverId
-       desc: Unique id of a server.
+     - name: "DserverId"
+       desc: "Unique id of a server."
 
-  - name: unwatch
-    desc: Remove a module from the list of watched projects. It disabled the live-reloading feature for a module.
+  - name: "unwatch"
+    desc: "Remove a module from the list of watched projects. It disabled the live-reloading feature for a module."
     options:
-     - name: DserverId
-       desc: Unique id of a server.
-     - name: DartifactId
-       desc: Artifact id of a module to unwatch.
-     - name: DgroupId
-       desc: Group id of a module to unwatch. It is optional, if artifact id is unambiguous.
+     - name: "DserverId"
+       desc: "Unique id of a server."
+     - name: "DartifactId"
+       desc: "Artifact id of a module to unwatch."
+     - name: "DgroupId"
+       desc: "Group id of a module to unwatch. It is optional, if artifact id is unambiguous."
 
-  - name: info
-    desc: Display server details including the list of watched modules.
+  - name: "info"
+    desc: "Display server details including the list of watched modules."
     options:
-     - name: DserverId
-       desc: Unique id of a server.
+     - name: "DserverId"
+       desc: "Unique id of a server."

@@ -31,14 +31,21 @@ public class Help extends AbstractMojo {
         InputStream stream = getClass().getClassLoader().getResourceAsStream(HELP_FILE);
         YamlDecoder dec = new YamlDecoder(stream);
         HelpFormatter formatter = new HelpFormatter();
+        formatter.setLeftPadding(4);
+        formatter.setDescPadding(8);
         try {
             Map keys = (Map) dec.readObject();
             List l = (List) keys.get("help");
             String printVersion = String.format(INFO, keys.get("version"));
             String printWikiLink = "For more info, see SDK documentation: " + WIKI;
             PrintWriter writer = new PrintWriter(System.out);
+            writer.println();
+            writer.println();
             writer.println(printVersion);
+            writer.println();
             writer.println(printWikiLink);
+            writer.println();
+            writer.println();
             writer.flush();
             if (l == null) {
                 throw new MojoExecutionException("Error during reading help data");
@@ -59,8 +66,9 @@ public class Help extends AbstractMojo {
                     }
                 }
                 formatter.printHelp(m.get("name").toString(), header, options, "");
+                writer.println();
+                writer.flush();
             }
-            writer.println(" -Dport Port on which to run server");
             writer.flush();
         } catch (EOFException e) {
             throw new MojoExecutionException(e.getMessage());
