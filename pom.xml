@@ -77,6 +77,10 @@
             <name>OpenMRS repository</name>
             <url>http://mavenrepo.openmrs.org/nexus/content/repositories/public</url>
         </repository>
+        <repository>
+            <id>jgit-repository</id>
+            <url>https://repo.eclipse.org/content/groups/releases/</url>
+        </repository>
     </repositories>
 
     <distributionManagement>
@@ -209,6 +213,13 @@
                 <groupId>javax.servlet</groupId>
                 <artifactId>jstl</artifactId>
                 <version>1.2</version>
+            </dependency>
+
+            <!-- JGit -->
+            <dependency>
+                <groupId>org.eclipse.jgit</groupId>
+                <artifactId>org.eclipse.jgit</artifactId>
+                <version>4.4.0.201606070830-r</version>
             </dependency>
 
             <!-- Testing -->
