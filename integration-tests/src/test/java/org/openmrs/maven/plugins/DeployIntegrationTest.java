@@ -9,8 +9,11 @@ import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.Server;
 
 import java.io.File;
+import java.util.Arrays;
 
+import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.openmrs.maven.plugins.SdkMatchers.hasNameStartingWith;
 import static org.openmrs.maven.plugins.SdkMatchers.hasUserOwa;
 import static org.openmrs.maven.plugins.SdkMatchers.serverHasVersion;
 
@@ -91,7 +94,7 @@ public class DeployIntegrationTest extends AbstractSdkIntegrationTest {
     }
 
     @Test
-    public void deploy_shouldInstallOwa() throws Exception {
+    public void deploy_shouldInstallOwaAndOwaModule() throws Exception {
         addTaskParam("serverId", testServerId);
         addTaskParam("owa", "conceptdictionary:1.0.0-beta.6");
 
@@ -100,6 +103,12 @@ public class DeployIntegrationTest extends AbstractSdkIntegrationTest {
         assertSuccess();
         assertFilePresent(testServerId+ File.separator+"owa");
         assertFilePresent(testServerId+ File.separator+"owa"+File.separator+"conceptdictionary");
+
+        //check if any owa module is installed
+        File modulesDir = new File(testDirectory, testServerId+File.separator+"modules");
+
+        //can't check for specific file, as always the latest release is installed
+        assertThat(Arrays.asList(modulesDir.listFiles()), hasItem(hasNameStartingWith("owa")));
 
         Server.setServersPath(testDirectory.getAbsolutePath());
         Server server = Server.loadServer(testServerId);

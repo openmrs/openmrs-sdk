@@ -184,10 +184,30 @@ public class Deploy extends AbstractTask {
             List<String> versions = bintray.getOwaMetadata(name).getVersions();
             version = wizard.promptForMissingValueWithOptions("Which version would you like to deploy?%s", version, "", versions, true);
         }
-        wizard.showMessage("Please remember that to run OWA you need to have openmrs-owa-module installed on the server");
+
+        boolean installOwaModule = true;
+        List<Artifact> serverModules = server.getServerModules();
+        Artifact owaModule = new Artifact("owa-omod", "");
+        for(Artifact module : serverModules){
+            if(owaModule.getArtifactId().equals(module.getArtifactId())){
+                installOwaModule = false;
+                break;
+            }
+        }
+        if(installOwaModule){
+            wizard.showMessage("No installation of OWA module found on this server, will install latest version");
+            owaModule.setVersion(versionsHelper.getLatestReleasedVersion(owaModule));
+            deployModule(
+                    owaModule.getGroupId(),
+                    owaModule.getArtifactId(),
+                    owaModule.getVersion(),
+                    server
+            );
+        }
+
         File owaDir = new File(server.getServerDirectory(), "owa");
         if(!owaDir.exists()){
-            //couldn't find place where owa dir is saved yet
+            //OWA module has option to set custom app folder
             boolean useDefaultDir = wizard.promptYesNo(String.format(
                     "\nThere is no default directory '%s' on server %s, would you like to create it? (if not, you will be asked for path to custom directory)",
                     Server.OWA_DIRECTORY,

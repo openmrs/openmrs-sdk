@@ -6,11 +6,13 @@ import org.openmrs.maven.plugins.bintray.BintrayId;
 import org.openmrs.maven.plugins.bintray.BintrayPackage;
 import org.openmrs.maven.plugins.model.Server;
 
+import java.io.File;
 import java.util.Collection;
 import java.util.List;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.hasItem;
+import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.Matchers.greaterThan;
 
 public class SdkMatchers {
@@ -44,6 +46,14 @@ public class SdkMatchers {
             @Override
             protected String featureValueOf(final BintrayPackage actual) {
                 return actual.getRepository();
+            }
+        };
+    }
+    public static Matcher<File> hasNameStartingWith(final String namePrefix) {
+        return new FeatureMatcher<File, String>(startsWith(namePrefix), "file with name", "file with name") {
+            @Override
+            protected String featureValueOf(final File actual) {
+                return actual.getName();
             }
         };
     }

@@ -14,7 +14,7 @@ import java.net.URL;
 import java.util.List;
 
 public class Bintray {
-    public static List<BintrayId> getAvailablePackages(String owner, String repo){
+    public List<BintrayId> getAvailablePackages(String owner, String repo){
         String url = String.format("https://api.bintray.com/repos/%s/%s/packages", owner, repo);
         GetMethod get = new GetMethod(url);
         try {
@@ -33,7 +33,7 @@ public class Bintray {
         }
     }
 
-    public static BintrayPackage getPackageMetadata(String owner, String repo, String name){
+    public BintrayPackage getPackageMetadata(String owner, String repo, String name){
         String url = String.format("https://api.bintray.com/packages/%s/%s/%s", owner, repo, name);
         GetMethod get = new GetMethod(url);
         try {
@@ -51,7 +51,7 @@ public class Bintray {
         }
     }
 
-    public static List<BintrayFile> getPackageFiles(String owner, String repo, String name, String version){
+    public List<BintrayFile> getPackageFiles(String owner, String repo, String name, String version){
         String url = String.format("https://api.bintray.com/packages/%s/%s/%s/versions/%s/files", owner, repo, name, version);
         GetMethod get = new GetMethod(url);
         try {
@@ -70,7 +70,7 @@ public class Bintray {
         }
     }
 
-    public static void downloadPackage(File destDirectory, String owner, String repo, String name, String version){
+    public void downloadPackage(File destDirectory, String owner, String repo, String name, String version){
         List<BintrayFile> files = getPackageFiles(owner, repo, name, version);
         for(BintrayFile file : files){
             downloadFile(file, destDirectory, null);
@@ -83,7 +83,7 @@ public class Bintray {
      * @param filename optional, if not passed, name is bintray file name
      * @return
      */
-    public static File downloadFile(BintrayFile file, File destDirectory, String filename){
+    public File downloadFile(BintrayFile file, File destDirectory, String filename){
         try {
             if(filename == null){
                 filename = file.getName();
@@ -101,13 +101,13 @@ public class Bintray {
         }
     }
 
-    public static void downloadPackage(File destDirectory, BintrayPackage bintrayPackage){
+    public void downloadPackage(File destDirectory, BintrayPackage bintrayPackage){
         downloadPackage(
                 destDirectory,
                 bintrayPackage,
                 bintrayPackage.getLatestVersion());
     }
-    public static void downloadPackage(File destDirectory, BintrayPackage bintrayPackage, String version){
+    public void downloadPackage(File destDirectory, BintrayPackage bintrayPackage, String version){
         downloadPackage(
                 destDirectory,
                 bintrayPackage.getOwner(),

@@ -15,22 +15,23 @@ public class OpenmrsBintray {
 
     private static final String OWA_PACKAGE_EXTENSION = ".zip";
 
+    private Bintray bintray = new Bintray();
 
     public List<BintrayId> getAvailableOWA() throws MojoExecutionException {
-        return Bintray.getAvailablePackages(BINTRAY_OPENMRS_USER, BINTRAY_OWA_REPO);
+        return bintray.getAvailablePackages(BINTRAY_OPENMRS_USER, BINTRAY_OWA_REPO);
     }
 
     public BintrayPackage getOwaMetadata(String name) throws MojoExecutionException {
-        return Bintray.getPackageMetadata(BINTRAY_OPENMRS_USER, BINTRAY_OWA_REPO, name);
+        return bintray.getPackageMetadata(BINTRAY_OPENMRS_USER, BINTRAY_OWA_REPO, name);
     }
     public void downloadOWA(File destination, String name, String version) {
         if(!destination.exists()){
             destination.mkdir();
         }
-        List<BintrayFile> bintrayFiles = Bintray.getPackageFiles(BINTRAY_OPENMRS_USER, BINTRAY_OWA_REPO, name, version);
+        List<BintrayFile> bintrayFiles = bintray.getPackageFiles(BINTRAY_OPENMRS_USER, BINTRAY_OWA_REPO, name, version);
         //Assumption: owa release is single zip file
         String packageName = parseOwaNameFromFile(bintrayFiles.get(0).getPath())+ OWA_PACKAGE_EXTENSION;
-        File downloadedFile = Bintray.downloadFile(bintrayFiles.get(0), destination, packageName);
+        File downloadedFile = bintray.downloadFile(bintrayFiles.get(0), destination, packageName);
         extractOwa(downloadedFile);
         downloadedFile.delete();
     }
