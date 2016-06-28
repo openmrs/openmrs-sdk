@@ -4,7 +4,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.openmrs.maven.plugins.utility.DistroHelper;
+import org.openmrs.maven.plugins.bintray.BintrayId;
 import org.openmrs.maven.plugins.utility.Project;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 
@@ -28,10 +28,12 @@ public class Server {
     public static final String PROPERTY_PLATFORM = "openmrs.platform.version";
     public static final String PROPERTY_DB_NAME = "database_name";
     public static final String PROPERTY_USER_MODULES = "user_modules";
+    public static final String PROPERTY_USER_OWAS = "user_owas";
     public static final String PROPERTY_DEMO_DATA = "add_demo_data";
     public static final String PROPERTY_DISTRO_ARTIFACT_ID = "distro.artifactId";
     public static final String PROPERTY_DISTRO_GROUP_ID = "distro.groupId";
     private static final String OLD_PROPERTIES_FILENAME = "backup.properties";
+    public static final String OWA_DIRECTORY = "owa";
 
     public static final String COMMA = ",";
 
@@ -396,6 +398,33 @@ public class Server {
             }
             else return id;
         }
+    }
+
+    public void saveUserOWA(BintrayId id){
+        addToValueList(PROPERTY_USER_OWAS, id.getName()+SLASH+id.getVersion());
+    }
+    public void removeUserOWA(BintrayId id){
+        List<BintrayId> owas = getUserOWAs();
+        owas.remove(id);
+        setUserOWAs(owas);
+    }
+    public void setUserOWAs(List<BintrayId> ids){
+        properties.remove(PROPERTY_USER_OWAS);
+        for(BintrayId id : ids){
+            saveUserOWA(id);
+        }
+    }
+    public List<BintrayId> getUserOWAs(){
+        String[] items = getParam(PROPERTY_USER_OWAS).split(COMMA);
+        List<BintrayId> owas = new ArrayList<>();
+        for(String item : items){
+            String name = item.split(SLASH)[0];
+            String version = item.split(SLASH)[1];
+            if(name != null && version != null){
+                owas.add(new BintrayId(name, version));
+            }
+        }
+        return owas;
     }
 
     /**

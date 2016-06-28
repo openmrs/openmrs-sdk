@@ -129,6 +129,24 @@
             <artifactId>hamcrest-library</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <!--http client-->
+        <dependency>
+            <groupId>commons-httpclient</groupId>
+            <artifactId>commons-httpclient</artifactId>
+        </dependency>
+
+        <!--json parser-->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
+        
+        <!--zip-->
+        <dependency>
+            <groupId>net.lingala.zip4j</groupId>
+            <artifactId>zip4j</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

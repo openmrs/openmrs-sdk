@@ -3,11 +3,15 @@ package org.openmrs.maven.plugins;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.openmrs.maven.plugins.bintray.BintrayId;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.Server;
 
+import java.io.File;
+
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.openmrs.maven.plugins.SdkMatchers.hasUserOwa;
 import static org.openmrs.maven.plugins.SdkMatchers.serverHasVersion;
 
 public class DeployIntegrationTest extends AbstractSdkIntegrationTest {
@@ -25,7 +29,7 @@ public class DeployIntegrationTest extends AbstractSdkIntegrationTest {
     }
 
     @Test
-    public void moduleInstall_shouldReplaceWebapp() throws Exception {
+    public void deploy_shouldReplaceWebapp() throws Exception {
         addTaskParam("serverId", testServerId);
         addTaskParam("platform", "1.11.5");
 
@@ -36,7 +40,7 @@ public class DeployIntegrationTest extends AbstractSdkIntegrationTest {
     }
 
     @Test
-    public void moduleInstall_shouldUpgradeDistroTo2_3_1() throws Exception {
+    public void deploy_shouldUpgradeDistroTo2_3_1() throws Exception {
         addTaskParam("serverId", testServerId);
         addTaskParam("distro", "referenceapplication:2.3.1");
 
@@ -53,7 +57,7 @@ public class DeployIntegrationTest extends AbstractSdkIntegrationTest {
     }
 
     @Test
-    public void moduleInstall_shouldUpgradeDistroFromDistroProperties() throws Exception {
+    public void deploy_shouldUpgradeDistroFromDistroProperties() throws Exception {
         addTaskParam("serverId", testServerId);
 
         executeTask("deploy");
@@ -64,7 +68,7 @@ public class DeployIntegrationTest extends AbstractSdkIntegrationTest {
     }
 
     @Test
-    public void moduleInstall_shouldInstallModule() throws Exception {
+    public void deploy_shouldInstallModule() throws Exception {
         addTaskParam("serverId", testServerId);
         addTaskParam("artifactId", "owa");
         addTaskParam("groupId", Artifact.GROUP_MODULE);
@@ -77,12 +81,28 @@ public class DeployIntegrationTest extends AbstractSdkIntegrationTest {
     }
 
     @Test
-    public void moduleInstall_shouldInstallModuleFromPomInDir() throws Exception {
+    public void deploy_shouldInstallModuleFromPomInDir() throws Exception {
         addTaskParam("serverId", testServerId);
 
         executeTask("deploy");
 
         assertSuccess();
         assertModulesInstalled(testServerId, "owa-1.4.omod");
+    }
+
+    @Test
+    public void deploy_shouldInstallOwa() throws Exception {
+        addTaskParam("serverId", testServerId);
+        addTaskParam("owa", "conceptdictionary:1.0.0-beta.6");
+
+        executeTask("deploy");
+
+        assertSuccess();
+        assertFilePresent(testServerId+ File.separator+"owa");
+        assertFilePresent(testServerId+ File.separator+"owa"+File.separator+"conceptdictionary");
+
+        Server.setServersPath(testDirectory.getAbsolutePath());
+        Server server = Server.loadServer(testServerId);
+        assertThat(server, hasUserOwa(new BintrayId("openmrs-owa-conceptdictionary","1.0.0-beta.6")));
     }
 }
