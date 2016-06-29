@@ -1,5 +1,7 @@
 package org.openmrs.maven.plugins;
 
+import org.apache.commons.io.output.NullOutputStream;
+import org.apache.ibatis.jdbc.ScriptRunner;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.openmrs.maven.plugins.model.Artifact;
@@ -11,6 +13,14 @@ import org.openmrs.maven.plugins.utility.DistroHelper;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.io.Reader;
+import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.SQLException;
 
 /**
@@ -22,6 +32,7 @@ public class Setup extends AbstractTask {
     private static final String GOAL_UNPACK = "unpack";
     private static final String DEFAULT_DISTRIBUTION = "\n\nWould you like to install OpenMRS distribution?";
     private static final String CUSTOM_DISTRIBUTION = "\n\nWould you like to install %s %s distribution?";
+    private static final String CLASSPATH_SCRIPT_PREFIX = "classpath://";
 
     /**
      * Server id (folder name)
@@ -57,6 +68,13 @@ public class Setup extends AbstractTask {
      * @parameter property="dbPassword"
      */
     private String dbPassword;
+
+    /**
+     * DB dump script to import
+     *
+     * @parameter property="dbSql"
+     */
+    private String dbSql;
 
     /**
      * Path to installation.properties
@@ -145,7 +163,14 @@ public class Setup extends AbstractTask {
                 server.setDbName(determineDbName(server.getDbUri(), server.getServerId()));
             }
             if (server.getDbDriver().equals(SDKConstants.DRIVER_MYSQL)){
-                if(!connectMySqlDatabase(server)){
+                boolean mysqlDbCreated = connectMySqlDatabase(server);
+                if(mysqlDbCreated){
+                    if(dbSql!=null){
+                        importMysqlDb(server, dbSql);
+                    } else if(distroProperties!=null&&distroProperties.getSqlScriptPath()!=null){
+                        importMysqlDb(server, distroProperties.getSqlScriptPath());
+                    }
+                } else {
                     wizard.showMessage("The specified database "+server.getDbName()+" does not exist and it will be created for you.");
                 }
             } else {
@@ -213,6 +238,52 @@ public class Setup extends AbstractTask {
                 }
             }
         }
+    }
+
+    private void importMysqlDb(Server server, String sqlScriptPath) {
+        String uri = server.getDbUri().replace("@DBNAME@", server.getDbName());
+        Connection connection = null;
+        try {
+            connection = DriverManager.getConnection(uri, server.getDbUser(), server.getDbPassword());
+            Reader scriptReader = getSqlScriptReader(sqlScriptPath);
+            ScriptRunner scriptRunner = new ScriptRunner(connection);
+            //we don't want to display ~5000 lines of queries to user if there is no error
+            scriptRunner.setLogWriter(new PrintWriter(new NullOutputStream()));
+            scriptRunner.setStopOnError(true);
+            scriptRunner.runScript(scriptReader);
+            scriptRunner.closeConnection();
+            getLog().info("Database imported successfully");
+        } catch (SQLException e) {
+            try {
+                if(connection!=null){
+                    connection.close();
+                }
+            } catch (SQLException e1) {
+                getLog().error(e.getMessage());
+            }
+        }
+    }
+
+    private Reader getSqlScriptReader(String sqlScriptPath){
+        InputStream stream;
+        if(sqlScriptPath.startsWith(CLASSPATH_SCRIPT_PREFIX)){
+            String resource = sqlScriptPath.replace(CLASSPATH_SCRIPT_PREFIX, "");
+            stream = (Setup.class.getClassLoader().getResourceAsStream(resource));
+        } else {
+            File scriptFile = null;
+            File relative = new File(System.getProperty("user.dir"), sqlScriptPath);
+            if(relative.exists()){
+                scriptFile = relative;
+            } else {
+                scriptFile = new File(sqlScriptPath);
+            }
+            try {
+                stream = new FileInputStream(scriptFile);
+            } catch (FileNotFoundException e) {
+                throw new RuntimeException("Invalid path to SQL import script", e);
+            }
+        }
+        return new InputStreamReader(stream);
     }
 
     public String determineDbName(String uri, String serverId) throws MojoExecutionException {

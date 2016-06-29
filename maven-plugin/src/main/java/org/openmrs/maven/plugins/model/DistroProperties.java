@@ -26,6 +26,7 @@ public class DistroProperties {
     private static final String ARTIFACT_ID = "artifactId";
     private static final String TYPE = "type";
     private static final String GROUP_ID = "groupId";
+    private static final String DB_SQL = "db.sql";
     public static final String DISTRO_FILE_NAME = "openmrs-disrto.properties";
 
 
@@ -172,6 +173,10 @@ public class DistroProperties {
 
     public boolean isH2Supported(){
         return Boolean.parseBoolean(getParam("supports.h2"));
+    }
+
+    public String getSqlScriptPath() {
+        return getParam(DB_SQL);
     }
 
     public String getServerVersion(){

@@ -43,4 +43,8 @@ public class DBConnector {
     public void close() throws SQLException {
         if (conn != null) conn.close();
     }
+
+    public Connection getConnection() {
+        return conn;
+    }
 }
