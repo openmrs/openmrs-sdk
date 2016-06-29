@@ -23,16 +23,14 @@ public abstract class AbstractTask extends AbstractMojo {
     /**
      * The project currently being build.
      *
-     * @parameter property="project"
-     * @required
+     * @parameter default-value="${project}"
      */
     MavenProject mavenProject;
 
     /**
      * The current Maven session.
      *
-     * @parameter property="session"
-     * @required
+     * @parameter default-value="${session}"
      */
     MavenSession mavenSession;
 
@@ -41,7 +39,6 @@ public abstract class AbstractTask extends AbstractMojo {
      *
      * @component
      * @required
-     * @readonly
      */
     ArtifactMetadataSource artifactMetadataSource;
 
@@ -60,8 +57,8 @@ public abstract class AbstractTask extends AbstractMojo {
     BuildPluginManager pluginManager;
 
     /**
-     * @required
      * @component
+     * @required
      */
     Wizard wizard;
 
@@ -69,7 +66,7 @@ public abstract class AbstractTask extends AbstractMojo {
      * Interactive mode flag, set for 'false' allows automatic testing in batch mode,
      * as it makes all 'yes/no' prompts return 'yes'
      *
-     * @parameter property="interactiveMode" default-value=true
+     * @parameter property="interactiveMode" default-value="true"
      */
     String interactiveMode;
 
