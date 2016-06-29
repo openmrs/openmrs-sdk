@@ -1,6 +1,7 @@
 package org.openmrs.maven.plugins.utility;
 
 import com.google.common.collect.Lists;
+import org.apache.commons.collections.ArrayStack;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -29,7 +30,7 @@ import java.util.Map.Entry;
 public class DefaultWizard implements Wizard {
     private static final String EMPTY_STRING = "";
     private static final String NONE = "(none)";
-    private static final String DEFAULT_CHOICE_TMPL = "Which one do you choose? [";
+    private static final String DEFAULT_CHOICE_TMPL = "Which one do you choose?";
     private static final String DEFAULT_OPTION_TMPL = "%d) %s";
     private static final String DEFAULT_CUSTOM_OPTION_TMPL = "%d) Custom";
     private static final String DEFAULT_SERVER_NAME = "server";
@@ -49,6 +50,8 @@ public class DefaultWizard implements Wizard {
     private static final String UPDATE_MODULE_TMPL = "^ upgrades %s %s to %s";
     private static final String ADD_MODULE_TMPL = "+ adds %s %s";
     private static final String NO_DIFFERENTIAL = "\nNo modules to update or add found";
+    public static final String PLATFORM_VERSION_PROMPT = "You can deploy the following versions of a platform";
+    public static final String DISTRIBUTION_VERSION_PROMPT = "You can deploy the following versions of distribution";
 
     @Requirement
     Prompter prompter;
@@ -109,71 +112,70 @@ public class DefaultWizard implements Wizard {
         if (value != null) {
             return value;
         }
-        String textToShow = null;
+        String textToShow;
         // check if there no default value
-        if (defValue.equals(EMPTY_STRING)){
+        if (StringUtils.isBlank(defValue)){
             textToShow = String.format(message != null ? message : DEFAULT_VALUE_TMPL, parameterName);
         }
         else {
             textToShow = String.format(message != null? message : DEFAULT_VALUE_TMPL_WITH_DEFAULT, parameterName, defValue);
         }
         String val = prompt(textToShow);
-        if (val.equals(EMPTY_STRING)) {
+        if (StringUtils.isBlank(val)) {
             val = defValue;
         }
         return val;
     }
 
     @Override
-    public String promptForMissingValueWithOptions(String message, String value, String parameterName, List<String> options, boolean allowCustom){
+    public String promptForMissingValueWithOptions(String message, String value, String parameterName, List<String> options, String customMessage, String customDefault){
         if (value != null) {
             return value;
         }
         String question = String.format(message != null? message : DEFAULT_VALUE_TMPL_WITH_DEFAULT, parameterName, options.get(0));
-        StringBuilder choiceBuilder = new StringBuilder(DEFAULT_CHOICE_TMPL);
 
-        showMessage(question);
-        System.out.println("");
-        int i = 1;
+        System.out.println("\n" + question + ":");
+        List<Integer> choices = new ArrayList<>();
+        int i = 0;
         for(String option : options){
-            System.out.println(String.format(DEFAULT_OPTION_TMPL, i, option));
-            choiceBuilder.append((i)+"/");
             i++;
+            System.out.println(String.format(DEFAULT_OPTION_TMPL, i, option));
+            choices.add(i);
         }
-        if(allowCustom){
+        if(customMessage != null){
+            i++;
             System.out.println(String.format(DEFAULT_CUSTOM_OPTION_TMPL, i));
-            choiceBuilder.append((i));
+            choices.add(i);
         }
-        String val = prompt(choiceBuilder.toString()+"]");
-        if (val.equals(EMPTY_STRING)) {
-            return options.get(0);
-        } else {
-            if(StringUtils.isNumeric(val)){
-                if(Integer.parseInt(val)<i){
-                    return options.get(Integer.parseInt(val)-1);
-                } else if(Integer.parseInt(val)==i && allowCustom) {
-                    return promptForValueIfMissingWithDefault(DEFAULT_CUSTOM_DIST_ARTIFACT, null, "", REFERENCEAPPLICATION_2_3);
-                }
+
+        String choice = prompt(DEFAULT_CHOICE_TMPL + " [" + StringUtils.join(choices.iterator(), "/") + "]");
+        int chosenIndex = -1;
+        if(!StringUtils.isBlank(choice) && StringUtils.isNumeric(choice)) {
+            chosenIndex = Integer.parseInt(choice) - 1;
+        }
+
+        if(chosenIndex >= 0) {
+            if (chosenIndex < options.size()){
+                return options.get(chosenIndex);
+            } else if(chosenIndex == options.size() && customMessage != null) {
+                return promptForValueIfMissingWithDefault(customMessage, null, "", customDefault);
             }
-            System.out.println("\nPlease insert valid option number!");
-            return promptForMissingValueWithOptions(message, value, parameterName, options, allowCustom);
         }
+
+        System.out.println("\nYou must specify " + StringUtils.join(choices.iterator(), " or ") + ".");
+        return promptForMissingValueWithOptions(message, value, parameterName, options, customMessage, customDefault);
     }
 
 
     private String prompt(String textToShow){
         try {
-            return prompter.prompt(textToShow);
+            return prompter.prompt("\n" + textToShow);
         } catch (PrompterException e) {
             throw new RuntimeException(e);
         }
     }
     public void showMessage(String textToShow){
-        try {
-            prompter.showMessage(textToShow);
-        } catch (PrompterException e) {
-            throw new RuntimeException(e);
-        }
+        System.out.println("\n" + textToShow);
     }
 
     /**
@@ -188,14 +190,6 @@ public class DefaultWizard implements Wizard {
     public String promptForValueWithDefaultList(String value, String parameterName, List<String> values) {
         if (value != null) return value;
         String defaultValue = values.size() > 0 ? values.get(0) : NONE;
-        final String text = DEFAULT_VALUE_TMPL_WITH_DEFAULT + " (possible: %s)";
-        String val = prompt(String.format(text, parameterName, defaultValue, StringUtils.join(values.toArray(), ", ")));
-        if (val.equals(EMPTY_STRING)) val = defaultValue;
-        return val;
-    }
-    @Override
-    public String promptForValueWithDefaultList(String value, String parameterName, String defaultValue, List<String> values) {
-        if (value != null) return value;
         final String text = DEFAULT_VALUE_TMPL_WITH_DEFAULT + " (possible: %s)";
         String val = prompt(String.format(text, parameterName, defaultValue, StringUtils.join(values.toArray(), ", ")));
         if (val.equals(EMPTY_STRING)) val = defaultValue;
@@ -263,15 +257,15 @@ public class DefaultWizard implements Wizard {
 
     @Override
     public void promptForPlatformVersionIfMissing(Server server, List<String> versions) {
-        String version = promptForMissingValueWithOptions("You can install the following versions of a platform",
-                server.getVersion(), "version", versions, true);
+        String version = promptForMissingValueWithOptions(PLATFORM_VERSION_PROMPT,
+                server.getVersion(), "version", versions, "Please specify platform version", null);
         server.setVersion(version);
     }
 
 	@Override
 	public String promptForPlatformVersion(List<String> versions) {
-        String version = promptForMissingValueWithOptions("You can install the following versions of a platform",
-                null, "version", versions, true);
+        String version = promptForMissingValueWithOptions(PLATFORM_VERSION_PROMPT,
+                null, "version", versions, "Please specify platform version", null);
         return version;
 	}
 
@@ -299,14 +293,9 @@ public class DefaultWizard implements Wizard {
         }
         optionsMap.put(String.format(REFAPP_OPTION_TMPL, "2.4-SNAPSHOT"), String.format(REFAPP_ARTIFACT_TMPL, "2.4-SNAPSHOT"));
 
-        String version = promptForMissingValueWithOptions ("You can install the following versions of distribution",
-                null, "version", Lists.newArrayList(optionsMap.keySet()), true);
+        String version = promptForMissingValueWithOptions(DISTRIBUTION_VERSION_PROMPT,
+                null, "version", Lists.newArrayList(optionsMap.keySet()), "Please specify distribution artifact", REFERENCEAPPLICATION_2_3);
         return optionsMap.get(version);
-    }
-
-    @Override
-    public boolean promptForInstallDistro() {
-        return promptYesNo("Would you like to install OpenMRS distribution?");
     }
 
     @Override
@@ -328,13 +317,15 @@ public class DefaultWizard implements Wizard {
     public void promptForH2Db(Server server) {
         boolean h2 = promptYesNo(
                 "Would you like to use the h2 database (-DdbDriver) (note that some modules do not support it)?");
-        if(h2){
+        if(h2) {
             server.setDbDriver(SDKConstants.DRIVER_H2);
             if (server.getDbUri() == null) {
                 server.setDbUri(SDKConstants.URI_H2);
             }
             server.setDbUser("root");
             server.setDbPassword("root");
+        } else {
+            promptForMySQLDb(server);
         }
     }
 

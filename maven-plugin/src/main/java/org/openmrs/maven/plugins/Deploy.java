@@ -36,10 +36,10 @@ public class Deploy extends AbstractTask {
     private static final String TEMPLATE_DOWNGRADE = "Installed version '%s' of module higher than target '%s'";
     private static final String TEMPLATE_CURRENT_VERSION = "The server currently has the OpenMRS %s in version %s installed.";
 
-    private static final String DEPLOY_MODULE_OPTION = "Deploy module";
-    private static final String DEPLOY_DISTRO_OPTION = "Deploy OpenMRS distribution";
-    private static final String DEPLOY_PLATFORM_OPTION = "Deploy OpenMRS platform";
-    private static final String DEPLOY_OWA_OPTION = "Deploy OpenMRS OWA";
+    private static final String DEPLOY_MODULE_OPTION = "Module";
+    private static final String DEPLOY_OWA_OPTION = "Open Web App";
+    private static final String DEPLOY_DISTRO_OPTION = "Distribution";
+    private static final String DEPLOY_PLATFORM_OPTION = "Platform";
 
     /**
      * @parameter property="serverId"
@@ -130,10 +130,12 @@ public class Deploy extends AbstractTask {
         DistroProperties distroProperties;
         List<String> options = new ArrayList<>(Arrays.asList(
                 DEPLOY_MODULE_OPTION,
+                DEPLOY_OWA_OPTION,
                 DEPLOY_DISTRO_OPTION,
-                DEPLOY_PLATFORM_OPTION,
-                DEPLOY_OWA_OPTION));
-        String choice = wizard.promptForMissingValueWithOptions("What would You like to do?%s", null, "", options, false);
+                DEPLOY_PLATFORM_OPTION
+                ));
+        String choice = wizard.promptForMissingValueWithOptions("What would you like to deploy?%s", null, "", options, null, null);
+
         switch(choice){
             case(DEPLOY_MODULE_OPTION):{
                 deployModule(serverId, groupId, artifactId, version);
@@ -178,11 +180,11 @@ public class Deploy extends AbstractTask {
             for(BintrayId id : bintray.getAvailableOWA()){
                 owas.add(id.getName());
             }
-            name = wizard.promptForMissingValueWithOptions("Which OWA would you like to deploy?%s", name, "", owas, true);
+            name = wizard.promptForMissingValueWithOptions("Which OWA would you like to deploy?%s", name, "", owas, "Please specify OWA id", null);
         }
         if(version == null){
             List<String> versions = bintray.getOwaMetadata(name).getVersions();
-            version = wizard.promptForMissingValueWithOptions("Which version would you like to deploy?%s", version, "", versions, true);
+            version = wizard.promptForMissingValueWithOptions("Which version would you like to deploy?%s", version, "", versions, "Please specify OWA version", null);
         }
         wizard.showMessage("Please remember that to run OWA you need to have openmrs-owa-module installed on the server");
         File owaDir = new File(server.getServerDirectory(), "owa");
@@ -406,7 +408,7 @@ public class Deploy extends AbstractTask {
             }
             List<String> availableVersions = versionsHelper.getVersionAdvice(new Artifact(moduleArtifactId, "1.0",moduleGroupId), 5);
             moduleVersion = wizard.promptForMissingValueWithOptions(
-                    "You can install following versions of module", version, "version", availableVersions, true);
+                    "You can deploy the following versions of the module", version, "version", availableVersions, "Please specify module version", null);
         }
         return new Artifact(moduleArtifactId, moduleVersion, moduleGroupId, Artifact.TYPE_JAR, Artifact.TYPE_OMOD);
     }

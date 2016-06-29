@@ -71,7 +71,7 @@ public class ServerUpgrader {
 			deleteDependencyPluginMarker();
 			parentTask.getLog().info("Server upgraded successfully");
 		} else {
-			parentTask.wizard.showMessage("\nServer upgrade aborted");
+			parentTask.wizard.showMessage("Server upgrade aborted");
 		}
 
 	}

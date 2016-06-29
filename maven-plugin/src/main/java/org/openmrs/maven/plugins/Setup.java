@@ -12,6 +12,8 @@ import org.openmrs.maven.plugins.utility.SDKConstants;
 
 import java.io.File;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @goal setup
@@ -20,8 +22,10 @@ import java.sql.SQLException;
 public class Setup extends AbstractTask {
 
     private static final String GOAL_UNPACK = "unpack";
-    private static final String DEFAULT_DISTRIBUTION = "\n\nWould you like to install OpenMRS distribution?";
-    private static final String CUSTOM_DISTRIBUTION = "\n\nWould you like to install %s %s distribution?";
+    private static final String DISTRIBUTION = "Distribution";
+    private static final String PLATFORM = "Platform";
+    public static final String SETTING_UP_A_NEW_SERVER = "Setting up a new server...";
+    public static final String SETUP_SERVERS_PROMPT = "You can setup the following servers";
 
     /**
      * Server id (folder name)
@@ -98,7 +102,6 @@ public class Setup extends AbstractTask {
      * @throws MojoExecutionException
      */
     public String setup(Server server, boolean isCreatePlatform, boolean isCopyDependencies, DistroProperties distroProperties) throws MojoExecutionException, MojoFailureException {
-
         File openMRS = Server.getServersPathFile();
         wizard.promptForNewServerIfMissing(server);
 
@@ -106,7 +109,7 @@ public class Setup extends AbstractTask {
         if (Server.hasServerConfig(serverPath)) {
             Server props = Server.loadServer(serverPath);
             if (props.getServerId() != null) {
-                throw new MojoExecutionException("Server with same id already created");
+                throw new MojoExecutionException("Server with the same id already exists");
             }
         }
         server.setServerDirectory(serverPath);
@@ -134,7 +137,7 @@ public class Setup extends AbstractTask {
             }else {
                 wizard.promptForMySQLDb(server);
             }
-        }else if(dbDriver.equals("h2")){
+        } if(dbDriver.equals("h2")){
             wizard.promptForH2Db(server);
         }else if(dbDriver.equals("mysql")){
             wizard.promptForMySQLDb(server);
@@ -244,34 +247,8 @@ public class Setup extends AbstractTask {
 
 
     public void executeTask() throws MojoExecutionException, MojoFailureException {
-        boolean createPlatform;
-        boolean installDistFromFile;
-        String version = null;
-        DistroProperties distroProperties = null;
-        wizard.showMessage("\nCreating a new server...");
-        if(platform == null && distro == null){
-            distroProperties = DistroHelper.getDistroPropertiesFromDir();
-            if(distroProperties!=null){
-                installDistFromFile = wizard.promptYesNo(String.format(CUSTOM_DISTRIBUTION, distroProperties.getName(), distroProperties.getServerVersion()));
-                if(installDistFromFile){
-                    createPlatform = false;
-                    version = distroProperties.getServerVersion();
-                }else {
-                    createPlatform = !wizard.promptYesNo(DEFAULT_DISTRIBUTION);
-                    distroProperties = null;
-                }
-            } else {
-                createPlatform = !wizard.promptYesNo(DEFAULT_DISTRIBUTION);
-            }
+        wizard.showMessage(SETTING_UP_A_NEW_SERVER);
 
-        } else if(platform != null){
-            version = platform;
-            createPlatform = true;
-        } else {
-            distroProperties = distroHelper.retrieveDistroProperties(distro);
-            version = distroProperties.getServerVersion();
-            createPlatform = false;
-        }
         Server.ServerBuilder serverBuilder;
         if(file != null){
             File serverPath = new File(file);
@@ -279,17 +256,55 @@ public class Setup extends AbstractTask {
             serverBuilder = new Server.ServerBuilder(server);
         } else {
             serverBuilder = new Server.ServerBuilder();
-
         }
         Server server = serverBuilder
-                        .setServerId(serverId)
-                        .setVersion(version)
-                        .setDbDriver(dbDriver)
-                        .setDbUri(dbUri)
-                        .setDbUser(dbUser)
-                        .setDbPassword(dbPassword)
-                        .setInteractiveMode(interactiveMode)
-                        .build();
+                .setServerId(serverId)
+                .setDbDriver(dbDriver)
+                .setDbUri(dbUri)
+                .setDbUser(dbUser)
+                .setDbPassword(dbPassword)
+                .setInteractiveMode(interactiveMode)
+                .build();
+        wizard.promptForNewServerIfMissing(server);
+
+        boolean createPlatform = false;
+        DistroProperties distroProperties = null;
+        String version = null;
+        if(platform == null && distro == null){
+            List<String> options = new ArrayList<>();
+            distroProperties = DistroHelper.getDistroPropertiesFromDir();
+
+            if(distroProperties!=null){
+                options.add(distroProperties.getName() + distroProperties.getServerVersion() + " distribution from current directory");
+            }
+            options.add(DISTRIBUTION);
+            options.add(PLATFORM);
+
+            String choice = wizard.promptForMissingValueWithOptions(SETUP_SERVERS_PROMPT, null, null, options, null, null);
+
+            switch(choice) {
+                case PLATFORM:
+                    createPlatform = true;
+                    distroProperties = null;
+                    break;
+                case DISTRIBUTION:
+                    createPlatform = false;
+                    distroProperties = null;
+                    break;
+                default:
+                    createPlatform = false;
+                    version = distroProperties.getServerVersion();
+            }
+        } else if (platform != null) {
+            version = platform;
+            createPlatform = true;
+        } else {
+            distroProperties = distroHelper.retrieveDistroProperties(distro);
+            version = distroProperties.getServerVersion();
+            createPlatform = false;
+        }
+        server.setVersion(version);
+
         // setup non-platform server
         String serverPath = setup(server, createPlatform, true, distroProperties);
         getLog().info("Server configured successfully, path: " + serverPath);

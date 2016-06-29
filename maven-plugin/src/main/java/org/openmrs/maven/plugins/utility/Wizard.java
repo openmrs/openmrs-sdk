@@ -29,7 +29,7 @@ public interface Wizard {
 
     String promptForDistroVersion();
 
-    String promptForMissingValueWithOptions(String message, String value, String parameterName, List<String> options, boolean allowCustom);
+    String promptForMissingValueWithOptions(String message, String value, String parameterName, List<String> options, String customMessage, String customDefault);
 
     void showMessage(String message);
 
@@ -37,11 +37,7 @@ public interface Wizard {
 
     String promptForValueWithDefaultList(String value, String parameterName, List<String> values);
 
-    String promptForValueWithDefaultList(String value, String parameterName, String defaultValue, List<String> values);
-
     String promptForValueIfMissing(String value, String parameterName);
-
-    boolean promptForInstallDistro();
 
     boolean promptYesNo(String text);
 
