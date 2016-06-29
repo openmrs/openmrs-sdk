@@ -20,17 +20,17 @@ import java.io.File;
 public class Unwatch extends AbstractMojo {
 	
 	/**
-     * @parameter property="serverId"
+     * @parameter expression="${serverId}"
      */
     private String serverId;
     
     /**
-     * @parameter property="artifactId"
+     * @parameter expression="${artifactId}"
      */
     private String artifactId;
 
     /**
-     * @parameter property="groupId"
+     * @parameter expression="${groupId}"
      */
     private String groupId;
 

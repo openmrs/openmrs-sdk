@@ -28,7 +28,7 @@ public class SetupSDK extends AbstractMojo{
     /**
      * The current Maven session.
      *
-     * @parameter property="session"
+     * @parameter expression="${session}"
      * @required
      */
     private MavenSession mavenSession;

@@ -1,9 +1,7 @@
 package org.openmrs.maven.plugins.utility;
 
 import com.google.common.collect.Lists;
-import org.apache.commons.collections.ArrayStack;
 import org.apache.commons.lang.StringUtils;
-import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -19,11 +17,7 @@ import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.model.UpgradeDifferential;
 
 import java.io.File;
-import java.io.UnsupportedEncodingException;
-import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URLDecoder;
-import java.net.URLEncoder;
 import java.util.*;
 import java.util.Map.Entry;
 
@@ -36,7 +30,7 @@ public class DefaultWizard implements Wizard {
     private static final String NONE = "(none)";
     private static final String DEFAULT_CHOICE_TMPL = "Which one do you choose?";
     private static final String DEFAULT_OPTION_TMPL = "%d) %s";
-    private static final String DEFAULT_CUSTOM_OPTION_TMPL = "%d) Custom";
+    private static final String DEFAULT_CUSTOM_OPTION_TMPL = "%d) Other...";
     private static final String DEFAULT_SERVER_NAME = "server";
     private static final String DEFAULT_VALUE_TMPL = "Please specify '%s'";
     private static final String DEFAULT_VALUE_TMPL_WITH_DEFAULT = "Please specify '%s': (default: '%s')";
@@ -247,8 +241,8 @@ public class DefaultWizard implements Wizard {
     @Override
     public String promptForExistingServerIdIfMissing(String serverId) {
         File omrsHome = new File(Server.getServersPath());
-        List<String> servers = getListOf5RecentServers();
-        serverId = promptForValueWithDefaultList(serverId, "serverId", servers);
+        List<String> servers = getListOfServers();
+        serverId = promptForMissingValueWithOptions("You can run the following servers:", serverId, "serverId", servers, null, null);
         if (serverId.equals(NONE)) {
             throw new RuntimeException(INVALID_SERVER);
         }
@@ -370,12 +364,11 @@ public class DefaultWizard implements Wizard {
     }
 
     /**
-     * Get 5 last modified servers
+     * Get servers with recently used first
      * @return
      */
     @Override
-    public List<String> getListOf5RecentServers() {
-        final int count = 5;
+    public List<String> getListOfServers() {
         String home = System.getProperty("user.home");
         File openMRS = new File(home, SDKConstants.OPENMRS_SERVER_PATH);
         Map<Long, String> sortedMap = new TreeMap<Long, String>(Collections.reverseOrder());
@@ -383,8 +376,7 @@ public class DefaultWizard implements Wizard {
         for (File f: list) {
             if (f.isDirectory()) sortedMap.put(f.lastModified(), f.getName());
         }
-        int length = sortedMap.size() < count ? sortedMap.size() : count;
-        return new ArrayList<String>(sortedMap.values()).subList(0, length);
+        return new ArrayList<String>(sortedMap.values());
     }
 
     @Override

@@ -23,14 +23,14 @@ public abstract class AbstractTask extends AbstractMojo {
     /**
      * The project currently being build.
      *
-     * @parameter default-value="${project}"
+     * @parameter expression="${project}"
      */
     MavenProject mavenProject;
 
     /**
      * The current Maven session.
      *
-     * @parameter default-value="${session}"
+     * @parameter expression="${session}"
      */
     MavenSession mavenSession;
 

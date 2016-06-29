@@ -18,11 +18,11 @@ import java.io.File;
 public class Watch extends AbstractMojo {
 	
 	/**
-     * @parameter property="serverId"
+     * @parameter expression="${serverId}"
      */
     private String serverId;
 
-    /**
+    /**1
      * @required
      * @component
      */

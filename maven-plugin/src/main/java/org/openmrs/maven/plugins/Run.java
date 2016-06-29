@@ -3,6 +3,7 @@ package org.openmrs.maven.plugins;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugin.logging.SystemStreamLog;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.utility.Project;
@@ -29,22 +30,22 @@ public class Run extends AbstractTask {
     }
 
 	/**
-	 * @parameter property="serverId"
+	 * @parameter expression="${serverId}"
 	 */
 	private String serverId;
 
 	/**
-	 * @parameter property="port"
+	 * @parameter expression="${port}"
 	 */
 	private Integer port;
 
 	/**
-	 * @parameter property="debug"
+	 * @parameter expression="${debug}"
 	 */
 	private String debug;
 
 	/**
-	 * @parameter property="fork"
+	 * @parameter expression="${fork}"
 	 */
 	private Boolean fork;
 

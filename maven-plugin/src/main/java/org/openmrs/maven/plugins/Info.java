@@ -19,7 +19,7 @@ import java.util.Set;
 public class Info extends AbstractMojo {
 	
 	/**
-     * @parameter property="serverId"
+     * @parameter expression="${serverId}"
      */
     private String serverId;
 

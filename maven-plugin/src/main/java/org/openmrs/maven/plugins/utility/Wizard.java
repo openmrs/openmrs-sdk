@@ -47,7 +47,7 @@ public interface Wizard {
 
     String promptForExistingServerIdIfMissing(String serverId);
 
-    List<String> getListOf5RecentServers();
+    List<String> getListOfServers();
 
     String addMySQLParamsIfMissing(String dbUri);
 
