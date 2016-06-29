@@ -66,7 +66,7 @@ public class SDKConstants {
     public static final String SETUP_DEFAULT_PLATFORM_VERSION = "1.11.5";
 
     public static final String REFERENCEAPPLICATION_ARTIFACT_ID = "referenceapplication-package";
-    public static final List<String> SUPPPORTED_REFAPP_VERSIONS_2_3_1_OR_LOWER = java.util.Arrays.asList("2.1", "2.2", "2.3.1");
+    public static final List<String> SUPPPORTED_REFAPP_VERSIONS_2_3_1_OR_LOWER = java.util.Arrays.asList("2.3.1", "2.2", "2.1");
     private final static String[] SUPPORTED_MODULE_EXTENSIONS = new String[]{Artifact.TYPE_WAR, Artifact.TYPE_JAR, Artifact.TYPE_OMOD};
 
     /**

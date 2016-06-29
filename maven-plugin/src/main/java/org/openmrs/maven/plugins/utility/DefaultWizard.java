@@ -285,15 +285,21 @@ public class DefaultWizard implements Wizard {
     }
 
     public String promptForDistroVersion() {
-        Map<String, String> optionsMap = new HashMap<>();
+        Map<String, String> optionsMap = new LinkedHashMap<>();
+        optionsMap.put(String.format(REFAPP_OPTION_TMPL, "2.4-SNAPSHOT"), String.format(REFAPP_ARTIFACT_TMPL, "2.4-SNAPSHOT"));
         for(String version : SDKConstants.SUPPPORTED_REFAPP_VERSIONS_2_3_1_OR_LOWER){
             optionsMap.put(String.format(REFAPP_OPTION_TMPL, version), String.format(REFAPP_ARTIFACT_TMPL, version));
         }
-        optionsMap.put(String.format(REFAPP_OPTION_TMPL, "2.4-SNAPSHOT"), String.format(REFAPP_ARTIFACT_TMPL, "2.4-SNAPSHOT"));
 
         String version = promptForMissingValueWithOptions(DISTRIBUTION_VERSION_PROMPT,
                 null, "version", Lists.newArrayList(optionsMap.keySet()), "Please specify distribution artifact", REFERENCEAPPLICATION_2_3);
-        return optionsMap.get(version);
+
+        String artifact = optionsMap.get(version);
+        if (artifact != null) {
+            return artifact;
+        } else {
+            return version;
+        }
     }
 
     @Override
