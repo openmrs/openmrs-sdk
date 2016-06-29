@@ -3,6 +3,8 @@ package org.openmrs.maven.plugins.utility;
 import com.google.common.collect.Lists;
 import org.apache.commons.collections.ArrayStack;
 import org.apache.commons.lang.StringUtils;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.utils.URIBuilder;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugin.logging.Log;
@@ -18,6 +20,8 @@ import org.openmrs.maven.plugins.model.UpgradeDifferential;
 
 import java.io.File;
 import java.io.UnsupportedEncodingException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.*;
@@ -385,44 +389,21 @@ public class DefaultWizard implements Wizard {
 
     @Override
     public String addMySQLParamsIfMissing(String dbUri) {
-		Map<String, String> mysqlParams = new LinkedHashMap<String, String>();
-		mysqlParams.put("autoReconnect", "true");
-		mysqlParams.put("sessionVariables", "storage_engine=InnoDB");
-		mysqlParams.put("useUnicode", "true");
-		mysqlParams.put("characterEncoding", "UTF-8");
+        String noJdbc = dbUri.substring(5);
 
-		int querySeparator = dbUri.indexOf("?");
+        URIBuilder uri;
+        try {
+            uri = new URIBuilder(noJdbc);
+        } catch (URISyntaxException e) {
+            throw new IllegalArgumentException(e);
+        }
+        uri.setParameter("autoReconnect", "true");
+        uri.setParameter("sessionVariables", "storage_engine=InnoDB");
+        uri.setParameter("useUnicode", "true");
+        uri.setParameter("characterEncoding", "UTF-8");
 
-		String query = querySeparator > 0 ? dbUri.substring(querySeparator + 1) : null;
-		if (query != null) {
-			String[] params = query.split("&");
-			for (String param : params) {
-				int valueSeparator = param.indexOf("=");
-			    try {
-					String key = valueSeparator > 0 ? URLDecoder.decode(param.substring(0, valueSeparator), "UTF-8") : param;
-					String value = valueSeparator > 0 ? URLDecoder.decode(param.substring(valueSeparator + 1), "UTF-8") : "";
-					mysqlParams.put(key, value);
-				}
-				catch (UnsupportedEncodingException e) {
-					throw new RuntimeException(e);
-				}
-			}
-		}
-
-		StringBuilder newUri = new StringBuilder(querySeparator > 0 ? dbUri.substring(0, querySeparator) : dbUri);
-		newUri.append("?");
-		for (Entry<String, String> param : mysqlParams.entrySet()) {
-			try {
-				newUri.append(URLEncoder.encode(param.getKey(), "UTF-8")).append("=").append(URLEncoder.encode(param.getValue(), "UTF-8")).append("&");
-			}
-			catch (UnsupportedEncodingException e) {
-				throw new RuntimeException(e);
-			}
-		}
-		dbUri = newUri.toString();
-		dbUri = dbUri.substring(0, dbUri.length() - 1);
-		return dbUri;
-	}
+        return "jdbc:" + uri.toString();
+    }
 
     public Log getLog() {
         if(log == null){

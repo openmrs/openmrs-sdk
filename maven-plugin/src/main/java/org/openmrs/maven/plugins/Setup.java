@@ -137,7 +137,7 @@ public class Setup extends AbstractTask {
             }else {
                 wizard.promptForMySQLDb(server);
             }
-        } if(dbDriver.equals("h2")){
+        } else if(dbDriver.equals("h2")){
             wizard.promptForH2Db(server);
         }else if(dbDriver.equals("mysql")){
             wizard.promptForMySQLDb(server);

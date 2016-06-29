@@ -62,6 +62,10 @@
             <groupId>org.jyaml</groupId>
             <artifactId>jyaml</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+        </dependency>
 
         <!-- Archetypes -->
         <dependency>
