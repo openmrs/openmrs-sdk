@@ -136,6 +136,14 @@ public class Project {
 	public boolean isOpenmrsModule() {
 		return Artifact.GROUP_MODULE.equals(model.getGroupId());
 	}
+
+	public boolean isOpenmrsCore() {
+		return Artifact.GROUP_OPENMRS.equals(model.getGroupId()) && "openmrs".equals(model.getArtifactId());
+	}
+
+	public Artifact getArtifact() {
+		return new Artifact(model.getArtifactId(), model.getVersion(), model.getGroupId(), model.getPackaging());
+	}
 	
 	@Override
 	public String toString() {

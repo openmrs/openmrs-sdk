@@ -275,7 +275,7 @@ public class Setup extends AbstractTask {
             distroProperties = DistroHelper.getDistroPropertiesFromDir();
 
             if(distroProperties!=null){
-                options.add(distroProperties.getName() + distroProperties.getServerVersion() + " distribution from current directory");
+                options.add(distroProperties.getName() + " " + distroProperties.getServerVersion() + " from current directory");
             }
             options.add(DISTRIBUTION);
             options.add(PLATFORM);
@@ -293,17 +293,18 @@ public class Setup extends AbstractTask {
                     break;
                 default:
                     createPlatform = false;
-                    version = distroProperties.getServerVersion();
+                    server.setPlatformVersion(distroProperties.getPlatformVersion());
+                    server.setVersion(distroProperties.getServerVersion());
             }
         } else if (platform != null) {
-            version = platform;
+            server.setVersion(platform);
             createPlatform = true;
         } else {
             distroProperties = distroHelper.retrieveDistroProperties(distro);
-            version = distroProperties.getServerVersion();
+            server.setVersion(distroProperties.getServerVersion());
+            server.setPlatformVersion(distroProperties.getPlatformVersion());
             createPlatform = false;
         }
-        server.setVersion(version);
 
         // setup non-platform server
         String serverPath = setup(server, createPlatform, true, distroProperties);

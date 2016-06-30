@@ -41,12 +41,12 @@ public class DefaultWizard implements Wizard {
     private static final String DEFAULT_CUSTOM_DIST_ARTIFACT = "Please specify custom distribution artifact%s (default: '%s')";
     private static final String REFAPP_OPTION_TMPL = "Reference Application %s";
     private static final String REFAPP_ARTIFACT_TMPL = "org.openmrs.distro:referenceapplication-package:%s";
-    private static final String JDK_ERROR_TMPL = "\n\nThe JDK %s is not compatible with OpenMRS Platform %s. " +
+    private static final String JDK_ERROR_TMPL = "\nThe JDK %s is not compatible with OpenMRS Platform %s. " +
             "Please use %s to run this server.\n\nIf you are running " +
-            "in a forked mode, correct the jdk property in %s\n\n";
-    private static final String UPGRADE_CONFIRM_TMPL = "The %s %s introduces the following changes";
-    private static final String UPDATE_MODULE_TMPL = "^ upgrades %s %s to %s";
-    private static final String ADD_MODULE_TMPL = "+ adds %s %s";
+            "in a forked mode, correct the java.home property in %s\n";
+    private static final String UPGRADE_CONFIRM_TMPL = "\nThe %s %s introduces the following changes:";
+    private static final String UPDATE_MODULE_TMPL = "^ Updates %s %s to %s";
+    private static final String ADD_MODULE_TMPL = "+ Adds %s %s";
     private static final String NO_DIFFERENTIAL = "\nNo modules to update or add found";
     public static final String PLATFORM_VERSION_PROMPT = "You can deploy the following versions of a platform";
     public static final String DISTRIBUTION_VERSION_PROMPT = "You can deploy the following versions of distribution";
@@ -242,7 +242,7 @@ public class DefaultWizard implements Wizard {
     public String promptForExistingServerIdIfMissing(String serverId) {
         File omrsHome = new File(Server.getServersPath());
         List<String> servers = getListOfServers();
-        serverId = promptForMissingValueWithOptions("You can run the following servers:", serverId, "serverId", servers, null, null);
+        serverId = promptForMissingValueWithOptions("You have the following servers:", serverId, "serverId", servers, null, null);
         if (serverId.equals(NONE)) {
             throw new RuntimeException(INVALID_SERVER);
         }
@@ -412,7 +412,7 @@ public class DefaultWizard implements Wizard {
 
     @Override
     public void showJdkErrorMessage(String jdk, String platform, String recommendedJdk, String pathToServerProperties) {
-        System.out.print(String.format(JDK_ERROR_TMPL, jdk, platform, recommendedJdk, pathToServerProperties));
+        System.out.println(String.format(JDK_ERROR_TMPL, jdk, platform, recommendedJdk, pathToServerProperties));
     }
 
     /**
@@ -465,7 +465,7 @@ public class DefaultWizard implements Wizard {
         }
 
         if(needConfirmation){
-            return promptYesNo(String.format("Would you like to apply those changes to the %s server?", server.getServerId()));
+            return promptYesNo(String.format("Would you like to apply those changes to '%s'?", server.getServerId()));
         }
         else return true;
     }

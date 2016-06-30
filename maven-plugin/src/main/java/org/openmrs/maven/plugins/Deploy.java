@@ -236,7 +236,7 @@ public class Deploy extends AbstractTask {
      * @return tru if success
      * @throws MojoExecutionException
      */
-    private void deployOpenmrsWar(Server server, Artifact artifact) throws MojoExecutionException {
+    public void deployOpenmrsWar(Server server, Artifact artifact) throws MojoExecutionException {
         List<Element> artifactItems = new ArrayList<Element>();
         artifactItems.add(artifact.toElement(server.getServerDirectory().getPath()));
 
@@ -343,7 +343,7 @@ public class Deploy extends AbstractTask {
         String moduleName = mavenProject.getArtifactId();
         if(moduleName.equals("openmrs")){
             if(!new Version(mavenProject.getVersion()).equals(new Version(server.getPlatformVersion()))){
-                String message = String.format("The server currently has openmrs.war in version %s. Would you like to change it to %s?", server.getPlatformVersion(), mavenProject.getVersion());
+                String message = String.format("The server currently has openmrs.war in version %s. Would you like to update it to %s?", server.getPlatformVersion(), mavenProject.getVersion());
                 boolean agree = wizard.promptYesNo(message);
                 if(agree){
                     return new Artifact("openmrs-webapp", mavenProject.getVersion(), Artifact.GROUP_WEB, Artifact.TYPE_WAR);
@@ -356,9 +356,9 @@ public class Deploy extends AbstractTask {
         DistroProperties distroProperties = DistroHelper.getDistroPropertiesFromDir();
         if (distroProperties!=null) {
             String message = String.format(
-                    "Would you like to update %s to %s %s specified in distro properties file in current directory?",
-                    server.getServerId(),
+                    "Would you like to update %s %s to %s from the current directory?",
                     distroProperties.getName(),
+                    server.getVersion(),
                     distroProperties.getServerVersion());
 
             boolean agree = wizard.promptYesNo(message);
@@ -421,7 +421,7 @@ public class Deploy extends AbstractTask {
         }
         boolean hasProject = (project != null && project.isOpenmrsModule());
         if(hasProject){
-            hasProject = wizard.promptYesNo(String.format("Would you like to install %s %s from this directory?",
+            hasProject = wizard.promptYesNo(String.format("Would you like to deploy %s %s from the current directory?",
                     project.getArtifactId(), project.getVersion()));
         }
         return hasProject;

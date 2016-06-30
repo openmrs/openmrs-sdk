@@ -26,7 +26,7 @@ public class DistroProperties {
     private static final String ARTIFACT_ID = "artifactId";
     private static final String TYPE = "type";
     private static final String GROUP_ID = "groupId";
-    public static final String DISTRO_FILE_NAME = "openmrs-disrto.properties";
+    public static final String DISTRO_FILE_NAME = "openmrs-distro.properties";
 
 
 
@@ -177,6 +177,11 @@ public class DistroProperties {
     public String getServerVersion(){
         return getParam("version");
     }
+
+    public String getPlatformVersion() {
+        return getParam("war.openmrs");
+    }
+
     public String getName(){
         return getParam("name");
     }

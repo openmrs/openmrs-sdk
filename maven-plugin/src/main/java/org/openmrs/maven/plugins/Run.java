@@ -3,7 +3,6 @@ package org.openmrs.maven.plugins;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
-import org.apache.maven.plugin.logging.SystemStreamLog;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.utility.Project;
@@ -49,6 +48,10 @@ public class Run extends AbstractTask {
 	 */
 	private Boolean fork;
 
+	/**
+	 * @parameter expression="${watchApi}"
+	 */
+	private Boolean watchApi;
 
 	public void executeTask() throws MojoExecutionException, MojoFailureException {
 		if (serverId == null) {
@@ -110,12 +113,12 @@ public class Run extends AbstractTask {
 
 		String mavenOpts = System.getProperty("MAVEN_OPTS", "");
 		if (!mavenOpts.contains("-Xmx")) {
-			mavenOpts += " -Xmx1536m";
+			mavenOpts += " -Xmx1024m";
 		}
 		if (!mavenOpts.contains("-XX:MaxPermSize=")) {
 			mavenOpts += " -XX:MaxPermSize=1024m";
 		}
-		if (server.hasWatchedProjects()) {
+		if (server.hasWatchedProjects() && isWatchApi()) {
 			mavenOpts += " -javaagent:" + new File(Server.getServersPath(), "springloaded.jar").getAbsolutePath() + " -noverify";
 		}
 
@@ -129,12 +132,7 @@ public class Run extends AbstractTask {
 			System.out.println("\nConnect remote debugger with port " + address + "\n");
 		}
 
-		System.setProperty("MAVEN_OPTS", mavenOpts);
-
-		System.out.println("Using JAVA_HOME: " + System.getenv("JAVA_HOME") + "\n");
-		System.out.println("Using MAVEN_OPTS: " + mavenOpts + "\n");
-
-		System.out.println("Forking a new process... (use -Dfork=false to prevent forking)\n");
+		System.out.println("\nForking a new process... (use -Dfork=false to prevent forking)\n");
 
 		List<String> commands = new ArrayList<String>();
 		commands.add(maven);
@@ -144,11 +142,19 @@ public class Run extends AbstractTask {
 		if (port != null) {
 			commands.add("-Dport=" + port);
 		}
-		if (server.hasWatchedProjects()) {
+		if (isWatchApi()) {
+			commands.add("-DwatchApi=" + watchApi);
+		}
+		if (server.hasWatchedProjects() && isWatchApi()) {
 			commands.add("-Dspringloaded=inclusions=org.openmrs..*");
 		}
+		commands.add("-e");
 
 		ProcessBuilder processBuilder = new ProcessBuilder(commands);
+
+		processBuilder.environment().put("MAVEN_OPTS", mavenOpts);
+		processBuilder.environment().put("JAVA_HOME", server.getJavaHome());
+
 		processBuilder.redirectErrorStream(true);
 		processBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
 		processBuilder.redirectInput(ProcessBuilder.Redirect.INHERIT);
@@ -168,5 +174,9 @@ public class Run extends AbstractTask {
 		} catch (InterruptedException e) {
 			throw new MojoFailureException("Interrupted waiting for Tomcat process", e);
 		}
+	}
+
+	private boolean isWatchApi() {
+		return Boolean.TRUE.equals(watchApi);
 	}
 }

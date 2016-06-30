@@ -40,7 +40,7 @@ public class SDKConstants {
     // default path to projects
     public static final String OPENMRS_MODULE_POM = "pom.xml";
     public static final String OPENMRS_SERVER_PATH = "openmrs";
-    public static final String OPENMRS_SERVER_PROPERTIES = "installation.properties";
+    public static final String OPENMRS_SERVER_PROPERTIES = "openmrs-server.properties";
     public static final String OPENMRS_SERVER_MODULES = "modules";
     // dbUri for different db
     public static final String URI_MYSQL = "jdbc:mysql://localhost:3306/@DBNAME@";

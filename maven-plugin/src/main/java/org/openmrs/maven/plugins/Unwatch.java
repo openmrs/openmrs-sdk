@@ -50,9 +50,9 @@ public class Unwatch extends AbstractMojo {
 	    	Project project = Project.loadProject(userDir);
             if (serverConfig.removeWatchedProjectByExample(new Project(project.getGroupId(), project.getArtifactId(), null, null)) != null) {
             	serverConfig.save();
-            	getLog().info("Stopped watching " + project.getPath() + " for changes.");
+				wizard.showMessage("Stopped watching " + project.getPath() + " for changes.");
             } else {
-            	getLog().info(project.getArtifactId() + " has not been watched.");
+				wizard.showMessage(project.getArtifactId() + " has not been watched.");
             }
         } else {
             artifactId = wizard.promptForValueIfMissing(artifactId, "artifactId");
@@ -60,15 +60,15 @@ public class Unwatch extends AbstractMojo {
             if (artifactId.equals("*")) {
         		serverConfig.clearWatchedProjects();
         		serverConfig.save();
-        		getLog().info("Stopped watching all projects for changes.");
+        		wizard.showMessage("Stopped watching all projects for changes.");
         	} else {
 	        	Project project = new Project(groupId, artifactId, null, null);
 	        	project = serverConfig.removeWatchedProjectByExample(project);
 	        	if (project != null) {
 	        		serverConfig.save();
-	        		getLog().info("Stopped watching " + project.getPath() + " for changes.");
+	        		wizard.showMessage("Stopped watching " + project.getPath() + " for changes.");
 	        	} else {
-	        		getLog().info((groupId != null) ? (groupId + ":") : "" + artifactId + " has not been watched.");
+	        		wizard.showMessage((groupId != null) ? (groupId + ":") : "" + artifactId + " has not been watched.");
 	        	}
         	}
         }

@@ -4,7 +4,7 @@ import org.apache.catalina.Context;
 import org.apache.catalina.LifecycleException;
 import org.apache.catalina.loader.WebappLoader;
 import org.apache.catalina.startup.Tomcat;
-import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -18,7 +18,8 @@ import org.openmrs.maven.plugins.utility.SDKConstants;
 import org.openmrs.maven.plugins.utility.Wizard;
 
 import java.io.File;
-import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -38,6 +39,11 @@ public class RunTomcat extends AbstractMojo {
 	private Integer port;
 
 	/**
+	 * @parameter expression="${watchApi}"
+	 */
+	private Boolean watchApi;
+
+	/**
 	 * @component
 	 * @required
 	 */
@@ -54,13 +60,16 @@ public class RunTomcat extends AbstractMojo {
 
 	@Override
 	public void execute() throws MojoExecutionException, MojoFailureException {
+		System.out.println("\nUsing JAVA_HOME: " + System.getenv("JAVA_HOME") + "\n");
+		System.out.println("Using MAVEN_OPTS: " + System.getenv("MAVEN_OPTS") + "\n");
+
 		serverId = wizard.promptForExistingServerIdIfMissing(serverId);
 
 		Server server = Server.loadServer(serverId);
-
 		String jdk = System.getProperty("java.version");
-		boolean isJdkValid = false;
-		String recommendedJdk = null;
+
+		boolean isJdkValid;
+		String recommendedJdk;
 
 		Version platformVersion = new Version(server.getPlatformVersion());
 		if(platformVersion.getMajorVersion() == 1){
@@ -69,7 +78,7 @@ public class RunTomcat extends AbstractMojo {
 		} else if (platformVersion.getMajorVersion() == 2){
 			isJdkValid =  (jdk.startsWith("1.8"));
 			recommendedJdk = "JDK 1.8";
-		} else throw new MojoExecutionException("Invalid server platform version: "+platformVersion.toString());
+		} else throw new MojoExecutionException("Invalid server platform version: " + platformVersion.toString());
 
 		if(!isJdkValid){
 			wizard.showJdkErrorMessage(jdk, server.getPlatformVersion(), recommendedJdk, server.getPropertiesFile().getPath());
@@ -136,18 +145,29 @@ public class RunTomcat extends AbstractMojo {
 		Server serverConfig = Server.loadServer(serverPath);
 		Set<Project> watchedProjects = serverConfig.getWatchedProjects();
 		if (!watchedProjects.isEmpty()) {
-			getLog().info(" ");
-			getLog().info("Hot redeployment enabled for: ");
+			if (isWatchApi()) {
+				wizard.showMessage("Hot redeployment of API classes and UI framework changes enabled for:");
+			} else {
+				wizard.showMessage("Hot redeployment of UI framework changes enabled for:");
+			}
 			int i = 1;
+			List<String> list = new ArrayList<String>();
 			for (Project project : watchedProjects) {
 				System.setProperty("uiFramework.development." + project.getArtifactId(), project.getPath());
-				System.setProperty(project.getArtifactId() + ".development.directory", project.getPath());
-				getLog().info(
-						String.format("%d) %s:%s at %s", i, project.getGroupId(), project.getArtifactId(), project.getPath()));
+
+				if (isWatchApi()) {
+					System.setProperty(project.getArtifactId() + ".development.directory", project.getPath());
+				}
+				list.add(String.format("%d) %s:%s at %s", i, project.getGroupId(), project.getArtifactId(), project.getPath()));
 				i++;
 			}
-			getLog().info(" ");
+			wizard.showMessage(StringUtils.join(list.iterator(), "\n"));
+			wizard.showMessage("");
 		}
+	}
+
+	private boolean isWatchApi() {
+		return Boolean.TRUE.equals(watchApi);
 	}
 
 }

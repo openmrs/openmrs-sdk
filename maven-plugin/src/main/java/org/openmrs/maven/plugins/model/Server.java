@@ -550,6 +550,11 @@ public class Server {
 
     public void setVersion(String version) { setParam(PROPERTY_VERSION, version); }
 
+    public String getJavaHome() {
+        String javaHome = getParam("java.home");
+        return javaHome != null ? javaHome : System.getenv("JAVA_HOME");
+    }
+
     public boolean isIncludeDemoData() {
         return Boolean.parseBoolean(getParam(PROPERTY_DEMO_DATA));
     }
