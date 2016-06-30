@@ -22,7 +22,6 @@ import org.eclipse.jgit.api.errors.StashApplyFailureException;
 import org.eclipse.jgit.internal.storage.file.FileRepository;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
-import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.transport.URIish;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.utility.Project;
@@ -91,6 +90,13 @@ public class Pull extends AbstractTask {
         }
     }
 
+    /**
+     * Pull latest changes from upstream master
+     *
+     * @param path
+     * @return true if pull was successful
+     * @throws MojoExecutionException
+     */
     private boolean pullLatestUpstream(String path) throws MojoExecutionException {
         Repository localRepo;
         Git git = null;
@@ -149,6 +155,12 @@ public class Pull extends AbstractTask {
 
     }
 
+    /**
+     * Checkout to previous branch
+     * @param git
+     * @param previousBranch
+     * @throws GitAPIException
+     */
     private void checkoutBranch(Git git, String previousBranch) throws GitAPIException {
         git.checkout()
                 .setCreateBranch(false)
@@ -156,6 +168,13 @@ public class Pull extends AbstractTask {
                 .call();
     }
 
+    /**
+     * Pull from upstream master
+     * @param git
+     * @param newBranch
+     * @return PullResult, which contains information if the pull was successful
+     * @throws GitAPIException
+     */
     private PullResult pullFromRemote(Git git, String newBranch) throws GitAPIException {
         PullCommand pull = git.pull()
                 .setRebase(true)
@@ -164,34 +183,62 @@ public class Pull extends AbstractTask {
         return pull.call();
     }
 
+    /**
+     * Abort rebasing if there are any conflicts
+     * @param git
+     * @throws GitAPIException
+     */
     private void rebaseAbort(Git git) throws GitAPIException {
         git.rebase()
                 .setOperation(RebaseCommand.Operation.ABORT)
                 .call();
     }
 
+    /**
+     * Delete branch and remote created to perform pull rebase
+     * @param git
+     * @param newBranch
+     */
     private void cleanUpBranchesAndRemotes(Git git, String newBranch){
         try {
-            deleteTempBranch(git);
+            deleteTempBranch(git, newBranch);
             deleteRemoteTempRepo(git, newBranch);
         } catch (GitAPIException e) {
             throw new RuntimeException("Couldn't delete new branch or remote", e);
         }
     }
 
-    private void deleteTempBranch(Git git) throws GitAPIException {
+    /**
+     * Delete branch
+     * @param git
+     * @throws GitAPIException
+     */
+    private void deleteTempBranch(Git git, String branchName) throws GitAPIException {
         git.branchDelete()
                 .setForce(true)
-                .setBranchNames("sdk-"+serverId)
+                .setBranchNames(branchName)
                 .call();
     }
 
+    /**
+     * Merge with temporary branch
+     * @param git
+     * @param newBranchFull
+     * @throws IOException
+     * @throws GitAPIException
+     */
     private void mergeWithNewBranch(Git git, String newBranchFull) throws IOException, GitAPIException {
         MergeCommand mergeCommand = git.merge();
         mergeCommand.include(git.getRepository().getRef(newBranchFull));
         mergeCommand.call();
     }
 
+    /**
+     * Checkout to new branch
+     * @param git
+     * @param newBranch
+     * @throws GitAPIException
+     */
     private void checkoutAndCreateNewBranch(Git git, String newBranch) throws GitAPIException {
         CheckoutCommand checkoutCommand = git.checkout();
         checkoutCommand.setCreateBranch(true);
@@ -199,6 +246,16 @@ public class Pull extends AbstractTask {
         checkoutCommand.call();
     }
 
+    /**
+     * Add temporary remote with link from pom.xml
+     * @param git
+     * @param path
+     * @param branchName
+     * @return
+     * @throws URISyntaxException
+     * @throws MojoExecutionException
+     * @throws GitAPIException
+     */
     private boolean addRemoteTempRepo(Git git,String path, String branchName) throws URISyntaxException, MojoExecutionException, GitAPIException {
         RemoteAddCommand remoteAddCommand = git.remoteAdd();
         remoteAddCommand.setUri(new URIish(getRemoteRepoUrlFromPom(path)));
@@ -207,12 +264,24 @@ public class Pull extends AbstractTask {
         return true;
     }
 
+    /**
+     * Delete temporary remote
+     * @param git
+     * @param branchName
+     * @throws GitAPIException
+     */
     private void deleteRemoteTempRepo(Git git, String branchName) throws GitAPIException {
         RemoteRemoveCommand remoteRemoveCommand = git.remoteRemove();
         remoteRemoveCommand.setName(branchName);
         remoteRemoveCommand.call();
     }
 
+    /**
+     * get github URL from pom.xml
+     * @param path
+     * @return github URL
+     * @throws MojoExecutionException
+     */
     private String getRemoteRepoUrlFromPom(String path) throws MojoExecutionException {
         Project project = Project.loadProject(new File(path));
         Model model = project.getModel();

@@ -83,8 +83,8 @@ public class Project {
 	}
 
 	/**
-	 * Get model object
-	 * 
+	 * get Model object
+	 *
 	 * @return
      */
 	public Model getModel() { return model; }
