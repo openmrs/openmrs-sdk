@@ -342,14 +342,12 @@ public class Deploy extends AbstractTask {
     public Artifact checkCurrentDirectoryForOpenmrsWebappUpdate(Server server) throws MojoExecutionException, MojoFailureException {
         String moduleName = mavenProject.getArtifactId();
         if(moduleName.equals("openmrs")){
-            if(!new Version(mavenProject.getVersion()).equals(new Version(server.getPlatformVersion()))){
-                String message = String.format("The server currently has openmrs.war in version %s. Would you like to update it to %s?", server.getPlatformVersion(), mavenProject.getVersion());
+            if(!new Version(mavenProject.getVersion()).equals(new Version(server.getPlatformVersion())) || new Version(mavenProject.getVersion()).isSnapshot()){
+                String message = String.format("The server currently has openmrs.war in version %s. Would you like to update it to %s from the current directory?", server.getPlatformVersion(), mavenProject.getVersion());
                 boolean agree = wizard.promptYesNo(message);
                 if(agree){
                     return new Artifact("openmrs-webapp", mavenProject.getVersion(), Artifact.GROUP_WEB, Artifact.TYPE_WAR);
                 }
-            } else if (new Version(mavenProject.getVersion()).isSnapshot()) {
-                return new Artifact("openmrs-webapp", mavenProject.getVersion(), Artifact.GROUP_WEB, Artifact.TYPE_WAR);
             }
         }
         return null;
@@ -394,12 +392,12 @@ public class Deploy extends AbstractTask {
         if (artifactId == null && project != null && project.isOpenmrsModule()) {
             if (project.getParent() != null) {
                 moduleGroupId = project.getParent().getGroupId();
-                moduleArtifactId = project.getParent().getArtifactId();
+                moduleArtifactId = project.getParent().getArtifactId() + "-omod";
                 moduleVersion = (version != null) ? version : project.getParent().getVersion();
 
             } else {
                 moduleGroupId = project.getGroupId();
-                moduleArtifactId = project.getArtifactId();
+                moduleArtifactId = project.getArtifactId() + "-omod";
                 moduleVersion = (version != null) ? version : project.getVersion();
             }
         } else {
