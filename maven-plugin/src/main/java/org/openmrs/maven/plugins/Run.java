@@ -105,6 +105,14 @@ public class Run extends AbstractTask {
 		}
 	}
 
+	/**
+	 * Creates temporary Maven reactor project to build dependencies in the correct order
+	 *
+	 * @param server
+	 * @return
+	 * @throws MojoFailureException
+	 * @throws MojoExecutionException
+     */
 	private File createTempReactorProject(Server server) throws MojoFailureException, MojoExecutionException {
 		File tempFolder = new File(server.getServerDirectory(), "temp-project");
 		if (!tempFolder.exists()) {
@@ -135,6 +143,11 @@ public class Run extends AbstractTask {
 		return tempFolder;
 	}
 
+	/**
+	 * Deletes temporary Maven reactor project
+	 *
+	 * @param tempFolder
+     */
 	private void deleteTempReactorProject(File tempFolder) {
 		try {
 			FileUtils.deleteDirectory(tempFolder);
@@ -143,6 +156,11 @@ public class Run extends AbstractTask {
 		}
 	}
 
+	/**
+	 * Creates Model to generate pom.xml for temporary project
+	 *
+	 * @return
+     */
 	private Model createModel(){
 		Model model = new Model();
 		model.setArtifactId(String.format("openmrs-sdk-server-%s", serverId));
@@ -154,6 +172,14 @@ public class Run extends AbstractTask {
 		return model;
 	}
 
+	/**
+	 * Deploy all watched modules to server
+	 *
+	 * @param server
+	 * @throws MojoFailureException
+	 * @throws MojoExecutionException
+	 * @throws MavenInvocationException
+     */
 	private void deployWatchedModules(Server server) throws MojoFailureException, MojoExecutionException, MavenInvocationException {
 		Set<Project> watchedProject = server.getWatchedProjects();
 		for (Project module: watchedProject) {
@@ -162,6 +188,11 @@ public class Run extends AbstractTask {
 		}
 	}
 
+	/**
+	 * Run "mvn clean install -DskipTests" command in the given directory
+	 * @param directory
+	 * @throws MojoFailureException
+     */
 	private void cleanInstallServerProject(String directory) throws MojoFailureException {
 		String maven = "mvn";
 		if (System.getProperty("os.name").toLowerCase(Locale.ENGLISH).contains("windows")) {
