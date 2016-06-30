@@ -237,14 +237,14 @@ public class Deploy extends AbstractTask {
      * @throws MojoExecutionException
      */
     public void deployOpenmrsWar(Server server, Artifact artifact) throws MojoExecutionException {
+        File openmrsCorePath = new File(server.getServerDirectory(), "openmrs-" + server.getPlatformVersion() + ".war");
+        openmrsCorePath.delete();
+        server.deleteServerTmpDirectory();
+
         List<Element> artifactItems = new ArrayList<Element>();
         artifactItems.add(artifact.toElement(server.getServerDirectory().getPath()));
 
         executeMojoPlugin(artifactItems);
-
-        File openmrsCorePath = new File(server.getServerDirectory(), "openmrs-" + server.getPlatformVersion() + ".war");
-        openmrsCorePath.delete();
-        server.deleteServerTmpDirectory();
 
         server.setPlatformVersion(mavenProject.getVersion());
         server.save();
@@ -348,6 +348,8 @@ public class Deploy extends AbstractTask {
                 if(agree){
                     return new Artifact("openmrs-webapp", mavenProject.getVersion(), Artifact.GROUP_WEB, Artifact.TYPE_WAR);
                 }
+            } else if (new Version(mavenProject.getVersion()).isSnapshot()) {
+                return new Artifact("openmrs-webapp", mavenProject.getVersion(), Artifact.GROUP_WEB, Artifact.TYPE_WAR);
             }
         }
         return null;
@@ -356,9 +358,9 @@ public class Deploy extends AbstractTask {
         DistroProperties distroProperties = DistroHelper.getDistroPropertiesFromDir();
         if (distroProperties!=null) {
             String message = String.format(
-                    "Would you like to update %s %s to %s from the current directory?",
+                    "Would you like to deploy %s %s from the current directory?",
+                    server.getServerId(),
                     distroProperties.getName(),
-                    server.getVersion(),
                     distroProperties.getServerVersion());
 
             boolean agree = wizard.promptYesNo(message);

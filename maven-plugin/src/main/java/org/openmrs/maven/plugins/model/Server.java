@@ -518,6 +518,10 @@ public class Server {
         setParam(PROPERTY_DB_DRIVER, dbDriver);
     }
 
+    public boolean isMySqlDb() {
+        return getDbUri().startsWith("jdbc:mysql");
+    }
+
     public String getDbUri() {
         return getParam(PROPERTY_DB_URI);
     }
