@@ -165,16 +165,16 @@ public class Setup extends AbstractTask {
             if(server.getDbName() == null){
                 server.setDbName(determineDbName(server.getDbUri(), server.getServerId()));
             }
-            if (server.getDbDriver().equals(SDKConstants.DRIVER_MYSQL)){
+            if (server.isMySqlDb()){
                 boolean mysqlDbCreated = connectMySqlDatabase(server);
                 if(mysqlDbCreated){
-                    if(dbSql!=null){
+                    if(dbSql != null){
                         importMysqlDb(server, dbSql);
-                    } else if(distroProperties!=null&&distroProperties.getSqlScriptPath()!=null){
+                    } else if(distroProperties != null && distroProperties.getSqlScriptPath() != null){
                         importMysqlDb(server, distroProperties.getSqlScriptPath());
                     }
                 } else {
-                    wizard.showMessage("The specified database "+server.getDbName()+" does not exist and it will be created for you.");
+                    throw new IllegalStateException("Failed to connect to the specified database " + server.getDbUri());
                 }
             } else {
                 moduleInstaller.installModule(SDKConstants.H2_ARTIFACT, server.getServerDirectory().getPath());
@@ -228,7 +228,7 @@ public class Setup extends AbstractTask {
             connector = new DBConnector(uri, server.getDbUser(), server.getDbPassword(), server.getDbName());
             connector.checkAndCreate();
             connector.close();
-            getLog().info("Database configured successfully");
+            wizard.showMessage("Connected to the database.");
             return true;
         } catch (SQLException e) {
             return false;
@@ -244,6 +244,7 @@ public class Setup extends AbstractTask {
     }
 
     private void importMysqlDb(Server server, String sqlScriptPath) {
+        wizard.showMessage("Importing a database from " + sqlScriptPath + "...");
         String uri = server.getDbUri().replace("@DBNAME@", server.getDbName());
         Connection connection = null;
         try {
@@ -255,7 +256,7 @@ public class Setup extends AbstractTask {
             scriptRunner.setStopOnError(true);
             scriptRunner.runScript(scriptReader);
             scriptRunner.closeConnection();
-            getLog().info("Database imported successfully");
+            wizard.showMessage("Database imported successfully.");
         } catch (SQLException e) {
             try {
                 if(connection!=null){
