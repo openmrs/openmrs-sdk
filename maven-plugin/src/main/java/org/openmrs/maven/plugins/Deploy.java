@@ -71,7 +71,7 @@ public class Deploy extends AbstractTask {
     private String platform;
 
     /**
-     * @parameter property="owa"
+     * @parameter expression="${owa}"
      */
     private String owa;
 

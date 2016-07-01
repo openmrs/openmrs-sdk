@@ -66,14 +66,14 @@ public abstract class AbstractTask extends AbstractMojo {
      * Interactive mode flag, set for 'false' allows automatic testing in batch mode,
      * as it makes all 'yes/no' prompts return 'yes'
      *
-     * @parameter property="interactiveMode" default-value="true"
+     * @parameter expression="${interactiveMode}" default-value="true"
      */
     String interactiveMode;
 
     /**
      * path to openmrs directory
      *
-     * @parameter property="openMRSPath"
+     * @parameter expression="${openMRSPath}"
      */
     String openMRSPath;
 
