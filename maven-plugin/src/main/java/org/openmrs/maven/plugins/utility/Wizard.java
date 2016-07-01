@@ -33,6 +33,8 @@ public interface Wizard {
 
     void showMessage(String message);
 
+    void showError(String message);
+
     String promptForValueIfMissingWithDefault(String message, String value, String parameterName, String defValue);
 
     String promptForValueWithDefaultList(String value, String parameterName, List<String> values);

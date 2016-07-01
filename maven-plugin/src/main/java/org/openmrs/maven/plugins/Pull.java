@@ -1,6 +1,7 @@
 package org.openmrs.maven.plugins;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Model;
 import org.apache.maven.plugin.BuildPluginManager;
@@ -16,19 +17,22 @@ import org.eclipse.jgit.api.RebaseCommand;
 import org.eclipse.jgit.api.RemoteAddCommand;
 import org.eclipse.jgit.api.RemoteRemoveCommand;
 import org.eclipse.jgit.api.ResetCommand;
-import org.eclipse.jgit.api.errors.CheckoutConflictException;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.api.errors.StashApplyFailureException;
 import org.eclipse.jgit.internal.storage.file.FileRepository;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
+import org.eclipse.jgit.transport.RemoteConfig;
 import org.eclipse.jgit.transport.URIish;
 import org.openmrs.maven.plugins.model.Server;
+import org.openmrs.maven.plugins.utility.CompositeException;
 import org.openmrs.maven.plugins.utility.Project;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -37,22 +41,40 @@ import java.util.Set;
  */
 public class Pull extends AbstractTask {
 
+    private static final String CLEAN_UP_ERROR_MESSAGE = "Please run \"git checkout %s\" and \"git stash apply\" in %s directory to revert changes";
     private static final String NO_WATCHED_MODULES_MESSAGE = "Server with id %s has no watched modules";
-    private static final String PULL_SUCCESS_MESSAGE = "Module %s have been updated successfully";
-    private static final String PULL_ERROR_MESSAGE = "Module %s could not be updated automatically due to %s";
-    private static final String CONFLICT_MESSAGE = "conflicts";
-    private static final String UPDATE_MANUALLY_MESSAGE = "Changes need to be pulled manually\n";
-    private static final String UPDATING_MODULE_MESSAGE = "Module %s is being updated to the latest upstream master";
-    private static final String CREATING_LOCAL_REPO_ERROR = "problem when initializing local repository";
-    private static final String GIT_COMMAND_ERROR = "problem with resolving git command";
-    private static final String CREATING_TEMP_REMOTE_ERROR = "problem with creating temporary remote to perform automatic update";
+    private static final String CONFLICT_ERROR_MESSAGE = "could not be updated automatically due to %s, changes need to be pulled manually";
+    private static final String CREATING_NEW_UPSTREAM_MESSAGE = "Creating new upstream repo due to incorrect url";
+    private static final String MODULES_UPDATED_SUCCESSFULLY_MESSAGE = "Modules updated successfully:";
+    private static final String MODULES_NOT_UPDATED_MESSAGE = "Modules not updated:";
+    private static final String CREATING_LOCAL_REPO_REASON = "problem when initializing local repository";
+    private static final String GIT_COMMAND_REASON = "problem with resolving git command";
+    private static final String CREATING_REMOTE_UPSTREAM_REASON = "problem with creating remote upstream";
+    private static final String DELETING_REMOTE_UPSTREAM_REASON = "problem with deleting remote upstream";
+    private static final String CREATING_URL_FROM_POM_REASON = "problem with getting URL from pom.xml";
+    private static final String NO_GIT_PROJECT_FOUND_REASON = "no git project found";
+    private static final String MERGING_PROBLEM_REASON = "problem with merging";
+    private static final String DELETING_BRANCH_REASON = "problem wih deleting branch";
+    private static final String PULL_COMMAND_PROBLEM_REASON = "problem with executing pull command";
+    private static final String CONFLICT_MESSAGE_REASON = "conflicts";
+    private static final String UPSTREAM = "upstream";
+    private static final String MASTER = "master";
+    private static final String DASH = " - ";
+    private static final String SDK_DASH = "sdk-";
 
     /**
      * @parameter expression="${serverId}"
      */
     private String serverId;
 
-    private String failureReason;
+    private List<String> updatedModules = new ArrayList<>();
+
+    private List<String> notUpdatedModules = new ArrayList<>();
+
+    private String userBranch;
+
+    private RevCommit stash;
+
 
     public Pull() {}
 
@@ -70,21 +92,26 @@ public class Pull extends AbstractTask {
         Server server = Server.loadServer(serverId);
 
         if(server.hasWatchedProjects()){
-            boolean pullingError = false;
             Set<Project> watchedProjects = server.getWatchedProjects();
+            CompositeException allExceptions = new CompositeException("Could not updated latest changes");
             for(Project project: watchedProjects) {
-                wizard.showMessage(String.format(UPDATING_MODULE_MESSAGE, project.getArtifactId()));
-                if (pullLatestUpstream(project.getPath())) {
-                    wizard.showMessage(String.format(PULL_SUCCESS_MESSAGE, project.getArtifactId()));
-                } else {
-                    getLog().error(String.format(PULL_ERROR_MESSAGE, project.getArtifactId(), failureReason));
-                    getLog().error(UPDATE_MANUALLY_MESSAGE);
-                    pullingError = true;
+                try {
+                    pullLatestUpstream(project.getPath());
+                    updatedModules.add(project.getArtifactId());
+                } catch (Exception e) {
+                    allExceptions.add(project.getPath(), e);
+                    try {
+                        cleanUp(project.getPath(), project.getArtifactId());
+                        notUpdatedModules.add(project.getArtifactId() + DASH + String.format(CONFLICT_ERROR_MESSAGE, e.getMessage()));
+                    } catch (IllegalStateException e1) {
+                        allExceptions.add(project.getPath(), e1);
+                        notUpdatedModules.add(project.getArtifactId() + DASH + String.format(CONFLICT_ERROR_MESSAGE, e.getMessage()) + ". " + e1.getMessage());
+                    }
                 }
             }
-            if(pullingError){
-                throw new MojoExecutionException("Some modules could not be updated automatically, please see error messages above");
-            }
+            displayUpdatedModules();
+            displayNotUpdatedModules();
+            allExceptions.checkAndThrow();
         }else {
             wizard.showMessage(String.format(NO_WATCHED_MODULES_MESSAGE, serverId));
         }
@@ -94,65 +121,67 @@ public class Pull extends AbstractTask {
      * Pull latest changes from upstream master
      *
      * @param path
-     * @return true if pull was successful
-     * @throws MojoExecutionException
+     * @throws Exception
      */
-    private boolean pullLatestUpstream(String path) throws MojoExecutionException {
-        Repository localRepo;
-        Git git = null;
-        String previousBranch;
-        String newBranchFull;
-        String newBranch = "sdk-" + serverId;
-        try {
-            localRepo = new FileRepository(new File(path, ".git").getAbsolutePath());
-            git = new Git(localRepo);
+    private void pullLatestUpstream(String path) throws Exception {
+        String newBranch = SDK_DASH + serverId;
+        Repository localRepo = getLocalRepository(path);
+        Git git = new Git(localRepo);
 
-            previousBranch = localRepo.getBranch();
-
-            checkoutAndCreateNewBranch(git, newBranch);
-            newBranchFull = localRepo.getFullBranch();
-            RevCommit stash = git.stashCreate().call();
-            addRemoteTempRepo(git, path, newBranch);
-            PullResult pullResult = pullFromRemote(git, newBranch);
-            if(!pullResult.isSuccessful()){
-                rebaseAbort(git);
-                checkoutBranch(git, previousBranch);
-                failureReason = CONFLICT_MESSAGE;
-                return false;
-            }
-            if (stash != null) {
-                try {
-                    git.stashApply().setStashRef(stash.getName()).call();
-                    checkoutBranch(git, previousBranch);
-                    mergeWithNewBranch(git, newBranchFull);
-                    return true;
-                } catch (StashApplyFailureException e) {
-                    git.reset().setMode(ResetCommand.ResetType.HARD).setRef(previousBranch).call();
-                    checkoutBranch(git, previousBranch);
-                    git.stashApply().setStashRef(stash.getName()).call();
-                    failureReason = CONFLICT_MESSAGE;
-                    return false;
-                }
-            } else {
-                checkoutBranch(git, previousBranch);
+        userBranch = localRepo.getBranch();
+        checkoutAndCreateNewBranch(git, newBranch);
+        String newBranchFull = localRepo.getFullBranch();
+        stash = git.stashCreate().call();
+        addRemoteUpstream(git, path);
+        pullFromRemoteUpstream(git, stash, newBranch, userBranch);
+        if (stash != null) {
+            try {
+                git.stashApply().setStashRef(stash.getName()).call();
+                checkoutBranch(git, userBranch);
                 mergeWithNewBranch(git, newBranchFull);
-                return true;
+                deleteTempBranch(git, newBranch);
+            } catch (StashApplyFailureException e) {
+                git.reset().setMode(ResetCommand.ResetType.HARD).setRef(userBranch).call();
+                checkoutBranch(git, userBranch);
+                git.stashApply().setStashRef(stash.getName()).call();
+                deleteTempBranch(git, newBranch);
+                throw new Exception(CONFLICT_MESSAGE_REASON);
             }
-
-        } catch (IOException e) {
-            failureReason = CREATING_LOCAL_REPO_ERROR;
-        } catch (CheckoutConflictException e) {
-            failureReason = CONFLICT_MESSAGE;
-        } catch (GitAPIException e) {
-            failureReason = GIT_COMMAND_ERROR;
-        } catch (URISyntaxException e) {
-            failureReason = CREATING_TEMP_REMOTE_ERROR;
-        } finally {
-            cleanUpBranchesAndRemotes(git, newBranch);
+        } else {
+            checkoutBranch(git, userBranch);
+            mergeWithNewBranch(git, newBranchFull);
+            deleteTempBranch(git, newBranch);
         }
 
-        return false;
 
+    }
+
+    private void cleanUp(String path, String moduleName) throws IllegalStateException {
+        try {
+            Repository localRepo = getLocalRepository(path);
+            Git git = new Git(localRepo);
+            if(!localRepo.getBranch().equals(userBranch)){
+                checkoutBranch(git, userBranch);
+                if(stash != null){ git.stashApply().setStashRef(stash.getName()).call(); }
+                deleteTempBranch(git, SDK_DASH + serverId);
+            }
+        } catch (Exception e) {
+            throw new IllegalStateException(String.format(CLEAN_UP_ERROR_MESSAGE, userBranch, moduleName), e);
+        }
+    }
+
+    /**
+     * Return local git repository
+     * @param path
+     * @return
+     * @throws IOException
+     */
+    private Repository getLocalRepository(String path) throws IOException {
+        try {
+            return new FileRepository(new File(path, ".git").getAbsolutePath());
+        } catch (IOException e) {
+            throw new IOException(CREATING_LOCAL_REPO_REASON, e);
+        }
     }
 
     /**
@@ -161,26 +190,44 @@ public class Pull extends AbstractTask {
      * @param previousBranch
      * @throws GitAPIException
      */
-    private void checkoutBranch(Git git, String previousBranch) throws GitAPIException {
-        git.checkout()
-                .setCreateBranch(false)
-                .setName(previousBranch)
-                .call();
+    private void checkoutBranch(Git git, String previousBranch) throws Exception {
+        try {
+            git.checkout()
+                    .setCreateBranch(false)
+                    .setName(previousBranch)
+                    .call();
+        } catch (GitAPIException e) {
+            throw new Exception(GIT_COMMAND_REASON, e);
+        }
     }
 
     /**
      * Pull from upstream master
+     *
      * @param git
+     * @param stash
      * @param newBranch
-     * @return PullResult, which contains information if the pull was successful
-     * @throws GitAPIException
+     * @param previousBranch
+     * @throws Exception
      */
-    private PullResult pullFromRemote(Git git, String newBranch) throws GitAPIException {
-        PullCommand pull = git.pull()
+    private void pullFromRemoteUpstream(Git git, RevCommit stash, String newBranch, String previousBranch) throws Exception {
+        try {
+            PullCommand pull = git.pull()
                 .setRebase(true)
-                .setRemote(newBranch)
-                .setRemoteBranchName("master");
-        return pull.call();
+                .setRemote(UPSTREAM)
+                .setRemoteBranchName(MASTER);
+
+            PullResult pullResult = pull.call();
+            if(!pullResult.isSuccessful()){
+                rebaseAbort(git);
+                checkoutBranch(git, previousBranch);
+                if (stash != null) { git.stashApply().setStashRef(stash.getName()).call(); }
+                deleteTempBranch(git, newBranch);
+                throw new Exception(CONFLICT_MESSAGE_REASON);
+            }
+        } catch (GitAPIException e) {
+            throw new Exception(PULL_COMMAND_PROBLEM_REASON, e);
+        }
     }
 
     /**
@@ -188,23 +235,13 @@ public class Pull extends AbstractTask {
      * @param git
      * @throws GitAPIException
      */
-    private void rebaseAbort(Git git) throws GitAPIException {
-        git.rebase()
-                .setOperation(RebaseCommand.Operation.ABORT)
-                .call();
-    }
-
-    /**
-     * Delete branch and remote created to perform pull rebase
-     * @param git
-     * @param newBranch
-     */
-    private void cleanUpBranchesAndRemotes(Git git, String newBranch){
+    private void rebaseAbort(Git git) throws Exception {
         try {
-            deleteTempBranch(git, newBranch);
-            deleteRemoteTempRepo(git, newBranch);
+            git.rebase()
+                    .setOperation(RebaseCommand.Operation.ABORT)
+                    .call();
         } catch (GitAPIException e) {
-            throw new RuntimeException("Couldn't delete new branch or remote", e);
+            throw new Exception(GIT_COMMAND_REASON, e);
         }
     }
 
@@ -213,11 +250,15 @@ public class Pull extends AbstractTask {
      * @param git
      * @throws GitAPIException
      */
-    private void deleteTempBranch(Git git, String branchName) throws GitAPIException {
-        git.branchDelete()
-                .setForce(true)
-                .setBranchNames(branchName)
-                .call();
+    private void deleteTempBranch(Git git, String branchName) throws Exception {
+        try {
+            git.branchDelete()
+                    .setForce(true)
+                    .setBranchNames(branchName)
+                    .call();
+        } catch (GitAPIException e) {
+            throw new Exception(DELETING_BRANCH_REASON, e);
+        }
     }
 
     /**
@@ -227,10 +268,16 @@ public class Pull extends AbstractTask {
      * @throws IOException
      * @throws GitAPIException
      */
-    private void mergeWithNewBranch(Git git, String newBranchFull) throws IOException, GitAPIException {
+    private void mergeWithNewBranch(Git git, String newBranchFull) throws Exception {
         MergeCommand mergeCommand = git.merge();
-        mergeCommand.include(git.getRepository().getRef(newBranchFull));
-        mergeCommand.call();
+        try {
+            mergeCommand.include(git.getRepository().getRef(newBranchFull));
+            mergeCommand.call();
+        } catch (GitAPIException e) {
+            throw new Exception(MERGING_PROBLEM_REASON, e);
+        } catch (IOException e) {
+            throw new Exception(GIT_COMMAND_REASON, e);
+        }
     }
 
     /**
@@ -239,41 +286,87 @@ public class Pull extends AbstractTask {
      * @param newBranch
      * @throws GitAPIException
      */
-    private void checkoutAndCreateNewBranch(Git git, String newBranch) throws GitAPIException {
+    private void checkoutAndCreateNewBranch(Git git, String newBranch) throws Exception {
         CheckoutCommand checkoutCommand = git.checkout();
         checkoutCommand.setCreateBranch(true);
         checkoutCommand.setName(newBranch);
-        checkoutCommand.call();
+        try {
+            checkoutCommand.call();
+        } catch (GitAPIException e) {
+            throw new Exception(GIT_COMMAND_REASON, e);
+        }
     }
 
     /**
      * Add temporary remote with link from pom.xml
      * @param git
      * @param path
-     * @param branchName
      * @return
      * @throws URISyntaxException
      * @throws MojoExecutionException
      * @throws GitAPIException
      */
-    private boolean addRemoteTempRepo(Git git,String path, String branchName) throws URISyntaxException, MojoExecutionException, GitAPIException {
-        RemoteAddCommand remoteAddCommand = git.remoteAdd();
-        remoteAddCommand.setUri(new URIish(getRemoteRepoUrlFromPom(path)));
-        remoteAddCommand.setName(branchName);
-        remoteAddCommand.call();
-        return true;
+    private void addRemoteUpstream(Git git, String path) throws Exception {
+
+        if (!isUpstreamRepoCreated(git, path)) {
+            try {
+                RemoteAddCommand remoteAddCommand = git.remoteAdd();
+                remoteAddCommand.setUri(new URIish(getRemoteRepoUrlFromPom(path)));
+                remoteAddCommand.setName(UPSTREAM);
+                remoteAddCommand.call();
+            } catch (URISyntaxException e) {
+                throw new Exception(CREATING_URL_FROM_POM_REASON, e);
+            } catch (MojoExecutionException e) {
+                throw new MojoExecutionException(NO_GIT_PROJECT_FOUND_REASON, e);
+            } catch (GitAPIException e) {
+                throw new Exception(CREATING_REMOTE_UPSTREAM_REASON, e);
+            }
+        }
     }
 
     /**
-     * Delete temporary remote
+     * Deletes upstream remote repo
      * @param git
-     * @param branchName
-     * @throws GitAPIException
+     * @throws Exception
      */
-    private void deleteRemoteTempRepo(Git git, String branchName) throws GitAPIException {
+    private void deleteUpstreamRepo(Git git) throws Exception {
         RemoteRemoveCommand remoteRemoveCommand = git.remoteRemove();
-        remoteRemoveCommand.setName(branchName);
-        remoteRemoveCommand.call();
+        remoteRemoveCommand.setName(UPSTREAM);
+        try {
+            remoteRemoveCommand.call();
+        } catch (GitAPIException e) {
+            throw new Exception(DELETING_REMOTE_UPSTREAM_REASON, e);
+        }
+
+    }
+
+    /**
+     * Checks if the upstream repo exist and if there is a proper URL 
+     * @param git
+     * @param path
+     * @return
+     * @throws Exception
+     */
+    private boolean isUpstreamRepoCreated(Git git, String path) throws Exception {
+        try {
+            List<RemoteConfig> remotes = git.remoteList().call();
+            for(RemoteConfig remote : remotes){
+                if(remote.getName().equals(UPSTREAM)){
+                    for(URIish uri : remote.getURIs()){
+                        if(uri.toString().equals(getRemoteRepoUrlFromPom(path))){
+                            return true;
+                        }else {
+                            wizard.showMessage(CREATING_NEW_UPSTREAM_MESSAGE);
+                            deleteUpstreamRepo(git);
+                        }
+                    }
+                }
+            }
+        } catch (GitAPIException e) {
+            throw new Exception(CREATING_REMOTE_UPSTREAM_REASON, e);
+        }
+
+        return false;
     }
 
     /**
@@ -287,6 +380,30 @@ public class Pull extends AbstractTask {
         Model model = project.getModel();
         String url = model.getScm().getUrl();
         return StringUtils.removeEnd(url, "/") + ".git";
+    }
+
+    /**
+     * displays all updated modules
+     */
+    private void displayUpdatedModules(){
+        if (updatedModules.size() != 0) {
+            wizard.showMessage(MODULES_UPDATED_SUCCESSFULLY_MESSAGE);
+            for(String moduleName: updatedModules){
+                wizard.showMessage(DASH + moduleName);
+            }
+        }
+    }
+
+    /**
+     * Displays all modules that could not be updated
+     */
+    private void displayNotUpdatedModules(){
+        if (notUpdatedModules.size() != 0) {
+            wizard.showError(MODULES_NOT_UPDATED_MESSAGE);
+            for(String moduleName: notUpdatedModules){
+                wizard.showMessage(DASH + moduleName);
+            }
+        }
     }
 
 
