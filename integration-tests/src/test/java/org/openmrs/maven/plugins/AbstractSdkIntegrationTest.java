@@ -158,7 +158,7 @@ public abstract class AbstractSdkIntegrationTest {
      */
     protected void assertServerInstalled(String serverId) throws Exception{
         assertFilePresent(serverId);
-        assertFilePresent(serverId+"/installation.properties");
+        assertFilePresent(serverId+"/openmrs-server.properties");
     }
 
     protected void assertModulesInstalled(String serverId, String... filenames){
