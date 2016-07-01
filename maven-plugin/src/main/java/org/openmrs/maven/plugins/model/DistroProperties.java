@@ -171,7 +171,7 @@ public class DistroProperties {
     }
 
     public boolean isH2Supported(){
-        return Boolean.parseBoolean(getParam("supports.h2"));
+        return Boolean.parseBoolean(getParam("db.h2.supported"));
     }
 
     public String getServerVersion(){
