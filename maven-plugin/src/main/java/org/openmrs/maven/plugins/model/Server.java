@@ -130,6 +130,12 @@ public class Server {
     public static boolean hasServerConfig(File dir) {
         if (dir.exists()) {
             File properties = new File(dir, SDKConstants.OPENMRS_SERVER_PROPERTIES);
+            if(!properties.exists()){       //This is for backwards compatibility with SDK 2.x and below
+                File installationProperties = new File(dir, "installation.properties");
+                if(installationProperties.exists()) {
+                    installationProperties.renameTo(properties);
+                }
+            }
             return properties.exists();
         }
 
