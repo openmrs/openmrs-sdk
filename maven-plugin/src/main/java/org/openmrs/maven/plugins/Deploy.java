@@ -259,7 +259,7 @@ public class Deploy extends AbstractTask {
      * @param server
      * @throws MojoExecutionException
      */
-    private void deployModule(String groupId, String artifactId, String version, Server server) throws MojoExecutionException {
+    public void deployModule(String groupId, String artifactId, String version, Server server) throws MojoExecutionException {
         List<Element> artifactItems = new ArrayList<Element>();
         Artifact artifact = getModuleArtifactForSelectedParameters(groupId, artifactId, version);
 
