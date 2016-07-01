@@ -76,7 +76,7 @@ public class Setup extends AbstractTask {
     /**
      * DB dump script to import
      *
-     * @parameter property="dbSql"
+     * @parameter expression="${dbSql}"
      */
     private String dbSql;
 
