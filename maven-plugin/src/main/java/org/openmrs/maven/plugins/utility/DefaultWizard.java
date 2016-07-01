@@ -129,7 +129,7 @@ public class DefaultWizard implements Wizard {
     public String promptForMissingValueWithOptions(String message, String value, String parameterName, List<String> options, String customMessage, String customDefault){
         if (value != null) {
             return value;
-        }else if(!interactiveMode){
+        } else if(!interactiveMode){
             return options.get(0);
         }
 
