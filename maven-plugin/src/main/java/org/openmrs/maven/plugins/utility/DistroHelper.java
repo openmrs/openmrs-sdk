@@ -1,5 +1,6 @@
 package org.openmrs.maven.plugins.utility;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.BuildPluginManager;
@@ -102,7 +103,7 @@ public class DistroHelper {
         return isRefapp2_3_1orLower(artifact.getArtifactId(), artifact.getVersion());
     }
 
-    public DistroProperties downloadDistroProperties(File path, Artifact artifact) throws MojoExecutionException {
+    public File downloadDistro(File path, Artifact artifact) throws MojoExecutionException {
         artifact.setDestFileName("openmrs-distro.jar");
         List<MojoExecutor.Element> artifactItems = new ArrayList<MojoExecutor.Element>();
         MojoExecutor.Element element = artifact.toElement(path.toString());
@@ -120,9 +121,38 @@ public class DistroHelper {
                 ),
                 executionEnvironment(mavenProject, mavenSession, pluginManager)
         );
+        return new File(path, artifact.getDestFileName());
+    }
+
+    public File extractFileFromDistro(File path, Artifact artifact, String filename) throws MojoExecutionException {
+        File distroFile = downloadDistro(path, artifact);
+        File resultFile = new File(path, filename);
+        ZipFile zipFile = null;
+        try {
+            zipFile = new ZipFile(distroFile);
+
+            Enumeration<? extends ZipEntry> entries = zipFile.entries();
+
+            while(entries.hasMoreElements()){
+                ZipEntry zipEntry = entries.nextElement();
+                if(zipEntry.getName().equals(filename)){
+                    FileUtils.copyInputStreamToFile(zipFile.getInputStream(zipEntry), resultFile);
+                }
+            }
+            zipFile.close();
+        } catch (IOException e) {
+            throw new RuntimeException("Could not read " + distroFile.toString(), e);
+        } finally {
+            IOUtils.closeQuietly(zipFile);
+            distroFile.delete();
+        }
+        return resultFile;
+    }
+
+    public DistroProperties downloadDistroProperties(File path, Artifact artifact) throws MojoExecutionException {
+        File file = downloadDistro(path, artifact);
 
         DistroProperties distroProperties = null;
-        File file = new File(path, artifact.getDestFileName());
         ZipFile zipFile = null;
         try {
             zipFile = new ZipFile(file);

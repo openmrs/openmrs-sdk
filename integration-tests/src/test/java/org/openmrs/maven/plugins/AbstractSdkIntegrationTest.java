@@ -190,5 +190,6 @@ public abstract class AbstractSdkIntegrationTest {
         addTaskParam(verifier, "dbUser", "mysql");
         addTaskParam(verifier, "dbPassword", "mysql");
         addTaskParam(verifier, "dbUri", "@DBNAME@");
+        addTaskParam(verifier, "dbSql", "null");
     }
 }

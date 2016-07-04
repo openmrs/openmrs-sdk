@@ -167,7 +167,7 @@ public class Setup extends AbstractTask {
             }
             if (server.isMySqlDb()){
                 boolean mysqlDbCreated = connectMySqlDatabase(server);
-                if(mysqlDbCreated){
+                if(mysqlDbCreated && !"null".equals(dbSql)){
                     if(dbSql != null){
                         importMysqlDb(server, dbSql);
                     } else if(distroProperties != null && distroProperties.getSqlScriptPath() != null){
@@ -243,21 +243,48 @@ public class Setup extends AbstractTask {
         }
     }
 
-    private void importMysqlDb(Server server, String sqlScriptPath) {
+    private void importMysqlDb(Server server, String sqlScriptPath) throws MojoExecutionException {
         wizard.showMessage("Importing a database from " + sqlScriptPath + "...");
         String uri = server.getDbUri().replace("@DBNAME@", server.getDbName());
+
+        File extractedSqlFile = null;
+        InputStream sqlStream;
+        if(sqlScriptPath.startsWith(CLASSPATH_SCRIPT_PREFIX)){
+            String sqlScript = sqlScriptPath.replace(CLASSPATH_SCRIPT_PREFIX, "");
+            sqlStream = (Setup.class.getClassLoader().getResourceAsStream(sqlScript));
+            if(sqlStream == null){
+                Artifact distroArtifact = new Artifact(server.getDistroArtifactId(), server.getVersion(), server.getDistroGroupId(), "jar");
+                extractedSqlFile =  distroHelper.extractFileFromDistro(server.getServerDirectory(), distroArtifact, sqlScript);
+                try {
+                    sqlStream = new FileInputStream(extractedSqlFile);
+                } catch (FileNotFoundException e) {
+                    throw new MojoExecutionException("Error during opening sql dump script file", e);
+                }
+            }
+        } else {
+            File scriptFile = new File(sqlScriptPath);
+            try {
+                sqlStream = new FileInputStream(scriptFile);
+            } catch (FileNotFoundException e) {
+                throw new RuntimeException("Invalid path to SQL import script", e);
+            }
+        }
+
         Connection connection = null;
         try {
             connection = DriverManager.getConnection(uri, server.getDbUser(), server.getDbPassword());
-            Reader scriptReader = getSqlScriptReader(sqlScriptPath);
             ScriptRunner scriptRunner = new ScriptRunner(connection);
             //we don't want to display ~5000 lines of queries to user if there is no error
             scriptRunner.setLogWriter(new PrintWriter(new NullOutputStream()));
             scriptRunner.setStopOnError(true);
-            scriptRunner.runScript(scriptReader);
+            scriptRunner.runScript(new InputStreamReader(sqlStream));
             scriptRunner.closeConnection();
             wizard.showMessage("Database imported successfully.");
         } catch (SQLException e) {
+            //this file is extracted from distribution, clean it up
+            if(extractedSqlFile != null && extractedSqlFile.exists()){
+                extractedSqlFile.delete();
+            }
             try {
                 if(connection!=null){
                     connection.close();
@@ -266,22 +293,6 @@ public class Setup extends AbstractTask {
                 getLog().error(e.getMessage());
             }
         }
-    }
-
-    private Reader getSqlScriptReader(String sqlScriptPath){
-        InputStream stream;
-        if(sqlScriptPath.startsWith(CLASSPATH_SCRIPT_PREFIX)){
-            String resource = sqlScriptPath.replace(CLASSPATH_SCRIPT_PREFIX, "");
-            stream = (Setup.class.getClassLoader().getResourceAsStream(resource));
-        } else {
-            File scriptFile = new File(sqlScriptPath);
-            try {
-                stream = new FileInputStream(scriptFile);
-            } catch (FileNotFoundException e) {
-                throw new RuntimeException("Invalid path to SQL import script", e);
-            }
-        }
-        return new InputStreamReader(stream);
     }
 
     public String determineDbName(String uri, String serverId) throws MojoExecutionException {
