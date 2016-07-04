@@ -61,5 +61,4 @@ public interface Wizard {
     void showJdkErrorMessage(String jdk, String platform, String recommendedJdk, String pathToProps);
 
     boolean promptForConfirmDistroUpgrade(UpgradeDifferential upgradeDifferential, Server server, DistroProperties distroProperties);
-
 }

@@ -6,12 +6,12 @@
 	<artifactId>${artifactId}</artifactId>
 	<version>${version}</version>
 	<packaging>pom</packaging>
-	<name>${A-moduleName}</name>
-	<description>${B-moduleDescription}</description>
+	<name>${module-name}</name>
+	<description>${module-description}</description>
 	
 	<developers>
 		<developer>
-			<name>${C-moduleAuthor}</name>
+			<name>${module-author}</name>
 		</developer>
 	</developers>
 	

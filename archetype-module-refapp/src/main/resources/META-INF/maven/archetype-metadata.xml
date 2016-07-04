@@ -13,11 +13,11 @@
 		<requiredProperty key="package">
 			<defaultValue>${groupId}.${artifactId}</defaultValue>
 		</requiredProperty>
-        <requiredProperty key="A-moduleName" />
-        <requiredProperty key="B-moduleDescription"/>
-        <requiredProperty key="C-moduleAuthor" />
+        <requiredProperty key="module-name" />
+        <requiredProperty key="module-description"/>
+        <requiredProperty key="module-author" />
 		<requiredProperty key="D-moduleClassPrefix">
-			<defaultValue>${A-moduleName.substring(0,1).toUpperCase()}${A-moduleName.substring(1).replaceAll(" ", "")}</defaultValue>
+			<defaultValue>${module-name.substring(0,1).toUpperCase()}${module-name.substring(1).replaceAll(" ", "")}</defaultValue>
 		</requiredProperty>
     </requiredProperties>
   <fileSets>

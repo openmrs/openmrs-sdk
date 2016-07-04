@@ -10,8 +10,8 @@
 
 	<artifactId>${rootArtifactId}-api</artifactId>
 	<packaging>jar</packaging>
-	<name>${A-moduleName} API</name>
-	<description>API project for ${A-moduleName}</description>
+	<name>${module-name} API</name>
+	<description>API project for ${module-name}</description>
 
 	<dependencies>
 	
