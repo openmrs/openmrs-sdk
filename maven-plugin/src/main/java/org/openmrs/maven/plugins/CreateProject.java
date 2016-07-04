@@ -1,10 +1,14 @@
 package org.openmrs.maven.plugins;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Arrays;
+import java.util.Properties;
 
 import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
 
@@ -25,6 +29,7 @@ public class CreateProject extends AbstractTask {
                 "What kind of project would you like to create?", null, null,
                 Arrays.asList(TYPE_PLATFORM, TYPE_REFAPP), null, null);
         if(type.equals(TYPE_REFAPP)){
+            String archetypeVersion = getSdkVersion();
             executeMojo(
                     plugin(
                             groupId(SDKConstants.ARCH_GROUP_ID),
@@ -36,7 +41,7 @@ public class CreateProject extends AbstractTask {
                             element(name("archetypeCatalog"), SDKConstants.ARCH_CATALOG),
                             element(name("archetypeGroupId"), SDKConstants.ARCH_MODULE_GROUP_ID),
                             element(name("archetypeArtifactId"), SDKConstants.ARCH_MODULE_ARTIFACT_ID),
-                            element(name("archetypeVersion"), SDKConstants.ARCH_MODULE_VERSION)
+                            element(name("archetypeVersion"), archetypeVersion)
                     ),
                     executionEnvironment(mavenProject, mavenSession, pluginManager)
             );
@@ -56,5 +61,18 @@ public class CreateProject extends AbstractTask {
         } else {
             throw new MojoExecutionException("Invalid project type");
         }
+    }
+
+    private String getSdkVersion() throws MojoExecutionException {
+        InputStream sdkPom = CreateProject.class.getClassLoader().getResourceAsStream("sdk.properties");
+        Properties sdk = new Properties();
+        try {
+            sdk.load(sdkPom);
+        } catch (IOException e) {
+            throw new MojoExecutionException(e.getMessage());
+        } finally {
+            IOUtils.closeQuietly(sdkPom);
+        }
+        return sdk.getProperty("version");
     }
 }

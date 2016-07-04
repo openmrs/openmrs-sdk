@@ -13,6 +13,8 @@
     <url>https://wiki.openmrs.org/display/docs/OpenMRS+SDK</url>
 
     <modules>
+        <module>archetype-module-refapp</module>
+        <module>archetype-module-platform</module>
         <module>maven-plugin</module>
         <module>integration-tests</module>
     </modules>

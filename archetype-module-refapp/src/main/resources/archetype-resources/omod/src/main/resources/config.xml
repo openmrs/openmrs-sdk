@@ -1,0 +1,62 @@
+#set( $symbol_pound = '#' )
+#set( $symbol_dollar = '$' )
+#set( $symbol_escape = '\' )
+<?xml version="1.0" encoding="UTF-8"?>
+
+<module configVersion="1.2">
+
+	<!-- Module Properties -->
+	<id>${symbol_dollar}{project.parent.artifactId}</id>
+	<name>${symbol_dollar}{project.parent.name}</name>
+	<version>${symbol_dollar}{project.parent.version}</version>
+	<package>${symbol_dollar}{project.parent.groupId}.${symbol_dollar}{project.parent.artifactId}</package>
+	<author>${module-author}</author>
+	<description>
+		${symbol_dollar}{project.parent.description}
+	</description>
+	<updateURL>https://modules.openmrs.org/modules/download/${symbol_dollar}{project.parent.artifactId}/update.rdf</updateURL>
+	<require_version>${symbol_dollar}{openMRSVersion}</require_version>
+	<!-- / Module Properties -->
+
+	<require_modules>
+		<require_module version="${symbol_dollar}{uiframeworkVersion}">
+			${groupId}.uiframework
+		</require_module>
+	</require_modules>
+
+	
+	<!-- Module Activator -->
+	<activator>${symbol_dollar}{project.parent.groupId}.${symbol_dollar}{project.parent.artifactId}.${D-moduleClassPrefix}Activator</activator>
+	
+	
+	<!-- Adds link to admin page -->
+	<extension>
+		<point>org.openmrs.admin.list</point>
+		<class>${symbol_dollar}{project.parent.groupId}.${symbol_dollar}{project.parent.artifactId}.extension.html.AdminList</class>
+	</extension>
+	
+	<!-- Maps hibernate file's, if present -->
+	<mappingFiles>
+
+        ${D-moduleClassPrefix}.hbm.xml
+				
+	</mappingFiles>
+
+	<!-- Internationalization -->
+	<!-- All message codes should start with ${symbol_dollar}{project.parent.artifactId}. -->
+	<messages>
+		<lang>en</lang>
+		<file>messages.properties</file>
+	</messages>
+	<messages>
+		<lang>fr</lang>
+		<file>messages_fr.properties</file>
+	</messages>
+	<messages>
+		<lang>es</lang>
+		<file>messages_es.properties</file>
+	</messages>
+	<!-- /Internationalization -->
+
+</module>
+
