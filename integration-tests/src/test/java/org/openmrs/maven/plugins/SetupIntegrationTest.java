@@ -76,7 +76,6 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
     }
 
     @Test
-    @Ignore("Needs a way to automatically select first option in wizard")
     public void setup_shouldInstallServerFromDistroPropertiesDir() throws Exception{
         String serverId = UUID.randomUUID().toString();
         addTaskParam("serverId", serverId);

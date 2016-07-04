@@ -127,7 +127,9 @@ public class DefaultWizard implements Wizard {
 
     @Override
     public String promptForMissingValueWithOptions(String message, String value, String parameterName, List<String> options, String customMessage, String customDefault){
-        if (value != null) {
+        if(!interactiveMode){
+            return options.get(0);
+        } else if (value != null) {
             return value;
         }
         String question = String.format(message != null? message : DEFAULT_VALUE_TMPL_WITH_DEFAULT, parameterName, options.get(0));
