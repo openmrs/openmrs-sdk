@@ -179,6 +179,11 @@ public class DefaultWizard implements Wizard {
         System.out.println("\n" + textToShow);
     }
 
+    @Override
+    public void showError(String textToShow) {
+        System.out.println("\n[ERROR]" + textToShow);
+    }
+
     /**
      * Prompt for a value with list of proposed values
      * @param value

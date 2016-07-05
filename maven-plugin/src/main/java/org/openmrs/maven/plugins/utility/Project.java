@@ -82,7 +82,12 @@ public class Project {
 		return model.getParent();
 	}
 
-	public Model getModel(){ return model; }
+	/**
+	 * get Model object
+	 *
+	 * @return
+     */
+	public Model getModel() { return model; }
 	
 	/**
 	 * Get artifactId

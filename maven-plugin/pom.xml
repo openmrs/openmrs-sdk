@@ -19,6 +19,13 @@
     <description>OpenMRS SDK allows for rapid development of OpenMRS modules.</description>
     <url>https://wiki.openmrs.org/display/docs/OpenMRS+SDK</url>
 
+    <repositories>
+        <repository>
+            <id>jgit-repository</id>
+            <url>https://repo.eclipse.org/content/groups/releases/</url>
+        </repository>
+    </repositories>
+
     <dependencies>
         <!-- Maven -->
         <dependency>
@@ -115,6 +122,18 @@
         <dependency>
             <groupId>javax.servlet</groupId>
             <artifactId>jstl</artifactId>
+        </dependency>
+
+        <!-- JGit -->
+        <dependency>
+            <groupId>org.eclipse.jgit</groupId>
+            <artifactId>org.eclipse.jgit</artifactId>
+            <version>4.4.0.201606070830-r</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>1.6.2</version>
         </dependency>
 
         <!--Testing-->
