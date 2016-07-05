@@ -1,5 +1,7 @@
 package org.openmrs.maven.plugins;
 
+import org.apache.commons.io.output.NullOutputStream;
+import org.apache.ibatis.jdbc.ScriptRunner;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.openmrs.maven.plugins.model.Artifact;
@@ -11,6 +13,14 @@ import org.openmrs.maven.plugins.utility.DistroHelper;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.io.Reader;
+import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -26,6 +36,7 @@ public class Setup extends AbstractTask {
     private static final String PLATFORM = "Platform";
     public static final String SETTING_UP_A_NEW_SERVER = "Setting up a new server...";
     public static final String SETUP_SERVERS_PROMPT = "You can setup the following servers";
+    private static final String CLASSPATH_SCRIPT_PREFIX = "classpath://";
 
     /**
      * Server id (folder name)
@@ -61,6 +72,13 @@ public class Setup extends AbstractTask {
      * @parameter expression="${dbPassword}"
      */
     private String dbPassword;
+
+    /**
+     * DB dump script to import
+     *
+     * @parameter expression="${dbSql}"
+     */
+    private String dbSql;
 
     /**
      * Path to installation.properties
@@ -147,9 +165,16 @@ public class Setup extends AbstractTask {
             if(server.getDbName() == null){
                 server.setDbName(determineDbName(server.getDbUri(), server.getServerId()));
             }
-            if (server.getDbDriver().equals(SDKConstants.DRIVER_MYSQL)){
-                if(!connectMySqlDatabase(server)){
-                    wizard.showMessage("The specified database "+server.getDbName()+" does not exist and it will be created for you.");
+            if (server.isMySqlDb()){
+                boolean mysqlDbCreated = connectMySqlDatabase(server);
+                if(mysqlDbCreated && !"null".equals(dbSql)){
+                    if(dbSql != null){
+                        importMysqlDb(server, dbSql);
+                    } else if(distroProperties != null && distroProperties.getSqlScriptPath() != null){
+                        importMysqlDb(server, distroProperties.getSqlScriptPath());
+                    }
+                } else {
+                    throw new IllegalStateException("Failed to connect to the specified database " + server.getDbUri());
                 }
             } else {
                 moduleInstaller.installModule(SDKConstants.H2_ARTIFACT, server.getServerDirectory().getPath());
@@ -203,7 +228,7 @@ public class Setup extends AbstractTask {
             connector = new DBConnector(uri, server.getDbUser(), server.getDbPassword(), server.getDbName());
             connector.checkAndCreate();
             connector.close();
-            getLog().info("Database configured successfully");
+            wizard.showMessage("Connected to the database.");
             return true;
         } catch (SQLException e) {
             return false;
@@ -214,6 +239,58 @@ public class Setup extends AbstractTask {
                 } catch (SQLException e) {
                     getLog().error(e.getMessage());
                 }
+            }
+        }
+    }
+
+    private void importMysqlDb(Server server, String sqlScriptPath) throws MojoExecutionException {
+        wizard.showMessage("Importing a database from " + sqlScriptPath + "...");
+        String uri = server.getDbUri().replace("@DBNAME@", server.getDbName());
+
+        File extractedSqlFile = null;
+        InputStream sqlStream;
+        if(sqlScriptPath.startsWith(CLASSPATH_SCRIPT_PREFIX)){
+            String sqlScript = sqlScriptPath.replace(CLASSPATH_SCRIPT_PREFIX, "");
+            sqlStream = (Setup.class.getClassLoader().getResourceAsStream(sqlScript));
+            if(sqlStream == null){
+                Artifact distroArtifact = new Artifact(server.getDistroArtifactId(), server.getVersion(), server.getDistroGroupId(), "jar");
+                extractedSqlFile =  distroHelper.extractFileFromDistro(server.getServerDirectory(), distroArtifact, sqlScript);
+                try {
+                    sqlStream = new FileInputStream(extractedSqlFile);
+                } catch (FileNotFoundException e) {
+                    throw new MojoExecutionException("Error during opening sql dump script file", e);
+                }
+            }
+        } else {
+            File scriptFile = new File(sqlScriptPath);
+            try {
+                sqlStream = new FileInputStream(scriptFile);
+            } catch (FileNotFoundException e) {
+                throw new RuntimeException("Invalid path to SQL import script", e);
+            }
+        }
+
+        Connection connection = null;
+        try {
+            connection = DriverManager.getConnection(uri, server.getDbUser(), server.getDbPassword());
+            ScriptRunner scriptRunner = new ScriptRunner(connection);
+            //we don't want to display ~5000 lines of queries to user if there is no error
+            scriptRunner.setLogWriter(new PrintWriter(new NullOutputStream()));
+            scriptRunner.setStopOnError(true);
+            scriptRunner.runScript(new InputStreamReader(sqlStream));
+            scriptRunner.closeConnection();
+            wizard.showMessage("Database imported successfully.");
+        } catch (SQLException e) {
+            //this file is extracted from distribution, clean it up
+            if(extractedSqlFile != null && extractedSqlFile.exists()){
+                extractedSqlFile.delete();
+            }
+            try {
+                if(connection!=null){
+                    connection.close();
+                }
+            } catch (SQLException e1) {
+                getLog().error(e.getMessage());
             }
         }
     }
