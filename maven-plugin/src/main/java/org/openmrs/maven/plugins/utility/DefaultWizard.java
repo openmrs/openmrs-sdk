@@ -361,7 +361,7 @@ public class DefaultWizard implements Wizard {
             try {
                 sdkPropertiesFile.createNewFile();
             } catch (IOException e) {
-                throw new IllegalStateException("Failed to create SDK properties file in: \"" + Server.getServersPathFile() + SDKConstants.OPENMRS_SDK_PROPERTIES + "\"");
+                throw new IllegalStateException("Failed to create SDK properties file in: \"" + Server.getServersPathFile() + "/" + SDKConstants.OPENMRS_SDK_PROPERTIES + "\"");
             }
         }
 
@@ -369,7 +369,7 @@ public class DefaultWizard implements Wizard {
         try {
             in = new FileInputStream(sdkPropertiesFile);
         } catch (FileNotFoundException e) {
-            throw new IllegalStateException("SDK properties file not found at: \"" + Server.getServersPathFile() + SDKConstants.OPENMRS_SDK_PROPERTIES + "\"");
+            throw new IllegalStateException("SDK properties file not found at: \"" + Server.getServersPathFile() + "/" + SDKConstants.OPENMRS_SDK_PROPERTIES + "\"");
         }
         Properties sdkProperties = new Properties();
         try {
@@ -385,7 +385,6 @@ public class DefaultWizard implements Wizard {
         List<String> result = new ArrayList<>();
 
         if (!interactiveMode) {
-            addJdkPathToSdkProperties("Some/Mock/Path/");
             return new ArrayList<>();
         }
 
