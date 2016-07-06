@@ -42,7 +42,7 @@ public interface Wizard {
 
     String promptForValueIfMissing(String value, String parameterName);
 
-    String promptForJdkPath(Server server);
+    void promptForJavaHomeIfMissing(Server server);
 
     boolean promptYesNo(String text);
 
@@ -51,12 +51,6 @@ public interface Wizard {
     File getCurrentServerPath() throws MojoExecutionException;
 
     String promptForExistingServerIdIfMissing(String serverId);
-
-    List<String> getJdkPaths();
-
-    Properties getSdkProperties() throws IOException;
-
-    public boolean isThereJdkUnderPath(String jdkPath);
 
     List<String> getListOfServers();
 

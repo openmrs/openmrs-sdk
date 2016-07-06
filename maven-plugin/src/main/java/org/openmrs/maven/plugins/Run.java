@@ -153,7 +153,9 @@ public class Run extends AbstractTask {
 		ProcessBuilder processBuilder = new ProcessBuilder(commands);
 
 		processBuilder.environment().put("MAVEN_OPTS", mavenOpts);
-		processBuilder.environment().put("JAVA_HOME", server.getJavaHome());
+		if (server.getJavaHome() != null) {
+			processBuilder.environment().put("JAVA_HOME", server.getJavaHome());
+		}
 
 		processBuilder.redirectErrorStream(true);
 		processBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT);

@@ -85,7 +85,6 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
     }
 
     @Test
-    @Ignore("Needs a way to automatically select first option in wizard")
     public void setup_shouldInstallServerFromDistroPropertiesDir() throws Exception{
         String serverId = UUID.randomUUID().toString();
         addTaskParam("serverId", serverId);
@@ -96,13 +95,13 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
 
         assertSuccess();
         assertServerInstalled(serverId);
-        assertFilePresent(serverId+"/openmrs-1.11.5.war");
-        assertFilePresent(serverId+"/modules");
+        assertFilePresent(serverId + "/openmrs-1.11.5.war");
+        assertFilePresent(serverId + "/modules");
         assertModulesInstalled(serverId, "owa-1.4.omod", "uicommons-1.7.omod", "uiframework-3.6.omod");
     }
 
     @Test
-    public void setup_shouldInstallServerWithGivenJdkAndCreateSdkPropertiesFileIfNotExist() throws Exception{
+    public void setup_shouldInstallServerWithDefaultJavaHome() throws Exception{
         String serverId = UUID.randomUUID().toString();
         addTaskParam("serverId", serverId);
 
@@ -113,21 +112,32 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
         assertFilePresent(serverId + File.separator + "openmrs-server.properties");
 
         File serverPropertiesFile = new File(testDirectory.getAbsolutePath() + File.separator + serverId, "openmrs-server.properties");
-        String javaHomeServerProperty = readValueFromPropertyKey(serverPropertiesFile, "java.home");
-        String defaultJavaHome = System.getProperty("java.home");
-        assertThat(defaultJavaHome, is(javaHomeServerProperty));
-        assertFilePresent("/sdk.properties");
-    }
+        String javaHomeServerProperty = readValueFromPropertyKey(serverPropertiesFile, "javaHome");
+        assertThat(javaHomeServerProperty, is(nullValue()));
+	}
 
     @Test
-    public void setup_shouldInstallServerWithGivenJdkInBatchMode() throws Exception{
-        String serverId = UUID.randomUUID().toString();
+    public void setup_shouldInstallServerWithGivenJavaHomeAndAddJavaHomeToSdkProperties() throws Exception{
+		String customJavaHome = System.getProperty("java.home");
+
+		String serverId = UUID.randomUUID().toString();
         addTaskParam("serverId", serverId);
-        addTaskParam("java.home", System.getProperty("java.home"));
+        addTaskParam("javaHome", customJavaHome);
 
         executeTask("setup");
         assertSuccess();
         assertServerInstalled(serverId);
+
+		assertFilePresent(serverId + File.separator + "openmrs-server.properties");
+
+		File serverPropertiesFile = new File(testDirectory.getAbsoluteFile(), serverId + File.separator + "openmrs-server.properties");
+		String javaHomeServerProperty = readValueFromPropertyKey(serverPropertiesFile, "javaHome");
+		assertThat(javaHomeServerProperty, is(customJavaHome));
+
+		assertFilePresent("sdk.properties");
+		File sdkProperties = new File(testDirectory.getAbsoluteFile(), "sdk.properties");
+		String javaHomes = readValueFromPropertyKey(sdkProperties, "javaHomeOptions");
+		assertThat(javaHomes, is(customJavaHome));
     }
 
     private String readValueFromPropertyKey(File propertiesFile, String key) throws Exception {

@@ -72,9 +72,9 @@ public class Setup extends AbstractTask {
     /**
      * Path to JDK Version
      *
-     * @parameter expression="${java.home}"
+     * @parameter expression="${javaHome}"
      */
-    private String jdk;
+    private String javaHome;
 
     /**
      * Path to installation.properties
@@ -171,17 +171,7 @@ public class Setup extends AbstractTask {
             }
         }
 
-        if (server.getJavaHome().equals(System.getProperty("java.home"))) {
-            wizard.promptForJdkPath(server);
-            if (server.getJavaHome() == null) {
-                server.setJavaHome(System.getProperty("java.home"));
-            }
-        }
-        else {
-            if (!wizard.isThereJdkUnderPath(server.getJavaHome())) {
-                throw new IllegalArgumentException("Given -Djdk property is invalid");
-            }
-        }
+        wizard.promptForJavaHomeIfMissing(server);
 
         server.setUnspecifiedToDefault();
         configureVersion(server, isCreatePlatform);
@@ -290,7 +280,7 @@ public class Setup extends AbstractTask {
                 .setDbUser(dbUser)
                 .setDbPassword(dbPassword)
                 .setInteractiveMode(interactiveMode)
-                .setJavaHome(jdk)
+                .setJavaHome(javaHome)
                 .build();
         wizard.promptForNewServerIfMissing(server);
 
