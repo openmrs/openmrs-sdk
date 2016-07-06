@@ -118,7 +118,7 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
 
     @Test
     public void setup_shouldInstallServerWithGivenJavaHomeAndAddJavaHomeToSdkProperties() throws Exception{
-		String customJavaHome = System.getProperty("java.home");
+		String customJavaHome = System.getenv("JAVA_HOME");
 
 		String serverId = UUID.randomUUID().toString();
         addTaskParam("serverId", serverId);
