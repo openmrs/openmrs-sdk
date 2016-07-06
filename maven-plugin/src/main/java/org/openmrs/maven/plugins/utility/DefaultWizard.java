@@ -290,10 +290,8 @@ public class DefaultWizard implements Wizard {
         paths.add("JAVA_HOME (currently: " + System.getProperty("java.home") + ")");
         paths.addAll(getJdkPaths());
 
-
-
         if (!interactiveMode) {
-            return paths.get(0);
+            return System.getProperty("java.home");
         }
 
         String javaHome = server.getJavaHome();
@@ -312,7 +310,6 @@ public class DefaultWizard implements Wizard {
 
         if (!isThereJdkUnderPath(path)) {
                 System.out.println(SDKConstants.OPENMRS_SDK_JDK_CUSTOM_INVALID);
-                server.setJavaHome(promptForJdkPath(server));
         }
         else {
             if (!isPathLineDuplicated(paths, path)) {
