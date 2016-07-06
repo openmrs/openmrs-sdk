@@ -189,7 +189,7 @@ public class Setup extends AbstractTask {
             }
         }
 
-        if (server.getJavaHome() == null || server.getJavaHome().equals(System.getProperty("java.home"))) {
+        if (server.getJavaHome().equals(System.getProperty("java.home"))) {
             wizard.promptForJdkPath(server);
             if (server.getJavaHome() == null) {
                 server.setJavaHome(System.getProperty("java.home"));
