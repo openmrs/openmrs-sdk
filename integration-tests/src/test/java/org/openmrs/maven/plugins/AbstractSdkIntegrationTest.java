@@ -119,6 +119,13 @@ public abstract class AbstractSdkIntegrationTest {
     }
 
     /**
+     * Clears all parameters to execute Mojo
+     */
+    public void clearParams(){
+        verifier.setCliOptions(new ArrayList<String>());
+    }
+
+    /**
      * executes given goal in openmrs-sdk-maven-plugin
      * @param goal to be executed
      * @throws VerificationException
