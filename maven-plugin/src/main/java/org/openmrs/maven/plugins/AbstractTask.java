@@ -16,7 +16,6 @@ import org.openmrs.maven.plugins.utility.VersionsHelper;
 import org.openmrs.maven.plugins.utility.Wizard;
 
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 
 /**
  *
