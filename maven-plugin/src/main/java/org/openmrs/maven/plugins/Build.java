@@ -109,11 +109,7 @@ public class Build extends AbstractTask {
      * @param tempFolder
      */
     private void deleteTempReactorProject(File tempFolder) {
-        try {
-            FileUtils.deleteDirectory(tempFolder);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to delete temporary project", e);
-        }
+        FileUtils.deleteQuietly(tempFolder);
     }
 
     /**

@@ -33,7 +33,7 @@ public abstract class AbstractSdkIntegrationTest {
      * contains name of directory in project's target dir, where integration tests are conducted
      */
     static final String TEST_DIRECTORY = "/integration-test";
-    static final String MOJO_OPTION_TMPL = "-D%s=%s";
+    static final String MOJO_OPTION_TMPL = "-D%s=\"%s\"";
 
     /**
      * contains files in test directory which are not created during tests and will not be cleaned up
@@ -81,25 +81,24 @@ public abstract class AbstractSdkIntegrationTest {
         }
     }
 
-    public static String setupTestServer() throws Exception{
-        File testDir = ResourceExtractor.simpleExtractResources(AbstractSdkIntegrationTest.class, TEST_DIRECTORY);
-        Verifier verifier = new Verifier(testDir.getAbsolutePath());
+    public String setupTestServer() throws Exception{
+        Verifier setupServer = new Verifier(testDirectory.getAbsolutePath());
         String serverId = UUID.randomUUID().toString();
 
-        addTaskParam(verifier, "serverId", serverId);
-        addTaskParam(verifier, "distro", "referenceapplication:2.2");
-        addTaskParam(verifier, "openMRSPath", testDir.getAbsolutePath());
-        addTaskParam(verifier, "java.home", System.getProperty("java.home"));
-        addTaskParam(verifier, "interactiveMode", "false");
-        addMockDbSettings(verifier);
+        addTaskParam(setupServer, "interactiveMode", "false");
+        addTaskParam(setupServer, "openMRSPath", testDirectory.getAbsolutePath());
+        addTaskParam(setupServer, "serverId", serverId);
+        addTaskParam(setupServer, "distro", "referenceapplication:2.2");
+        addMockDbSettings(setupServer);
+
         String sdk = resolveSdkArtifact();
-        verifier.executeGoal(sdk+":setup");
+        setupServer.executeGoal(sdk+":setup");
         return serverId;
     }
 
     public static void deleteTestServer(String serverId) throws Exception{
         File testDir = ResourceExtractor.simpleExtractResources(AbstractSdkIntegrationTest.class, TEST_DIRECTORY);
-        FileUtils.deleteDirectory(testDir.getAbsolutePath()+"/"+serverId);
+        FileUtils.deleteDirectory(testDir.getAbsolutePath() + File.separator + serverId);
     }
 
     /**
@@ -145,13 +144,13 @@ public abstract class AbstractSdkIntegrationTest {
      * asserts that file with given path is present in test directory
      */
     public void assertFilePresent(String path){
-        verifier.assertFilePresent(testDirectory.getAbsolutePath()+"/"+path);
+        verifier.assertFilePresent(testDirectory.getAbsolutePath()+ File.separator +path);
     }
     /**
      * asserts that file with given path is not present in test directory
      */
     public void assertFileNotPresent(String path){
-        verifier.assertFileNotPresent(testDirectory.getAbsolutePath()+"/"+path);
+        verifier.assertFileNotPresent(testDirectory.getAbsolutePath()+ File.separator +path);
     }
 
     /**
@@ -167,7 +166,7 @@ public abstract class AbstractSdkIntegrationTest {
      */
     protected void assertServerInstalled(String serverId) throws Exception{
         assertFilePresent(serverId);
-        assertFilePresent(serverId+"/openmrs-server.properties");
+        assertFilePresent(serverId + File.separator + "openmrs-server.properties");
     }
 
     protected void assertModulesInstalled(String serverId, String... filenames){
@@ -176,7 +175,7 @@ public abstract class AbstractSdkIntegrationTest {
 
     private void assertModulesInstalled(String serverId, List<String> filenames){
         for(String filename : filenames){
-            assertFilePresent(serverId+"/modules/"+filename);
+            assertFilePresent(serverId + File.separator + "modules" + File.separator + filename);
         }
     }
 

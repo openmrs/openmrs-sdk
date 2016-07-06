@@ -71,10 +71,6 @@ public class RunTomcat extends AbstractMojo {
 		boolean isJdkValid;
 		String recommendedJdk;
 
-		String java = System.getProperty("java.home");
-		System.out.println(jdk);
-		System.out.println(java);
-
 		Version platformVersion = new Version(server.getPlatformVersion());
 		if(platformVersion.getMajorVersion() == 1){
 			isJdkValid = (jdk.startsWith("1.7"));

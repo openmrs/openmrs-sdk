@@ -46,7 +46,7 @@ public class SDKConstants {
     public static final String OPENMRS_SDK_PROPERTIES = "sdk.properties";
     public static final String OPENMRS_SERVER_MODULES = "modules";
     // properties names
-    public static final String OPENMRS_SDK_PROPERTIES_JDK_HOME = "jdk.home";
+    public static final String OPENMRS_SDK_PROPERTIES_JAVA_HOME_OPTIONS = "javaHomeOptions";
     // dbUri for different db
     public static final String URI_MYSQL = "jdbc:mysql://localhost:3306/@DBNAME@";
     public static final String URI_POSTGRESQL = "jdbc:postgresql://localhost:5740/@DBNAME@";

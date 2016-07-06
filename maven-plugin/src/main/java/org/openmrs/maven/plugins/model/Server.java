@@ -25,7 +25,7 @@ public class Server {
     public static final String PROPERTY_DB_PASS = "connection.password";
     public static final String PROPERTY_DB_URI = "connection.url";
     public static final String PROPERTY_VERSION = "openmrs.version";
-    public static final String PROPERTY_JDK = "java.home";
+    public static final String PROPERTY_JAVA_HOME = "javaHome";
     public static final String PROPERTY_PLATFORM = "openmrs.platform.version";
     public static final String PROPERTY_DB_NAME = "database_name";
     public static final String PROPERTY_USER_MODULES = "user_modules";
@@ -515,7 +515,7 @@ public class Server {
     }
 
     public void setJavaHome(String path) {
-        setParam(PROPERTY_JDK, path);
+        setParam(PROPERTY_JAVA_HOME, path);
     }
 
     public String getServerId() {
@@ -571,8 +571,8 @@ public class Server {
     public void setVersion(String version) { setParam(PROPERTY_VERSION, version); }
 
     public String getJavaHome() {
-        String javaHome = getParam("java.home");
-        return javaHome != null ? javaHome : System.getenv("JAVA_HOME");
+        String javaHome = getParam(PROPERTY_JAVA_HOME);
+        return javaHome;
     }
 
     public boolean isIncludeDemoData() {

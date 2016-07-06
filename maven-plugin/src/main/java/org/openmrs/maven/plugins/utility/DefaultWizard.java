@@ -1,6 +1,7 @@
 package org.openmrs.maven.plugins.utility;
 
 import com.google.common.collect.Lists;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -284,50 +285,45 @@ public class DefaultWizard implements Wizard {
 	}
 
     @Override
-    public String promptForJdkPath(Server server) {
+    public void promptForJavaHomeIfMissing(Server server) {
+        if (!StringUtils.isBlank(server.getJavaHome())) {
+            if (isJavaHomeValid(server.getJavaHome())) {
+                addJavaHomeToSdkProperties(server.getJavaHome());
+                return;
+            } else {
+                throw new IllegalArgumentException("The specified -DjavaHome property is invalid");
+            }
+        }
+
+        if (!interactiveMode) {
+            return;
+        }
 
         List<String> paths = new ArrayList<>();
         paths.add("JAVA_HOME (currently: " + System.getProperty("java.home") + ")");
-        paths.addAll(getJdkPaths());
-
-        if (!interactiveMode) {
-            return System.getProperty("java.home");
-        }
-
-        String javaHome = server.getJavaHome();
-
-        if (javaHome.equals(System.getProperty("java.home"))) {
-            javaHome = null;
-        }
+        paths.addAll(getJavaHomeOptions());
 
         String path = promptForMissingValueWithOptions(SDKConstants.OPENMRS_SDK_JDK_OPTION,
-                javaHome, "path", paths, SDKConstants.OPENMRS_SDK_JDK_CUSTOM, null);
+                server.getJavaHome(), "path", paths, SDKConstants.OPENMRS_SDK_JDK_CUSTOM, null);
 
         if (path.equals(paths.get(0))) {
             // Use default JAVA_HOME
-            return null;
+            server.setJavaHome(null);
+        } else if (!isJavaHomeValid(path)) {
+            System.out.println(SDKConstants.OPENMRS_SDK_JDK_CUSTOM_INVALID);
+            promptForJavaHomeIfMissing(server);
+        } else {
+            server.setJavaHome(path);
+            addJavaHomeToSdkProperties(path);
         }
-
-        if (!isThereJdkUnderPath(path)) {
-                System.out.println(SDKConstants.OPENMRS_SDK_JDK_CUSTOM_INVALID);
-        }
-        else {
-            if (!isPathLineDuplicated(paths, path)) {
-                addJdkPathToSdkProperties(path);
-            }
-            return path;
-        }
-        return null;
     }
 
-    private void addJdkPathToSdkProperties(String path) {
-
+    private void addJavaHomeToSdkProperties(String path) {
         File sdkPropertiesFile = new File(Server.getServersPathFile(), SDKConstants.OPENMRS_SDK_PROPERTIES);
-        Properties sdkProperties = null;
-        sdkProperties = getSdkProperties();
-        List<String> jdkPaths = getJdkPaths();
+        Properties sdkProperties = getSdkProperties();
+        List<String> jdkPaths = getJavaHomeOptions();
 
-        if (!path.equals(System.getProperty("java.home")) && !isPathLineDuplicated(jdkPaths, path)) {
+        if (!jdkPaths.contains(path)) {
             if (jdkPaths.size() == 5) {
                 jdkPaths.set(4, path);
             }
@@ -337,21 +333,13 @@ public class DefaultWizard implements Wizard {
 
             Collections.sort(jdkPaths);
 
-            String updatedProperty = convertListToPropertyString(jdkPaths);
-            sdkProperties.setProperty(SDKConstants.OPENMRS_SDK_PROPERTIES_JDK_HOME, updatedProperty);
+            String updatedProperty = StringUtils.join(jdkPaths.iterator(), ", ");
+            sdkProperties.setProperty(SDKConstants.OPENMRS_SDK_PROPERTIES_JAVA_HOME_OPTIONS, updatedProperty);
             savePropertiesChangesToFile(sdkProperties, sdkPropertiesFile, SDK_PROPERTIES_FILE);
         }
     }
 
-    private String convertListToPropertyString(List<String> list) {
-        String result = "";
-        for (String str : list) {
-            result += str + ", ";
-        }
-        return result;
-    }
-
-    public Properties getSdkProperties() {
+    private Properties getSdkProperties() {
         File sdkPropertiesFile = new File(Server.getServersPathFile(), SDKConstants.OPENMRS_SDK_PROPERTIES);
 
         if (!sdkPropertiesFile.exists()) {
@@ -362,7 +350,7 @@ public class DefaultWizard implements Wizard {
             }
         }
 
-        InputStream in = null;
+        InputStream in;
         try {
             in = new FileInputStream(sdkPropertiesFile);
         } catch (FileNotFoundException e) {
@@ -377,7 +365,7 @@ public class DefaultWizard implements Wizard {
         return sdkProperties;
     }
 
-    public List<String> getJdkPaths() {
+    private List<String> getJavaHomeOptions() {
         Properties sdkProperties = getSdkProperties();
         List<String> result = new ArrayList<>();
 
@@ -385,52 +373,48 @@ public class DefaultWizard implements Wizard {
             return new ArrayList<>();
         }
 
-        String jdkHomeProperty = sdkProperties.getProperty(SDKConstants.OPENMRS_SDK_PROPERTIES_JDK_HOME);
+        String jdkHomeProperty = sdkProperties.getProperty(SDKConstants.OPENMRS_SDK_PROPERTIES_JAVA_HOME_OPTIONS);
         if (jdkHomeProperty != null) {
-            result.addAll(Arrays.asList(jdkHomeProperty.split("\\s*,\\s*")));
-
-            for (int i = 0; i < result.size(); i++) {
-                if (!isThereJdkUnderPath(result.get(i))) {
-                    result.remove(i);
-                    i--;
+            for (String path: Arrays.asList(jdkHomeProperty.split("\\s*,\\s*"))) {
+                if (isJavaHomeValid(path)) {
+                    result.add(path);
                 }
             }
 
             // Save properties
             Collections.sort(result);
-            String updatedProperty = convertListToPropertyString(result);
-            sdkProperties.setProperty(SDKConstants.OPENMRS_SDK_PROPERTIES_JDK_HOME, updatedProperty);
+            String updatedProperty = StringUtils.join(result.iterator(), ", ");
+            sdkProperties.setProperty(SDKConstants.OPENMRS_SDK_PROPERTIES_JAVA_HOME_OPTIONS, updatedProperty);
             File sdkPropertiesFile = new File(Server.getServersPathFile(), SDKConstants.OPENMRS_SDK_PROPERTIES);
             savePropertiesChangesToFile(sdkProperties, sdkPropertiesFile, SDK_PROPERTIES_FILE);
 
             return result;
-        }
-        else {
+        } else {
             return new ArrayList<>();
         }
     }
 
-    private boolean isPathLineDuplicated(List<String> paths, String jdkPath) {
-        for (String path : paths) {
-            if (path.equals(jdkPath)) {
-                return true;
-            }
+    private boolean isJavaHomeValid(String jdkPath) {
+        File jdk = new File(jdkPath, "bin");
+        if (System.getProperty("os.name").toLowerCase().contains("windows")) {
+            jdk = new File(jdk, "java.exe");
+        } else {
+            jdk = new File(jdk, "java");
         }
-        return false;
-    }
 
-    public boolean isThereJdkUnderPath(String jdkPath) {
-        File jdk = new File(jdkPath + File.separator + "bin" + File.separator + "java");
         return jdk.exists();
     }
 
     private void savePropertiesChangesToFile(Properties properties, File file, String message) {
+        OutputStream fos = null;
         try {
-            OutputStream fos = new FileOutputStream(file);
+            fos = new FileOutputStream(file);
             properties.store(fos, message + ":");
             fos.close();
-        } catch (IOException e1) {
-            e1.printStackTrace();
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        } finally {
+            IOUtils.closeQuietly(fos);
         }
     }
 
