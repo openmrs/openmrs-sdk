@@ -25,6 +25,7 @@ public class Server {
     public static final String PROPERTY_DB_PASS = "connection.password";
     public static final String PROPERTY_DB_URI = "connection.url";
     public static final String PROPERTY_VERSION = "openmrs.version";
+    public static final String PROPERTY_JDK = "java.home";
     public static final String PROPERTY_PLATFORM = "openmrs.platform.version";
     public static final String PROPERTY_DB_NAME = "database_name";
     public static final String PROPERTY_USER_MODULES = "user_modules";
@@ -60,6 +61,11 @@ public class Server {
 
         public ServerBuilder setInteractiveMode(String nestedInteractiveMode) {
             server.interactiveMode = nestedInteractiveMode;
+            return this;
+        }
+
+        public ServerBuilder setJavaHome(String path) {
+            server.setJavaHome(path);
             return this;
         }
 
@@ -506,6 +512,10 @@ public class Server {
             }
 
         }
+    }
+
+    public void setJavaHome(String path) {
+        setParam(PROPERTY_JDK, path);
     }
 
     public String getServerId() {

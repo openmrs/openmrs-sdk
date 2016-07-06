@@ -17,7 +17,13 @@ import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.model.UpgradeDifferential;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.net.URISyntaxException;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.*;
 import java.util.Map.Entry;
 
@@ -39,6 +45,8 @@ public class DefaultWizard implements Wizard {
     private static final String YESNO = " [Y/n]";
     private static final String REFERENCEAPPLICATION_2_3 = "org.openmrs.distro:referenceapplication-package:2.3.1";
     private static final String DEFAULT_CUSTOM_DIST_ARTIFACT = "Please specify custom distribution artifact%s (default: '%s')";
+    private static final String CUSTOM_JDK_PATH = "Please specify a path to JDK used for running this server (-Djdk)";
+    private static final String SDK_PROPERTIES_FILE = "SDK Properties file";
     private static final String REFAPP_OPTION_TMPL = "Reference Application %s";
     private static final String REFAPP_ARTIFACT_TMPL = "org.openmrs.distro:referenceapplication-package:%s";
     private static final String JDK_ERROR_TMPL = "\nThe JDK %s is not compatible with OpenMRS Platform %s. " +
@@ -274,6 +282,161 @@ public class DefaultWizard implements Wizard {
                 null, "version", versions, "Please specify platform version", null);
         return version;
 	}
+
+    @Override
+    public String promptForJdkPath(Server server) {
+
+        List<String> paths = new ArrayList<>();
+        paths.add("JAVA_HOME (currently: " + System.getProperty("java.home") + ")");
+        paths.addAll(getJdkPaths());
+
+
+
+        if (!interactiveMode) {
+            return paths.get(0);
+        }
+
+        String javaHome = server.getJavaHome();
+
+        if (javaHome.equals(System.getProperty("java.home"))) {
+            javaHome = null;
+        }
+
+        String path = promptForMissingValueWithOptions(SDKConstants.OPENMRS_SDK_JDK_OPTION,
+                javaHome, "path", paths, SDKConstants.OPENMRS_SDK_JDK_CUSTOM, null);
+
+        if (path.equals(paths.get(0))) {
+            // Use default JAVA_HOME
+            return null;
+        }
+
+        if (!isThereJdkUnderPath(path)) {
+                System.out.println(SDKConstants.OPENMRS_SDK_JDK_CUSTOM_INVALID);
+                server.setJavaHome(promptForJdkPath(server));
+        }
+        else {
+            if (!isPathLineDuplicated(paths, path)) {
+                addJdkPathToSdkProperties(path);
+            }
+            return path;
+        }
+        return null;
+    }
+
+    private void addJdkPathToSdkProperties(String path) {
+
+        File sdkPropertiesFile = new File(Server.getServersPathFile(), SDKConstants.OPENMRS_SDK_PROPERTIES);
+        Properties sdkProperties = null;
+        sdkProperties = getSdkProperties();
+        List<String> jdkPaths = getJdkPaths();
+
+        if (!path.equals(System.getProperty("java.home")) && !isPathLineDuplicated(jdkPaths, path)) {
+            if (jdkPaths.size() == 5) {
+                jdkPaths.set(4, path);
+            }
+            else {
+                jdkPaths.add(path);
+            }
+
+            Collections.sort(jdkPaths);
+
+            String updatedProperty = convertListToPropertyString(jdkPaths);
+            sdkProperties.setProperty(SDKConstants.OPENMRS_SDK_PROPERTIES_JDK_HOME, updatedProperty);
+            savePropertiesChangesToFile(sdkProperties, sdkPropertiesFile, SDK_PROPERTIES_FILE);
+        }
+    }
+
+    private String convertListToPropertyString(List<String> list) {
+        String result = "";
+        for (String str : list) {
+            result += str + ", ";
+        }
+        return result;
+    }
+
+    public Properties getSdkProperties() {
+        File sdkPropertiesFile = new File(Server.getServersPathFile(), SDKConstants.OPENMRS_SDK_PROPERTIES);
+
+        if (!sdkPropertiesFile.exists()) {
+            try {
+                sdkPropertiesFile.createNewFile();
+            } catch (IOException e) {
+                throw new IllegalStateException("Failed to create SDK properties file in: \"" + Server.getServersPathFile() + SDKConstants.OPENMRS_SDK_PROPERTIES + "\"");
+            }
+        }
+
+        InputStream in = null;
+        try {
+            in = new FileInputStream(sdkPropertiesFile);
+        } catch (FileNotFoundException e) {
+            throw new IllegalStateException("SDK properties file not found at: \"" + Server.getServersPathFile() + SDKConstants.OPENMRS_SDK_PROPERTIES + "\"");
+        }
+        Properties sdkProperties = new Properties();
+        try {
+            sdkProperties.load(in);
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to load properties from file");
+        }
+        return sdkProperties;
+    }
+
+    public List<String> getJdkPaths() {
+        Properties sdkProperties = getSdkProperties();
+        List<String> result = new ArrayList<>();
+
+        if (!interactiveMode) {
+            addJdkPathToSdkProperties("Some/Mock/Path/");
+            return new ArrayList<>();
+        }
+
+        String jdkHomeProperty = sdkProperties.getProperty(SDKConstants.OPENMRS_SDK_PROPERTIES_JDK_HOME);
+        if (jdkHomeProperty != null) {
+            result.addAll(Arrays.asList(jdkHomeProperty.split("\\s*,\\s*")));
+
+            for (int i = 0; i < result.size(); i++) {
+                if (!isThereJdkUnderPath(result.get(i))) {
+                    result.remove(i);
+                    i--;
+                }
+            }
+
+            // Save properties
+            Collections.sort(result);
+            String updatedProperty = convertListToPropertyString(result);
+            sdkProperties.setProperty(SDKConstants.OPENMRS_SDK_PROPERTIES_JDK_HOME, updatedProperty);
+            File sdkPropertiesFile = new File(Server.getServersPathFile(), SDKConstants.OPENMRS_SDK_PROPERTIES);
+            savePropertiesChangesToFile(sdkProperties, sdkPropertiesFile, SDK_PROPERTIES_FILE);
+
+            return result;
+        }
+        else {
+            return new ArrayList<>();
+        }
+    }
+
+    private boolean isPathLineDuplicated(List<String> paths, String jdkPath) {
+        for (String path : paths) {
+            if (path.equals(jdkPath)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean isThereJdkUnderPath(String jdkPath) {
+        File jdk = new File(jdkPath + File.separator + "bin" + File.separator + "java");
+        return jdk.exists();
+    }
+
+    private void savePropertiesChangesToFile(Properties properties, File file, String message) {
+        try {
+            OutputStream fos = new FileOutputStream(file);
+            properties.store(fos, message + ":");
+            fos.close();
+        } catch (IOException e1) {
+            e1.printStackTrace();
+        }
+    }
 
 	@Override
     public void promptForDistroVersionIfMissing(Server server) throws MojoExecutionException {
