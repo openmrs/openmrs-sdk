@@ -89,6 +89,8 @@ public abstract class AbstractSdkIntegrationTest {
         addTaskParam(verifier, "serverId", serverId);
         addTaskParam(verifier, "distro", "referenceapplication:2.2");
         addTaskParam(verifier, "openMRSPath", testDir.getAbsolutePath());
+        addTaskParam(verifier, "java.home", System.getProperty("java.home"));
+        addTaskParam(verifier, "interactiveMode", "false");
         addMockDbSettings(verifier);
         String sdk = resolveSdkArtifact();
         verifier.executeGoal(sdk+":setup");
