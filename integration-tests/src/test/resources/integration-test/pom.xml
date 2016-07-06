@@ -5,8 +5,8 @@
                       http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>org.openmrs.modules</groupId>
-    <artifactId>owa-omod</artifactId>
+    <groupId>org.openmrs.module</groupId>
+    <artifactId>owa</artifactId>
     <version>1.4</version>
     <packaging>pom</packaging>
 </project>

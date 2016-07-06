@@ -2,7 +2,6 @@ package org.openmrs.maven.plugins;
 
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.openmrs.maven.plugins.bintray.BintrayId;
 import org.openmrs.maven.plugins.model.Artifact;
@@ -34,8 +33,10 @@ public class DeployIntegrationTest extends AbstractSdkIntegrationTest {
 
     @Test
     public void deploy_shouldReplaceWebapp() throws Exception {
-        addTaskParam("serverId", testServerId);
         addTaskParam("platform", "1.11.5");
+
+        addAnswer(testServerId);
+        addTaskParam(BATCH_ANSWERS, getAnswers());
 
         executeTask("deploy");
 
@@ -45,8 +46,14 @@ public class DeployIntegrationTest extends AbstractSdkIntegrationTest {
 
     @Test
     public void deploy_shouldUpgradeDistroTo2_3_1() throws Exception {
-        addTaskParam("serverId", testServerId);
-        addTaskParam("distro", "referenceapplication:2.3.1");
+
+        addAnswer(testServerId);
+        addAnswer("n");
+        addAnswer("n");
+        addAnswer("Distribution");
+        addAnswer("referenceapplication:2.3.1");
+        addAnswer("y");
+        addTaskParam(BATCH_ANSWERS, getAnswers());
 
         executeTask("deploy");
 
@@ -62,7 +69,10 @@ public class DeployIntegrationTest extends AbstractSdkIntegrationTest {
 
     @Test
     public void deploy_shouldUpgradeDistroFromDistroProperties() throws Exception {
-        addTaskParam("serverId", testServerId);
+        addAnswer(testServerId);
+        addAnswer("y");
+        addAnswer("y");
+        addTaskParam(BATCH_ANSWERS, getAnswers());
 
         executeTask("deploy");
 
@@ -73,11 +83,14 @@ public class DeployIntegrationTest extends AbstractSdkIntegrationTest {
 
     @Test
     public void deploy_shouldInstallModule() throws Exception {
-        addTaskParam("serverId", testServerId);
         addTaskParam("artifactId", "owa");
         addTaskParam("groupId", Artifact.GROUP_MODULE);
         addTaskParam("version", "1.4");
 
+        addAnswer(testServerId);
+        addAnswer("y");
+        addAnswer("y");
+        addTaskParam(BATCH_ANSWERS, getAnswers());
         executeTask("deploy");
 
         assertSuccess();
@@ -86,8 +99,11 @@ public class DeployIntegrationTest extends AbstractSdkIntegrationTest {
 
     @Test
     public void deploy_shouldInstallModuleFromPomInDir() throws Exception {
-        addTaskParam("serverId", testServerId);
 
+        addAnswer(testServerId);
+        addAnswer("n");
+        addAnswer("y");
+        addTaskParam(BATCH_ANSWERS, getAnswers());
         executeTask("deploy");
 
         assertSuccess();
@@ -96,8 +112,11 @@ public class DeployIntegrationTest extends AbstractSdkIntegrationTest {
 
     @Test
     public void deploy_shouldInstallOwaAndOwaModule() throws Exception {
-        addTaskParam("serverId", testServerId);
         addTaskParam("owa", "conceptdictionary:1.0.0-beta.6");
+
+        addAnswer(testServerId);
+        addAnswer("y");
+        addTaskParam(BATCH_ANSWERS, getAnswers());
 
         executeTask("deploy");
 

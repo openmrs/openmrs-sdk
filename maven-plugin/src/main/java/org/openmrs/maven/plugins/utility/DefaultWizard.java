@@ -67,6 +67,8 @@ public class DefaultWizard implements Wizard {
 
     private boolean interactiveMode = true;
 
+    private ArrayDeque<String> batchAnswers;
+
     public DefaultWizard(){};
 
     public DefaultWizard(Prompter prompter) {
@@ -116,17 +118,20 @@ public class DefaultWizard implements Wizard {
      */
     @Override
     public String promptForValueIfMissingWithDefault(String message, String value, String parameterName, String defValue) {
-        if (value != null) {
-            return value;
-        }
         String textToShow;
-        // check if there no default value
         if (StringUtils.isBlank(defValue)){
             textToShow = String.format(message != null ? message : DEFAULT_VALUE_TMPL, parameterName);
         }
         else {
             textToShow = String.format(message != null? message : DEFAULT_VALUE_TMPL_WITH_DEFAULT, parameterName, defValue);
         }
+
+        if (value != null) {
+            return value;
+        }else if(!interactiveMode){
+            return getAnswer(textToShow);
+        }
+
         String val = prompt(textToShow);
         if (StringUtils.isBlank(val)) {
             val = defValue;
@@ -136,13 +141,15 @@ public class DefaultWizard implements Wizard {
 
     @Override
     public String promptForMissingValueWithOptions(String message, String value, String parameterName, List<String> options, String customMessage, String customDefault){
+
+        String question = String.format(message != null? message : DEFAULT_VALUE_TMPL_WITH_DEFAULT, parameterName, options.get(0));
+
         if (value != null) {
             return value;
         } else if(!interactiveMode){
-            return options.get(0);
+            return getAnswer(question);
         }
 
-        String question = String.format(message != null? message : DEFAULT_VALUE_TMPL_WITH_DEFAULT, parameterName, options.get(0));
 
         System.out.println("\n" + question + ":");
         List<Integer> choices = new ArrayList<>();
@@ -230,13 +237,14 @@ public class DefaultWizard implements Wizard {
      */
     @Override
     public boolean promptYesNo(String text) {
+        String yesNo = null;
         if(interactiveMode){
-            String yesNo = null;
             yesNo = prompt(text.concat(YESNO));
-            return yesNo.equals("") || yesNo.toLowerCase().equals("y");
         } else {
-            return true;
+            yesNo = getAnswer(text);
         }
+        return yesNo.equals("") || yesNo.toLowerCase().equals("y");
+
     }
 
     /**
@@ -295,27 +303,27 @@ public class DefaultWizard implements Wizard {
             }
         }
 
-        if (!interactiveMode) {
-            return;
+        if (interactiveMode) {
+            List<String> paths = new ArrayList<>();
+            paths.add("JAVA_HOME (currently: " + System.getenv("JAVA_HOME") + ")");
+            paths.addAll(getJavaHomeOptions());
+
+            String path = promptForMissingValueWithOptions(SDKConstants.OPENMRS_SDK_JDK_OPTION,
+                    server.getJavaHome(), "path", paths, SDKConstants.OPENMRS_SDK_JDK_CUSTOM, null);
+
+            if (path.equals(paths.get(0))) {
+                // Use default JAVA_HOME
+                server.setJavaHome(null);
+            } else if (!isJavaHomeValid(path)) {
+                System.out.println(SDKConstants.OPENMRS_SDK_JDK_CUSTOM_INVALID);
+                promptForJavaHomeIfMissing(server);
+            } else {
+                server.setJavaHome(path);
+                addJavaHomeToSdkProperties(path);
+            }
         }
 
-        List<String> paths = new ArrayList<>();
-        paths.add("JAVA_HOME (currently: " + System.getenv("JAVA_HOME") + ")");
-        paths.addAll(getJavaHomeOptions());
 
-        String path = promptForMissingValueWithOptions(SDKConstants.OPENMRS_SDK_JDK_OPTION,
-                server.getJavaHome(), "path", paths, SDKConstants.OPENMRS_SDK_JDK_CUSTOM, null);
-
-        if (path.equals(paths.get(0))) {
-            // Use default JAVA_HOME
-            server.setJavaHome(null);
-        } else if (!isJavaHomeValid(path)) {
-            System.out.println(SDKConstants.OPENMRS_SDK_JDK_CUSTOM_INVALID);
-            promptForJavaHomeIfMissing(server);
-        } else {
-            server.setJavaHome(path);
-            addJavaHomeToSdkProperties(path);
-        }
     }
 
     private void addJavaHomeToSdkProperties(String path) {
@@ -369,29 +377,30 @@ public class DefaultWizard implements Wizard {
         Properties sdkProperties = getSdkProperties();
         List<String> result = new ArrayList<>();
 
-        if (!interactiveMode) {
-            return new ArrayList<>();
-        }
-
-        String jdkHomeProperty = sdkProperties.getProperty(SDKConstants.OPENMRS_SDK_PROPERTIES_JAVA_HOME_OPTIONS);
-        if (jdkHomeProperty != null) {
-            for (String path: Arrays.asList(jdkHomeProperty.split("\\s*,\\s*"))) {
-                if (isJavaHomeValid(path)) {
-                    result.add(path);
+        if (interactiveMode) {
+            String jdkHomeProperty = sdkProperties.getProperty(SDKConstants.OPENMRS_SDK_PROPERTIES_JAVA_HOME_OPTIONS);
+            if (jdkHomeProperty != null) {
+                for (String path: Arrays.asList(jdkHomeProperty.split("\\s*,\\s*"))) {
+                    if (isJavaHomeValid(path)) {
+                        result.add(path);
+                    }
                 }
+
+                // Save properties
+                Collections.sort(result);
+                String updatedProperty = StringUtils.join(result.iterator(), ", ");
+                sdkProperties.setProperty(SDKConstants.OPENMRS_SDK_PROPERTIES_JAVA_HOME_OPTIONS, updatedProperty);
+                File sdkPropertiesFile = new File(Server.getServersPathFile(), SDKConstants.OPENMRS_SDK_PROPERTIES);
+                savePropertiesChangesToFile(sdkProperties, sdkPropertiesFile, SDK_PROPERTIES_FILE);
+
+                return result;
+            } else {
+                return new ArrayList<>();
             }
-
-            // Save properties
-            Collections.sort(result);
-            String updatedProperty = StringUtils.join(result.iterator(), ", ");
-            sdkProperties.setProperty(SDKConstants.OPENMRS_SDK_PROPERTIES_JAVA_HOME_OPTIONS, updatedProperty);
-            File sdkPropertiesFile = new File(Server.getServersPathFile(), SDKConstants.OPENMRS_SDK_PROPERTIES);
-            savePropertiesChangesToFile(sdkProperties, sdkPropertiesFile, SDK_PROPERTIES_FILE);
-
-            return result;
-        } else {
+        }else {
             return new ArrayList<>();
         }
+
     }
 
     private boolean isJavaHomeValid(String jdkPath) {
@@ -619,5 +628,18 @@ public class DefaultWizard implements Wizard {
             return promptYesNo(String.format("Would you like to apply those changes to '%s'?", server.getServerId()));
         }
         else return true;
+    }
+
+    @Override
+    public void setAnswers(ArrayDeque<String> batchAnswers) {
+        this.batchAnswers = batchAnswers;
+    }
+
+    private String getAnswer(String question){
+        String answer = batchAnswers.poll();
+        if(answer == null){
+            throw new RuntimeException("Answer not provided for question: " + question);
+        }
+        return answer.trim();
     }
 }

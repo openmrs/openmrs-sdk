@@ -44,9 +44,11 @@ public class BuildIntegrationTest extends AbstractSdkIntegrationTest{
         assertFileNotPresent(serverId+ File.separator+"module2-1.0-SNAPSHOT.omod");
         assertFileNotPresent(serverId+ File.separator+"module1-1.0-SNAPSHOT.omod");
 
-        addTaskParam("serverId", serverId);
-        addTaskParam("interactiveMode","false");
         addTaskParam("openMRSPath",testDirectory.getAbsolutePath());
+
+        addAnswer(serverId);
+        addTaskParam(BATCH_ANSWERS, getAnswers());
+
 
         executeTask("build");
 

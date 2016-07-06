@@ -19,6 +19,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
+import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -82,6 +83,11 @@ public class CreateProject extends CreateProjectFromArchetypeMojo {
      * @required
      */
     Wizard wizard;
+
+    /**
+     * @parameter expression="${batchAnswers}"
+     */
+    private ArrayDeque<String> batchAnswers;
 
     /**
      * The manager's artifactId. This can be an ordered comma separated list.
@@ -298,6 +304,11 @@ public class CreateProject extends CreateProjectFromArchetypeMojo {
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
+
+        if(batchAnswers != null && batchAnswers.size() != 0){
+            wizard.setAnswers(batchAnswers);
+            wizard.setInteractiveMode(false);
+        }
 
         if("false".equals(interactiveMode)){
             wizard.setInteractiveMode(false);

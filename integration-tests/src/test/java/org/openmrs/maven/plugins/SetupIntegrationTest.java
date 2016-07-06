@@ -21,9 +21,11 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
     public void setup_shouldInstallRefapp2_3_1() throws Exception{
         String serverId = UUID.randomUUID().toString();
 
-        addTaskParam("serverId", serverId);
         addTaskParam("distro", "referenceapplication:2.3.1");
         addMockDbSettings();
+        addAnswer(serverId);
+        addAnswer(System.getenv("JAVA_HOME"));
+        addTaskParam(BATCH_ANSWERS, getAnswers());
 
         executeTask("setup");
 
@@ -45,9 +47,12 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
     public void setup_shouldInstallPlatform1_11_5() throws Exception{
         String serverId = UUID.randomUUID().toString();
 
-        addTaskParam("serverId", serverId);
         addTaskParam("platform", "1.11.5");
         addMockDbSettings();
+
+        addAnswer(serverId);
+        addAnswer(System.getenv("JAVA_HOME"));
+        addTaskParam(BATCH_ANSWERS, getAnswers());
 
         executeTask("setup");
 
@@ -66,10 +71,13 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
     @Test
     public void setup_shouldInstallServerFromGivenDistroProperties() throws Exception{
         String serverId = UUID.randomUUID().toString();
-        addTaskParam("serverId", serverId);
 
         addTaskParam("distro", testDirectory.getAbsolutePath() + File.separator + "openmrs-distro.properties");
         addMockDbSettings();
+
+        addAnswer(serverId);
+        addAnswer(System.getenv("JAVA_HOME"));
+        addTaskParam(BATCH_ANSWERS, getAnswers());
 
         executeTask("setup");
 
@@ -84,8 +92,10 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
     public void setup_shouldInstallServerFromDistroPropertiesDir() throws Exception{
         String serverId = UUID.randomUUID().toString();
         addTaskParam("serverId", serverId);
-
         addMockDbSettings();
+
+        addAnswer(System.getenv("JAVA_HOME"));
+        addTaskParam(BATCH_ANSWERS, getAnswers());
 
         executeTask("setup");
 
@@ -99,7 +109,14 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
     @Test
     public void setup_shouldInstallServerWithDefaultJavaHome() throws Exception{
         String serverId = UUID.randomUUID().toString();
-        addTaskParam("serverId", serverId);
+
+        addMockDbSettings();
+
+        addAnswer(serverId);
+        addAnswer("Distribution");
+        addAnswer("referenceapplication:2.4-SNAPSHOT");
+        addAnswer(System.getenv("JAVA_HOME"));
+        addTaskParam(BATCH_ANSWERS, getAnswers());
 
         executeTask("setup");
         assertSuccess();
@@ -117,8 +134,15 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
 		String customJavaHome = System.getenv("JAVA_HOME");
 
 		String serverId = UUID.randomUUID().toString();
-        addTaskParam("serverId", serverId);
+
         addTaskParam("javaHome", customJavaHome);
+
+        addAnswer(serverId);
+        addAnswer("Distribution");
+        addAnswer("referenceapplication:2.4-SNAPSHOT");
+        addTaskParam(BATCH_ANSWERS, getAnswers());
+
+        addMockDbSettings();
 
         executeTask("setup");
         assertSuccess();

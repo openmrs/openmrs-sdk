@@ -2,6 +2,7 @@ package org.openmrs.maven.plugins;
 
 import com.google.common.collect.Lists;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.maven.it.VerificationException;
 import org.apache.maven.it.Verifier;
 import org.apache.maven.it.util.ResourceExtractor;
@@ -23,6 +24,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -38,6 +40,9 @@ public abstract class AbstractSdkIntegrationTest {
      */
     static final String TEST_DIRECTORY = "/integration-test";
     static final String MOJO_OPTION_TMPL = "-D%s=\"%s\"";
+    protected static final String BATCH_ANSWERS = "batchAnswers";
+
+    protected ArrayDeque<String> batchAnswers = new ArrayDeque<>();
 
     /**
      * contains files in test directory which are not created during tests and will not be cleaned up
@@ -72,7 +77,7 @@ public abstract class AbstractSdkIntegrationTest {
 
         testFilesToPersist = new ArrayList<File>(Arrays.asList(testDirectory.listFiles()));
 
-        addTaskParam("interactiveMode","false");
+
         addTaskParam("openMRSPath",testDirectory.getAbsolutePath());
     }
 
@@ -83,21 +88,29 @@ public abstract class AbstractSdkIntegrationTest {
                 FileUtils.deleteDirectory(file);
             }
         }
+        cleanAnswers();
     }
 
     public String setupTestServer() throws Exception{
         Verifier setupServer = new Verifier(testDirectory.getAbsolutePath());
         String serverId = UUID.randomUUID().toString();
 
-        addTaskParam(setupServer, "interactiveMode", "false");
         addTaskParam(setupServer, "openMRSPath", testDirectory.getAbsolutePath());
-        addTaskParam(setupServer, "serverId", serverId);
         addTaskParam(setupServer, "distro", "referenceapplication:2.2");
         addMockDbSettings(setupServer);
+
+        addAnswer(serverId);
+        addAnswer(System.getenv("JAVA_HOME"));
+        addTaskParam(setupServer, BATCH_ANSWERS, getAnswers());
+        cleanAnswers();
 
         String sdk = resolveSdkArtifact();
         setupServer.executeGoal(sdk+":setup");
         return serverId;
+    }
+
+    private void cleanAnswers() {
+        batchAnswers.clear();
     }
 
     public static void deleteTestServer(String serverId) throws Exception{
@@ -213,5 +226,16 @@ public abstract class AbstractSdkIntegrationTest {
     protected static void saveTestPom(File directory, Model model) throws IOException {
         MavenXpp3Writer writer = new MavenXpp3Writer();
         writer.write(new FileOutputStream(new File(directory, "pom.xml")), model);
+    }
+
+    protected void addAnswer(String answer){
+        batchAnswers.add(answer);
+    }
+
+    protected String getAnswers() {
+        String answers = StringUtils.join(batchAnswers.iterator(), ",");
+        answers = StringUtils.removeEnd(answers, "]");
+        answers = StringUtils.removeStart(answers, "[");
+        return answers;
     }
 }

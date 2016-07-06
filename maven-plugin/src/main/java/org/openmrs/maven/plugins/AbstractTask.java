@@ -15,6 +15,9 @@ import org.openmrs.maven.plugins.utility.ModuleInstaller;
 import org.openmrs.maven.plugins.utility.VersionsHelper;
 import org.openmrs.maven.plugins.utility.Wizard;
 
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+
 /**
  *
  */
@@ -77,6 +80,12 @@ public abstract class AbstractTask extends AbstractMojo {
      */
     String openMRSPath;
 
+    /***
+     *
+     * @parameter expression="${batchAnswers}"
+     */
+    ArrayDeque<String> batchAnswers;
+
     /**
      * wizard for resolving artifact available versions
      */
@@ -120,7 +129,8 @@ public abstract class AbstractTask extends AbstractMojo {
         if(StringUtils.isNotBlank(openMRSPath)){
             Server.setServersPath(openMRSPath);
         }
-        if("false".equals(interactiveMode)){
+        if(batchAnswers != null && !batchAnswers.isEmpty()){
+            wizard.setAnswers(batchAnswers);
             wizard.setInteractiveMode(false);
         }
     }
