@@ -40,7 +40,7 @@ public class DeployIntegrationTest extends AbstractSdkIntegrationTest {
         executeTask("deploy");
 
         assertSuccess();
-        assertFilePresent(testServerId+"/openmrs-1.11.5.war");
+        assertFilePresent(testServerId + File.separator + "openmrs-1.11.5.war");
     }
 
     @Test
@@ -51,7 +51,7 @@ public class DeployIntegrationTest extends AbstractSdkIntegrationTest {
         executeTask("deploy");
 
         assertSuccess();
-        assertFilePresent(testServerId+"/openmrs-1.11.5.war");
+        assertFilePresent(testServerId + File.separator + "openmrs-1.11.5.war");
         DistroProperties distroProperties = new DistroProperties("2.3.1");
         assertModulesInstalled(testServerId, distroProperties);
 
@@ -67,7 +67,7 @@ public class DeployIntegrationTest extends AbstractSdkIntegrationTest {
         executeTask("deploy");
 
         assertSuccess();
-        assertFilePresent(testServerId+"/openmrs-1.11.5.war");
+        assertFilePresent(testServerId + File.separator + "openmrs-1.11.5.war");
         assertModulesInstalled(testServerId, "owa-1.4.omod", "uicommons-1.7.omod", "uiframework-3.6.omod");
     }
 

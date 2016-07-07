@@ -144,13 +144,13 @@ public abstract class AbstractSdkIntegrationTest {
      * asserts that file with given path is present in test directory
      */
     public void assertFilePresent(String path){
-        verifier.assertFilePresent(testDirectory.getAbsolutePath()+ File.separator +path);
+        verifier.assertFilePresent(testDirectory.getAbsolutePath() + File.separator + path);
     }
     /**
      * asserts that file with given path is not present in test directory
      */
     public void assertFileNotPresent(String path){
-        verifier.assertFileNotPresent(testDirectory.getAbsolutePath()+ File.separator +path);
+        verifier.assertFileNotPresent(testDirectory.getAbsolutePath() + File.separator + path);
     }
 
     /**

@@ -1,22 +1,18 @@
 package org.openmrs.maven.plugins;
 
-import org.junit.Ignore;
 import org.junit.Test;
 import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.Server;
-import org.openmrs.maven.plugins.utility.SDKConstants;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 import java.util.UUID;
 
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.*;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.core.Is.is;
 import static org.openmrs.maven.plugins.SdkMatchers.serverHasVersion;
 
 public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
@@ -33,9 +29,9 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
 
         assertSuccess();
         assertServerInstalled(serverId);
-        assertFilePresent(serverId+"/openmrs-1.11.5.war");
-        assertFilePresent(serverId+"/modules");
-        assertFileNotPresent(serverId+"/tmp");
+        assertFilePresent(serverId + File.separator + "openmrs-1.11.5.war");
+        assertFilePresent(serverId + File.separator + "modules");
+        assertFileNotPresent(serverId + File.separator + "tmp");
 
         DistroProperties distroProperties = new DistroProperties("2.3.1");
         assertModulesInstalled(serverId, distroProperties);
@@ -57,9 +53,9 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
 
         assertSuccess();
         assertServerInstalled(serverId);
-        assertFilePresent(serverId+"/openmrs-1.11.5.war");
-        assertFilePresent(serverId+"/h2-1.4.190.jar");
-        assertFileNotPresent(serverId+"/modules");
+        assertFilePresent(serverId + File.separator + "openmrs-1.11.5.war");
+        assertFilePresent(serverId + File.separator + "h2-1.4.190.jar");
+        assertFileNotPresent(serverId + File.separator + "modules");
 
         Server.setServersPath(testDirectory.getAbsolutePath());
         Server server = Server.loadServer(serverId);
@@ -72,15 +68,15 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
         String serverId = UUID.randomUUID().toString();
         addTaskParam("serverId", serverId);
 
-        addTaskParam("distro", testDirectory.getAbsolutePath()+"/openmrs-distro.properties");
+        addTaskParam("distro", testDirectory.getAbsolutePath() + File.separator + "openmrs-distro.properties");
         addMockDbSettings();
 
         executeTask("setup");
 
         assertSuccess();
         assertServerInstalled(serverId);
-        assertFilePresent(serverId+"/openmrs-1.11.5.war");
-        assertFilePresent(serverId+"/modules");
+        assertFilePresent(serverId + File.separator + "openmrs-1.11.5.war");
+        assertFilePresent(serverId + File.separator + "modules");
         assertModulesInstalled(serverId, "owa-1.4.omod", "uicommons-1.7.omod", "uiframework-3.6.omod");
     }
 
@@ -95,8 +91,8 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
 
         assertSuccess();
         assertServerInstalled(serverId);
-        assertFilePresent(serverId + "/openmrs-1.11.5.war");
-        assertFilePresent(serverId + "/modules");
+        assertFilePresent(serverId + File.separator + "openmrs-1.11.5.war");
+        assertFilePresent(serverId + File.separator + "modules");
         assertModulesInstalled(serverId, "owa-1.4.omod", "uicommons-1.7.omod", "uiframework-3.6.omod");
     }
 
