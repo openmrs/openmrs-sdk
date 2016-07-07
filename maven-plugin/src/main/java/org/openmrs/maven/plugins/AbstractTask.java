@@ -10,13 +10,16 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.project.MavenProject;
 import org.openmrs.maven.plugins.model.Server;
+import org.openmrs.maven.plugins.utility.DefaultJira;
 import org.openmrs.maven.plugins.utility.DistroHelper;
+import org.openmrs.maven.plugins.git.DefaultGitHelper;
+import org.openmrs.maven.plugins.git.GitHelper;
+import org.openmrs.maven.plugins.utility.Jira;
 import org.openmrs.maven.plugins.utility.ModuleInstaller;
 import org.openmrs.maven.plugins.utility.VersionsHelper;
 import org.openmrs.maven.plugins.utility.Wizard;
 
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 
 /**
  *
@@ -101,6 +104,16 @@ public abstract class AbstractTask extends AbstractMojo {
      */
     DistroHelper distroHelper;
 
+    /**
+     * handles github and provides basic git utilities
+     */
+    GitHelper gitHelper;
+
+    /**
+     * handles jira
+     */
+    Jira jira;
+
     public AbstractTask(){}
 
     public AbstractTask(AbstractTask other) {
@@ -113,10 +126,17 @@ public abstract class AbstractTask extends AbstractMojo {
         this.moduleInstaller = other.moduleInstaller;
         this.versionsHelper = other.versionsHelper;
         this.distroHelper = other.distroHelper;
+        this.gitHelper = other.gitHelper;
         initTask();
     }
 
     public void initTask() {
+        if(jira == null){
+            jira = new DefaultJira();
+        }
+        if(gitHelper == null){
+            gitHelper = new DefaultGitHelper();
+        }
         if(versionsHelper == null){
             versionsHelper = new VersionsHelper(artifactFactory, mavenProject, mavenSession, artifactMetadataSource);
         }

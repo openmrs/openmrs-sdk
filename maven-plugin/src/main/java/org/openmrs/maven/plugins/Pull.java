@@ -1,12 +1,9 @@
 package org.openmrs.maven.plugins;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Model;
-import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
-import org.apache.maven.project.MavenProject;
 import org.eclipse.jgit.api.CheckoutCommand;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.MergeCommand;
@@ -89,10 +86,9 @@ public class Pull extends AbstractTask {
 
     public Pull(AbstractTask other) {super(other);}
 
-    public Pull(MavenProject project, MavenSession session, BuildPluginManager manager) {
-        super.mavenProject = project;
-        super.mavenSession = session;
-        super.pluginManager = manager;
+    public Pull(AbstractTask other, String branch) {
+        super(other);
+        this.branch = branch;
     }
 
     @Override
@@ -153,7 +149,6 @@ public class Pull extends AbstractTask {
                 }
                 try {
                     pullLatestUpstream(project.getPath());
-                    updatedModules.add(project.getArtifactId());
                 } catch (Exception e) {
                     allExceptions.add(project.getPath(), e);
                     try {
@@ -164,6 +159,7 @@ public class Pull extends AbstractTask {
                         notUpdatedModules.add(project.getArtifactId() + DASH + String.format(CONFLICT_ERROR_MESSAGE, e.getMessage()) + ". " + e1.getMessage());
                     }
                 }
+                updatedModules.add(project.getArtifactId());
             }
             displayUpdatedModules();
             displayNotUpdatedModules();
@@ -178,12 +174,25 @@ public class Pull extends AbstractTask {
      *
      * @return
      */
-    private boolean isGitProjectPresent(){
+    private boolean isGitProjectPresent() {
         File file = new File(System.getProperty("user.dir"), ".git");
-        if(file.exists()){
+        if (file.exists()) {
             return true;
         }
         return false;
+    }
+
+    public void pullLatestUpstream(CompositeException allExceptions, Project project){
+        try {
+            pullLatestUpstream(project.getPath());
+        } catch (Exception e) {
+            allExceptions.add(project.getPath(), e);
+            try {
+                cleanUp(project.getPath(), project.getArtifactId());
+            } catch (IllegalStateException e1) {
+                allExceptions.add(project.getPath(), e1);
+            }
+        }
     }
 
     /**
@@ -192,9 +201,9 @@ public class Pull extends AbstractTask {
      * @param path
      * @throws Exception
      */
-    private void pullLatestUpstream(String path) throws Exception {
+    public void pullLatestUpstream(String path) throws Exception {
         String newBranch = SDK_DASH + serverId;
-        Repository localRepo = getLocalRepository(path);
+        Repository localRepo = gitHelper.getLocalRepository(path);
         Git git = new Git(localRepo);
         
         userBranch = localRepo.getBranch();
@@ -235,9 +244,9 @@ public class Pull extends AbstractTask {
      * @param moduleName
      * @throws IllegalStateException
      */
-    private void cleanUp(String path, String moduleName) throws IllegalStateException {
+    public void cleanUp(String path, String moduleName) throws IllegalStateException {
         try {
-            Repository localRepo = getLocalRepository(path);
+            Repository localRepo = gitHelper.getLocalRepository(path);
             Git git = new Git(localRepo);
             if(!localRepo.getBranch().equals(userBranch)){
                 checkoutBranch(git, userBranch);
@@ -505,6 +514,4 @@ public class Pull extends AbstractTask {
             }
         }
     }
-
-
 }
