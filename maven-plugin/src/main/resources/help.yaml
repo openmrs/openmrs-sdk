@@ -1,10 +1,7 @@
 version: "${version}"
 help:
-  - name: "create-module"
-    desc: "Create OpenMRS Reference Application module."
-
-  - name: "create-platform-module"
-    desc: "Create OpenMRS Platform module."
+  - name: "create-project"
+    desc: "Create module for the OpenMRS platform or the OpenMRS Reference Application."
 
   - name: "setup"
     desc: "Setup a new instance of OpenMRS server. It can be used for setting up a platform or a distribution. It prompts for any missing, but required parameters."
