@@ -179,6 +179,9 @@ public class Setup extends AbstractTask {
                     } else if(distroProperties != null && distroProperties.getSqlScriptPath() != null){
                         importMysqlDb(server, distroProperties.getSqlScriptPath());
                     }
+                    else if(isCreatePlatform) {
+                        importMysqlDb(server, CLASSPATH_SCRIPT_PREFIX+ "openmrs-platform.sql");
+                    }
                 } else {
                     throw new IllegalStateException("Failed to connect to the specified database " + server.getDbUri());
                 }
@@ -288,6 +291,7 @@ public class Setup extends AbstractTask {
             scriptRunner.runScript(new InputStreamReader(sqlStream));
             scriptRunner.closeConnection();
             wizard.showMessage("Database imported successfully.");
+            server.setParam("create_tables", "false");
         } catch (SQLException e) {
             //this file is extracted from distribution, clean it up
             if(extractedSqlFile != null && extractedSqlFile.exists()){
