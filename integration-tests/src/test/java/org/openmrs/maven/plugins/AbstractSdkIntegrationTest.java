@@ -13,7 +13,6 @@ import org.junit.runner.RunWith;
 import org.junit.runners.BlockJUnit4ClassRunner;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.DistroProperties;
-import org.openmrs.maven.plugins.utility.Project;
 
 import java.io.File;
 import java.io.IOException;
@@ -24,7 +23,6 @@ import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
 
-import static org.hamcrest.MatcherAssert.assertThat;
 
 @RunWith(BlockJUnit4ClassRunner.class)
 public abstract class AbstractSdkIntegrationTest {

@@ -1,6 +1,8 @@
 package org.openmrs.maven.plugins;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.maven.it.VerificationException;
+import org.apache.maven.it.Verifier;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Writer;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -16,9 +18,6 @@ import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
 import java.util.Set;
 
 /**
@@ -34,6 +33,8 @@ public class Build extends AbstractTask {
 
     public Build(){}
 
+    public Build(AbstractTask other) { super(other); }
+
     public Build(AbstractTask other, String serverId){
         super(other);
         this.serverId = serverId;
@@ -41,11 +42,17 @@ public class Build extends AbstractTask {
 
     @Override
     public void executeTask() throws MojoExecutionException, MojoFailureException {
+        serverId = wizard.promptForExistingServerIdIfMissing(serverId);
         Server server = Server.loadServer(serverId);
 
 
         File tempFolder = createTempReactorProject(server);
-        cleanInstallServerProject(tempFolder.getPath());
+        try {
+            cleanInstallServerProject(tempFolder.getAbsolutePath());
+        } catch (VerificationException e) {
+            deleteTempReactorProject(tempFolder);
+            throw new RuntimeException("Failed to install watched modules", e);
+        }
         deleteTempReactorProject(tempFolder);
         try {
             deployWatchedModules(server);
@@ -149,29 +156,10 @@ public class Build extends AbstractTask {
      * @param directory
      * @throws MojoFailureException
      */
-    private void cleanInstallServerProject(String directory) throws MojoFailureException {
-        String maven = "mvn";
-        if (System.getProperty("os.name").toLowerCase(Locale.ENGLISH).contains("windows")) {
-            maven = "mvn.bat";
-        }
-        List<String> commands = new ArrayList<>();
-        commands.add(maven);
-        commands.add("clean");
-        commands.add("install");
-        commands.add("-DskipTests");
-
-        ProcessBuilder processBuilder = new ProcessBuilder(commands);
-        processBuilder.redirectErrorStream(true);
-        processBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
-        processBuilder.redirectInput(ProcessBuilder.Redirect.INHERIT);
-        processBuilder.directory(new File(directory));
-        try {
-            final Process process = processBuilder.start();
-            process.waitFor();
-        } catch (IOException e) {
-            throw new MojoFailureException("Failed to build server project", e);
-        } catch (InterruptedException e) {
-            throw new MojoFailureException("Failed to build server project", e);
-        }
+    private void cleanInstallServerProject(String directory) throws MojoFailureException, VerificationException {
+        Verifier verifier = new Verifier(directory, true);
+        verifier.setAutoclean(true);
+        verifier.addCliOption("-DskipTests");
+        verifier.executeGoal("install");
     }
 }
