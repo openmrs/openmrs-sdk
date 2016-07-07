@@ -24,18 +24,9 @@ public class SDKConstants {
     public static final String PLUGIN_JETTY_ARTIFACT_ID = "jetty-maven-plugin";
     public static final String PLUGIN_JETTY_VERSION = "9.0.4.v20130625";
     public static final String DB_NAME_TEMPLATE = "openmrs-%s";
-    // archetype
-    public static final String ARCH_CATALOG = "http://mavenrepo.openmrs.org/nexus/service/local/repositories/releases/content/archetype-catalog.xml";
-    public static final String ARCH_GROUP_ID = "org.apache.maven.plugins";
-    public static final String ARCH_ARTIFACT_ID = "maven-archetype-plugin";
-    public static final String ARCH_VERSION = "2.3";
-    // archetype module options
-    public static final String ARCH_MODULE_GROUP_ID = "org.openmrs.maven.archetypes";
-    public static final String ARCH_MODULE_ARTIFACT_ID = "openmrs-sdk-archetype-module-refapp";
-    // plugin module wizard
-    public static final String WIZARD_GROUP_ID = "org.openmrs.maven.plugins";
-    public static final String WIZARD_ARTIFACT_ID = "module-wizard-plugin";
-    public static final String WIZARD_VERSION = "1.1.1";
+    //archetypes artifactId
+    public static final String REFAPP_ARCH_ARTIFACT_ID = "openmrs-sdk-archetype-module-refapp";
+    public static final String PLATFORM_ARCH_ARTIFACT_ID = "openmrs-sdk-archetype-module-platform";
     // default path to projects
     public static final String OPENMRS_MODULE_POM = "pom.xml";
     public static final String OPENMRS_SERVER_PATH = "openmrs";

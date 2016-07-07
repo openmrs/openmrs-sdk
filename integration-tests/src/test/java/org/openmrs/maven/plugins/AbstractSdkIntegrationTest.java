@@ -5,8 +5,12 @@ import org.apache.commons.io.IOUtils;
 import org.apache.maven.it.VerificationException;
 import org.apache.maven.it.Verifier;
 import org.apache.maven.it.util.ResourceExtractor;
+import org.apache.maven.model.Model;
+import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
+import org.apache.maven.model.io.xpp3.MavenXpp3Writer;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.shared.utils.io.FileUtils;
+import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.runner.RunWith;
@@ -15,6 +19,8 @@ import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.DistroProperties;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -197,5 +203,15 @@ public abstract class AbstractSdkIntegrationTest {
         addTaskParam(verifier, "dbPassword", "mysql");
         addTaskParam(verifier, "dbUri", "@DBNAME@");
         addTaskParam(verifier, "dbSql", "null");
+    }
+
+    protected static Model getTestPom(File directory) throws IOException, XmlPullParserException {
+        MavenXpp3Reader reader = new MavenXpp3Reader();
+        return reader.read(new FileInputStream(new File(directory, "pom.xml")));
+    }
+
+    protected static void saveTestPom(File directory, Model model) throws IOException {
+        MavenXpp3Writer writer = new MavenXpp3Writer();
+        writer.write(new FileOutputStream(new File(directory, "pom.xml")), model);
     }
 }

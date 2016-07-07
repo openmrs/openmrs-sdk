@@ -10,8 +10,8 @@
 
     <artifactId>${rootArtifactId}-omod</artifactId>
     <packaging>jar</packaging>
-    <name>${A-moduleName} OMOD</name>
-    <description>OMOD project for ${A-moduleName}</description>
+    <name>${module-name} OMOD</name>
+    <description>OMOD project for ${module-name}</description>
 
 	<dependencies>
 
