@@ -1,7 +1,6 @@
 package org.openmrs.maven.plugins;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Model;
 import org.apache.maven.plugin.BuildPluginManager;
@@ -20,6 +19,7 @@ import org.eclipse.jgit.api.ResetCommand;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.api.errors.StashApplyFailureException;
 import org.eclipse.jgit.internal.storage.file.FileRepository;
+import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.transport.RemoteConfig;
@@ -41,8 +41,11 @@ import java.util.Set;
  */
 public class Pull extends AbstractTask {
 
-    private static final String CLEAN_UP_ERROR_MESSAGE = "Please run \"git checkout %s\" and \"git stash apply\" in %s directory to revert changes";
+    private static final String ENTER_BRANCH_NAME_MESSAGE = "Enter name of the upstream branch you want to pull(default: master)";
+    private static final String CLEAN_UP_ERROR_MESSAGE = "problem with resolving git command. " +
+                                                            "Please run \"git checkout %s\" and \"git stash apply\" in %s directory to revert changes";
     private static final String NO_WATCHED_MODULES_MESSAGE = "Server with id %s has no watched modules";
+    private static final String MODULE_UPDATED_SUCCESSFULLY_MESSAGE = "Module %s updated successfully";
     private static final String CONFLICT_ERROR_MESSAGE = "could not be updated automatically due to %s, changes need to be pulled manually";
     private static final String CREATING_NEW_UPSTREAM_MESSAGE = "Creating new upstream repo due to incorrect url";
     private static final String MODULES_UPDATED_SUCCESSFULLY_MESSAGE = "Modules updated successfully:";
@@ -61,11 +64,17 @@ public class Pull extends AbstractTask {
     private static final String MASTER = "master";
     private static final String DASH = " - ";
     private static final String SDK_DASH = "sdk-";
+    private static final String TEMP_BRANCH = "tempBranch";
 
     /**
      * @parameter expression="${serverId}"
      */
     private String serverId;
+
+    /**
+     * @parameter expression="${branch}
+     */
+    private String branch;
 
     private List<String> updatedModules = new ArrayList<>();
 
@@ -88,6 +97,48 @@ public class Pull extends AbstractTask {
 
     @Override
     public void executeTask() throws MojoExecutionException, MojoFailureException {
+
+        if (isGitProjectPresent() && StringUtils.isBlank(serverId)) {
+            pullProjectFromUserDir();
+        } else {
+            pullWatchedProjects();
+        }
+    }
+
+    /**
+     * Pulls latest changes if the project exists in the user directory
+     *
+     * @throws MojoExecutionException
+     */
+    private void pullProjectFromUserDir() throws MojoExecutionException {
+        String path = System.getProperty("user.dir");
+        Project project = Project.loadProject(new File(path));
+        if (project.isOpenmrsCore()) {
+            branch = wizard.promptForValueIfMissingWithDefault(ENTER_BRANCH_NAME_MESSAGE, branch, null, MASTER);
+        } else if(branch == null){
+            branch = MASTER;
+        }
+        if(serverId == null){ serverId = TEMP_BRANCH; }
+        try {
+            pullLatestUpstream(path);
+            wizard.showMessage(String.format(MODULE_UPDATED_SUCCESSFULLY_MESSAGE, project.getArtifactId()));
+        } catch (Exception e) {
+            String moduleName = project.getArtifactId();
+            try {
+                cleanUp(path, moduleName);
+                wizard.showError(moduleName + " " + String.format(CONFLICT_ERROR_MESSAGE, e.getMessage()));
+            } catch (IllegalStateException e1) {
+                wizard.showError(moduleName + " " + String.format(CONFLICT_ERROR_MESSAGE, e1.getMessage()));
+            }
+        }
+    }
+
+    /**
+     * Pull latest changes for all watched projects
+     *
+     * @throws MojoExecutionException
+     */
+    private void pullWatchedProjects() throws MojoExecutionException {
         serverId = wizard.promptForExistingServerIdIfMissing(serverId);
         Server server = Server.loadServer(serverId);
 
@@ -95,6 +146,11 @@ public class Pull extends AbstractTask {
             Set<Project> watchedProjects = server.getWatchedProjects();
             CompositeException allExceptions = new CompositeException("Could not updated latest changes");
             for(Project project: watchedProjects) {
+                if(project.isOpenmrsCore()){
+                    branch = wizard.promptForValueIfMissingWithDefault(ENTER_BRANCH_NAME_MESSAGE, branch, null, MASTER);
+                } else{
+                    branch = MASTER;
+                }
                 try {
                     pullLatestUpstream(project.getPath());
                     updatedModules.add(project.getArtifactId());
@@ -118,6 +174,19 @@ public class Pull extends AbstractTask {
     }
 
     /**
+     * Check if the Git project exists
+     *
+     * @return
+     */
+    private boolean isGitProjectPresent(){
+        File file = new File(System.getProperty("user.dir"), ".git");
+        if(file.exists()){
+            return true;
+        }
+        return false;
+    }
+
+    /**
      * Pull latest changes from upstream master
      *
      * @param path
@@ -127,8 +196,11 @@ public class Pull extends AbstractTask {
         String newBranch = SDK_DASH + serverId;
         Repository localRepo = getLocalRepository(path);
         Git git = new Git(localRepo);
-
+        
         userBranch = localRepo.getBranch();
+        if(isTempBranchCreated(git)){
+            deleteTempBranch(git, newBranch);
+        }        
         checkoutAndCreateNewBranch(git, newBranch);
         String newBranchFull = localRepo.getFullBranch();
         stash = git.stashCreate().call();
@@ -156,6 +228,13 @@ public class Pull extends AbstractTask {
 
     }
 
+    /**
+     * Clean up if something went wrong
+     *
+     * @param path
+     * @param moduleName
+     * @throws IllegalStateException
+     */
     private void cleanUp(String path, String moduleName) throws IllegalStateException {
         try {
             Repository localRepo = getLocalRepository(path);
@@ -164,10 +243,30 @@ public class Pull extends AbstractTask {
                 checkoutBranch(git, userBranch);
                 if(stash != null){ git.stashApply().setStashRef(stash.getName()).call(); }
                 deleteTempBranch(git, SDK_DASH + serverId);
+            } else if(isTempBranchCreated(git)){
+                if(stash != null){ git.stashApply().setStashRef(stash.getName()).call(); }
+                deleteTempBranch(git, SDK_DASH + serverId);
             }
         } catch (Exception e) {
             throw new IllegalStateException(String.format(CLEAN_UP_ERROR_MESSAGE, userBranch, moduleName), e);
         }
+    }
+
+    /**
+     * Checks if the temp branch is created
+     *
+     * @param git
+     * @return
+     * @throws GitAPIException
+     */
+    private boolean isTempBranchCreated(Git git) throws GitAPIException {
+        List<Ref> branchList = git.branchList().call();
+        for(Ref ref: branchList){
+            if(ref.getName().contains(SDK_DASH + serverId)){
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -202,7 +301,7 @@ public class Pull extends AbstractTask {
     }
 
     /**
-     * Pull from upstream master
+     * Pull from upstream
      *
      * @param git
      * @param stash
@@ -215,7 +314,7 @@ public class Pull extends AbstractTask {
             PullCommand pull = git.pull()
                 .setRebase(true)
                 .setRemote(UPSTREAM)
-                .setRemoteBranchName(MASTER);
+                .setRemoteBranchName(branch);
 
             PullResult pullResult = pull.call();
             if(!pullResult.isSuccessful()){
@@ -272,6 +371,7 @@ public class Pull extends AbstractTask {
         MergeCommand mergeCommand = git.merge();
         try {
             mergeCommand.include(git.getRepository().getRef(newBranchFull));
+            mergeCommand.setFastForward(MergeCommand.FastForwardMode.FF_ONLY);
             mergeCommand.call();
         } catch (GitAPIException e) {
             throw new Exception(MERGING_PROBLEM_REASON, e);
