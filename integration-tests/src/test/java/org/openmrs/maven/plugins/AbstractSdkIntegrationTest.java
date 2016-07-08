@@ -106,6 +106,7 @@ public abstract class AbstractSdkIntegrationTest {
 
         String sdk = resolveSdkArtifact();
         setupServer.executeGoal(sdk+":setup");
+        new File(testDirectory, "log.txt").delete();
         return serverId;
     }
 

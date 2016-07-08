@@ -1,7 +1,5 @@
 package org.openmrs.maven.plugins;
 
-import org.apache.maven.it.VerificationException;
-import org.apache.maven.it.Verifier;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -9,7 +7,6 @@ import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.utility.Project;
 
 import java.io.File;
-import java.util.UUID;
 
 /**
  *
