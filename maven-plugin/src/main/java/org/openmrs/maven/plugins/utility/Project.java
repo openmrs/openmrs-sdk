@@ -31,7 +31,7 @@ public class Project {
 		}
 	}
 	
-	private Project(Model model) {
+	public Project(Model model) {
 		this.model = model;
 	}
 	
