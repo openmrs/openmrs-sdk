@@ -42,6 +42,23 @@ public class CreateProjectIntegrationTest extends AbstractSdkIntegrationTest {
     }
 
     @Test
+    public void createProject_shouldCreateRefappModuleProjectUsingBatchAnswers() throws Exception{
+
+        addAnswer("Reference Application module");
+        addAnswer("test");
+        addAnswer("test");
+        addAnswer("test");
+        addAnswer("test");
+        addAnswer("test");
+        addAnswer("test");
+        addTaskParam(BATCH_ANSWERS, getAnswers());
+
+        executeTask("create-project");
+        assertSuccess();
+        assertProjectCreated();
+    }
+
+    @Test
     public void createProject_shouldCreatePlatformModuleProject() throws Exception{
         addTaskParam("type", "platform-module");
 

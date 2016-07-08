@@ -7,6 +7,7 @@ import org.openmrs.maven.plugins.model.UpgradeDifferential;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -61,4 +62,6 @@ public interface Wizard {
     void showJdkErrorMessage(String jdk, String platform, String recommendedJdk, String pathToProps);
 
     boolean promptForConfirmDistroUpgrade(UpgradeDifferential upgradeDifferential, Server server, DistroProperties distroProperties);
+
+    void setAnswers(ArrayDeque<String> batchAnswers);
 }

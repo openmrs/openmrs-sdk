@@ -108,10 +108,10 @@ public class Deploy extends AbstractTask {
             DistroProperties distroProperties = checkCurrentDirectoryForDistroProperties(server);
             if(artifact != null){
                 deployOpenmrsWar(server, artifact);
-            } else if(checkCurrentDirForModuleProject()) {
-                deployModule(groupId, artifactId, version, server);
             } else if(distroProperties!=null){
                 serverUpgrader.upgradeToDistro(server, distroProperties);
+            } else if(checkCurrentDirForModuleProject()) {
+                deployModule(groupId, artifactId, version, server);
             } else {
                 runInteractiveMode(server, serverUpgrader);
             }
