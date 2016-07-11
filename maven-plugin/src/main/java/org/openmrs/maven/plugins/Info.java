@@ -16,7 +16,7 @@ import java.util.Set;
 * @requiresProject false
 *
 */
-public class Info extends AbstractMojo {
+public class Info extends AbstractTask {
 	
 	/**
      * @parameter expression="${serverId}"
@@ -30,7 +30,7 @@ public class Info extends AbstractMojo {
     Wizard wizard;
 
 	@Override
-    public void execute() throws MojoExecutionException, MojoFailureException {
+    public void executeTask() throws MojoExecutionException, MojoFailureException {
 	    serverId = wizard.promptForExistingServerIdIfMissing(serverId);
            
         Server serverConfig = Server.loadServer(serverId);

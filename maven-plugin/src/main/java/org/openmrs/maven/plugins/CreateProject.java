@@ -12,7 +12,9 @@ import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.shared.invoker.Invoker;
+import org.openmrs.maven.plugins.model.SdkStatistics;
 import org.openmrs.maven.plugins.utility.SDKConstants;
+import org.openmrs.maven.plugins.utility.StatsManager;
 import org.openmrs.maven.plugins.utility.Wizard;
 
 import java.io.File;
@@ -301,6 +303,8 @@ public class CreateProject extends CreateProjectFromArchetypeMojo {
      */
     private String moduleActivatorManagement;
 
+    private SdkStatistics sdkStatistics;
+
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
@@ -310,9 +314,8 @@ public class CreateProject extends CreateProjectFromArchetypeMojo {
             wizard.setInteractiveMode(false);
         }
 
-        if("false".equals(interactiveMode)){
-            wizard.setInteractiveMode(false);
-        }
+
+        new StatsManager(wizard, session).incrementGoalStats();
 
         String choice = wizard.promptForMissingValueWithOptions(
                 MODULE_TYPE_PROMPT, type, null,

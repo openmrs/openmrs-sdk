@@ -17,7 +17,7 @@ import java.io.File;
 * @requiresProject false
 *
 */
-public class Unwatch extends AbstractMojo {
+public class Unwatch extends AbstractTask {
 	
 	/**
      * @parameter expression="${serverId}"
@@ -41,7 +41,7 @@ public class Unwatch extends AbstractMojo {
     Wizard wizard;
 
 	@Override
-    public void execute() throws MojoExecutionException, MojoFailureException {
+    public void executeTask() throws MojoExecutionException, MojoFailureException {
 	    serverId = wizard.promptForExistingServerIdIfMissing(serverId);
 	    Server serverConfig = Server.loadServer(serverId);
 	    

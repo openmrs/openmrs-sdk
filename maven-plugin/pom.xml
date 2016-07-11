@@ -28,6 +28,7 @@
 
     <dependencies>
         <!-- Maven -->
+        <!-- Maven -->
         <dependency>
             <groupId>org.apache.maven.shared</groupId>
             <artifactId>maven-verifier</artifactId>

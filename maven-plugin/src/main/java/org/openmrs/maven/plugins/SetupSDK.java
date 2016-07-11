@@ -4,8 +4,11 @@ import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.openmrs.maven.plugins.model.SdkStatistics;
+import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 import org.openmrs.maven.plugins.utility.SettingsManager;
+import org.openmrs.maven.plugins.utility.Wizard;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -20,20 +23,18 @@ import java.io.OutputStream;
  * @requiresProject false
  *
  */
-public class SetupSDK extends AbstractMojo{
+public class SetupSDK extends AbstractTask{
 
     private static final String SUCCESS_TEMPLATE = "SDK installed successfully, settings file: %s";
     private static final String SDK_INFO = "Now you can use sdk: mvn openmrs-sdk:<task_name>";
 
-    /**
-     * The current Maven session.
-     *
-     * @parameter expression="${session}"
-     * @required
-     */
-    private MavenSession mavenSession;
+    public void execute() throws MojoFailureException, MojoExecutionException { //execute method is overwritten to not change the workflow
+        initTask();                                                             //in SetupSDK, but we need to extends AbstractTask to support batchAnswers
+        executeTask();
+    }
 
-    public void execute() throws MojoExecutionException, MojoFailureException {
+    public void executeTask() throws MojoExecutionException, MojoFailureException {
+        initSdkStatsFile();
         String localRepository = mavenSession.getSettings().getLocalRepository();
         File mavenHome = new File(localRepository).getParentFile();
         mavenHome.mkdirs();
@@ -58,6 +59,19 @@ public class SetupSDK extends AbstractMojo{
             getLog().info(SDK_INFO);
         } catch (IOException e) {
             throw new MojoExecutionException(e.getMessage());
+        }
+    }
+
+    private void initSdkStatsFile() throws MojoExecutionException {
+        File openMrsServers = new File(Server.getServersPath());
+        if(!openMrsServers.exists()){
+            openMrsServers.mkdirs();
+        }
+        File sdkStats = new File(Server.getServersPath(), "sdk-stats.properties");
+        if(!sdkStats.exists()){
+            boolean agree = wizard.promptYesNo(SDKConstants.SDK_STATS_ENABLED_QUESTION);
+            SdkStatistics sdkStatistics = new SdkStatistics().createSdkStatsFile(agree);
+            sdkStatistics.sendReport(wizard);
         }
     }
 }
