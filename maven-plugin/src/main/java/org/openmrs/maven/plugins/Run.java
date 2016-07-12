@@ -13,6 +13,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
 
@@ -112,12 +114,10 @@ public class Run extends AbstractTask {
 		}
 
 		String mavenOpts = System.getProperty("MAVEN_OPTS", "");
-		if (!mavenOpts.contains("-Xmx")) {
-			mavenOpts += " -Xmx1024m";
-		}
-		if (!mavenOpts.contains("-XX:MaxPermSize=")) {
-			mavenOpts += " -XX:MaxPermSize=1024m";
-		}
+
+		mavenOpts = adjustXmxToAtLeast(mavenOpts, 768);
+		mavenOpts = adjustMaxPermSizeToAtLeast(mavenOpts, 512);
+
 		if (server.hasWatchedProjects() && isWatchApi()) {
 			mavenOpts += " -javaagent:" + new File(Server.getServersPath(), "springloaded.jar").getAbsolutePath() + " -noverify";
 		}
@@ -176,6 +176,41 @@ public class Run extends AbstractTask {
 		} catch (InterruptedException e) {
 			throw new MojoFailureException("Interrupted waiting for Tomcat process", e);
 		}
+	}
+
+	String adjustXmxToAtLeast(String input, Integer valueInMegabytes) {
+		return adjustParamToAtLeast(input, "-Xmx([0-9]+)([kKmMgG]?)", "-Xmx" + valueInMegabytes + "m", valueInMegabytes);
+	}
+
+	String adjustMaxPermSizeToAtLeast(String mavenOpts, Integer valueInMegabytes) {
+		return adjustParamToAtLeast(mavenOpts, "-XX:MaxPermSize=([0-9]+)([kKmMgG]?)", "-XX:MaxPermSize=" + valueInMegabytes + "m", valueInMegabytes);
+	}
+
+	private String adjustParamToAtLeast(String input, String pattern, String replacement, Integer valueInMegabytes) {
+		Pattern xmx = Pattern.compile(pattern);
+		Matcher xmxMatcher = xmx.matcher(input);
+		if (xmxMatcher.find()) {
+			boolean xmxReplace;
+			Integer value = Integer.valueOf(xmxMatcher.group(1));
+			String unit = xmxMatcher.group(2).toLowerCase();
+			if ("k".equals(unit)) {
+				xmxReplace = value < valueInMegabytes * 1024;
+			} else if ("m".equals(unit)) {
+				xmxReplace = value < valueInMegabytes;
+			} else if ("g".equals(unit)) {
+				xmxReplace = value < ((double) valueInMegabytes / 1024);
+			} else {
+				xmxReplace = value < valueInMegabytes * 1024 * 1024;
+			}
+
+			if (xmxReplace) {
+				input = xmxMatcher.replaceAll(replacement);
+			}
+ 		} else {
+			input += " " + replacement;
+		}
+
+		return input;
 	}
 
 	private boolean isWatchApi() {
