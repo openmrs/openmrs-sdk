@@ -191,10 +191,20 @@ public class Setup extends AbstractTask {
             }
         }
 
-        wizard.promptForJavaHomeIfMissing(server);
 
         server.setUnspecifiedToDefault();
         configureVersion(server, isCreatePlatform);
+
+        String platformVersion = server.getPlatformVersion();
+        if (platformVersion.charAt(0) == 1) {
+            wizard.showMessage("Note: JDK 1.7 is needed for platform version " + platformVersion + ".");
+        }
+        else {
+            wizard.showMessage("Note: JDK 1.8 is needed for platform version " + platformVersion + ".");
+        }
+
+        wizard.promptForJavaHomeIfMissing(server);
+
         server.save();
 
         return serverPath.getPath();
