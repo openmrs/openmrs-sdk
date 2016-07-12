@@ -1,0 +1,4 @@
+language: java
+install :
+- mvn clean install -DskipTests
+- mvn org.openmrs.maven.plugins:openmrs-sdk-maven-plugin:3.0.0-SNAPSHOT:setup-sdk -DbatchAnswers=n

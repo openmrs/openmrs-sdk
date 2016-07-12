@@ -78,16 +78,6 @@
             <artifactId>httpclient</artifactId>
         </dependency>
 
-        <!-- Archetypes -->
-        <dependency>
-            <groupId>org.openmrs.maven.plugins</groupId>
-            <artifactId>module-wizard-plugin</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.openmrs.maven.archetypes</groupId>
-            <artifactId>maven-archetype-openmrs-project</artifactId>
-        </dependency>
-
         <!-- DBs -->
         <dependency>
             <groupId>mysql</groupId>
