@@ -106,6 +106,7 @@ public abstract class AbstractSdkIntegrationTest {
 
         String sdk = resolveSdkArtifact();
         setupServer.executeGoal(sdk+":setup");
+        assertFilePresent(serverId+File.separator+"openmrs-server.properties");
         new File(testDirectory, "log.txt").delete();
         return serverId;
     }

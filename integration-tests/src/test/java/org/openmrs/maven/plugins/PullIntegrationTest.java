@@ -19,9 +19,9 @@ import java.io.File;
  */
 public class PullIntegrationTest extends AbstractSdkIntegrationTest {
 
-    private static final String OPENMRS_MODULE_APPUI = "openmrs-module-appui";
+    private static final String OPENMRS_MODULE_IDGEN = "openmrs-module-idgen";
     private static final String PULL_GOAL = "pull";
-    private static final String MODULE_GITHUB_URL = "https://github.com/openmrs/openmrs-module-appui.git";
+    private static final String MODULE_GITHUB_URL = "https://github.com/openmrs/openmrs-module-idgen.git";
     private static final String SUCCESS_MESSAGE = "updated successfully";
     private static final String NO_WATCHED_PROJECTS_MESSAGE = "Server with id %s has no watched modules";
 
@@ -30,11 +30,11 @@ public class PullIntegrationTest extends AbstractSdkIntegrationTest {
     @Before
     public void setup() throws Exception {
         testDirectory = ResourceExtractor.simpleExtractResources(getClass(), TEST_DIRECTORY);
+        verifier = new Verifier(new File(testDirectory, OPENMRS_MODULE_IDGEN).getAbsolutePath());
         serverId = setupTestServer();
 
         cloneGitProject();
 
-        verifier = new Verifier(new File(testDirectory, OPENMRS_MODULE_APPUI).getAbsolutePath());
         addTaskParam("openMRSPath", testDirectory.getAbsolutePath());
     }
 
@@ -42,7 +42,7 @@ public class PullIntegrationTest extends AbstractSdkIntegrationTest {
     @After
     public void teardown() throws Exception {
         deleteTestServer(serverId);
-        FileUtils.deleteDirectory(new File(testDirectory, OPENMRS_MODULE_APPUI));
+        FileUtils.deleteDirectory(new File(testDirectory, OPENMRS_MODULE_IDGEN));
     }
 
     @Test
@@ -93,7 +93,7 @@ public class PullIntegrationTest extends AbstractSdkIntegrationTest {
     private void cloneGitProject() throws GitAPIException {
         Git result = Git.cloneRepository()
                 .setURI(MODULE_GITHUB_URL)
-                .setDirectory(new File(testDirectory, OPENMRS_MODULE_APPUI))
+                .setDirectory(new File(testDirectory, OPENMRS_MODULE_IDGEN))
                 .call();
 
         result.close();
@@ -101,7 +101,7 @@ public class PullIntegrationTest extends AbstractSdkIntegrationTest {
 
     private void addWatchedProjects() throws MojoExecutionException {
         Server server = Server.loadServer(new File(testDirectory, serverId));
-        File firstDir = new File(testDirectory, OPENMRS_MODULE_APPUI);
+        File firstDir = new File(testDirectory, OPENMRS_MODULE_IDGEN);
         server.addWatchedProject(Project.loadProject(firstDir));
         server.save();
     }

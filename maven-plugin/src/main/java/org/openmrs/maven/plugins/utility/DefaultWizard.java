@@ -446,7 +446,7 @@ public class DefaultWizard implements Wizard {
 
     public String promptForDistroVersion() {
         Map<String, String> optionsMap = new LinkedHashMap<>();
-        optionsMap.put(String.format(REFAPP_OPTION_TMPL, "2.4-SNAPSHOT"), String.format(REFAPP_ARTIFACT_TMPL, "2.4-SNAPSHOT"));
+        optionsMap.put(String.format(REFAPP_OPTION_TMPL, "2.4"), String.format(REFAPP_ARTIFACT_TMPL, "2.4"));
         for(String version : SDKConstants.SUPPPORTED_REFAPP_VERSIONS_2_3_1_OR_LOWER){
             optionsMap.put(String.format(REFAPP_OPTION_TMPL, version), String.format(REFAPP_ARTIFACT_TMPL, version));
         }
@@ -535,8 +535,7 @@ public class DefaultWizard implements Wizard {
      */
     @Override
     public List<String> getListOfServers() {
-        String home = System.getProperty("user.home");
-        File openMRS = new File(home, SDKConstants.OPENMRS_SERVER_PATH);
+        File openMRS = new File(Server.getServersPath());
         Map<Long, String> sortedMap = new TreeMap<Long, String>(Collections.reverseOrder());
         File [] list = (openMRS.listFiles() == null) ? new File[0] : openMRS.listFiles();
         for (File f: list) {

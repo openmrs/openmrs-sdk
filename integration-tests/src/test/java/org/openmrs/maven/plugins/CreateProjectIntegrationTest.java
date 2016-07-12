@@ -33,6 +33,8 @@ public class CreateProjectIntegrationTest extends AbstractSdkIntegrationTest {
     public void createProject_shouldCreateRefappModuleProject() throws Exception{
         addTaskParam("type", "referenceapplication-module");
 
+        addTaskParam("serviceReply", "n");
+        addTaskParam("adminLinkReply", "n");
         for( String option : options){
             addTaskParam(option, "test");
         }
@@ -43,6 +45,9 @@ public class CreateProjectIntegrationTest extends AbstractSdkIntegrationTest {
 
     @Test
     public void createProject_shouldCreateRefappModuleProjectUsingBatchAnswers() throws Exception{
+
+        addTaskParam("serviceReply", "n");
+        addTaskParam("adminLinkReply", "n");
 
         addAnswer("Reference Application module");
         addAnswer("test");

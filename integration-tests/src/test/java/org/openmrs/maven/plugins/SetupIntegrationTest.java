@@ -114,7 +114,7 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
 
         addAnswer(serverId);
         addAnswer("Distribution");
-        addAnswer("referenceapplication:2.4-SNAPSHOT");
+        addAnswer("referenceapplication:2.4");
         addAnswer(System.getenv("JAVA_HOME"));
         addTaskParam(BATCH_ANSWERS, getAnswers());
 
@@ -139,7 +139,7 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
 
         addAnswer(serverId);
         addAnswer("Distribution");
-        addAnswer("referenceapplication:2.4-SNAPSHOT");
+        addAnswer("referenceapplication:2.4");
         addTaskParam(BATCH_ANSWERS, getAnswers());
 
         addMockDbSettings();
