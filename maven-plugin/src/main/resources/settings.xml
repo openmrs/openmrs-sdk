@@ -8,6 +8,13 @@
     <activeProfiles>
         <activeProfile>openmrs</activeProfile>
     </activeProfiles>
+    <servers>
+        <server>
+            <id>bintray-sdk</id>
+            <username>${env.BINTRAY_USER}</username>
+            <password>${env.BINTRAY_API_KEY}</password>
+        </server>
+    </servers>
     <profiles>
         <profile>
             <id>openmrs</id>
