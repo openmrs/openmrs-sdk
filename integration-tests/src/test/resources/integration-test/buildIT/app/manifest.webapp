@@ -1,0 +1,16 @@
+{
+  "version": "0.1.0",
+  "name": "TEST",
+  "description": "TEST",
+  "launch_path": "index.html",
+  "developer": {
+    "name": "user",
+    "url": "https://github.com/user/openmrs-owa-test"
+  },
+  "default_locale": "en",
+    "activities": {
+      "openmrs": {
+        "href": "*"
+      }
+    }
+}

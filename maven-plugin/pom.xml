@@ -187,6 +187,12 @@
             <groupId>org.eclipse.mylyn.github</groupId>
             <artifactId>org.eclipse.egit.github.core</artifactId>
         </dependency>
+        <!-- Maven frontend builder -->
+        <dependency>
+            <groupId>com.github.eirslett</groupId>
+            <artifactId>frontend-maven-plugin</artifactId>
+            <version>1.0</version>
+        </dependency>
     </dependencies>
 
     <build>

@@ -10,6 +10,7 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.shared.invoker.MavenInvocationException;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.utility.Project;
+import org.twdata.maven.mojoexecutor.MojoExecutor;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -18,7 +19,19 @@ import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
+
+import static org.twdata.maven.mojoexecutor.MojoExecutor.artifactId;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.configuration;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.element;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.executeMojo;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.executionEnvironment;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.goal;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.groupId;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.plugin;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.version;
 
 /**
  * @goal build
@@ -31,6 +44,10 @@ public class Build extends AbstractTask {
      */
     private String serverId;
 
+    private final static String FRONTEND_BUILDER_GROUP_ID = "com.github.eirslett";
+    private final static String FRONTEND_BUILDER_ARTIFACT_ID = "frontend-maven-plugin";
+    private final static String FRONTEND_BUILDER_VERSION = "1.0";
+
     public Build(){}
 
     public Build(AbstractTask other) { super(other); }
@@ -42,10 +59,30 @@ public class Build extends AbstractTask {
 
     @Override
     public void executeTask() throws MojoExecutionException, MojoFailureException {
+        File configFile = new File("webpack.config.js");
+        if (configFile.exists()) {
+            boolean buildOwa = wizard.promptYesNo("OWA Project found in this directory, do You want to build it?");
+            if (buildOwa) {
+                buildOwaProject();
+            }
+            else {
+                boolean buildWatchedProjects = wizard.promptYesNo("Do You want to build all watched projects instead?");
+                if (buildWatchedProjects) {
+                    buildWatchedProjects();
+                }
+                else {
+                    throw new IllegalStateException("Task aborted");
+                }
+            }
+        }
+        else {
+            buildWatchedProjects();
+        }
+    }
+
+    private void buildWatchedProjects() throws MojoExecutionException, MojoFailureException {
         serverId = wizard.promptForExistingServerIdIfMissing(serverId);
         Server server = Server.loadServer(serverId);
-
-
         File tempFolder = createTempReactorProject(server);
         try {
             cleanInstallServerProject(tempFolder.getAbsolutePath());
@@ -59,7 +96,53 @@ public class Build extends AbstractTask {
         } catch (MavenInvocationException e) {
             throw new MojoFailureException("Failed to deploy watched modules", e);
         }
+    }
 
+    private void buildOwaProject() throws MojoExecutionException {
+
+        System.out.println("Building OWA project...");
+
+        List<MojoExecutor.Element> configuration = new ArrayList<MojoExecutor.Element>();
+        configuration.add(element("nodeVersion", "v4.4.5"));
+        configuration.add(element("npmVersion", "2.15.5"));
+        executeMojo(
+                plugin(
+                        groupId(FRONTEND_BUILDER_GROUP_ID),
+                        artifactId(FRONTEND_BUILDER_ARTIFACT_ID),
+                        version(FRONTEND_BUILDER_VERSION)
+                ),
+                goal("install-node-and-npm"),
+                configuration(configuration.toArray(new MojoExecutor.Element[0])),
+                executionEnvironment(mavenProject, mavenSession, pluginManager)
+        );
+
+        configuration = new ArrayList<MojoExecutor.Element>();
+        configuration.add(element("arguments", "install"));
+        executeMojo(
+                plugin(
+                        groupId(FRONTEND_BUILDER_GROUP_ID),
+                        artifactId(FRONTEND_BUILDER_ARTIFACT_ID),
+                        version(FRONTEND_BUILDER_VERSION)
+                ),
+                goal("npm"),
+                configuration(configuration.toArray(new MojoExecutor.Element[0])),
+                executionEnvironment(mavenProject, mavenSession, pluginManager)
+        );
+
+        configuration = new ArrayList<MojoExecutor.Element>();
+        configuration.add(element("arguments", "run build"));
+        executeMojo(
+                plugin(
+                        groupId(FRONTEND_BUILDER_GROUP_ID),
+                        artifactId(FRONTEND_BUILDER_ARTIFACT_ID),
+                        version(FRONTEND_BUILDER_VERSION)
+                ),
+                goal("npm"),
+                configuration(configuration.toArray(new MojoExecutor.Element[0])),
+                executionEnvironment(mavenProject, mavenSession, pluginManager)
+        );
+
+        System.out.println("Build done.");
     }
 
     /**
