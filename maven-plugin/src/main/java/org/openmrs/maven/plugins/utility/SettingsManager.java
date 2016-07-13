@@ -3,6 +3,7 @@ package org.openmrs.maven.plugins.utility;
 import org.apache.commons.io.IOUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.settings.Profile;
+import org.apache.maven.settings.Server;
 import org.apache.maven.settings.Settings;
 import org.apache.maven.settings.io.xpp3.SettingsXpp3Reader;
 import org.apache.maven.settings.io.xpp3.SettingsXpp3Writer;
@@ -65,6 +66,11 @@ public class SettingsManager {
         Profile profile = other.getProfiles().get(0);
         if (settings.getProfiles() == null) {
             settings.setProfiles(new ArrayList<Profile>());
+        }
+        if(settings.getServer("bintray") == null) {
+            ArrayList<Server> servers = new ArrayList<>();
+            servers.add(other.getServer("bintray"));
+            settings.setServers(servers);
         }
         // remove already created OpenMRS profile
         List<Profile> profilesToRemove = new ArrayList<Profile>();
