@@ -61,7 +61,7 @@
         <connection>scm:git:https://github.com/openmrs/openmrs-sdk</connection>
         <developerConnection>scm:git:https://github.com/openmrs/openmrs-sdk</developerConnection>
         <url>https://github.com/openmrs/openmrs-sdk</url>
-        <tag>HEAD</tag>
+        <tag>3.0.0</tag>
     </scm>
 
 
