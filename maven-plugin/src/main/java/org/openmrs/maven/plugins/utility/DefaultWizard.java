@@ -140,9 +140,15 @@ public class DefaultWizard implements Wizard {
     }
 
     @Override
+    public String promptForMissingValueWithOptions(String message, String value, String parameterName, List<String> options){
+        return promptForMissingValueWithOptions(message, value, parameterName, options, null, null);
+    }
+
+    @Override
     public String promptForMissingValueWithOptions(String message, String value, String parameterName, List<String> options, String customMessage, String customDefault){
 
-        String question = String.format(message != null? message : DEFAULT_VALUE_TMPL_WITH_DEFAULT, parameterName, options.get(0));
+        String defaultOption = options.isEmpty()? "" : options.get(0);
+        String question = String.format(message != null? message : DEFAULT_VALUE_TMPL_WITH_DEFAULT, parameterName, defaultOption);
 
         if (value != null) {
             return value;
@@ -267,7 +273,7 @@ public class DefaultWizard implements Wizard {
     public String promptForExistingServerIdIfMissing(String serverId) {
         File omrsHome = new File(Server.getServersPath());
         List<String> servers = getListOfServers();
-        serverId = promptForMissingValueWithOptions("You have the following servers:", serverId, "serverId", servers, null, null);
+        serverId = promptForMissingValueWithOptions("You have the following servers:", serverId, "serverId", servers);
         if (serverId.equals(NONE)) {
             throw new RuntimeException(INVALID_SERVER);
         }

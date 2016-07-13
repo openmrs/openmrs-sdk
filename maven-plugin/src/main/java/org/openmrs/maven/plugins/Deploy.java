@@ -136,7 +136,7 @@ public class Deploy extends AbstractTask {
                 DEPLOY_DISTRO_OPTION,
                 DEPLOY_PLATFORM_OPTION
                 ));
-        String choice = wizard.promptForMissingValueWithOptions("What would you like to deploy?%s", null, "", options, null, null);
+        String choice = wizard.promptForMissingValueWithOptions("What would you like to deploy?%s", null, "", options);
 
         switch(choice){
             case(DEPLOY_MODULE_OPTION):{

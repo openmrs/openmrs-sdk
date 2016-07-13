@@ -318,9 +318,7 @@ public class CreateProject extends CreateProjectFromArchetypeMojo {
 
         new StatsManager(wizard, session).incrementGoalStats();
 
-        String choice = wizard.promptForMissingValueWithOptions(
-                MODULE_TYPE_PROMPT, type, null,
-                Arrays.asList(OPTION_PLATFORM, OPTION_REFAPP), null, null);
+        String choice = wizard.promptForMissingValueWithOptions(MODULE_TYPE_PROMPT, type, null, Arrays.asList(OPTION_PLATFORM, OPTION_REFAPP));
 
         if(OPTION_PLATFORM.equals(choice)){
             type = TYPE_PLATFORM;

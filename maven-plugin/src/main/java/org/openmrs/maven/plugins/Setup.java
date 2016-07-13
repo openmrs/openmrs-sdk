@@ -370,7 +370,7 @@ public class Setup extends AbstractTask {
             options.add(DISTRIBUTION);
             options.add(PLATFORM);
 
-            String choice = wizard.promptForMissingValueWithOptions(SETUP_SERVERS_PROMPT, null, null, options, null, null);
+            String choice = wizard.promptForMissingValueWithOptions(SETUP_SERVERS_PROMPT, null, null, options);
 
             switch(choice) {
                 case PLATFORM:

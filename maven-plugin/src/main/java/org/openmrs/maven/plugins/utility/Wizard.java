@@ -33,6 +33,8 @@ public interface Wizard {
 
     String promptForDistroVersion();
 
+    String promptForMissingValueWithOptions(String message, String value, String parameterName, List<String> options);
+
     String promptForMissingValueWithOptions(String message, String value, String parameterName, List<String> options, String customMessage, String customDefault);
 
     void showMessage(String message);
