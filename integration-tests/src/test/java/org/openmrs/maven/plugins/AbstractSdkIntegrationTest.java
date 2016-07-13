@@ -151,6 +151,8 @@ public abstract class AbstractSdkIntegrationTest {
      * @throws VerificationException
      */
     public void executeTask(String goal) throws Exception {
+        addTaskParam(BATCH_ANSWERS, getAnswers());
+        addTaskParam("testMode", "true");
         String sdk = resolveSdkArtifact();
         verifier.executeGoal(sdk+":"+goal);
     }

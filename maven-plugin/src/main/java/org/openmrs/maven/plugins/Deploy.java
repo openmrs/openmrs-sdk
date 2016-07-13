@@ -149,7 +149,7 @@ public class Deploy extends AbstractTask {
                         "Reference Application distribution",
                         server.getVersion()));
 
-                distro = wizard.promptForDistroVersion();
+                distro = wizard.promptForRefAppVersion(versionsHelper);
                 distroProperties = distroHelper.retrieveDistroProperties(distro);
                 upgrader.upgradeToDistro(server, distroProperties);
                 break;

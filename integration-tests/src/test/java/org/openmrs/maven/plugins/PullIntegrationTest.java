@@ -52,7 +52,6 @@ public class PullIntegrationTest extends AbstractSdkIntegrationTest {
         addWatchedProjects();
 
         addAnswer(serverId);
-        addTaskParam(BATCH_ANSWERS, getAnswers());
 
         executeTask(PULL_GOAL);
 

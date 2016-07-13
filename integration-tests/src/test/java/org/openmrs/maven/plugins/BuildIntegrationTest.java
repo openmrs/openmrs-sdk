@@ -44,7 +44,6 @@ public class BuildIntegrationTest extends AbstractSdkIntegrationTest{
         addTaskParam("openMRSPath",testDirectory.getAbsolutePath());
 
         addAnswer(serverId);
-        addTaskParam(BATCH_ANSWERS, getAnswers());
 
 
         executeTask("build");
