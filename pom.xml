@@ -6,7 +6,7 @@
     <groupId>org.openmrs.maven</groupId>
     <artifactId>openmrs-sdk</artifactId>
     <packaging>pom</packaging>
-    <version>3.0.0</version>
+    <version>3.0.1-SNAPSHOT</version>
 
     <name>OpenMRS SDK</name>
     <description>OpenMRS SDK allows for rapid development of OpenMRS modules.</description>
@@ -61,7 +61,7 @@
         <connection>scm:git:https://github.com/openmrs/openmrs-sdk</connection>
         <developerConnection>scm:git:https://github.com/openmrs/openmrs-sdk</developerConnection>
         <url>https://github.com/openmrs/openmrs-sdk</url>
-        <tag>3.0.0</tag>
+        <tag>3.0.x</tag>
     </scm>
 
 
