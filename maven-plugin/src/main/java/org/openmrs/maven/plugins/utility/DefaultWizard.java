@@ -464,8 +464,14 @@ public class DefaultWizard implements Wizard {
 
     @Override
     public void promptForH2Db(Server server) {
-        boolean h2 = promptYesNo(
-                "Would you like to use the h2 database (-DdbDriver) (note that some modules do not support it)?");
+        boolean h2;
+        if ("h2".equals(server.getDbDriver()) || SDKConstants.DRIVER_H2.equals(server.getDbDriver())) {
+            h2 = true;
+        } else {
+            h2 = promptYesNo(
+                    "Would you like to use the h2 database (-DdbDriver) (note that some modules do not support it)?");
+        }
+
         if(h2) {
             server.setDbDriver(SDKConstants.DRIVER_H2);
             if (server.getDbUri() == null) {
