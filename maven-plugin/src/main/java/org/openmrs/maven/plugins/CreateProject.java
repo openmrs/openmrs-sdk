@@ -22,6 +22,7 @@ import java.lang.reflect.Field;
 import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -406,15 +407,17 @@ public class CreateProject extends CreateProjectFromArchetypeMojo {
 
         setPrivateField("session", session);
 
-        Map<String, String> archetypeToVersion = new HashMap<>();
+        Map<String, String> archetypeToVersion = new LinkedHashMap<>();
 
         archetypeToVersion.put(archetypeArtifactId, archetypeVersion);
-
-        if ("y".equalsIgnoreCase(adminLinkReply)) {
-            archetypeToVersion.put("openmrs-archetype-adminpagelink-creation", "1.1.1");
-        }
-        if ("y".equalsIgnoreCase(serviceReply)) {
-            archetypeToVersion.put("openmrs-archetype-service-dao-hibernate-creation", "1.1.1");
+        
+        if(TYPE_PLATFORM.equals(type)){
+            if ("y".equalsIgnoreCase(adminLinkReply)) {
+                archetypeToVersion.put("openmrs-archetype-adminpagelink-creation", "1.1.1");
+            }
+            if ("y".equalsIgnoreCase(serviceReply)) {
+                archetypeToVersion.put("openmrs-archetype-service-dao-hibernate-creation", "1.1.1");
+            }
         }
 
         for (Map.Entry<String, String> archetype : archetypeToVersion.entrySet()) {
