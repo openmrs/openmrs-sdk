@@ -4,34 +4,44 @@ import net.lingala.zip4j.core.ZipFile;
 import net.lingala.zip4j.exception.ZipException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.project.MavenProject;
+import org.openmrs.maven.plugins.utility.DefaultJira;
+import org.openmrs.maven.plugins.utility.Jira;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 
-public class OpenmrsBintray {
-    private static final String BINTRAY_OPENMRS_USER = "openmrs";
-    private static final String BINTRAY_OWA_REPO = "owa";
-    private static final String OPENMRS_OWA_PREFIX = "openmrs-owa-";
+public class OpenmrsBintray extends Bintray{
+    public static final String OPENMRS_USERNAME = "openmrs";
+    public static final String BINTRAY_OWA_REPO = "owa";
+    public static final String OPENMRS_MAVEN_REPO = "maven";
+    public static final String OPENMRS_OWA_PREFIX = "openmrs-owa-";
 
     private static final String OWA_PACKAGE_EXTENSION = ".zip";
 
-    private Bintray bintray = new Bintray();
+    public OpenmrsBintray() {}
+
+    public OpenmrsBintray(String username, String password) {
+        super(username, password);
+    }
 
     public List<BintrayId> getAvailableOWA() throws MojoExecutionException {
-        return bintray.getAvailablePackages(BINTRAY_OPENMRS_USER, BINTRAY_OWA_REPO);
+        return getAvailablePackages(OPENMRS_USERNAME, BINTRAY_OWA_REPO);
     }
 
     public BintrayPackage getOwaMetadata(String name) throws MojoExecutionException {
-        return bintray.getPackageMetadata(BINTRAY_OPENMRS_USER, BINTRAY_OWA_REPO, name);
+        return getPackageMetadata(OPENMRS_USERNAME, BINTRAY_OWA_REPO, name);
     }
     public void downloadOWA(File destination, String name, String version) {
         if(!destination.exists()){
             destination.mkdir();
         }
-        List<BintrayFile> bintrayFiles = bintray.getPackageFiles(BINTRAY_OPENMRS_USER, BINTRAY_OWA_REPO, name, version);
+        List<BintrayFile> bintrayFiles = getPackageFiles(OPENMRS_USERNAME, BINTRAY_OWA_REPO, name, version);
         //Assumption: owa release is single zip file
         String packageName = parseOwaNameFromFile(bintrayFiles.get(0).getPath())+ OWA_PACKAGE_EXTENSION;
-        File downloadedFile = bintray.downloadFile(bintrayFiles.get(0), destination, packageName);
+        File downloadedFile = downloadFile(bintrayFiles.get(0), destination, packageName);
         extractOwa(downloadedFile);
         downloadedFile.delete();
     }
@@ -59,5 +69,31 @@ public class OpenmrsBintray {
         } catch (ZipException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public BintrayPackage getMavenPackageMetadata(String name) {
+        return getPackageMetadata(OPENMRS_USERNAME, OPENMRS_MAVEN_REPO, name);
+    }
+
+    public List<BintrayId> getMavenAvailablePackages(String repo) {
+        return getAvailablePackages(OPENMRS_USERNAME, OPENMRS_MAVEN_REPO);
+    }
+
+    public BintrayPackage createMavenPackage(MavenProject mavenProject){
+        CreatePackageRequest request = new CreatePackageRequest();
+        request.setName(mavenProject.getArtifactId());
+        request.setDescription(mavenProject.getDescription());
+
+        String githubUrl = mavenProject.getScm().getUrl();
+        String githubRepo = githubUrl.substring(githubUrl.lastIndexOf("/"));
+        request.setVcsUrl(githubUrl+".git");
+        request.setGithubRepo(OPENMRS_USERNAME+githubRepo);
+        request.setWebsiteUrl("http://openmrs.org/");
+
+        request.setIssueTrackerUrl(new DefaultJira().getJiraUrl());
+        //so far all OpenMRS projects have MPL-2.0 license
+        //TODO: resolve it dynamically?
+        request.setLicenses(Arrays.asList("MPL-2.0"));
+        return createPackage(OPENMRS_USERNAME, OPENMRS_MAVEN_REPO, request);
     }
 }

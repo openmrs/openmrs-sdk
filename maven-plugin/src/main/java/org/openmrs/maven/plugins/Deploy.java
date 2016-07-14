@@ -183,7 +183,11 @@ public class Deploy extends AbstractTask {
             name = wizard.promptForMissingValueWithOptions("Which OWA would you like to deploy?%s", name, "", owas, "Please specify OWA id", null);
         }
         if(version == null){
-            List<String> versions = bintray.getOwaMetadata(name).getVersions();
+            BintrayPackage owaMetadata = bintray.getOwaMetadata(name);
+            if(owaMetadata == null){
+                throw new RuntimeException("there is no package with given name");
+            }
+            List<String> versions = owaMetadata.getVersions();
             version = wizard.promptForMissingValueWithOptions("Which version would you like to deploy?%s", version, "", versions, "Please specify OWA version", null);
         }
 

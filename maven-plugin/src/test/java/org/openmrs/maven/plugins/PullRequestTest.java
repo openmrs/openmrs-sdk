@@ -117,7 +117,7 @@ public class PullRequestTest {
         pullRequest.executeTask();
         verify(gitHelper, atLeastOnce()).addIssueIdIfMissing(any(Git.class), eq(issueId), eq(2));
         verify(gitHelper, atLeastOnce()).squashLastCommits(any(Git.class), eq(2));
-        verify(gitHelper, atLeastOnce()).push(any(Git.class), eq(username), eq(password), anyString());
+        verify(gitHelper, atLeastOnce()).push(any(Git.class), eq(username), eq(password), anyString(), anyString(), eq(false));
         verify(jira, atLeastOnce()).getIssue(issueId);
     }
 

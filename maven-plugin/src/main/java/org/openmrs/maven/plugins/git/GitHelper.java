@@ -48,9 +48,10 @@ public interface GitHelper {
      * @param git
      * @param username github usename
      * @param password github password
-     * @return returns JGit resut of push
+     * @param remote
+     *@param force  @return returns JGit resut of push
      */
-    Iterable<PushResult> push(Git git, String username, String password, String ref);
+    Iterable<PushResult> push(Git git, String username, String password, String ref, String remote, boolean force);
 
     /**
      * returns commits which differ between given base and head references
@@ -79,4 +80,44 @@ public interface GitHelper {
      * @return
      */
     PullRequest getPullRequestIfExists(String base, String head, String repository);
+
+    /**
+     * returns last commit from current branch
+     * @param git
+     * @return
+     */
+    RevCommit getLastCommit(Git git);
+
+    /**
+     * calls reset hard on current branch with passed commit as argument
+     */
+    void resetHard(Git git, RevCommit commit);
+
+    /**
+     * returns tag with passed name in local and remote repository
+     * @param git
+     * @param tagRef name of tag
+     * @param username github username
+     * @param password github password
+     * @return
+     */
+    boolean deleteTag(Git git, String tagRef, String username, String password);
+
+    /**
+     * revert passed commits on current branch
+     * commits are as iterable, because JGit's LogCommand returns RevWalk which implements iterable
+     * @param git
+     * @param commits
+     */
+    void revertCommits(Git git, Iterable<RevCommit> commits);
+
+    /**
+     * Adds 'upstream' reference to remote repositories
+     * path has to indicate pom.xml file or directory containing it
+     *
+     * @param git
+     * @param path
+     * @throws Exception
+     */
+    void addRemoteUpstream(Git git, String path) throws Exception;
 }

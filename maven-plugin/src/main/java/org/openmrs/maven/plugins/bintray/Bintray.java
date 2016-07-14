@@ -4,8 +4,14 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.CollectionType;
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.HttpException;
+import org.apache.commons.httpclient.UsernamePasswordCredentials;
+import org.apache.commons.httpclient.auth.BasicScheme;
+import org.apache.commons.httpclient.methods.ByteArrayRequestEntity;
 import org.apache.commons.httpclient.methods.GetMethod;
+import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.io.FileUtils;
 
 import java.io.File;
@@ -14,6 +20,21 @@ import java.net.URL;
 import java.util.List;
 
 public class Bintray {
+    private String username;
+    private String password;
+
+    public Bintray() {}
+
+    public Bintray(String username, String password) {
+        this.username = username;
+        this.password = password;
+    }
+
+    public void setCredentials(String username, String password){
+        this.username = username;
+        this.password = password;
+    }
+
     public List<BintrayId> getAvailablePackages(String owner, String repo){
         String url = String.format("https://api.bintray.com/repos/%s/%s/packages", owner, repo);
         GetMethod get = new GetMethod(url);
@@ -46,7 +67,7 @@ public class Bintray {
             return parser.readValueAs(BintrayPackage.class);
         } catch (IOException e) {
             if(get.getStatusCode() == 404){
-                throw new RuntimeException("Bintray package not found!", e);
+                return null;
             } else throw new RuntimeException(e);
         }
     }
@@ -114,5 +135,33 @@ public class Bintray {
                 bintrayPackage.getRepository(),
                 bintrayPackage.getName(),
                 version);
+    }
+
+    public BintrayPackage createPackage(String owner, String repository, CreatePackageRequest request){
+        String url = String.format("https://api.bintray.com/packages/%s/%s/", owner, repository);
+        PostMethod post = new PostMethod(url);
+        if(username==null||password==null){
+            throw new IllegalStateException("Cannot create package without credentials");
+        }
+        post.addRequestHeader("Authorization", "Basic "+ new String(Base64.encodeBase64((username+":"+password).getBytes())));
+        ObjectMapper mapper = new ObjectMapper();
+        try{
+            post.setRequestEntity(new ByteArrayRequestEntity(mapper.writeValueAsBytes(request)));
+            new HttpClient().executeMethod(post);
+            if(post.getStatusCode()==401){
+                throw new IOException("Unauthorized, this user have no rights to publish packages as "+owner+", or API key is invalid");
+            }
+            JsonParser parser =  new JsonFactory().createParser(post.getResponseBodyAsStream());
+            parser.setCodec(new ObjectMapper());
+            BintrayPackage bintrayPackage = parser.readValueAs(BintrayPackage.class);
+            //there is response body so mapper will return empty object, not null
+            if(bintrayPackage.getName() != null){
+                return bintrayPackage;
+            } else {
+                throw new RuntimeException("Failed to create package");
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to create package", e);
+        }
     }
 }

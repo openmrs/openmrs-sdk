@@ -39,16 +39,7 @@ public class SetupSDK extends AbstractMojo{
         mavenHome.mkdirs();
         File mavenSettings = new File(mavenHome, SDKConstants.MAVEN_SETTINGS);
         try {
-            SettingsManager settings = null;
-            if (!mavenSettings.exists()) {
-                settings = new SettingsManager();
-                OutputStream emptySettings = new FileOutputStream(mavenSettings);
-                settings.apply(emptySettings);
-            }
-            else {
-                InputStream stream = new FileInputStream(mavenSettings);
-                settings = new SettingsManager(stream);
-            }
+            SettingsManager settings = new SettingsManager(mavenSession);
             InputStream settingsStream = getClass().getClassLoader().getResourceAsStream(SDKConstants.MAVEN_SETTINGS);
             SettingsManager defaultSettings = new SettingsManager(settingsStream);
             settings.updateSettings(defaultSettings.getSettings());

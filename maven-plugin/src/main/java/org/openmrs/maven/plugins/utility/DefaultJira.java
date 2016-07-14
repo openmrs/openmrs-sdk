@@ -25,4 +25,9 @@ public class DefaultJira implements Jira {
         JiraRestClient client = factory.create(jiraServerUri, new AnonymousAuthenticationHandler());
         return client.getIssueClient().getIssue(issueId).claim();
     }
+
+    @Override
+    public String getJiraUrl() {
+        return OPENMRS_ISSUES_URI;
+    }
 }
