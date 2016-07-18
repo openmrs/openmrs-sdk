@@ -24,7 +24,7 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
         addTaskParam("distro", "referenceapplication:2.3.1");
         addMockDbSettings();
         addAnswer(serverId);
-        addAnswer(System.getenv("JAVA_HOME"));
+        addAnswer(System.getProperty("java.home"));
         addTaskParam(BATCH_ANSWERS, getAnswers());
 
         executeTask("setup");
@@ -51,7 +51,7 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
         addMockDbSettings();
 
         addAnswer(serverId);
-        addAnswer(System.getenv("JAVA_HOME"));
+        addAnswer(System.getProperty("java.home"));
         addTaskParam(BATCH_ANSWERS, getAnswers());
 
         executeTask("setup");
@@ -76,7 +76,7 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
         addMockDbSettings();
 
         addAnswer(serverId);
-        addAnswer(System.getenv("JAVA_HOME"));
+        addAnswer(System.getProperty("java.home"));
         addTaskParam(BATCH_ANSWERS, getAnswers());
 
         executeTask("setup");
@@ -94,7 +94,7 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
         addTaskParam("serverId", serverId);
         addMockDbSettings();
 
-        addAnswer(System.getenv("JAVA_HOME"));
+        addAnswer(System.getProperty("java.home"));
         addTaskParam(BATCH_ANSWERS, getAnswers());
 
         executeTask("setup");
@@ -115,7 +115,7 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
         addAnswer(serverId);
         addAnswer("Distribution");
         addAnswer("referenceapplication:2.4");
-        addAnswer(System.getenv("JAVA_HOME"));
+        addAnswer(System.getProperty("java.home"));
         addTaskParam(BATCH_ANSWERS, getAnswers());
 
         executeTask("setup");
@@ -131,7 +131,7 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
 
     @Test
     public void setup_shouldInstallServerWithGivenJavaHomeAndAddJavaHomeToSdkProperties() throws Exception{
-		String customJavaHome = System.getenv("JAVA_HOME");
+		String customJavaHome = System.getProperty("java.home");
 
 		String serverId = UUID.randomUUID().toString();
 

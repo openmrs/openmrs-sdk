@@ -100,7 +100,7 @@ public abstract class AbstractSdkIntegrationTest {
         addMockDbSettings(setupServer);
 
         addAnswer(serverId);
-        addAnswer(System.getenv("JAVA_HOME"));
+        addAnswer(System.getProperty("java.home"));
         addTaskParam(setupServer, BATCH_ANSWERS, getAnswers());
         cleanAnswers();
 
