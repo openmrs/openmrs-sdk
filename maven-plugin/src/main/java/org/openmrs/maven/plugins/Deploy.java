@@ -103,7 +103,7 @@ public class Deploy extends AbstractTask {
          */
         ServerUpgrader serverUpgrader = new ServerUpgrader(this);
 
-        if((platform == null && distro == null && owa == null)){
+        if((platform == null && distro == null && owa == null) && artifactId == null){
             Artifact artifact = checkCurrentDirectoryForOpenmrsWebappUpdate(server);
             DistroProperties distroProperties = checkCurrentDirectoryForDistroProperties(server);
             if(artifact != null){
@@ -123,6 +123,8 @@ public class Deploy extends AbstractTask {
         } else if(owa != null){
             BintrayId id = OpenmrsBintray.parseOwa(owa);
             deployOwa(server, id.getName(), id.getVersion());
+        } else if(artifactId != null){
+            deployModule(serverId, groupId, artifactId, version);
         } else throw new MojoExecutionException("Invalid installation option");
     }
 
