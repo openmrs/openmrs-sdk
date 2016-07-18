@@ -9,6 +9,7 @@ import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.project.MavenProject;
+import org.openmrs.maven.plugins.model.SdkStatistics;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.utility.DefaultJira;
 import org.openmrs.maven.plugins.utility.DistroHelper;
@@ -16,6 +17,8 @@ import org.openmrs.maven.plugins.git.DefaultGitHelper;
 import org.openmrs.maven.plugins.git.GitHelper;
 import org.openmrs.maven.plugins.utility.Jira;
 import org.openmrs.maven.plugins.utility.ModuleInstaller;
+import org.openmrs.maven.plugins.utility.SDKConstants;
+import org.openmrs.maven.plugins.utility.StatsManager;
 import org.openmrs.maven.plugins.utility.VersionsHelper;
 import org.openmrs.maven.plugins.utility.Wizard;
 
@@ -114,6 +117,7 @@ public abstract class AbstractTask extends AbstractMojo {
      */
     Jira jira;
 
+
     public AbstractTask(){}
 
     public AbstractTask(AbstractTask other) {
@@ -158,8 +162,11 @@ public abstract class AbstractTask extends AbstractMojo {
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
         initTask();
+        new StatsManager(wizard, mavenSession).incrementGoalStats();
         executeTask();
     }
+
+
 
     abstract public void executeTask() throws MojoExecutionException, MojoFailureException;
 }

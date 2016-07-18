@@ -15,6 +15,8 @@ import java.util.Properties;
  * Class for handling static values
  */
 public class SDKConstants {
+    public static final String SDK_STATS_ENABLED_QUESTION = "Would you be willing to help us improve SDK by sending us once in a while anonymous " +
+            "usage statistics (you can always change your mind by going to sdk-stats.properties and setting statsEnabled to false)";
     // dependency plugin
     public static final String PLUGIN_DEPENDENCIES_GROUP_ID = "org.apache.maven.plugins";
     public static final String PLUGIN_DEPENDENCIES_ARTIFACT_ID = "maven-dependency-plugin";

@@ -15,8 +15,8 @@ import java.io.File;
 * @requiresProject false
 *
 */
-public class Watch extends AbstractMojo {
-	
+public class Watch extends AbstractTask {
+
 	/**
      * @parameter expression="${serverId}"
      */
@@ -29,21 +29,21 @@ public class Watch extends AbstractMojo {
     Wizard wizard;
 
 	@Override
-    public void execute() throws MojoExecutionException, MojoFailureException {
+    public void executeTask() throws MojoExecutionException, MojoFailureException {
 	    serverId = wizard.promptForExistingServerIdIfMissing(serverId);
-	    
+
 	    File userDir = new File(System.getProperty("user.dir"));
 	    if (Project.hasProject(userDir)) {
             Project config = Project.loadProject(userDir);
-            
+
             Server serverConfig = Server.loadServer(serverId);
             serverConfig.addWatchedProject(config);
             serverConfig.save();
-            
+
             getLog().info("Watching " + config.getPath() + " for changes...");
         } else {
         	throw new MojoFailureException("Command must be run from openmrs-core or module's main directory");
         }
     }
-	
+
 }

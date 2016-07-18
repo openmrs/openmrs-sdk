@@ -20,14 +20,14 @@ import java.util.Map;
  * @requiresProject false
  *
  */
-public class Help extends AbstractMojo {
+public class Help extends AbstractTask {
 
     private static final String HELP_FILE = "help.yaml";
     private static final String DESC_MESSAGE = "Description: ";
     private static final String INFO = "OpenMRS SDK %s";
     private static final String WIKI = "https://wiki.openmrs.org/display/docs/OpenMRS+SDK";
 
-    public void execute() throws MojoExecutionException, MojoFailureException {
+    public void executeTask() throws MojoExecutionException, MojoFailureException {
         InputStream stream = getClass().getClassLoader().getResourceAsStream(HELP_FILE);
         YamlDecoder dec = new YamlDecoder(stream);
         HelpFormatter formatter = new HelpFormatter();

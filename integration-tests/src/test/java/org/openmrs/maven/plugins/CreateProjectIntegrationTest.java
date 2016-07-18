@@ -38,6 +38,9 @@ public class CreateProjectIntegrationTest extends AbstractSdkIntegrationTest {
         for( String option : options){
             addTaskParam(option, "test");
         }
+        addAnswer("test");
+        addTaskParam(BATCH_ANSWERS, getAnswers()); //only to set interactive mode to false
+
         executeTask("create-project");
         assertSuccess();
         assertProjectCreated();
@@ -70,6 +73,9 @@ public class CreateProjectIntegrationTest extends AbstractSdkIntegrationTest {
         for( String option : options){
             addTaskParam(option, "test");
         }
+        addAnswer("test");
+        addTaskParam(BATCH_ANSWERS, getAnswers()); //only to set interactive mode to false
+
         executeTask("create-project");
         assertSuccess();
         assertProjectCreated();

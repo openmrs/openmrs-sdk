@@ -40,7 +40,7 @@ public class Server {
 
     public static final String SLASH = "/";
 
-    private static String serversPath = System.getProperty("user.home")+"/"+SDKConstants.OPENMRS_SERVER_PATH;
+    private static String serversPath = System.getProperty("user.home")+File.separator+SDKConstants.OPENMRS_SERVER_PATH;
 
     private Properties properties;
 
