@@ -305,7 +305,7 @@ public class DefaultWizard implements Wizard {
 
         if (interactiveMode) {
             List<String> paths = new ArrayList<>();
-            paths.add("JAVA_HOME (currently: " + System.getenv("JAVA_HOME") + ")");
+            paths.add("JAVA_HOME (currently: " + System.getProperty("java.home") + ")");
             paths.addAll(getJavaHomeOptions());
 
             String path = promptForMissingValueWithOptions(SDKConstants.OPENMRS_SDK_JDK_OPTION,
