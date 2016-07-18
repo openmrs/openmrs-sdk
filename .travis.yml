@@ -1,4 +1,10 @@
 language: java
 install :
-- mvn clean install -DskipTests
-- mvn org.openmrs.maven.plugins:openmrs-sdk-maven-plugin:3.0.0-SNAPSHOT:setup-sdk -DbatchAnswers=n
+  - mvn clean install -DskipTests
+  - mvn org.openmrs.maven.plugins:openmrs-sdk-maven-plugin:3.0.0-SNAPSHOT:setup-sdk -DbatchAnswers=n
+deploy:
+  provider: script
+  script: ./deploy.sh
+  skip_cleanup: true
+  on:
+    tags: true

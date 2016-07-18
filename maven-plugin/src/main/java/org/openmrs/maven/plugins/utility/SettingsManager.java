@@ -3,6 +3,7 @@ package org.openmrs.maven.plugins.utility;
 import org.apache.commons.io.IOUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.settings.Profile;
+import org.apache.maven.settings.Server;
 import org.apache.maven.settings.Settings;
 import org.apache.maven.settings.io.xpp3.SettingsXpp3Reader;
 import org.apache.maven.settings.io.xpp3.SettingsXpp3Writer;
@@ -66,6 +67,11 @@ public class SettingsManager {
         if (settings.getProfiles() == null) {
             settings.setProfiles(new ArrayList<Profile>());
         }
+        if(settings.getServer("bintray-sdk") == null) {
+            ArrayList<Server> servers = new ArrayList<>();
+            servers.add(other.getServer("bintray-sdk"));
+            settings.setServers(servers);
+        }
         // remove already created OpenMRS profile
         List<Profile> profilesToRemove = new ArrayList<Profile>();
         for (Profile p: settings.getProfiles()) {
@@ -98,7 +104,7 @@ public class SettingsManager {
                 writer.write(stream, settings);
                 stream.close();
             } catch (IOException e) {
-                throw new MojoExecutionException(e.getMessage());
+                throw new MojoExecutionException("Failed to write setting.xml", e);
             } finally {
                 IOUtils.closeQuietly(stream);
             }
