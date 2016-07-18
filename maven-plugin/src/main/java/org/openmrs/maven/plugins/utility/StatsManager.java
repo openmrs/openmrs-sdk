@@ -32,16 +32,20 @@ public class StatsManager {
     }
 
     public void incrementGoalStats() throws MojoExecutionException {
-        loadStatistics();
+        try {
+            loadStatistics();
 
-        if(sdkStatistics.getStatsEnabled() && wizard.isInteractiveMode()){
-            String goal = getGoal();
-            if (StringUtils.isNotBlank(goal)) {
-                sdkStatistics.incrementGoal(goal);
-                sdkStatistics.setLastUsed();
-                sdkStatistics.save();
+            if(sdkStatistics.getStatsEnabled() && wizard.isInteractiveMode()){
+                String goal = getGoal();
+                if (StringUtils.isNotBlank(goal)) {
+                    sdkStatistics.incrementGoal(goal);
+                    sdkStatistics.setLastUsed();
+                    sdkStatistics.save();
+                }
+                sdkStatistics.sendReport(wizard);
             }
-            sdkStatistics.sendReport(wizard);
+        } catch (Exception e) {
+            wizard.showMessage("Failed to send anonymous user statistics. " + e.getMessage());
         }
     }
 
