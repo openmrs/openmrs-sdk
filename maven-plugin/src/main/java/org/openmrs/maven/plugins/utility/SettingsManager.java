@@ -1,6 +1,7 @@
 package org.openmrs.maven.plugins.utility;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.settings.Profile;
 import org.apache.maven.settings.Server;
@@ -9,6 +10,10 @@ import org.apache.maven.settings.io.xpp3.SettingsXpp3Reader;
 import org.apache.maven.settings.io.xpp3.SettingsXpp3Writer;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -22,9 +27,11 @@ public class SettingsManager {
 
     private Settings settings;
 
+    private File settingsFile;
+
     public SettingsManager() {
         settings = new Settings();
-    };
+    }
 
     public SettingsManager(InputStream stream) throws MojoExecutionException {
         this();
@@ -39,6 +46,34 @@ public class SettingsManager {
         } finally {
             IOUtils.closeQuietly(stream);
         }
+    }
+
+    /**
+     * Returns Settings from settings.xml in maven home
+     *
+     * @param mavenSession
+     * @throws MojoExecutionException
+     */
+    public SettingsManager(MavenSession mavenSession) throws MojoExecutionException {
+        String localRepository = mavenSession.getSettings().getLocalRepository();
+        File mavenHome = new File(localRepository).getParentFile();
+        mavenHome.mkdirs();
+        settingsFile = new File(mavenHome, SDKConstants.MAVEN_SETTINGS);
+        InputStream stream = null;
+        try{
+            if(settingsFile.exists()){
+                stream = new FileInputStream(settingsFile);
+            } else {
+                OutputStream emptySettings = new FileOutputStream(settingsFile);
+                apply(emptySettings);
+            }
+            settings = new SettingsXpp3Reader().read(stream);
+        } catch (IOException|XmlPullParserException e) {
+            throw new MojoExecutionException("Failed to load settings.xml",e);
+        } finally {
+            IOUtils.closeQuietly(stream);
+        }
+
     }
 
     /**
@@ -93,6 +128,10 @@ public class SettingsManager {
         return settings;
     }
 
+    public File getSettingsFile() {
+        return settingsFile;
+    }
+
     /**
      * Write settings to file
      * @param stream
@@ -109,5 +148,30 @@ public class SettingsManager {
                 IOUtils.closeQuietly(stream);
             }
         }
+    }
+
+    /**
+     * Write settings to file
+     */
+    public void apply() throws MojoExecutionException {
+        if (settings != null && settingsFile != null) {
+            SettingsXpp3Writer writer = new SettingsXpp3Writer();
+            OutputStream stream = null;
+            try {
+                stream = new FileOutputStream(settingsFile);
+                writer.write(stream, settings);
+                stream.close();
+            } catch (IOException e) {
+                throw new MojoExecutionException(e.getMessage());
+            } finally {
+                IOUtils.closeQuietly(stream);
+            }
+        } else throw new IllegalStateException("Settings and settings file must not be null to apply");
+    }
+
+    public void addServer(Server server) {
+        List<Server> servers = settings.getServers();
+        servers.add(server);
+        settings.setServers(servers);
     }
 }

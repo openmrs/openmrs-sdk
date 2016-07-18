@@ -1,16 +1,22 @@
 package org.openmrs.maven.plugins;
 
+import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Test;
+import org.openmrs.maven.plugins.bintray.Bintray;
 import org.openmrs.maven.plugins.bintray.BintrayId;
 import org.openmrs.maven.plugins.bintray.BintrayPackage;
+import org.openmrs.maven.plugins.bintray.CreatePackageRequest;
 import org.openmrs.maven.plugins.bintray.OpenmrsBintray;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.hasSize;
@@ -37,6 +43,11 @@ public class OpenmrsBintrayIntegrationTest extends AbstractSdkIntegrationTest {
         assertThat(dictionary, is(notNullValue()));
         assertThat(dictionary, hasOwner("openmrs"));
         assertThat(dictionary, hasRepository("owa"));
+    }
+    @Test
+    public void getOwaMetadataTestShouldReturnNull() throws Exception{
+        BintrayPackage dictionary = openmrsBintray.getOwaMetadata("openmrs-owa-fake");
+        assertThat(dictionary, is(nullValue()));
     }
     @Test
     public void downloadOwaTest() throws Exception{

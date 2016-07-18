@@ -1,13 +1,20 @@
 package org.openmrs.maven.plugins.git;
 
+import org.apache.commons.lang.StringUtils;
+import org.apache.maven.model.Model;
+import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 import org.eclipse.egit.github.core.PullRequest;
 import org.eclipse.egit.github.core.PullRequestMarker;
 import org.eclipse.egit.github.core.service.PullRequestService;
 import org.eclipse.egit.github.core.service.RepositoryService;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.RebaseCommand;
-import org.eclipse.jgit.api.RebaseResult;
+import org.eclipse.jgit.api.RemoteAddCommand;
+import org.eclipse.jgit.api.RemoteRemoveCommand;
+import org.eclipse.jgit.api.ResetCommand;
+import org.eclipse.jgit.api.RevertCommand;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.diff.DiffEntry;
 import org.eclipse.jgit.errors.IllegalTodoFileModification;
@@ -19,7 +26,9 @@ import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.transport.PushResult;
+import org.eclipse.jgit.transport.RemoteConfig;
 import org.eclipse.jgit.transport.RemoteRefUpdate;
+import org.eclipse.jgit.transport.URIish;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.openmrs.maven.plugins.AbstractTask;
 import org.openmrs.maven.plugins.Pull;
@@ -27,7 +36,9 @@ import org.openmrs.maven.plugins.utility.CompositeException;
 import org.openmrs.maven.plugins.utility.Project;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -35,13 +46,14 @@ public class DefaultGitHelper implements GitHelper {
 
     private static final String CREATING_LOCAL_REPO_REASON = "problem when initializing local repository";
     private final static String OPENMRS_USER = "openmrs";
+    private static final String CREATING_REMOTE_UPSTREAM_REASON = "problem with creating remote upstream";
+    private static final String DELETING_REMOTE_UPSTREAM_REASON = "problem with deleting remote upstream";
+    private static final String CREATING_URL_FROM_POM_REASON = "problem with getting URL from pom.xml";
+    private static final String NO_GIT_PROJECT_FOUND_REASON = "no git project found";
+    private static final String UPSTREAM = "upstream";
 
     /**
-     * Return local git repository
-     *
-     * @param path
-     * @return
-     * @throws IOException
+     * @inheritDoc
      */
     @Override
     public Repository getLocalRepository(String path) {
@@ -52,6 +64,9 @@ public class DefaultGitHelper implements GitHelper {
         }
     }
 
+    /**
+     * @inheritDoc
+     */
     @Override
     public boolean checkIfUncommitedChanges(Git git) {
         try {
@@ -62,6 +77,9 @@ public class DefaultGitHelper implements GitHelper {
         }
     }
 
+    /**
+     * @inheritDoc
+     */
     @Override
     public void addIssueIdIfMissing(Git git, final String issueId, int rebaseSize) throws MojoExecutionException {
         CompositeException allExceptions = new CompositeException("Failed to add issue id to commits message if missing");
@@ -99,6 +117,9 @@ public class DefaultGitHelper implements GitHelper {
         allExceptions.checkAndThrow();
     }
 
+    /**
+     * @inheritDoc
+     */
     @Override
     public void squashLastCommits(Git git, int numberOfCommits) {
         CompositeException allExceptions = new CompositeException("Failed to squash last commits");
@@ -132,6 +153,9 @@ public class DefaultGitHelper implements GitHelper {
         }
     }
 
+    /**
+     * @inheritDoc
+     */
     @Override
     public void pullRebase(AbstractTask parentTask, String branch, Project project) throws MojoExecutionException {
         Pull pull = new Pull(parentTask, branch);
@@ -140,19 +164,23 @@ public class DefaultGitHelper implements GitHelper {
         allExceptions.checkAndThrow();
     }
 
+    /**
+     * @inheritDoc
+     */
     @Override
-    public Iterable<PushResult> push (Git git, String username, String password, String branch) {
+    public Iterable<PushResult> push(Git git, String username, String password, String reference, String remote, boolean force) {
         UsernamePasswordCredentialsProvider credentialsProvider = new UsernamePasswordCredentialsProvider(username, password);
         try {
             Iterable<PushResult> results = git
                     .push()
                     .setCredentialsProvider(credentialsProvider)
-                    .add("refs/heads/"+branch)
-                    .setRemote("origin")
+                    .add(reference)
+                    .setRemote(remote)
+                    .setForce(force)
                     .call();
 
             for(PushResult result : results){
-                RemoteRefUpdate update = result.getRemoteUpdate("refs/heads/"+branch);
+                RemoteRefUpdate update = result.getRemoteUpdate(reference);
                 RemoteRefUpdate.Status status = update.getStatus();
                 if(!(status.equals(RemoteRefUpdate.Status.OK)||status.equals(RemoteRefUpdate.Status.UP_TO_DATE))){
                     throw new RuntimeException("Failed to push changes to origin");
@@ -164,7 +192,9 @@ public class DefaultGitHelper implements GitHelper {
         }
     }
 
-
+    /**
+     * @inheritDoc
+     */
     @Override
     public Iterable<RevCommit> getCommitDifferential(Git git, String baseRef, String headRef) {
         Ref localRef = git.getRepository().getAllRefs().get(headRef);
@@ -176,7 +206,9 @@ public class DefaultGitHelper implements GitHelper {
         }
     }
 
-
+    /**
+     * @inheritDoc
+     */
     @Override
     public List<String> getCommitDifferentialMessages(Git git, String baseRef, String headRef) {
         Iterable<RevCommit> commits = getCommitDifferential(git, baseRef, headRef);
@@ -187,6 +219,9 @@ public class DefaultGitHelper implements GitHelper {
         return messages;
     }
 
+    /**
+     * @inheritDoc
+     */
     @Override
     public PullRequest openPullRequest(GithubPrRequest request) {
         RepositoryService repositoryService = new RepositoryService();
@@ -213,6 +248,9 @@ public class DefaultGitHelper implements GitHelper {
         }
     }
 
+    /**
+     * @inheritDoc
+     */
     @Override
     public PullRequest getPullRequestIfExists(String base, String head, String repository) {
         RepositoryService repositoryService = new RepositoryService();
@@ -238,6 +276,151 @@ public class DefaultGitHelper implements GitHelper {
         String openmrsBase = base.startsWith(OPENMRS_USER) ? base : OPENMRS_USER+":"+base;
         boolean matchingBase = openmrsBase.equals(openPR.getBase().getLabel());
         return matchingBase && matchingHead;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    @Override
+    public RevCommit getLastCommit(Git git){
+        try {
+            return git.log().setMaxCount(1).call().iterator().next();
+        } catch (GitAPIException e) {
+            throw new RuntimeException("Failed to access local repository data",e);
+        }
+    }
+
+    /**
+     * @inheritDoc
+     */
+    @Override
+    public void resetHard(Git git, RevCommit commit){
+        try {
+            git.reset().setMode(ResetCommand.ResetType.HARD).setRef(commit.getName()).call();
+        } catch (GitAPIException e) {
+            throw new RuntimeException("Failed to hard reset to commit "+commit.getShortMessage(), e);
+        }
+    }
+
+    /**
+     * @inheritDoc
+     */
+    @Override
+    public boolean deleteTag(Git git, String tag, String username, String password){
+        Ref tagRef = git.getRepository().getTags().get(tag);
+        if(tagRef != null){
+            try {
+                //delete remote tag, if
+                UsernamePasswordCredentialsProvider credentialsProvider = new UsernamePasswordCredentialsProvider(username, password);
+                git.push()
+                        .setCredentialsProvider(credentialsProvider)
+                        .add(":"+tagRef)
+                        .setRemote("upstream")
+                        .call();
+                git.tagDelete().setTags(tagRef.getName()).call();
+                return true;
+            } catch (GitAPIException e) {
+                throw new RuntimeException("Failed to delete tag "+tag, e);
+            }
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * @inheritDoc
+     */
+    @Override
+    public void revertCommits(Git git, Iterable<RevCommit> commits) {
+        try {
+            RevertCommand revert = git.revert();
+            for(RevCommit commit: commits){
+                revert.include(commit.getId());
+            }
+            revert.call();
+        } catch (GitAPIException e) {
+            throw new RuntimeException("Failed to revert commits",e);
+        }
+    }
+
+    /**
+     * @inheritDoc
+     */
+    @Override
+    public void addRemoteUpstream(Git git, String path) throws Exception {
+
+        if (!isUpstreamRepoCreated(git, path)) {
+            try {
+                RemoteAddCommand remoteAddCommand = git.remoteAdd();
+                remoteAddCommand.setUri(new URIish(getRemoteRepoUrlFromPom(path)));
+                remoteAddCommand.setName(UPSTREAM);
+                remoteAddCommand.call();
+            } catch (URISyntaxException e) {
+                throw new Exception(CREATING_URL_FROM_POM_REASON, e);
+            } catch (MojoExecutionException e) {
+                throw new MojoExecutionException(NO_GIT_PROJECT_FOUND_REASON, e);
+            } catch (GitAPIException e) {
+                throw new Exception(CREATING_REMOTE_UPSTREAM_REASON, e);
+            }
+        }
+    }
+
+    /**
+     * Deletes upstream remote repo
+     */
+    private void deleteUpstreamRepo(Git git) throws Exception {
+        RemoteRemoveCommand remoteRemoveCommand = git.remoteRemove();
+        remoteRemoveCommand.setName(UPSTREAM);
+        try {
+            remoteRemoveCommand.call();
+        } catch (GitAPIException e) {
+            throw new Exception(DELETING_REMOTE_UPSTREAM_REASON, e);
+        }
+
+    }
+
+    /**
+     * Checks if the upstream repo exist and if there is a proper URL
+     */
+    private boolean isUpstreamRepoCreated(Git git, String path) throws Exception {
+        try {
+            List<RemoteConfig> remotes = git.remoteList().call();
+            for(RemoteConfig remote : remotes){
+                if(remote.getName().equals(UPSTREAM)){
+                    for(URIish uri : remote.getURIs()){
+                        if(uri.toString().equals(getRemoteRepoUrlFromPom(path))){
+                            return true;
+                        }else {
+                            deleteUpstreamRepo(git);
+                        }
+                    }
+                }
+            }
+        } catch (GitAPIException e) {
+            throw new Exception(CREATING_REMOTE_UPSTREAM_REASON, e);
+        }
+
+        return false;
+    }
+
+    /**
+     * get github repository URL from pom.xml
+     */
+    private String getRemoteRepoUrlFromPom(String path) throws MojoExecutionException {
+        Model model = null;
+        try {
+            File pomFile = new File(path);
+            if(pomFile.isDirectory()){
+                pomFile = new File(pomFile, "pom.xml");
+            }
+            model = new MavenXpp3Reader().read(new FileInputStream(pomFile));
+        } catch (IOException e) {
+            throw new MojoExecutionException("Failed to access file "+path,e);
+        } catch (XmlPullParserException e) {
+            throw new MojoExecutionException("Failed to parse pom.xml",e);
+        }
+        String url = model.getScm().getUrl();
+        return StringUtils.removeEnd(url, "/") + ".git";
     }
 }
 

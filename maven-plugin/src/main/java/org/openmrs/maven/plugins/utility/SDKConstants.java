@@ -1,6 +1,7 @@
 package org.openmrs.maven.plugins.utility;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.maven.model.Plugin;
 import org.openmrs.maven.plugins.model.Artifact;
 
 import java.io.IOException;
@@ -10,6 +11,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+
+import static org.twdata.maven.mojoexecutor.MojoExecutor.artifactId;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.groupId;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.plugin;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.version;
 
 /**
  * Class for handling static values
@@ -21,6 +27,10 @@ public class SDKConstants {
     public static final String PLUGIN_DEPENDENCIES_GROUP_ID = "org.apache.maven.plugins";
     public static final String PLUGIN_DEPENDENCIES_ARTIFACT_ID = "maven-dependency-plugin";
     public static final String PLUGIN_DEPENDENCIES_VERSION = "2.8";
+    // release plugin
+    public static final String PLUGIN_RELEASE_GROUP_ID = "org.apache.maven.plugins";
+    public static final String PLUGIN_RELEASE_ARTIFACT_ID = "maven-release-plugin";
+    public static final String PLUGIN_RELEASE_VERSION = "2.5.3";
     // run plugin
     public static final String PLUGIN_JETTY_GROUP_ID = "org.eclipse.jetty";
     public static final String PLUGIN_JETTY_ARTIFACT_ID = "jetty-maven-plugin";
@@ -110,5 +120,13 @@ public class SDKConstants {
         return type.equals(SUPPORTED_MODULE_EXTENSIONS[0])
                 || type.equals(SUPPORTED_MODULE_EXTENSIONS[1])
                 || type.equals(SUPPORTED_MODULE_EXTENSIONS[2]);
+    }
+
+    public static Plugin getReleasePlugin() {
+        return plugin(
+                groupId(SDKConstants.PLUGIN_RELEASE_GROUP_ID),
+                artifactId(SDKConstants.PLUGIN_RELEASE_ARTIFACT_ID),
+                version(SDKConstants.PLUGIN_RELEASE_VERSION)
+        );
     }
 }

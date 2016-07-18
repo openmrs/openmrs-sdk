@@ -44,15 +44,10 @@ public class Pull extends AbstractTask {
     private static final String NO_WATCHED_MODULES_MESSAGE = "Server with id %s has no watched modules";
     private static final String MODULE_UPDATED_SUCCESSFULLY_MESSAGE = "Module %s updated successfully";
     private static final String CONFLICT_ERROR_MESSAGE = "could not be updated automatically due to %s, changes need to be pulled manually";
-    private static final String CREATING_NEW_UPSTREAM_MESSAGE = "Creating new upstream repo due to incorrect url";
     private static final String MODULES_UPDATED_SUCCESSFULLY_MESSAGE = "Modules updated successfully:";
     private static final String MODULES_NOT_UPDATED_MESSAGE = "Modules not updated:";
     private static final String CREATING_LOCAL_REPO_REASON = "problem when initializing local repository";
     private static final String GIT_COMMAND_REASON = "problem with resolving git command";
-    private static final String CREATING_REMOTE_UPSTREAM_REASON = "problem with creating remote upstream";
-    private static final String DELETING_REMOTE_UPSTREAM_REASON = "problem with deleting remote upstream";
-    private static final String CREATING_URL_FROM_POM_REASON = "problem with getting URL from pom.xml";
-    private static final String NO_GIT_PROJECT_FOUND_REASON = "no git project found";
     private static final String MERGING_PROBLEM_REASON = "problem with merging";
     private static final String DELETING_BRANCH_REASON = "problem wih deleting branch";
     private static final String PULL_COMMAND_PROBLEM_REASON = "problem with executing pull command";
@@ -213,7 +208,7 @@ public class Pull extends AbstractTask {
         checkoutAndCreateNewBranch(git, newBranch);
         String newBranchFull = localRepo.getFullBranch();
         stash = git.stashCreate().call();
-        addRemoteUpstream(git, path);
+        gitHelper.addRemoteUpstream(git, path);
         pullFromRemoteUpstream(git, stash, newBranch, userBranch);
         if (stash != null) {
             try {
@@ -276,20 +271,6 @@ public class Pull extends AbstractTask {
             }
         }
         return false;
-    }
-
-    /**
-     * Return local git repository
-     * @param path
-     * @return
-     * @throws IOException
-     */
-    private Repository getLocalRepository(String path) throws IOException {
-        try {
-            return new FileRepository(new File(path, ".git").getAbsolutePath());
-        } catch (IOException e) {
-            throw new IOException(CREATING_LOCAL_REPO_REASON, e);
-        }
     }
 
     /**
@@ -404,91 +385,6 @@ public class Pull extends AbstractTask {
         } catch (GitAPIException e) {
             throw new Exception(GIT_COMMAND_REASON, e);
         }
-    }
-
-    /**
-     * Add temporary remote with link from pom.xml
-     * @param git
-     * @param path
-     * @return
-     * @throws URISyntaxException
-     * @throws MojoExecutionException
-     * @throws GitAPIException
-     */
-    private void addRemoteUpstream(Git git, String path) throws Exception {
-
-        if (!isUpstreamRepoCreated(git, path)) {
-            try {
-                RemoteAddCommand remoteAddCommand = git.remoteAdd();
-                remoteAddCommand.setUri(new URIish(getRemoteRepoUrlFromPom(path)));
-                remoteAddCommand.setName(UPSTREAM);
-                remoteAddCommand.call();
-            } catch (URISyntaxException e) {
-                throw new Exception(CREATING_URL_FROM_POM_REASON, e);
-            } catch (MojoExecutionException e) {
-                throw new MojoExecutionException(NO_GIT_PROJECT_FOUND_REASON, e);
-            } catch (GitAPIException e) {
-                throw new Exception(CREATING_REMOTE_UPSTREAM_REASON, e);
-            }
-        }
-    }
-
-    /**
-     * Deletes upstream remote repo
-     * @param git
-     * @throws Exception
-     */
-    private void deleteUpstreamRepo(Git git) throws Exception {
-        RemoteRemoveCommand remoteRemoveCommand = git.remoteRemove();
-        remoteRemoveCommand.setName(UPSTREAM);
-        try {
-            remoteRemoveCommand.call();
-        } catch (GitAPIException e) {
-            throw new Exception(DELETING_REMOTE_UPSTREAM_REASON, e);
-        }
-
-    }
-
-    /**
-     * Checks if the upstream repo exist and if there is a proper URL 
-     * @param git
-     * @param path
-     * @return
-     * @throws Exception
-     */
-    private boolean isUpstreamRepoCreated(Git git, String path) throws Exception {
-        try {
-            List<RemoteConfig> remotes = git.remoteList().call();
-            for(RemoteConfig remote : remotes){
-                if(remote.getName().equals(UPSTREAM)){
-                    for(URIish uri : remote.getURIs()){
-                        if(uri.toString().equals(getRemoteRepoUrlFromPom(path))){
-                            return true;
-                        }else {
-                            wizard.showMessage(CREATING_NEW_UPSTREAM_MESSAGE);
-                            deleteUpstreamRepo(git);
-                        }
-                    }
-                }
-            }
-        } catch (GitAPIException e) {
-            throw new Exception(CREATING_REMOTE_UPSTREAM_REASON, e);
-        }
-
-        return false;
-    }
-
-    /**
-     * get github URL from pom.xml
-     * @param path
-     * @return github URL
-     * @throws MojoExecutionException
-     */
-    private String getRemoteRepoUrlFromPom(String path) throws MojoExecutionException {
-        Project project = Project.loadProject(new File(path));
-        Model model = project.getModel();
-        String url = model.getScm().getUrl();
-        return StringUtils.removeEnd(url, "/") + ".git";
     }
 
     /**

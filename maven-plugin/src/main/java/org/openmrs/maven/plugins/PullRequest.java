@@ -96,7 +96,7 @@ public class PullRequest extends AbstractTask {
         username = wizard.promptForValueIfMissing(username, "github username");
         password = wizard.promptForValueIfMissing(password, "github password");
 
-        gitHelper.push(git, username, password, localBranch);
+        gitHelper.push(git, username, password, "refs/heads/"+localBranch, "origin", false);
 
         createUpdatePullRequest(issue, localBranch, repoName);
     }

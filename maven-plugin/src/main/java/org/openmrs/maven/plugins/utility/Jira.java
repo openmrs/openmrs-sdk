@@ -4,4 +4,5 @@ import com.atlassian.jira.rest.client.domain.Issue;
 
 public interface Jira {
     Issue getIssue(String issueId);
+    String getJiraUrl();
 }
