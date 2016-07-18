@@ -60,7 +60,7 @@ public class RunTomcat extends AbstractMojo {
 
 	@Override
 	public void execute() throws MojoExecutionException, MojoFailureException {
-		System.out.println("\nUsing JAVA_HOME: " + System.getenv("JAVA_HOME") + "\n");
+		System.out.println("\nUsing JAVA_HOME: " + System.getProperty("java.home") + "\n");
 		System.out.println("Using MAVEN_OPTS: " + System.getenv("MAVEN_OPTS") + "\n");
 
 		serverId = wizard.promptForExistingServerIdIfMissing(serverId);
