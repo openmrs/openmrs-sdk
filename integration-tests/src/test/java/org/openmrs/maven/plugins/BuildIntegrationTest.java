@@ -1,5 +1,8 @@
 package org.openmrs.maven.plugins;
 
+import org.apache.commons.io.FileUtils;
+import org.apache.maven.it.Verifier;
+import org.apache.maven.it.util.ResourceExtractor;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -7,6 +10,8 @@ import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.utility.Project;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 /**
  *
@@ -17,7 +22,15 @@ public class BuildIntegrationTest extends AbstractSdkIntegrationTest{
 
 
     @Before
-    public void setupServer() throws Exception{
+    public void setup() throws Exception{
+        testDirectory = ResourceExtractor.simpleExtractResources(getClass(), TEST_DIRECTORY+File.separator+"buildIT");
+        verifier = new Verifier(testDirectory.getAbsolutePath());
+
+        testFilesToPersist = new ArrayList<File>(Arrays.asList(testDirectory.listFiles()));
+
+
+        addTaskParam("openMRSPath",testDirectory.getAbsolutePath());
+
         serverId = setupTestServer();
 
         Server server = Server.loadServer(new File(testDirectory, serverId));
@@ -43,8 +56,10 @@ public class BuildIntegrationTest extends AbstractSdkIntegrationTest{
 
         addTaskParam("openMRSPath",testDirectory.getAbsolutePath());
 
-        addAnswer(serverId);
+        addAnswer("n"); // OWA Project found in this directory, do You want to build it?
+        addAnswer("y"); // Do You want to build all watched projects instead?
 
+        addAnswer(serverId);
 
         executeTask("build");
 
@@ -53,4 +68,24 @@ public class BuildIntegrationTest extends AbstractSdkIntegrationTest{
         assertModulesInstalled(serverId, "module1-1.0-SNAPSHOT.omod");
 
     }
+
+    @Test
+    public void build_shouldBuildOwaProject() throws Exception{
+
+
+        addTaskParam("openMRSPath",testDirectory.getAbsolutePath());
+
+        addAnswer("y"); // OWA Project found in this directory, do You want to build it?
+
+        addTaskParam(BATCH_ANSWERS, getAnswers());
+
+        executeTask("build");
+
+        verifier.verifyTextInLog("[INFO] BUILD SUCCESS");
+
+        assertFilePresent("node");
+        assertFilePresent("node_modules");
+    }
+
+
 }

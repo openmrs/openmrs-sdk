@@ -1,0 +1,51 @@
+{
+  "name": "test",
+  "version": "0.1.0",
+  "description": "TEST",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/user/openmrs-owa-test"
+  },
+  "dependencies": {
+  "angular": "^1.5.3"
+},
+  "devDependencies": {
+    "ng-annotate-webpack-plugin":"0.1.3",
+    "babel-core": "^6.2.1",
+    "babel-loader": "^6.2.0",
+    "babel-preset-es2015": "^6.1.18",
+    "browser-sync": "^2.11.1",
+    "browser-sync-webpack-plugin": "^1.0.1",
+    "copy-webpack-plugin": "^1.1.1",
+    "css-loader": "^0.23.1",
+    "extract-text-webpack-plugin": "^1.0.1",
+    "file-loader": "^0.8.5",
+    "html-loader": "^0.4.3",
+    "html-webpack-plugin": "^2.7.1",
+    "raw-loader": "^0.5.1",
+    "rimraf": "^2.5.2",
+    "style-loader": "^0.13.1",
+    "url-loader": "^0.5.7",
+    "webpack": "^1.12.13",
+    "yargs": "^4.3.1",
+    "archiver": "^1.0.0",
+    "on-build-webpack": "^0.1.0"
+  },
+  "scripts": {
+    "clean": "rimraf dist && rimraf coverage*",
+    "build": "npm run clean && webpack --progress --colors --mode=production --target=web",
+    "build:dev": "npm run clean && webpack --progress --colors --mode=dev --target=web",
+    "build:prod": "npm run test && npm run build",
+    "build:deploy": "webpack --progress --colors --mode=deploy --target=web",
+    "watch": "webpack --progress --colors --watch --mode=deploy --target=web",
+    "test": "echo \"Error: no test specified\""
+  },
+  "keywords": [
+    "OpenMRS",
+    "Open",
+    "Web",
+    "App"
+  ],
+  "author": "user",
+  "license": "MPL-2.0"
+}
