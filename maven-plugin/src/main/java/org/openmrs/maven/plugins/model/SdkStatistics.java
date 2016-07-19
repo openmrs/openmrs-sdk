@@ -126,6 +126,9 @@ public class SdkStatistics {
         builder.append("&entry.677412410="+statistics.getProperty("statsUser"));
         builder.append("&entry.678099034="+statistics.getProperty("statsCreate-projectCalls"));
         builder.append("&entry.1559628016="+statistics.getProperty("statsRunCalls"));
+        builder.append("&entry.2088950996="+statistics.getProperty("statsPrCalls"));
+        builder.append("&entry.1875021849="+statistics.getProperty("statsCloneCalls"));
+        builder.append("&entry.2038776811="+statistics.getProperty("statsReleaseCalls"));
 
         return builder.toString();
     }
