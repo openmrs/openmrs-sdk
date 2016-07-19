@@ -125,6 +125,15 @@
             <artifactId>org.eclipse.jgit</artifactId>
             <version>4.4.0.201606070830-r</version>
         </dependency>
+
+        <!-- GitHub API -->
+        <dependency>
+            <groupId>org.eclipse.mylyn.github</groupId>
+            <artifactId>org.eclipse.egit.github.core</artifactId>
+            <version>2.1.5</version>
+        </dependency>
+
+        <!-- Logging -->
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-simple</artifactId>
