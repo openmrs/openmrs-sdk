@@ -50,8 +50,6 @@ public interface Wizard {
 
     boolean checkYes(String value);
 
-    File getCurrentServerPath() throws MojoExecutionException;
-
     String promptForExistingServerIdIfMissing(String serverId);
 
     List<String> getListOfServers();

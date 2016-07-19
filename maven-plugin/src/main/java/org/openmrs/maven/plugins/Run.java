@@ -57,7 +57,7 @@ public class Run extends AbstractTask {
 
 	public void executeTask() throws MojoExecutionException, MojoFailureException {
 		if (serverId == null) {
-			File currentProperties = wizard.getCurrentServerPath();
+			File currentProperties = Server.checkCurrentDirForServer();
 			if (currentProperties != null) serverId = currentProperties.getName();
 		}
 		serverId = wizard.promptForExistingServerIdIfMissing(serverId);

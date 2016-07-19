@@ -148,6 +148,19 @@ public class Server {
         return false;
     }
 
+    /**
+     * @return openmrs-server.properties file if there is server, null otherwise
+     */
+    public static File checkCurrentDirForServer() {
+        File dir = new File(System.getProperty("user.dir"));
+        boolean hasServer = hasServerConfig(dir);
+        if(hasServer){
+            return dir;
+        } else {
+            return null;
+        }
+    }
+
     public static Server createServer(File dir) {
         Properties properties = new Properties();
         return new Server(dir, properties);

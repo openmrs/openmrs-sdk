@@ -517,28 +517,6 @@ public class DefaultWizard implements Wizard {
     }
 
     /**
-     * Check if we are currenly inside "server" folder and get path
-     * @return
-     */
-    @Override
-    public File getCurrentServerPath() throws MojoExecutionException {
-        File currentFolder = new File(System.getProperty("user.dir"));
-        File openmrsHome = Server.getServersPathFile();
-        File current = new File(currentFolder, SDKConstants.OPENMRS_SERVER_PROPERTIES);
-        File parent = new File(currentFolder.getParent(), SDKConstants.OPENMRS_SERVER_PROPERTIES);
-        File propertiesFile = null;
-        if (current.exists()) propertiesFile = current;
-        else if (parent.exists()) propertiesFile = parent;
-        if (propertiesFile != null) {
-            File server = propertiesFile.getParentFile();
-            if (!server.getParentFile().equals(openmrsHome)) return null;
-            Server properties = Server.loadServer(server);
-            if (properties.getParam(Server.PROPERTY_SERVER_ID) != null) return propertiesFile.getParentFile();
-        }
-        return null;
-    }
-
-    /**
      * Get servers with recently used first
      * @return
      */
