@@ -144,7 +144,7 @@ public class Setup extends AbstractTask {
                 wizard.promptForPlatformVersionIfMissing(server, versionsHelper.getVersionAdvice(webapp, 6));
                 moduleInstaller.installCoreModules(server, isCreatePlatform, distroProperties);
             } else {
-                wizard.promptForDistroVersionIfMissing(server);
+                wizard.promptForRefAppVersionIfMissing(server, versionsHelper);
                 distroProperties = extractDistroToServer(server, isCreatePlatform, serverPath);
                 distroProperties.saveTo(server.getServerDirectory());
             }
@@ -352,7 +352,7 @@ public class Setup extends AbstractTask {
                 .setDbUri(dbUri)
                 .setDbUser(dbUser)
                 .setDbPassword(dbPassword)
-                .setInteractiveMode(interactiveMode)
+                .setInteractiveMode(testMode)
                 .setJavaHome(javaHome)
                 .build();
         wizard.promptForNewServerIfMissing(server);
@@ -370,7 +370,7 @@ public class Setup extends AbstractTask {
             options.add(DISTRIBUTION);
             options.add(PLATFORM);
 
-            String choice = wizard.promptForMissingValueWithOptions(SETUP_SERVERS_PROMPT, null, null, options, null, null);
+            String choice = wizard.promptForMissingValueWithOptions(SETUP_SERVERS_PROMPT, null, null, options);
 
             switch(choice) {
                 case PLATFORM:

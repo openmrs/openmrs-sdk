@@ -59,7 +59,6 @@ public class CreateProjectIntegrationTest extends AbstractSdkIntegrationTest {
         addAnswer("test");
         addAnswer("test");
         addAnswer("test");
-        addTaskParam(BATCH_ANSWERS, getAnswers());
 
         executeTask("create-project");
         assertSuccess();

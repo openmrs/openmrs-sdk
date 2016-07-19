@@ -36,7 +36,6 @@ public class DeployIntegrationTest extends AbstractSdkIntegrationTest {
         addTaskParam("platform", "1.11.5");
 
         addAnswer(testServerId);
-        addTaskParam(BATCH_ANSWERS, getAnswers());
 
         executeTask("deploy");
 
@@ -53,7 +52,6 @@ public class DeployIntegrationTest extends AbstractSdkIntegrationTest {
         addAnswer("Distribution");
         addAnswer("referenceapplication:2.3.1");
         addAnswer("y");
-        addTaskParam(BATCH_ANSWERS, getAnswers());
 
         executeTask("deploy");
 
@@ -72,7 +70,6 @@ public class DeployIntegrationTest extends AbstractSdkIntegrationTest {
         addAnswer(testServerId);
         addAnswer("y");
         addAnswer("y");
-        addTaskParam(BATCH_ANSWERS, getAnswers());
 
         executeTask("deploy");
 
@@ -90,7 +87,6 @@ public class DeployIntegrationTest extends AbstractSdkIntegrationTest {
         addAnswer(testServerId);
         addAnswer("y");
         addAnswer("y");
-        addTaskParam(BATCH_ANSWERS, getAnswers());
         executeTask("deploy");
 
         assertSuccess();
@@ -103,7 +99,6 @@ public class DeployIntegrationTest extends AbstractSdkIntegrationTest {
         addAnswer(testServerId);
         addAnswer("n");
         addAnswer("y");
-        addTaskParam(BATCH_ANSWERS, getAnswers());
         executeTask("deploy");
 
         assertSuccess();
@@ -116,7 +111,6 @@ public class DeployIntegrationTest extends AbstractSdkIntegrationTest {
 
         addAnswer(testServerId);
         addAnswer("y");
-        addTaskParam(BATCH_ANSWERS, getAnswers());
 
         executeTask("deploy");
 

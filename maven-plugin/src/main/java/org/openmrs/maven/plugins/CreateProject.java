@@ -147,12 +147,11 @@ public class CreateProject extends CreateProjectFromArchetypeMojo {
     private List<ArtifactRepository> remoteArtifactRepositories;
 
     /**
-     * User settings use to check the interactiveMode.
+     * test mode, if true disables interactive mode and uses batchAnswers, even if there is none
      *
-     * @parameter expression="${interactiveMode}" default-value="true"
-     * @required
+     * @parameter expression="${testMode}" default-value="false"
      */
-    private Boolean interactiveMode;
+    String testMode;
 
     /** @parameter expression="${basedir}" */
     private File basedir;
@@ -310,17 +309,13 @@ public class CreateProject extends CreateProjectFromArchetypeMojo {
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
 
-        if(batchAnswers != null && batchAnswers.size() != 0){
+        if((batchAnswers != null && !batchAnswers.isEmpty())||"true".equals(testMode)){
             wizard.setAnswers(batchAnswers);
             wizard.setInteractiveMode(false);
         }
 
-
         new StatsManager(wizard, session).incrementGoalStats();
-
-        String choice = wizard.promptForMissingValueWithOptions(
-                MODULE_TYPE_PROMPT, type, null,
-                Arrays.asList(OPTION_PLATFORM, OPTION_REFAPP), null, null);
+        String choice = wizard.promptForMissingValueWithOptions(MODULE_TYPE_PROMPT, type, null, Arrays.asList(OPTION_PLATFORM, OPTION_REFAPP));
 
         if(OPTION_PLATFORM.equals(choice)){
             type = TYPE_PLATFORM;

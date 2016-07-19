@@ -6,11 +6,8 @@ import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.model.UpgradeDifferential;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Properties;
 
 public interface Wizard {
     boolean isInteractiveMode();
@@ -29,9 +26,11 @@ public interface Wizard {
 
     String promptForPlatformVersion(List<String> versions);
 
-    void promptForDistroVersionIfMissing(Server server) throws MojoExecutionException;
+    public void promptForRefAppVersionIfMissing(Server server, VersionsHelper versionsHelper) throws MojoExecutionException;
 
-    String promptForDistroVersion();
+    String promptForRefAppVersion(VersionsHelper versionsHelper);
+
+    String promptForMissingValueWithOptions(String message, String value, String parameterName, List<String> options);
 
     String promptForMissingValueWithOptions(String message, String value, String parameterName, List<String> options, String customMessage, String customDefault);
 

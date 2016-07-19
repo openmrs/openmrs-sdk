@@ -140,9 +140,15 @@ public class DefaultWizard implements Wizard {
     }
 
     @Override
+    public String promptForMissingValueWithOptions(String message, String value, String parameterName, List<String> options){
+        return promptForMissingValueWithOptions(message, value, parameterName, options, null, null);
+    }
+
+    @Override
     public String promptForMissingValueWithOptions(String message, String value, String parameterName, List<String> options, String customMessage, String customDefault){
 
-        String question = String.format(message != null? message : DEFAULT_VALUE_TMPL_WITH_DEFAULT, parameterName, options.get(0));
+        String defaultOption = options.isEmpty()? "" : options.get(0);
+        String question = String.format(message != null? message : DEFAULT_VALUE_TMPL_WITH_DEFAULT, parameterName, defaultOption);
 
         if (value != null) {
             return value;
@@ -267,7 +273,7 @@ public class DefaultWizard implements Wizard {
     public String promptForExistingServerIdIfMissing(String serverId) {
         File omrsHome = new File(Server.getServersPath());
         List<String> servers = getListOfServers();
-        serverId = promptForMissingValueWithOptions("You have the following servers:", serverId, "serverId", servers, null, null);
+        serverId = promptForMissingValueWithOptions("You have the following servers:", serverId, "serverId", servers);
         if (serverId.equals(NONE)) {
             throw new RuntimeException(INVALID_SERVER);
         }
@@ -428,9 +434,9 @@ public class DefaultWizard implements Wizard {
     }
 
 	@Override
-    public void promptForDistroVersionIfMissing(Server server) throws MojoExecutionException {
+    public void promptForRefAppVersionIfMissing(Server server, VersionsHelper versionsHelper) throws MojoExecutionException {
         if(server.getVersion()==null){
-            String choice = promptForDistroVersion();
+            String choice = promptForRefAppVersion(versionsHelper);
             Artifact distro = DistroHelper.parseDistroArtifact(choice);
             if(distro != null){
                 server.setVersion(distro.getVersion());
@@ -444,11 +450,14 @@ public class DefaultWizard implements Wizard {
         }
     }
 
-    public String promptForDistroVersion() {
+    public String promptForRefAppVersion(VersionsHelper versionsHelper) {
+        int maxOptionsSize = 5;
         Map<String, String> optionsMap = new LinkedHashMap<>();
-        optionsMap.put(String.format(REFAPP_OPTION_TMPL, "2.4"), String.format(REFAPP_ARTIFACT_TMPL, "2.4"));
-        for(String version : SDKConstants.SUPPPORTED_REFAPP_VERSIONS_2_3_1_OR_LOWER){
+        Set<String> versions = new LinkedHashSet<>(versionsHelper.getVersionAdvice(SDKConstants.getReferenceModule("2.3.1"), maxOptionsSize));
+        versions.addAll(SDKConstants.SUPPPORTED_REFAPP_VERSIONS_2_3_1_OR_LOWER);
+        for(String version : versions){
             optionsMap.put(String.format(REFAPP_OPTION_TMPL, version), String.format(REFAPP_ARTIFACT_TMPL, version));
+            if(optionsMap.size()== maxOptionsSize) break;
         }
 
         String version = promptForMissingValueWithOptions(DISTRIBUTION_VERSION_PROMPT,

@@ -72,12 +72,11 @@ public abstract class AbstractTask extends AbstractMojo {
     Wizard wizard;
 
     /**
-     * Interactive mode flag, set for 'false' allows automatic testing in batch mode,
-     * as it makes all 'yes/no' prompts return 'yes'
+     * test mode, if true disables interactive mode and uses batchAnswers, even if there is none
      *
-     * @parameter expression="${interactiveMode}" default-value="true"
+     * @parameter expression="${testMode}" default-value="false"
      */
-    String interactiveMode;
+    String testMode;
 
     /**
      * path to openmrs directory
@@ -153,7 +152,7 @@ public abstract class AbstractTask extends AbstractMojo {
         if(StringUtils.isNotBlank(openMRSPath)){
             Server.setServersPath(openMRSPath);
         }
-        if(batchAnswers != null && !batchAnswers.isEmpty()){
+        if((batchAnswers != null && !batchAnswers.isEmpty())||"true".equals(testMode)){
             wizard.setAnswers(batchAnswers);
             wizard.setInteractiveMode(false);
         }

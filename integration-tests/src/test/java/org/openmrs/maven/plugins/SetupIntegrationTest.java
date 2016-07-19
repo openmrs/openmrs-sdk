@@ -25,7 +25,6 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
         addMockDbSettings();
         addAnswer(serverId);
         addAnswer(System.getProperty("java.home"));
-        addTaskParam(BATCH_ANSWERS, getAnswers());
 
         executeTask("setup");
 
@@ -52,7 +51,6 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
 
         addAnswer(serverId);
         addAnswer(System.getProperty("java.home"));
-        addTaskParam(BATCH_ANSWERS, getAnswers());
 
         executeTask("setup");
 
@@ -77,7 +75,7 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
 
         addAnswer(serverId);
         addAnswer(System.getProperty("java.home"));
-        addTaskParam(BATCH_ANSWERS, getAnswers());
+
 
         executeTask("setup");
 
@@ -95,7 +93,6 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
         addMockDbSettings();
 
         addAnswer(System.getProperty("java.home"));
-        addTaskParam(BATCH_ANSWERS, getAnswers());
 
         executeTask("setup");
 
@@ -116,7 +113,6 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
         addAnswer("Distribution");
         addAnswer("referenceapplication:2.4");
         addAnswer(System.getProperty("java.home"));
-        addTaskParam(BATCH_ANSWERS, getAnswers());
 
         executeTask("setup");
         assertSuccess();
@@ -140,7 +136,6 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
         addAnswer(serverId);
         addAnswer("Distribution");
         addAnswer("referenceapplication:2.4");
-        addTaskParam(BATCH_ANSWERS, getAnswers());
 
         addMockDbSettings();
 
