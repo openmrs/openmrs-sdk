@@ -11,6 +11,7 @@ import org.openmrs.maven.plugins.utility.SDKConstants;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.*;
 
@@ -135,16 +136,10 @@ public class Server {
 
     public static boolean hasServerConfig(File dir) {
         if (dir.exists()) {
-            File properties = new File(dir, SDKConstants.OPENMRS_SERVER_PROPERTIES);
-            if(!properties.exists()){       //This is for backwards compatibility with SDK 2.x and below
-                File installationProperties = new File(dir, "installation.properties");
-                if(installationProperties.exists()) {
-                    installationProperties.renameTo(properties);
-                }
-            }
-            return properties.exists();
+            File serverProperties = new File(dir, SDKConstants.OPENMRS_SERVER_PROPERTIES);
+            File installationProperties = new File(dir, "installation.properties");
+            return serverProperties.exists() || installationProperties.exists();
         }
-
         return false;
     }
 
@@ -174,7 +169,7 @@ public class Server {
 
     public static Server loadServer(File dir) throws MojoExecutionException {
         if (!hasServerConfig(dir)) {
-            throw new IllegalArgumentException(SDKConstants.OPENMRS_SERVER_PROPERTIES + " propertiesFile is missing");
+            throw new IllegalArgumentException(SDKConstants.OPENMRS_SERVER_PROPERTIES + " properties file is missing");
         }
 
         Properties properties = new Properties();
@@ -651,6 +646,21 @@ public class Server {
             } catch (IOException e) {
                 System.out.println("Could not delete tmp directory");
             }
+        }
+    }
+
+    public String getWebappVersionFromFilesystem() throws MojoExecutionException {
+        File[] files = serverDirectory.listFiles(new FilenameFilter() {
+            @Override
+            public boolean accept(File dir, String name) {
+                return name.contains(".war");
+            }
+        });
+        if(files.length != 1){
+            throw new MojoExecutionException("Server "+getServerId()+" has none or more than one installed OpenMRS webapp copies");
+        } else {
+            //format of webapp name is openmrs-{version}.war
+            return org.apache.maven.shared.utils.StringUtils.stripEnd(org.apache.maven.shared.utils.StringUtils.stripStart(files[0].getName(), "openmrs-"), ".war");
         }
     }
 }

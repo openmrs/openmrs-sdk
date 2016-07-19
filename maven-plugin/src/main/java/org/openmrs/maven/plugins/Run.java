@@ -61,7 +61,7 @@ public class Run extends AbstractTask {
 			if (currentProperties != null) serverId = currentProperties.getName();
 		}
 		serverId = wizard.promptForExistingServerIdIfMissing(serverId);
-		Server server = Server.loadServer(serverId);
+		Server server = loadValidatedServer(serverId);
 		File serverPath = server.getServerDirectory();
 		serverPath.mkdirs();
 		File userDir = new File(System.getProperty("user.dir"));

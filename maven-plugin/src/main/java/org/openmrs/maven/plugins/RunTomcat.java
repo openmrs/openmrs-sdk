@@ -5,7 +5,6 @@ import org.apache.catalina.LifecycleException;
 import org.apache.catalina.loader.WebappLoader;
 import org.apache.catalina.startup.Tomcat;
 import org.apache.commons.lang.StringUtils;
-import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.codehaus.plexus.classworlds.ClassWorld;
@@ -26,7 +25,7 @@ import java.util.Set;
  * @goal run-tomcat
  * @requiresProject false
  */
-public class RunTomcat extends AbstractMojo {
+public class RunTomcat extends AbstractTask {
 
 	/**
 	 * @parameter expression="${serverId}"
@@ -59,7 +58,7 @@ public class RunTomcat extends AbstractMojo {
 	}
 
 	@Override
-	public void execute() throws MojoExecutionException, MojoFailureException {
+	public void executeTask() throws MojoExecutionException, MojoFailureException {
 		System.out.println("\nUsing JAVA_HOME: " + System.getProperty("java.home") + "\n");
 		System.out.println("Using MAVEN_OPTS: " + System.getenv("MAVEN_OPTS") + "\n");
 
@@ -144,7 +143,7 @@ public class RunTomcat extends AbstractMojo {
 	}
 
 	private void setSystemPropertiesForWatchedProjects(File serverPath) throws MojoExecutionException {
-		Server serverConfig = Server.loadServer(serverPath);
+		Server serverConfig = loadValidatedServer(serverPath.getName());
 		Set<Project> watchedProjects = serverConfig.getWatchedProjects();
 		if (!watchedProjects.isEmpty()) {
 			if (isWatchApi()) {

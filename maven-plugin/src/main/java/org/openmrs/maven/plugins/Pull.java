@@ -1,7 +1,6 @@
 package org.openmrs.maven.plugins;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.maven.model.Model;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.eclipse.jgit.api.CheckoutCommand;
@@ -10,24 +9,18 @@ import org.eclipse.jgit.api.MergeCommand;
 import org.eclipse.jgit.api.PullCommand;
 import org.eclipse.jgit.api.PullResult;
 import org.eclipse.jgit.api.RebaseCommand;
-import org.eclipse.jgit.api.RemoteAddCommand;
-import org.eclipse.jgit.api.RemoteRemoveCommand;
 import org.eclipse.jgit.api.ResetCommand;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.api.errors.StashApplyFailureException;
-import org.eclipse.jgit.internal.storage.file.FileRepository;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
-import org.eclipse.jgit.transport.RemoteConfig;
-import org.eclipse.jgit.transport.URIish;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.utility.CompositeException;
 import org.openmrs.maven.plugins.utility.Project;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -131,7 +124,7 @@ public class Pull extends AbstractTask {
      */
     private void pullWatchedProjects() throws MojoExecutionException {
         serverId = wizard.promptForExistingServerIdIfMissing(serverId);
-        Server server = Server.loadServer(serverId);
+        Server server = loadValidatedServer(serverId);
 
         if(server.hasWatchedProjects()){
             Set<Project> watchedProjects = server.getWatchedProjects();

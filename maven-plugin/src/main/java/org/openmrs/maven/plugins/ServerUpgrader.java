@@ -3,11 +3,13 @@ package org.openmrs.maven.plugins;
 import org.apache.commons.io.FileUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.shared.utils.StringUtils;
 import org.openmrs.maven.plugins.model.*;
 import org.openmrs.maven.plugins.utility.DistroHelper;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 
 import java.io.File;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -120,4 +122,67 @@ public class ServerUpgrader {
         server.setPlatformVersion(version);
         server.save();
     }
+
+	public void validateServerMetadata(File serverPath) throws MojoExecutionException {
+		File serverProperties = new File(serverPath, SDKConstants.OPENMRS_SERVER_PROPERTIES);
+		File installationProperties = new File(serverPath, "installation.properties");
+		Server server = null;
+
+		if (installationProperties.exists()){
+			if(serverProperties.exists()){
+				FileUtils.deleteQuietly(installationProperties);
+			} else {
+				installationProperties.renameTo(serverProperties);
+			}
+		}
+
+		if(serverProperties.exists()){
+			server = Server.loadServer(serverPath);
+			String webappVersion = server.getWebappVersionFromFilesystem();
+			if(!webappVersion.equals(server.getPlatformVersion())){
+				String version = server.getVersion();
+				String platformVersion = server.getPlatformVersion();
+				if(platformVersion != null){
+					//case: distribution:
+					if(version!=null){
+						if(version.equals(server.getWebappVersionFromFilesystem())){
+							server.setPlatformVersion(version);
+							server.setVersion(platformVersion);
+						} else {
+							throw new MojoExecutionException("Invalid versions configured in openmrs-server.properties file");
+						}
+					}
+					//case:platform
+					else {
+						server.setVersion(platformVersion);
+					}
+				} else {
+					server.setPlatformVersion(server.getWebappVersionFromFilesystem());
+				}
+			}
+			if(server.getVersion() != null){
+				if(server.getVersion().equals("2.3")){
+					this.parentTask.wizard.showMessage("Please note that Reference Application 2.3 is not supported" +
+							"\nFunctions other than 'run' will not work properly, " +
+							"\nIt is recommended to use version 2.3.1 instead");
+				}
+				configureMissingDistroArtifact(server);
+				if(!new File(serverPath, DistroProperties.DISTRO_FILE_NAME).exists()){
+					String distro = server.getDistroArtifactId() + ":" + server.getVersion();
+					parentTask.distroHelper.saveDistroPropertiesTo(serverPath, distro);
+				}
+			}
+		} else throw new MojoExecutionException("There is no server properties file in this directory");
+
+		server.save();
+	}
+
+	private void configureMissingDistroArtifact(Server server) {
+		if(server.getDistroArtifactId() == null){
+            server.setDistroArtifactId(SDKConstants.REFERENCEAPPLICATION_ARTIFACT_ID);
+        }
+		if(server.getDistroGroupId() == null){
+            server.setDistroGroupId(Artifact.GROUP_DISTRO);
+        }
+	}
 }

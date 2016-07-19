@@ -1,7 +1,6 @@
 package org.openmrs.maven.plugins;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.openmrs.maven.plugins.model.Server;
@@ -43,7 +42,7 @@ public class Unwatch extends AbstractTask {
 	@Override
     public void executeTask() throws MojoExecutionException, MojoFailureException {
 	    serverId = wizard.promptForExistingServerIdIfMissing(serverId);
-	    Server serverConfig = Server.loadServer(serverId);
+	    Server serverConfig = loadValidatedServer(serverId);
 	    
 	    File userDir = new File(System.getProperty("user.dir"));
 	    if (StringUtils.isBlank(artifactId) && Project.hasProject(userDir)) {

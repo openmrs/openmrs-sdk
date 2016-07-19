@@ -38,7 +38,7 @@ public class Reset extends AbstractTask {
             if (currentProperties != null) serverId = currentProperties.getName();
         }
         serverId = wizard.promptForExistingServerIdIfMissing(serverId);
-        Server server = Server.loadServer(serverId);
+        Server server = loadValidatedServer(serverId);
         DBConnector connector = null;
         try {
             String dbName = String.format(SDKConstants.DB_NAME_TEMPLATE, serverId);

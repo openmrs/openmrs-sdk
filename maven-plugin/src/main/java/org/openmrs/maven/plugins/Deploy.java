@@ -91,7 +91,7 @@ public class Deploy extends AbstractTask {
             if (currentProperties != null) serverId = currentProperties.getName();
         }
         serverId = wizard.promptForExistingServerIdIfMissing(serverId);
-        Server server = Server.loadServer(serverId);
+        Server server = loadValidatedServer(serverId);
         /**
          * workflow:
          * -if user specified both distro and platform, ignore them and enter interactive mode
@@ -251,7 +251,7 @@ public class Deploy extends AbstractTask {
         }
 
         serverId = wizard.promptForExistingServerIdIfMissing(serverId);
-        Server server = Server.loadServer(serverId);
+        Server server = loadValidatedServer(serverId);
         deployModule(groupId, artifactId, version, server);
     }
 
