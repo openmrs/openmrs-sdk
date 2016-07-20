@@ -46,7 +46,7 @@ public class ServerUpgrader {
 			server.saveBackupProperties();
 			List<Artifact> userModules = server.getUserModules();
 
-			String modulesDir = server.getServerDirectory().getPath()+"/"+SDKConstants.OPENMRS_SERVER_MODULES;
+			String modulesDir = server.getServerDirectory().getPath()+File.separator+SDKConstants.OPENMRS_SERVER_MODULES;
 			if(upgradeDifferential.getPlatformArtifact()!=null){
 				replaceWebapp(server, upgradeDifferential.getPlatformArtifact().getVersion());
 			}
@@ -142,7 +142,7 @@ public class ServerUpgrader {
 			if(!webappVersion.equals(server.getPlatformVersion())){
 				String version = server.getVersion();
 				String platformVersion = server.getPlatformVersion();
-				if(platformVersion != null){
+				if(StringUtils.isNotBlank(platformVersion)){
 					//case: distribution:
 					if(version!=null){
 						if(version.equals(server.getWebappVersionFromFilesystem())){
@@ -160,7 +160,7 @@ public class ServerUpgrader {
 					server.setPlatformVersion(server.getWebappVersionFromFilesystem());
 				}
 			}
-			if(server.getVersion() != null){
+			if(StringUtils.isNotBlank(server.getVersion())){
 				if(server.getVersion().equals("2.3")){
 					this.parentTask.wizard.showMessage("Please note that Reference Application 2.3 is not supported" +
 							"\nFunctions other than 'run' will not work properly, " +

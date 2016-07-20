@@ -343,7 +343,7 @@ public class Server {
     }
 
     /**
-     * adds artifact to user modules list in installation.properties file
+     * adds artifact to user modules list in openmrs-server.properties file
      */
     public void saveUserModule(Artifact artifact) throws MojoExecutionException {
         String[] params = {artifact.getGroupId(), StringUtils.removeEnd(artifact.getArtifactId(), "-omod"), artifact.getVersion()};
@@ -352,7 +352,7 @@ public class Server {
     }
 
     /**
-     * removes artifact from user modules list in installation.properties
+     * removes artifact from user modules list in openmrs-server.properties
      */
     public boolean removeUserModule(Artifact artifact) throws MojoExecutionException {
         List<Artifact> userModules = getUserModules();
@@ -397,13 +397,29 @@ public class Server {
     /**
      * Get artifacts of core and all modules on server
      */
-
     public List<Artifact> getServerModules() throws MojoExecutionException {
-        List<Artifact> artifacts;
-        DistroProperties distroProperties = new DistroProperties(getDistroPropertiesFile());
-        artifacts = distroProperties.getModuleArtifacts();
-        artifacts.addAll(distroProperties.getWarArtifacts());
-        artifacts.addAll(getUserModules());
+        List<Artifact> artifacts = new ArrayList<>();
+        File propertiesFile = getDistroPropertiesFile();
+        if(propertiesFile.exists()){
+            DistroProperties distroProperties = new DistroProperties(propertiesFile);
+            artifacts.addAll(distroProperties.getModuleArtifacts());
+            artifacts.addAll(distroProperties.getWarArtifacts());
+            for(Artifact userArtifact : getUserModules()){
+                for(Artifact artifact : artifacts){
+                    boolean equalArtifactId = userArtifact.getArtifactId().equals(artifact.getArtifactId());
+                    boolean equalGroupId = userArtifact.getGroupId().equals(artifact.getGroupId());
+                    if(equalArtifactId && equalGroupId){
+                        Version artifactVersion = new Version(artifact.getVersion());
+                        Version userArtifactVersion = new Version(userArtifact.getVersion());
+                        if(!artifactVersion.equal(userArtifactVersion)){
+                            artifact.setVersion(userArtifact.getVersion());
+                        }
+                    }
+                }
+            }
+        } else {
+            artifacts.addAll(getUserModules());
+        }
         return artifacts;
     }
 
