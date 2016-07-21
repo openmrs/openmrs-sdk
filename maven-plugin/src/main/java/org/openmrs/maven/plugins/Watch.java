@@ -4,7 +4,6 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.utility.Project;
-import org.openmrs.maven.plugins.utility.Wizard;
 
 import java.io.File;
 
@@ -20,12 +19,6 @@ public class Watch extends AbstractTask {
      * @parameter expression="${serverId}"
      */
     private String serverId;
-
-    /**1
-     * @required
-     * @component
-     */
-    Wizard wizard;
 
 	@Override
     public void executeTask() throws MojoExecutionException, MojoFailureException {

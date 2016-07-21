@@ -30,7 +30,6 @@ import java.util.List;
  */
 public class Setup extends AbstractTask {
 
-    private static final String GOAL_UNPACK = "unpack";
     private static final String DISTRIBUTION = "Distribution";
     private static final String PLATFORM = "Platform";
     public static final String SETTING_UP_A_NEW_SERVER = "Setting up a new server...";
@@ -359,7 +358,6 @@ public class Setup extends AbstractTask {
 
         boolean createPlatform = false;
         DistroProperties distroProperties = null;
-        String version = null;
         if(platform == null && distro == null){
             List<String> options = new ArrayList<>();
             distroProperties = DistroHelper.getDistroPropertiesFromDir();
