@@ -192,7 +192,7 @@ public class Setup extends AbstractTask {
         configureVersion(server, isCreatePlatform);
 
         String platformVersion = server.getPlatformVersion();
-        if (platformVersion.charAt(0) == 1) {
+        if (platformVersion.startsWith("1.")) {
             wizard.showMessage("Note: JDK 1.7 is needed for platform version " + platformVersion + ".");
         }
         else {
