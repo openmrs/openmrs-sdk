@@ -261,7 +261,7 @@ public class Setup extends AbstractTask {
     }
 
     private void importMysqlDb(Server server, String sqlScriptPath) throws MojoExecutionException {
-        wizard.showMessage("Importing a database from " + sqlScriptPath + "...");
+        wizard.showMessage("Importing an initial database from " + sqlScriptPath + "...");
         String uri = server.getDbUri().replace("@DBNAME@", server.getDbName());
 
         File extractedSqlFile = null;

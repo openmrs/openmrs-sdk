@@ -314,17 +314,16 @@ public class DefaultWizard implements Wizard {
         }
 
         if (interactiveMode) {
-            List<String> paths = new ArrayList<>();
-            paths.add("JAVA_HOME (currently: " + System.getProperty("java.home") + ")");
-            paths.addAll(getJavaHomeOptions());
+            List<String> options = new ArrayList<>();
+            options.add("JAVA_HOME (currently: " + System.getProperty("java.home") + ")");
+            options.addAll(getJavaHomeOptions());
 
-            String path = promptForMissingValueWithOptions(SDKConstants.OPENMRS_SDK_JDK_OPTION,
-                    server.getJavaHome(), "path", paths, SDKConstants.OPENMRS_SDK_JDK_CUSTOM, null);
+            String selectedOption = promptForMissingValueWithOptions(SDKConstants.OPENMRS_SDK_JDK_OPTION,
+                    server.getJavaHome(), "path", options, SDKConstants.OPENMRS_SDK_JDK_CUSTOM, null);
 
             String requiredJdkVersion;
             String notRecommendedJdkVersion = "Not recommended";
-            char platformVersionNumber = server.getPlatformVersion().charAt(0);
-            if (platformVersionNumber == '1') {
+            if (server.getPlatformVersion().startsWith("1.")) {
                 requiredJdkVersion = "1.7";
                 notRecommendedJdkVersion = "1.8";
             }
@@ -333,7 +332,7 @@ public class DefaultWizard implements Wizard {
             }
 
             // Use default JAVA_HOME
-            if (path.equals(paths.get(0))) {
+            if (selectedOption.equals(options.get(0))) {
                 if (System.getProperty("java.version").startsWith(requiredJdkVersion)) {
                     server.setJavaHome(null);
                 }
@@ -352,14 +351,14 @@ public class DefaultWizard implements Wizard {
                     showMessage("Required: " + requiredJdkVersion);
                     promptForJavaHomeIfMissing(server);
                 }
-            } else if (!isJavaHomeValid(path)) {
+            } else if (!isJavaHomeValid(selectedOption)) {
                 System.out.println(SDKConstants.OPENMRS_SDK_JDK_CUSTOM_INVALID);
                 promptForJavaHomeIfMissing(server);
             } else {
-                String jdkUnderSpecifiedPathVersion = extractJavaVersionFromPath(path);
+                String jdkUnderSpecifiedPathVersion = determineJavaVersionFromPath(selectedOption);
                 if (jdkUnderSpecifiedPathVersion.startsWith(requiredJdkVersion)) {
-                    server.setJavaHome(path);
-                    addJavaHomeToSdkProperties(path);
+                    server.setJavaHome(selectedOption);
+                    addJavaHomeToSdkProperties(selectedOption);
                 }
                 else if (jdkUnderSpecifiedPathVersion.startsWith(notRecommendedJdkVersion)) {
                     boolean isSelectJdk7 = promptYesNo("It is not recommended to run OpenMRS platform " + server.getPlatformVersion() + " on JDK 8. Would you like to select the recommended JDK 7 instead?");
@@ -371,7 +370,7 @@ public class DefaultWizard implements Wizard {
                     }
                 }
                 else {
-                    showMessage("JDK in custom path (" + path + ") doesn't match platform requirements:");
+                    showMessage("JDK in custom path (" + selectedOption + ") doesn't match platform requirements:");
                     showMessage("JDK version: " + jdkUnderSpecifiedPathVersion);
                     showMessage("Required: " + requiredJdkVersion);
                     promptForJavaHomeIfMissing(server);
@@ -380,25 +379,26 @@ public class DefaultWizard implements Wizard {
         }
     }
 
-    private String extractJavaVersionFromPath(String path) {
+    private String determineJavaVersionFromPath(String path) {
+        File javaPath = new File(path, "bin");
+
         List<String> commands = new ArrayList<>();
-        commands.add("./java");
+        if (System.getProperty("os.name").toLowerCase(Locale.ENGLISH).contains("windows")) {
+            javaPath = new File(javaPath, "java.exe");
+        } else {
+            javaPath = new File(javaPath, "java");
+        }
+        commands.add(javaPath.toString());
         commands.add("-version");
 
         ProcessBuilder processBuilder = new ProcessBuilder(commands);
         processBuilder.redirectErrorStream(true);
 
-        processBuilder.environment().put("JAVA_HOME", path);
-
-        processBuilder.directory(new File(path.replace("/jre","/bin")));
-
-        String result = null;
-
+        String result;
         try {
             final Process process = processBuilder.start();
-            BufferedReader stdInput = new BufferedReader(new InputStreamReader(process.getInputStream()));
-
-            result = stdInput.readLine();
+            List<String> output = IOUtils.readLines(process.getInputStream());
+            result = StringUtils.join(output.iterator(), "\n");
         } catch (IOException e) {
             throw new RuntimeException("Failed to fetch Java version from \"" + path + "\"");
         }
@@ -409,7 +409,7 @@ public class DefaultWizard implements Wizard {
             return m.group(1);
         }
         else {
-            return null;
+            throw new RuntimeException("Failed to fetch Java version from \"" + path + "\". 'java -version' returned " + result);
         }
     }
 
