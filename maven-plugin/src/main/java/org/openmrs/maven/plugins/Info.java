@@ -23,12 +23,6 @@ public class Info extends AbstractTask {
      */
     private String serverId;
 
-    /**
-     * @required
-     * @component
-     */
-    Wizard wizard;
-
 	@Override
     public void executeTask() throws MojoExecutionException, MojoFailureException {
 	    serverId = wizard.promptForExistingServerIdIfMissing(serverId);
