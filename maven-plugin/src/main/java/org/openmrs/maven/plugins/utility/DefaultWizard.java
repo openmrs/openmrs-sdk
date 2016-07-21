@@ -17,8 +17,10 @@ import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.model.UpgradeDifferential;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.InputStreamReader;
 import java.net.URISyntaxException;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -27,6 +29,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Class for attribute helper functions
@@ -317,19 +321,96 @@ public class DefaultWizard implements Wizard {
             String path = promptForMissingValueWithOptions(SDKConstants.OPENMRS_SDK_JDK_OPTION,
                     server.getJavaHome(), "path", paths, SDKConstants.OPENMRS_SDK_JDK_CUSTOM, null);
 
+            String requiredJdkVersion;
+            String notRecommendedJdkVersion = "Not recommended";
+            char platformVersionNumber = server.getPlatformVersion().charAt(0);
+            if (platformVersionNumber == '1') {
+                requiredJdkVersion = "1.7";
+                notRecommendedJdkVersion = "1.8";
+            }
+            else {
+                requiredJdkVersion = "1.8";
+            }
+
+            // Use default JAVA_HOME
             if (path.equals(paths.get(0))) {
-                // Use default JAVA_HOME
-                server.setJavaHome(null);
+                if (System.getProperty("java.version").startsWith(requiredJdkVersion)) {
+                    server.setJavaHome(null);
+                }
+                else if (System.getProperty("java.version").startsWith(notRecommendedJdkVersion)) {
+                    boolean isSelectJdk7 = promptYesNo("It is not recommended to run OpenMRS platform " + server.getPlatformVersion() + " on JDK 8. Would you like to select the recommended JDK 7 instead?");
+                    if (isSelectJdk7) {
+                        promptForJavaHomeIfMissing(server);
+                    }
+                    else {
+                        server.setJavaHome(null);
+                    }
+                }
+                else {
+                    showMessage("Your JAVA_HOME version doesn't fit platform requirements:");
+                    showMessage("JAVA_HOME version: " + System.getProperty("java.version"));
+                    showMessage("Required: " + requiredJdkVersion);
+                    promptForJavaHomeIfMissing(server);
+                }
             } else if (!isJavaHomeValid(path)) {
                 System.out.println(SDKConstants.OPENMRS_SDK_JDK_CUSTOM_INVALID);
                 promptForJavaHomeIfMissing(server);
             } else {
-                server.setJavaHome(path);
-                addJavaHomeToSdkProperties(path);
+                String jdkUnderSpecifiedPathVersion = extractJavaVersionFromPath(path);
+                if (jdkUnderSpecifiedPathVersion.startsWith(requiredJdkVersion)) {
+                    server.setJavaHome(path);
+                    addJavaHomeToSdkProperties(path);
+                }
+                else if (jdkUnderSpecifiedPathVersion.startsWith(notRecommendedJdkVersion)) {
+                    boolean isSelectJdk7 = promptYesNo("It is not recommended to run OpenMRS platform " + server.getPlatformVersion() + " on JDK 8. Would you like to select the recommended JDK 7 instead?");
+                    if (isSelectJdk7) {
+                        promptForJavaHomeIfMissing(server);
+                    }
+                    else {
+                        server.setJavaHome(null);
+                    }
+                }
+                else {
+                    showMessage("JDK in custom path (" + path + ") doesn't match platform requirements:");
+                    showMessage("JDK version: " + jdkUnderSpecifiedPathVersion);
+                    showMessage("Required: " + requiredJdkVersion);
+                    promptForJavaHomeIfMissing(server);
+                }
             }
         }
+    }
 
+    private String extractJavaVersionFromPath(String path) {
+        List<String> commands = new ArrayList<>();
+        commands.add("./java");
+        commands.add("-version");
 
+        ProcessBuilder processBuilder = new ProcessBuilder(commands);
+        processBuilder.redirectErrorStream(true);
+
+        processBuilder.environment().put("JAVA_HOME", path);
+
+        processBuilder.directory(new File(path.replace("/jre","/bin")));
+
+        String result = null;
+
+        try {
+            final Process process = processBuilder.start();
+            BufferedReader stdInput = new BufferedReader(new InputStreamReader(process.getInputStream()));
+
+            result = stdInput.readLine();
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to fetch Java version from \"" + path + "\"");
+        }
+
+        Pattern p = Pattern.compile(".*\\\"(.*)\\\".*");
+        Matcher m = p.matcher(result);
+        if (m.find()) {
+            return m.group(1);
+        }
+        else {
+            return null;
+        }
     }
 
     private void addJavaHomeToSdkProperties(String path) {
