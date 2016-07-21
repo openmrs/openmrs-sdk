@@ -44,7 +44,7 @@ public class DefaultWizard implements Wizard {
     private static final String DEFAULT_FAIL_MESSAGE = "Server with such serverId is not exists";
     private static final String INVALID_SERVER = "Invalid server Id";
     private static final String YESNO = " [Y/n]";
-    private static final String REFERENCEAPPLICATION_2_3 = "org.openmrs.distro:referenceapplication-package:2.3.1";
+    private static final String REFERENCEAPPLICATION_2_4 = "org.openmrs.distro:referenceapplication-package:2.4";
     private static final String DEFAULT_CUSTOM_DIST_ARTIFACT = "Please specify custom distribution artifact%s (default: '%s')";
     private static final String CUSTOM_JDK_PATH = "Please specify a path to JDK used for running this server (-Djdk)";
     private static final String SDK_PROPERTIES_FILE = "SDK Properties file";
@@ -181,7 +181,7 @@ public class DefaultWizard implements Wizard {
             if (chosenIndex < options.size()){
                 return options.get(chosenIndex);
             } else if(chosenIndex == options.size() && customMessage != null) {
-                return promptForValueIfMissingWithDefault(customMessage, null, "", customDefault);
+                return promptForValueIfMissingWithDefault(customMessage, null, parameterName, customDefault);
             }
         }
 
@@ -461,7 +461,7 @@ public class DefaultWizard implements Wizard {
         }
 
         String version = promptForMissingValueWithOptions(DISTRIBUTION_VERSION_PROMPT,
-                null, "version", Lists.newArrayList(optionsMap.keySet()), "Please specify distribution artifact", REFERENCEAPPLICATION_2_3);
+                null, "distribution artifact", Lists.newArrayList(optionsMap.keySet()), "Please specify %s (default: '%s')", REFERENCEAPPLICATION_2_4);
 
         String artifact = optionsMap.get(version);
         if (artifact != null) {
