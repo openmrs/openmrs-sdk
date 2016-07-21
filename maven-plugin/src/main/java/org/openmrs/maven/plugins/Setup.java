@@ -125,16 +125,8 @@ public class Setup extends AbstractTask {
      * @throws MojoExecutionException
      */
     public String setup(Server server, boolean isCreatePlatform, boolean isCopyDependencies, DistroProperties distroProperties) throws MojoExecutionException, MojoFailureException {
-        File openMRS = Server.getServersPathFile();
         wizard.promptForNewServerIfMissing(server);
-
-        File serverPath = new File(openMRS, server.getServerId());
-        if (Server.hasServerConfig(serverPath)) {
-            Server props = Server.loadServer(serverPath);
-            if (props.getServerId() != null) {
-                throw new MojoExecutionException("Server with the same id already exists");
-            }
-        }
+        File serverPath = new File(Server.getServersPathFile(), server.getServerId());
         server.setServerDirectory(serverPath);
 
         if (distroProperties == null) {
@@ -362,6 +354,11 @@ public class Setup extends AbstractTask {
                 .setJavaHome(javaHome)
                 .build();
         wizard.promptForNewServerIfMissing(server);
+
+        File serverDir = new File(Server.getServersPath(), server.getServerId());
+        if (serverDir.isDirectory() && serverDir.exists()) {
+            throw new MojoExecutionException("Cannot create server: directory with name "+serverDir.getName()+" already exists");
+        }
 
         boolean createPlatform = false;
         DistroProperties distroProperties = null;
