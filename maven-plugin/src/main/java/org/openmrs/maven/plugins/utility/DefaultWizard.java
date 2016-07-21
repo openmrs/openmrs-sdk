@@ -4,6 +4,8 @@ import com.google.common.collect.Lists;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.maven.artifact.versioning.ArtifactVersion;
+import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugin.logging.Log;
@@ -16,6 +18,7 @@ import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.model.UpgradeDifferential;
+import org.openmrs.maven.plugins.model.Version;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -536,7 +539,11 @@ public class DefaultWizard implements Wizard {
         Map<String, String> optionsMap = new LinkedHashMap<>();
         Set<String> versions = new LinkedHashSet<>(versionsHelper.getVersionAdvice(SDKConstants.getReferenceModule("2.3.1"), maxOptionsSize));
         versions.addAll(SDKConstants.SUPPPORTED_REFAPP_VERSIONS_2_3_1_OR_LOWER);
+        List<ArtifactVersion> artifactVersions = new ArrayList<>();
         for(String version : versions){
+            artifactVersions.add(new DefaultArtifactVersion(version));
+        }
+        for(String version : versionsHelper.getVersionAdvice(artifactVersions, 5)){
             optionsMap.put(String.format(REFAPP_OPTION_TMPL, version), String.format(REFAPP_ARTIFACT_TMPL, version));
             if(optionsMap.size()== maxOptionsSize) break;
         }
@@ -607,7 +614,11 @@ public class DefaultWizard implements Wizard {
         Map<Long, String> sortedMap = new TreeMap<Long, String>(Collections.reverseOrder());
         File [] list = (openMRS.listFiles() == null) ? new File[0] : openMRS.listFiles();
         for (File f: list) {
-            if (f.isDirectory()) sortedMap.put(f.lastModified(), f.getName());
+            if (f.isDirectory()){
+                if(Server.hasServerConfig(f)){
+                    sortedMap.put(f.lastModified(), f.getName());
+                }
+            }
         }
         return new ArrayList<String>(sortedMap.values());
     }

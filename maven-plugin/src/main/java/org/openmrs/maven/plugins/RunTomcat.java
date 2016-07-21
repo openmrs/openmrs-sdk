@@ -68,24 +68,19 @@ public class RunTomcat extends AbstractMojo {
 		Server server = Server.loadServer(serverId);
 		String jdk = System.getProperty("java.version");
 
-		boolean isJdkValid;
-		String recommendedJdk;
-
 		Version platformVersion = new Version(server.getPlatformVersion());
 		if(platformVersion.getMajorVersion() == 1){
-			isJdkValid = (jdk.startsWith("1.7"));
-			recommendedJdk = "JDK 1.7";
+			if((jdk.startsWith("1.8"))){
+				wizard.showMessage("Please note that it is not recommended to run OpenMRS platform "+server.getPlatformVersion()+" on JDK 8.\n");
+			}
 		} else if (platformVersion.getMajorVersion() == 2){
-			isJdkValid =  (jdk.startsWith("1.8"));
-			recommendedJdk = "JDK 1.8";
+			if(!(jdk.startsWith("1.8"))){
+				wizard.showJdkErrorMessage(jdk, server.getPlatformVersion(), "JDK 1.8", server.getPropertiesFile().getPath());
+				throw new MojoExecutionException(String.format("The JDK %s is not compatible with OpenMRS Platform %s. ",
+						"JDK 1.8", server.getPlatformVersion()));
+			}
 		} else {
 			throw new MojoExecutionException("Invalid server platform version: "+platformVersion.toString());
-		}
-
-		if(!isJdkValid){
-			wizard.showJdkErrorMessage(jdk, server.getPlatformVersion(), recommendedJdk, server.getPropertiesFile().getPath());
-			throw new MojoExecutionException(String.format("The JDK %s is not compatible with OpenMRS Platform %s. ",
-					jdk, server.getPlatformVersion()));
 		}
 
 		File tempDirectory = server.getServerTmpDirectory();
