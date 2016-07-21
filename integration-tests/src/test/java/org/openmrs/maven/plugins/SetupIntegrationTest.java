@@ -111,7 +111,7 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
 
         addAnswer(serverId);
         addAnswer("Distribution");
-        addAnswer("referenceapplication:2.4");
+        addAnswer("referenceapplication:2.2");
         addAnswer(System.getProperty("java.home"));
 
         executeTask("setup");
@@ -135,7 +135,7 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
 
         addAnswer(serverId);
         addAnswer("Distribution");
-        addAnswer("referenceapplication:2.4");
+        addAnswer("referenceapplication:2.2");
 
         addMockDbSettings();
 
