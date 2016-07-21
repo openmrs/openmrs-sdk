@@ -614,7 +614,11 @@ public class DefaultWizard implements Wizard {
         Map<Long, String> sortedMap = new TreeMap<Long, String>(Collections.reverseOrder());
         File [] list = (openMRS.listFiles() == null) ? new File[0] : openMRS.listFiles();
         for (File f: list) {
-            if (f.isDirectory()) sortedMap.put(f.lastModified(), f.getName());
+            if (f.isDirectory()){
+                if(Server.hasServerConfig(f)){
+                    sortedMap.put(f.lastModified(), f.getName());
+                }
+            }
         }
         return new ArrayList<String>(sortedMap.values());
     }
