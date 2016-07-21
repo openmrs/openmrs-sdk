@@ -199,11 +199,21 @@ public class DistroHelper {
             Artifact artifact = parseDistroArtifact(distro);
             if(isRefapp2_3_1orLower(artifact)){
                 result = new DistroProperties(artifact.getVersion());
-            } else {
+            } else if (!new Version(artifact.getVersion()).lower(new Version("2.4"))) {
                 result = downloadDistroProperties(new File(System.getProperty("user.dir")), artifact);
             }
         }
         return result;
+    }
+
+    /**
+     * resolves distro based on passed artifact and saves distro.properties file in destination
+     */
+    public void saveDistroPropertiesTo(File destination, String distro) throws MojoExecutionException {
+        DistroProperties distroProperties = retrieveDistroProperties(distro);
+        if(distroProperties != null){
+            distroProperties.saveTo(destination);
+        }
     }
 
     /**

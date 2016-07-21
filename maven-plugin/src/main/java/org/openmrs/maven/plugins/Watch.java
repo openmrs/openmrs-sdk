@@ -1,6 +1,5 @@
 package org.openmrs.maven.plugins;
 
-import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.openmrs.maven.plugins.model.Server;
@@ -36,7 +35,7 @@ public class Watch extends AbstractTask {
 	    if (Project.hasProject(userDir)) {
             Project config = Project.loadProject(userDir);
 
-            Server serverConfig = Server.loadServer(serverId);
+            Server serverConfig = loadValidatedServer(serverId);
             serverConfig.addWatchedProject(config);
             serverConfig.save();
 

@@ -221,7 +221,7 @@ public class CreateProject extends CreateProjectFromArchetypeMojo {
     /**
      * The generated project's module author.
      *
-     * @parameter expression="${user.name}" default-value="You"
+     * @parameter expression="${user.name}"
      */
     private String moduleAuthor;
 

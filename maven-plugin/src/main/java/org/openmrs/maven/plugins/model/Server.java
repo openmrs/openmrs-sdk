@@ -11,6 +11,7 @@ import org.openmrs.maven.plugins.utility.SDKConstants;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.*;
 
@@ -135,17 +136,24 @@ public class Server {
 
     public static boolean hasServerConfig(File dir) {
         if (dir.exists()) {
-            File properties = new File(dir, SDKConstants.OPENMRS_SERVER_PROPERTIES);
-            if(!properties.exists()){       //This is for backwards compatibility with SDK 2.x and below
-                File installationProperties = new File(dir, "installation.properties");
-                if(installationProperties.exists()) {
-                    installationProperties.renameTo(properties);
-                }
-            }
-            return properties.exists();
+            File serverProperties = new File(dir, SDKConstants.OPENMRS_SERVER_PROPERTIES);
+            File installationProperties = new File(dir, "installation.properties");
+            return serverProperties.exists() || installationProperties.exists();
         }
-
         return false;
+    }
+
+    /**
+     * @return openmrs-server.properties file if there is server, null otherwise
+     */
+    public static File checkCurrentDirForServer() {
+        File dir = new File(System.getProperty("user.dir"));
+        boolean hasServer = hasServerConfig(dir);
+        if(hasServer){
+            return dir;
+        } else {
+            return null;
+        }
     }
 
     public static Server createServer(File dir) {
@@ -161,7 +169,7 @@ public class Server {
 
     public static Server loadServer(File dir) throws MojoExecutionException {
         if (!hasServerConfig(dir)) {
-            throw new IllegalArgumentException(SDKConstants.OPENMRS_SERVER_PROPERTIES + " propertiesFile is missing");
+            throw new IllegalArgumentException(SDKConstants.OPENMRS_SERVER_PROPERTIES + " properties file is missing");
         }
 
         Properties properties = new Properties();
@@ -335,7 +343,7 @@ public class Server {
     }
 
     /**
-     * adds artifact to user modules list in installation.properties file
+     * adds artifact to user modules list in openmrs-server.properties file
      */
     public void saveUserModule(Artifact artifact) throws MojoExecutionException {
         String[] params = {artifact.getGroupId(), StringUtils.removeEnd(artifact.getArtifactId(), "-omod"), artifact.getVersion()};
@@ -344,7 +352,7 @@ public class Server {
     }
 
     /**
-     * removes artifact from user modules list in installation.properties
+     * removes artifact from user modules list in openmrs-server.properties
      */
     public boolean removeUserModule(Artifact artifact) throws MojoExecutionException {
         List<Artifact> userModules = getUserModules();
@@ -389,13 +397,29 @@ public class Server {
     /**
      * Get artifacts of core and all modules on server
      */
-
     public List<Artifact> getServerModules() throws MojoExecutionException {
-        List<Artifact> artifacts;
-        DistroProperties distroProperties = new DistroProperties(getDistroPropertiesFile());
-        artifacts = distroProperties.getModuleArtifacts();
-        artifacts.addAll(distroProperties.getWarArtifacts());
-        artifacts.addAll(getUserModules());
+        List<Artifact> artifacts = new ArrayList<>();
+        File propertiesFile = getDistroPropertiesFile();
+        if(propertiesFile.exists()){
+            DistroProperties distroProperties = new DistroProperties(propertiesFile);
+            artifacts.addAll(distroProperties.getModuleArtifacts());
+            artifacts.addAll(distroProperties.getWarArtifacts());
+            for(Artifact userArtifact : getUserModules()){
+                for(Artifact artifact : artifacts){
+                    boolean equalArtifactId = userArtifact.getArtifactId().equals(artifact.getArtifactId());
+                    boolean equalGroupId = userArtifact.getGroupId().equals(artifact.getGroupId());
+                    if(equalArtifactId && equalGroupId){
+                        Version artifactVersion = new Version(artifact.getVersion());
+                        Version userArtifactVersion = new Version(userArtifact.getVersion());
+                        if(!artifactVersion.equal(userArtifactVersion)){
+                            artifact.setVersion(userArtifact.getVersion());
+                        }
+                    }
+                }
+            }
+        } else {
+            artifacts.addAll(getUserModules());
+        }
         return artifacts;
     }
 
@@ -638,6 +662,21 @@ public class Server {
             } catch (IOException e) {
                 System.out.println("Could not delete tmp directory");
             }
+        }
+    }
+
+    public String getWebappVersionFromFilesystem() throws MojoExecutionException {
+        File[] files = serverDirectory.listFiles(new FilenameFilter() {
+            @Override
+            public boolean accept(File dir, String name) {
+                return name.contains(".war");
+            }
+        });
+        if(files.length != 1){
+            throw new MojoExecutionException("Server "+getServerId()+" has none or more than one installed OpenMRS webapp copies");
+        } else {
+            //format of webapp name is openmrs-{version}.war
+            return org.apache.maven.shared.utils.StringUtils.stripEnd(org.apache.maven.shared.utils.StringUtils.stripStart(files[0].getName(), "openmrs-"), ".war");
         }
     }
 }

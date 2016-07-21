@@ -25,7 +25,7 @@ public class Delete extends AbstractTask{
     public void executeTask() throws MojoExecutionException, MojoFailureException {
         serverId = wizard.promptForExistingServerIdIfMissing(serverId);
         try {
-            Server server = Server.loadServer(serverId);
+            Server server = loadValidatedServer(serverId);
             FileUtils.deleteDirectory(server.getServerDirectory());
 
             if (server.isMySqlDb()) {

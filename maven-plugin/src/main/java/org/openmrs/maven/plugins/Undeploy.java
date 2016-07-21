@@ -1,12 +1,10 @@
 package org.openmrs.maven.plugins;
 
-import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.utility.SDKConstants;
-import org.openmrs.maven.plugins.utility.Wizard;
 
 import java.io.File;
 
@@ -34,11 +32,11 @@ public class Undeploy extends AbstractTask {
     public void executeTask() throws MojoExecutionException, MojoFailureException {
         Deploy deployer = new Deploy();
         if (serverId == null) {
-            File currentProperties = wizard.getCurrentServerPath();
+            File currentProperties = Server.checkCurrentDirForServer();
             if (currentProperties != null) serverId = currentProperties.getName();
         }
         serverId = wizard.promptForExistingServerIdIfMissing(serverId);
-        Server server = Server.loadServer(serverId);
+        Server server = loadValidatedServer(serverId);
         Artifact artifact = deployer.getModuleArtifactForSelectedParameters(groupId, artifactId, "default");
         File modules = new File(server.getServerDirectory(), SDKConstants.OPENMRS_SERVER_MODULES);
         File[] listOfModules = modules.listFiles();
@@ -46,7 +44,7 @@ public class Undeploy extends AbstractTask {
             if (mod.getName().startsWith(artifact.getArtifactId())) {
                 boolean deleted = mod.delete();
                 if (deleted) {
-                    Server properties = Server.loadServer(serverId);
+                    Server properties = loadValidatedServer(serverId);
                     properties.removeFromValueList(Server.PROPERTY_USER_MODULES, artifact.getArtifactId());
                     properties.save();
                     getLog().info(String.format("Module with groupId: '%s', artifactId: '%s' was successfully removed from server.",

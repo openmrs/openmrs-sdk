@@ -34,11 +34,11 @@ public class Reset extends AbstractTask {
 
     public void executeTask() throws MojoExecutionException, MojoFailureException {
         if (serverId == null) {
-            File currentProperties = wizard.getCurrentServerPath();
+            File currentProperties = Server.checkCurrentDirForServer();
             if (currentProperties != null) serverId = currentProperties.getName();
         }
         serverId = wizard.promptForExistingServerIdIfMissing(serverId);
-        Server server = Server.loadServer(serverId);
+        Server server = loadValidatedServer(serverId);
         DBConnector connector = null;
         try {
             String dbName = String.format(SDKConstants.DB_NAME_TEMPLATE, serverId);
