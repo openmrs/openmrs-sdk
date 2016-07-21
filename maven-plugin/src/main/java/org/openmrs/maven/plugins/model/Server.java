@@ -404,23 +404,44 @@ public class Server {
             DistroProperties distroProperties = new DistroProperties(propertiesFile);
             artifacts.addAll(distroProperties.getModuleArtifacts());
             artifacts.addAll(distroProperties.getWarArtifacts());
-            for(Artifact userArtifact : getUserModules()){
-                for(Artifact artifact : artifacts){
-                    boolean equalArtifactId = userArtifact.getArtifactId().equals(artifact.getArtifactId());
-                    boolean equalGroupId = userArtifact.getGroupId().equals(artifact.getGroupId());
-                    if(equalArtifactId && equalGroupId){
-                        Version artifactVersion = new Version(artifact.getVersion());
-                        Version userArtifactVersion = new Version(userArtifact.getVersion());
-                        if(!artifactVersion.equal(userArtifactVersion)){
-                            artifact.setVersion(userArtifact.getVersion());
-                        }
-                    }
-                }
-            }
+
+            artifacts = mergeArtifactLists(artifacts, getUserModules());
+
         } else {
             artifacts.addAll(getUserModules());
         }
         return artifacts;
+    }
+
+    /**
+     * returns lists of baseArtifacts updated with updateArtifacts(add absent objects and update versions)
+     *
+     * @param baseArtifacts - main list
+     * @param updateArtifacts - list of artifacts to add/update
+     * @throws MojoExecutionException
+     */
+    static List<Artifact> mergeArtifactLists(List<Artifact> baseArtifacts, List<Artifact> updateArtifacts) throws MojoExecutionException {
+        List<Artifact> updatedList = new ArrayList<>(baseArtifacts);
+        for(Artifact updateArtifact : updateArtifacts){
+            boolean notFound = true;
+            for(Artifact baseArtifact : baseArtifacts){
+                boolean equalArtifactId = updateArtifact.getArtifactId().equals(baseArtifact.getArtifactId());
+                boolean equalGroupId = updateArtifact.getGroupId().equals(baseArtifact.getGroupId());
+                if(equalArtifactId && equalGroupId){
+                    notFound = false;
+                    Version baseVersion = new Version(baseArtifact.getVersion());
+                    Version updateVersion = new Version(updateArtifact.getVersion());
+                    if(!baseVersion.equal(updateVersion)){
+                        updatedList.remove(baseArtifact);
+                        updatedList.add(updateArtifact);
+                    }
+                }
+            }
+            if(notFound){
+                updatedList.add(updateArtifact);
+            }
+        }
+        return updatedList;
     }
 
     public String getArtifactId(String filename) {

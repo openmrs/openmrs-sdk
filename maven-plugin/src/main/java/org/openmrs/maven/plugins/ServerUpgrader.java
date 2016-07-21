@@ -164,7 +164,9 @@ public class ServerUpgrader {
 				if(server.getVersion().equals("2.3")){
 					this.parentTask.wizard.showMessage("Please note that Reference Application 2.3 is not supported" +
 							"\nFunctions other than 'run' will not work properly, " +
-							"\nIt is recommended to use version 2.3.1 instead");
+							"\nIt is recommended to use version 2.3.1 instead" +
+							"\nYou can easily upgrade this server calling 'mvn openmrs-sdk:deploy -DserverId="+server.getServerId() +
+							" -Ddistro=referenceapplication:2.3.1'");
 				}
 				configureMissingDistroArtifact(server);
 				if(!new File(serverPath, DistroProperties.DISTRO_FILE_NAME).exists()){
