@@ -21,12 +21,6 @@ public class Watch extends AbstractTask {
      */
     private String serverId;
 
-    /**1
-     * @required
-     * @component
-     */
-    Wizard wizard;
-
 	@Override
     public void executeTask() throws MojoExecutionException, MojoFailureException {
 	    serverId = wizard.promptForExistingServerIdIfMissing(serverId);

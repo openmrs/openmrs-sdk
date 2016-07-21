@@ -33,12 +33,6 @@ public class Unwatch extends AbstractTask {
      */
     private String groupId;
 
-    /**
-     * @required
-     * @component
-     */
-    Wizard wizard;
-
 	@Override
     public void executeTask() throws MojoExecutionException, MojoFailureException {
 	    serverId = wizard.promptForExistingServerIdIfMissing(serverId);
