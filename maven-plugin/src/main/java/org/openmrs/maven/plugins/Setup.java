@@ -175,10 +175,7 @@ public class Setup extends AbstractTask {
                 if(mysqlDbCreated && !"null".equals(dbSql)){
                     if(dbSql != null){
                         importMysqlDb(server, dbSql);
-                    } else if(distroProperties != null && distroProperties.getSqlScriptPath() != null){
-                        importMysqlDb(server, distroProperties.getSqlScriptPath());
-                    }
-                    else if(isCreatePlatform) {
+                    } else {
                         importMysqlDb(server, CLASSPATH_SCRIPT_PREFIX+ "openmrs-platform.sql");
                     }
                 } else {
