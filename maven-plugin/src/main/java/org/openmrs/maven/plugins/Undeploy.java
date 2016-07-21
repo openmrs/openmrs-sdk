@@ -1,5 +1,6 @@
 package org.openmrs.maven.plugins;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.openmrs.maven.plugins.model.Artifact;
@@ -38,14 +39,15 @@ public class Undeploy extends AbstractTask {
         serverId = wizard.promptForExistingServerIdIfMissing(serverId);
         Server server = loadValidatedServer(serverId);
         Artifact artifact = deployer.getModuleArtifactForSelectedParameters(groupId, artifactId, "default");
+        artifact.setArtifactId(StringUtils.stripEnd(artifact.getArtifactId(), "-omod"));
         File modules = new File(server.getServerDirectory(), SDKConstants.OPENMRS_SERVER_MODULES);
         File[] listOfModules = modules.listFiles();
         for (File mod : listOfModules) {
             if (mod.getName().startsWith(artifact.getArtifactId())) {
                 boolean deleted = mod.delete();
                 if (deleted) {
-                    Server properties = loadValidatedServer(serverId);
-                    properties.removeFromValueList(Server.PROPERTY_USER_MODULES, artifact.getArtifactId());
+                    Server properties = Server.loadServer(serverId);
+                    properties.removeUserModule(artifact);
                     properties.save();
                     getLog().info(String.format("Module with groupId: '%s', artifactId: '%s' was successfully removed from server.",
                             artifact.getGroupId(), artifact.getArtifactId()));
