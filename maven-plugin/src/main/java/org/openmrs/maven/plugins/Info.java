@@ -1,13 +1,10 @@
 package org.openmrs.maven.plugins;
 
-import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.utility.Project;
-import org.openmrs.maven.plugins.utility.Wizard;
 
-import java.io.File;
 import java.util.Set;
 
 /**

@@ -39,7 +39,6 @@ public class Pull extends AbstractTask {
     private static final String CONFLICT_ERROR_MESSAGE = "could not be updated automatically due to %s, changes need to be pulled manually";
     private static final String MODULES_UPDATED_SUCCESSFULLY_MESSAGE = "Modules updated successfully:";
     private static final String MODULES_NOT_UPDATED_MESSAGE = "Modules not updated:";
-    private static final String CREATING_LOCAL_REPO_REASON = "problem when initializing local repository";
     private static final String GIT_COMMAND_REASON = "problem with resolving git command";
     private static final String MERGING_PROBLEM_REASON = "problem with merging";
     private static final String DELETING_BRANCH_REASON = "problem wih deleting branch";

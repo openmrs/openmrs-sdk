@@ -11,11 +11,9 @@ import org.apache.maven.shared.utils.StringUtils;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.openmrs.maven.plugins.bintray.BintrayPackage;
-import org.openmrs.maven.plugins.bintray.CreatePackageRequest;
 import org.openmrs.maven.plugins.bintray.OpenmrsBintray;
 import org.openmrs.maven.plugins.model.Version;
 import org.openmrs.maven.plugins.utility.CompositeException;
-import org.openmrs.maven.plugins.utility.DefaultJira;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 import org.openmrs.maven.plugins.utility.SettingsManager;
 
@@ -23,7 +21,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 
@@ -33,7 +30,6 @@ import static org.twdata.maven.mojoexecutor.MojoExecutor.executeMojo;
 import static org.twdata.maven.mojoexecutor.MojoExecutor.executionEnvironment;
 import static org.twdata.maven.mojoexecutor.MojoExecutor.goal;
 import static org.twdata.maven.mojoexecutor.MojoExecutor.name;
-import static org.twdata.maven.mojoexecutor.MojoExecutor.plugin;
 
 
 /**
