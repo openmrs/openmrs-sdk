@@ -70,8 +70,23 @@ public class Server {
             return this;
         }
 
+        public ServerBuilder setDistroArtifactId(String distroArtifactId) {
+            server.setDistroArtifactId(distroArtifactId);
+            return this;
+        }
+
+        public ServerBuilder setDistroGroupId(String distroGroupId) {
+            server.setDistroGroupId(distroGroupId);
+            return this;
+        }
+
         public ServerBuilder setVersion(String version) {
             server.setVersion(version);
+            return this;
+        }
+
+        public ServerBuilder serPlatformVersion(String platformVersion) {
+            server.setPlatformVersion(platformVersion);
             return this;
         }
 
@@ -82,6 +97,11 @@ public class Server {
 
         public ServerBuilder setDbDriver(String DbDriver) {
             server.setDbDriver(DbDriver);
+            return this;
+        }
+
+        public ServerBuilder setDbName(String DbUri) {
+            server.setDbName(DbUri);
             return this;
         }
 
