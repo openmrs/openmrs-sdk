@@ -144,7 +144,7 @@ public class Setup extends AbstractTask {
             distroProperties.saveTo(server.getServerDirectory());
         }
         
-        if(dbDriver == null){
+        if(server.getDbDriver() == null && dbDriver == null){
             if(isCreatePlatform){
                 wizard.promptForH2Db(server);
             } else if(distroProperties!= null && distroProperties.isH2Supported()){
@@ -152,9 +152,9 @@ public class Setup extends AbstractTask {
             }else {
                 wizard.promptForMySQLDb(server);
             }
-        } else if(dbDriver.equals("h2")){
+        } else if("h2".equals(dbDriver)){
             wizard.promptForH2Db(server);
-        }else if(dbDriver.equals("mysql")){
+        }else if("mysql".equals(dbDriver)){
             wizard.promptForMySQLDb(server);
         }
 

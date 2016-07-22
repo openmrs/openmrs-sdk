@@ -3,6 +3,7 @@ package org.openmrs.maven.plugins;
 import org.apache.commons.io.FileUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.shared.utils.StringUtils;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.utility.DBConnector;
@@ -19,7 +20,7 @@ import java.util.List;
  */
 public class Reset extends AbstractTask {
 
-    private static final String TEMPLATE_SUCCESS = "Server '%s' has been reset, user modules were saved";
+    private static final String TEMPLATE_SUCCESS = "Server '%s' reset successful, user modules were saved";
     private static final String TEMPLATE_SUCCESS_FULL = "Server '%s' has been reset, user modules were removed";
 
     /**
@@ -39,39 +40,46 @@ public class Reset extends AbstractTask {
         }
         serverId = wizard.promptForExistingServerIdIfMissing(serverId);
         Server server = loadValidatedServer(serverId);
-        DBConnector connector = null;
-        try {
-            String dbName = String.format(SDKConstants.DB_NAME_TEMPLATE, serverId);
-            String uri = server.getParam(Server.PROPERTY_DB_URI);
-            uri = uri.substring(0, uri.lastIndexOf("/"));
-            connector = new DBConnector(uri, server.getParam(Server.PROPERTY_DB_USER),
-                                          server.getParam(Server.PROPERTY_DB_PASS),
-                                          dbName);
-            connector.dropDatabase();
-            connector.close();
-        } catch (SQLException e) {
-            throw new MojoExecutionException(e.getMessage());
-        } finally {
-            if (connector != null) try {
+        if(server.getDbDriver().equals(SDKConstants.DRIVER_MYSQL)){
+            DBConnector connector = null;
+            try {
+                String dbName = String.format(SDKConstants.DB_NAME_TEMPLATE, serverId);
+                String uri = server.getParam(Server.PROPERTY_DB_URI);
+                uri = uri.substring(0, uri.lastIndexOf("/"));
+                connector = new DBConnector(uri, server.getParam(Server.PROPERTY_DB_USER),
+                        server.getParam(Server.PROPERTY_DB_PASS),
+                        dbName);
+                connector.dropDatabase();
                 connector.close();
             } catch (SQLException e) {
-                getLog().error(e.getMessage());
+                throw new MojoExecutionException(e.getMessage());
+            } finally {
+                if (connector != null) try {
+                    connector.close();
+                } catch (SQLException e) {
+                    getLog().error(e.getMessage());
+                }
             }
         }
-        boolean isPlatform = server.getParam(Server.PROPERTY_VERSION) == null;
+        boolean isPlatform = StringUtils.isBlank(server.getVersion());
         if (wizard.checkYes(full)) {
             try {
                 Server newServer = new Server.ServerBuilder()
-                        .setServerId(server.getParam(Server.PROPERTY_SERVER_ID))
-                        .setVersion(server.getParam(Server.PROPERTY_PLATFORM))
-                        .setDbDriver(server.getParam(Server.PROPERTY_DB_DRIVER))
-                        .setDbUri(server.getParam(Server.PROPERTY_DB_URI))
-                        .setDbUser(server.getParam(Server.PROPERTY_DB_USER))
-                        .setDbPassword(server.getParam(Server.PROPERTY_DB_PASS))
+                        .setServerId(server.getServerId())
+                        .setDistroArtifactId(server.getDistroArtifactId())
+                        .setDistroGroupId(server.getDistroGroupId())
+                        .setVersion(server.getVersion())
+                        .serPlatformVersion(server.getPlatformVersion())
+                        .setDbDriver(server.getDbDriver())
+                        .setDbName(server.getDbName())
+                        .setDbUri(server.getDbUri())
+                        .setDbUser(server.getDbUser())
+                        .setDbPassword(server.getDbPassword())
                         .setInteractiveMode("false")
+                        .setJavaHome(server.getJavaHome())
                         .build();
                 Setup setup = new Setup(this);
-                FileUtils.deleteDirectory(newServer.getServerDirectory());
+                FileUtils.deleteDirectory(server.getServerDirectory());
                 setup.setup(newServer, isPlatform, true, null);
                 getLog().info(String.format(TEMPLATE_SUCCESS_FULL, newServer.getServerId()));
             } catch (IOException e) {
@@ -81,7 +89,7 @@ public class Reset extends AbstractTask {
         else {
 	        if(isPlatform){
                 ServerUpgrader serverUpgrader = new ServerUpgrader(this);
-		        serverUpgrader.upgradePlatform(server, server.getVersion());
+		        serverUpgrader.upgradePlatform(server, server.getPlatformVersion());
 	        } else {
 		        resetDistro(server);
 	        }

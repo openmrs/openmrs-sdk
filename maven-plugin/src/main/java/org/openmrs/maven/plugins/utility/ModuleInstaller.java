@@ -65,18 +65,9 @@ public class ModuleInstaller {
         }
         // install user modules
         if (server != null) {
-            String values = server.getParam(Server.PROPERTY_USER_MODULES);
-            if (values != null) {
-                Deploy installer = new Deploy(mavenProject, mavenSession, pluginManager);
-                String[] modules = values.split(Server.COMMA);
-                for (String mod: modules) {
-                    String[] params = mod.split(Server.SLASH);
-                    // check
-                    if (params.length == 3) {
-                        installer.deployModule(server.getServerId(), params[0], params[1], params[2]);
-                    }
-                    else throw new MojoExecutionException("Properties file parse error - cannot read user modules list");
-                }
+            List<Artifact> userModules = server.getUserModules();
+            for(Artifact module : userModules){
+                installModule(module, new File(server.getServerDirectory(), SDKConstants.OPENMRS_SERVER_MODULES).getAbsolutePath());
             }
         }
     }
