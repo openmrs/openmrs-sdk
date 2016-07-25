@@ -3,20 +3,33 @@ package org.openmrs.maven.plugins;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.shared.invoker.DefaultInvocationRequest;
+import org.apache.maven.shared.invoker.DefaultInvoker;
+import org.apache.maven.shared.invoker.InvocationRequest;
+import org.apache.maven.shared.invoker.InvocationResult;
+import org.apache.maven.shared.invoker.Invoker;
+import org.apache.maven.shared.invoker.MavenInvocationException;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.utility.Project;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 
 import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
+import java.util.Arrays;
+import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.artifactId;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.configuration;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.element;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.executeMojo;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.executionEnvironment;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.goal;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.groupId;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.name;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.plugin;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.version;
 
 /**
  * @goal run
@@ -93,10 +106,6 @@ public class Run extends AbstractTask {
 
 
 	private void runInFork(Server server) throws MojoExecutionException, MojoFailureException {
-		String maven = "mvn";
-		if (System.getProperty("os.name").toLowerCase(Locale.ENGLISH).contains("windows")) {
-			maven = "mvn.bat";
-		}
 
 		if (server.hasWatchedProjects()) {
 			File serversPath = Server.getServersPathFile();
@@ -119,7 +128,10 @@ public class Run extends AbstractTask {
 			}
 		}
 
-		String mavenOpts = System.getProperty("MAVEN_OPTS", "");
+		String mavenOpts = mavenSession.getRequest().getUserProperties().getProperty("MAVEN_OPTS");
+		if (StringUtils.isBlank(mavenOpts)) {
+			mavenOpts = mavenSession.getRequest().getSystemProperties().getProperty("MAVEN_OPTS", "");
+		}
 
 		mavenOpts = adjustXmxToAtLeast(mavenOpts, 768);
 		mavenOpts = adjustMaxPermSizeToAtLeast(mavenOpts, 512);
@@ -140,47 +152,41 @@ public class Run extends AbstractTask {
 
 		System.out.println("\nForking a new process... (use -Dfork=false to prevent forking)\n");
 
-		List<String> commands = new ArrayList<String>();
-		commands.add(maven);
-		commands.add(SDKConstants.getSDKInfo().getGroupId() + ":"
-				+ SDKConstants.getSDKInfo().getArtifactId() + ":" + SDKConstants.getSDKInfo().getVersion() + ":run-tomcat");
-		commands.add("-DserverId=" + server.getServerId());
+		Properties properties = new Properties();
+		properties.put("serverId", server.getServerId());
 		if (port != null) {
-			commands.add("-Dport=" + port);
+			properties.put("port", port);
 		}
 		if (isWatchApi()) {
-			commands.add("-DwatchApi=" + watchApi);
+			properties.put("watchApi", watchApi);
 		}
 		if (server.hasWatchedProjects() && isWatchApi()) {
-			commands.add("-Dspringloaded=inclusions=org.openmrs..*");
+			properties.put("springloaded", "inclusions=org.openmrs..*");
 		}
-		commands.add("-e");
 
-		ProcessBuilder processBuilder = new ProcessBuilder(commands);
+		InvocationRequest request = new DefaultInvocationRequest();
+		request.setGoals(Arrays.asList(SDKConstants.getSDKInfo().getGroupId() + ":"
+				+ SDKConstants.getSDKInfo().getArtifactId() + ":" + SDKConstants.getSDKInfo().getVersion() + ":run-tomcat"))
+				.setMavenOpts(mavenOpts)
+				.setProperties(properties)
+				.setShowErrors(mavenSession.getRequest().isShowErrors())
+				.setOffline(mavenSession.getRequest().isOffline())
+				.setLocalRepositoryDirectory(mavenSession.getRequest().getLocalRepositoryPath())
+				.setUpdateSnapshots(mavenSession.getRequest().isUpdateSnapshots())
+				.setShowVersion(true);
 
-		processBuilder.environment().put("MAVEN_OPTS", mavenOpts);
 		if (server.getJavaHome() != null) {
-			processBuilder.environment().put("JAVA_HOME", server.getJavaHome());
+			request.setJavaHome(new File(server.getJavaHome()));
 		}
 
-		processBuilder.redirectErrorStream(true);
-		processBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
-		processBuilder.redirectInput(ProcessBuilder.Redirect.INHERIT);
 		try {
-			final Process process = processBuilder.start();
-
-			Runtime.getRuntime().addShutdownHook(new Thread() {
-				@Override
-				public void run() {
-					process.destroy();
-				}
-			});
-
-			process.waitFor();
-		} catch (IOException e) {
+			Invoker invoker = new DefaultInvoker();
+			InvocationResult result = invoker.execute(request);
+			if (result.getExitCode() != 0 ) {
+				throw new IllegalStateException("Failed running Tomcat", result.getExecutionException());
+			}
+		} catch (MavenInvocationException e) {
 			throw new MojoFailureException("Failed to start Tomcat process", e);
-		} catch (InterruptedException e) {
-			throw new MojoFailureException("Interrupted waiting for Tomcat process", e);
 		}
 	}
 
