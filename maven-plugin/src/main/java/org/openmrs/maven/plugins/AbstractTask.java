@@ -14,6 +14,7 @@ import org.openmrs.maven.plugins.utility.DefaultJira;
 import org.openmrs.maven.plugins.utility.DistroHelper;
 import org.openmrs.maven.plugins.git.DefaultGitHelper;
 import org.openmrs.maven.plugins.git.GitHelper;
+import org.openmrs.maven.plugins.utility.DockerHelper;
 import org.openmrs.maven.plugins.utility.Jira;
 import org.openmrs.maven.plugins.utility.ModuleInstaller;
 import org.openmrs.maven.plugins.utility.StatsManager;
@@ -115,6 +116,11 @@ public abstract class AbstractTask extends AbstractMojo {
      */
     Jira jira;
 
+    /**
+     * handles docker
+     */
+    DockerHelper dockerHelper;
+
 
     public AbstractTask(){}
 
@@ -129,6 +135,7 @@ public abstract class AbstractTask extends AbstractMojo {
         this.versionsHelper = other.versionsHelper;
         this.distroHelper = other.distroHelper;
         this.gitHelper = other.gitHelper;
+        this.dockerHelper = other.dockerHelper;
         initTask();
     }
 
@@ -147,6 +154,9 @@ public abstract class AbstractTask extends AbstractMojo {
         }
         if(distroHelper == null){
             distroHelper = new DistroHelper(mavenProject, mavenSession, pluginManager);
+        }
+        if(dockerHelper == null){
+            dockerHelper = new DockerHelper(mavenProject, mavenSession, pluginManager, wizard);
         }
         if(StringUtils.isNotBlank(openMRSPath)){
             Server.setServersPath(openMRSPath);

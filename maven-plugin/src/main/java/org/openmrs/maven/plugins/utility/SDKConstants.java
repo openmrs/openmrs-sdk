@@ -27,6 +27,8 @@ public class SDKConstants {
     public static final String PLUGIN_DEPENDENCIES_GROUP_ID = "org.apache.maven.plugins";
     public static final String PLUGIN_DEPENDENCIES_ARTIFACT_ID = "maven-dependency-plugin";
     public static final String PLUGIN_DEPENDENCIES_VERSION = "2.8";
+    //docker plugin
+    public static final String PLUGIN_DOCKER_ARTIFACT_ID = "openmrs-sdk-docker-maven-plugin";
     // release plugin
     public static final String PLUGIN_RELEASE_GROUP_ID = "org.apache.maven.plugins";
     public static final String PLUGIN_RELEASE_ARTIFACT_ID = "maven-release-plugin";
@@ -48,6 +50,7 @@ public class SDKConstants {
     public static final String OPENMRS_SDK_JDK_CUSTOM_INVALID = "JDK path is invalid";
     public static final String OPENMRS_SDK_PROPERTIES = "sdk.properties";
     public static final String OPENMRS_SERVER_MODULES = "modules";
+    public static final String OPENMRS_DOCKER_MYSQL_STORAGE = "mysql";
     // properties names
     public static final String OPENMRS_SDK_PROPERTIES_JAVA_HOME_OPTIONS = "javaHomeOptions";
     // dbUri for different db
@@ -72,7 +75,6 @@ public class SDKConstants {
     }};
     public static final String SETUP_DEFAULT_VERSION = "2.3";
     public static final String SETUP_DEFAULT_PLATFORM_VERSION = "1.11.5";
-
     public static final String REFERENCEAPPLICATION_ARTIFACT_ID = "referenceapplication-package";
     public static final List<String> SUPPPORTED_REFAPP_VERSIONS_2_3_1_OR_LOWER = java.util.Arrays.asList("2.3.1", "2.2", "2.1");
     private final static String[] SUPPORTED_MODULE_EXTENSIONS = new String[]{Artifact.TYPE_WAR, Artifact.TYPE_JAR, Artifact.TYPE_OMOD};
