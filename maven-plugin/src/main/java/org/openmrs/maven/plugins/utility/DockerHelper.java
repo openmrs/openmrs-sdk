@@ -160,13 +160,12 @@ public class DockerHelper {
                         //do not specify container id, so docker plugin will use default mysql container with label
                         element("dockerHost", dockerHost),
                         element("username", DOCKER_MYSQL_USERNAME),
-                        element("password", DOCKER_MYSQL_PASSWORD),
-                        element("port", DOCKER_MYSQL_PORT)),
+                        element("password", DOCKER_MYSQL_PASSWORD)),
                 executionEnvironment(mavenProject, mavenSession, pluginManager)
         );
     }
 
-    public void runMySql(String containerId, String port, String username, String password) throws MojoExecutionException {
+    public void runMySql(String containerId, String dbUri, String username, String password) throws MojoExecutionException {
         Artifact sdkInfo = SDKConstants.getSDKInfo();
         String dockerHost = getDockerHost();
         dockerHost = promptForDockerHostIfMissing(dockerHost);
@@ -184,7 +183,7 @@ public class DockerHelper {
                         element("containerId", containerId),
                         element("username", username),
                         element("password", password),
-                        element("port", port)),
+                        element("dbUri", dbUri)),
                 executionEnvironment(mavenProject, mavenSession, pluginManager)
         );
     }
