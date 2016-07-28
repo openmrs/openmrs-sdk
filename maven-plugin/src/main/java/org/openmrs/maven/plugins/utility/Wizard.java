@@ -5,7 +5,6 @@ import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.model.UpgradeDifferential;
 
-import java.io.File;
 import java.util.ArrayDeque;
 import java.util.List;
 
@@ -16,9 +15,9 @@ public interface Wizard {
 
     void promptForNewServerIfMissing(Server server);
 
-    void promptForMySQLDb(Server server);
+    void promptForDb(Server server, DockerHelper dockerHelper, boolean h2supported, String dbDriver) throws MojoExecutionException;
 
-    void promptForH2Db(Server server);
+    public void promptForMySQLDb(Server server) throws MojoExecutionException;
 
     void promptForDbCredentialsIfMissing(Server server);
 

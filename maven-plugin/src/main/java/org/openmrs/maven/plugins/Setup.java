@@ -144,18 +144,12 @@ public class Setup extends AbstractTask {
             distroProperties.saveTo(server.getServerDirectory());
         }
         
-        if(server.getDbDriver() == null && dbDriver == null){
-            if(isCreatePlatform){
-                wizard.promptForH2Db(server);
-            } else if(distroProperties!= null && distroProperties.isH2Supported()){
-                wizard.promptForH2Db(server);
-            }else {
-                wizard.promptForMySQLDb(server);
+        if(server.getDbDriver() == null) {
+            boolean h2supported = true;
+            if(distroProperties != null) {
+                h2supported = distroProperties.isH2Supported();
             }
-        } else if("h2".equals(dbDriver)){
-            wizard.promptForH2Db(server);
-        }else if("mysql".equals(dbDriver)){
-            wizard.promptForMySQLDb(server);
+            wizard.promptForDb(server, dockerHelper, h2supported, dbDriver);
         }
 
         if(server.getDbDriver() != null){
@@ -234,6 +228,12 @@ public class Setup extends AbstractTask {
         uri = uri.substring(0, uri.lastIndexOf("/"));
         DBConnector connector = null;
         try {
+            try {
+                //ensure driver is registered
+                Class.forName("com.mysql.jdbc.Driver");
+            } catch (ClassNotFoundException e) {
+                throw new RuntimeException("Failed to load MySQL driver");
+            }
             connector = new DBConnector(uri, server.getDbUser(), server.getDbPassword(), server.getDbName());
             connector.checkAndCreate();
             connector.close();

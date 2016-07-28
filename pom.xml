@@ -15,6 +15,7 @@
     <modules>
         <module>archetype-module-refapp</module>
         <module>archetype-module-platform</module>
+        <module>docker-maven-plugin</module>
         <module>maven-plugin</module>
         <module>integration-tests</module>
     </modules>

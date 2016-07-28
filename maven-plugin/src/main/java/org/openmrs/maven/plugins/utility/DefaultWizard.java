@@ -1,6 +1,7 @@
 package org.openmrs.maven.plugins.utility;
 
 import com.google.common.collect.Lists;
+import com.google.inject.internal.util.Maps;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.client.utils.URIBuilder;
@@ -18,12 +19,9 @@ import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.model.UpgradeDifferential;
-import org.openmrs.maven.plugins.model.Version;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.InputStreamReader;
 import java.net.URISyntaxException;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -66,6 +64,16 @@ public class DefaultWizard implements Wizard {
     private static final String NO_DIFFERENTIAL = "\nNo modules to update or add found";
     public static final String PLATFORM_VERSION_PROMPT = "You can deploy the following versions of a platform";
     public static final String DISTRIBUTION_VERSION_PROMPT = "You can deploy the following versions of distribution";
+
+    public static final String DB_OPTION_H2 = "H2";
+    public static final String DB_OPTION_MYSQL = "Pre-installed MySQL";
+    public static final String DB_OPTION_SDK_DOCKER_MYSQL = "MySQL 5.6 in SDK docker container (docker required)";
+    public static final String DB_OPTION_DOCKER_MYSQL = "Existing docker container (docker required)";
+    public static final Map<String,String> DB_OPTIONS_MAP = new HashMap<String, String>() {{
+        put("mysql", DB_OPTION_MYSQL);
+        put("h2", DB_OPTION_H2);
+        put("docker", DB_OPTION_SDK_DOCKER_MYSQL);
+    }};
 
     @Requirement
     Prompter prompter;
@@ -560,7 +568,41 @@ public class DefaultWizard implements Wizard {
     }
 
     @Override
-    public void promptForMySQLDb(Server server) {
+    public void promptForDb(Server server, DockerHelper dockerHelper, boolean h2supported, String dbDriver) throws MojoExecutionException {
+        String db = null;
+        if(StringUtils.isNotBlank(dbDriver)){
+            db = DB_OPTIONS_MAP.get(dbDriver);
+        }
+        List<String> options = new ArrayList<>();
+        if(h2supported) options.add(DB_OPTION_H2);
+        options.addAll(Lists.newArrayList(DB_OPTION_MYSQL, DB_OPTION_SDK_DOCKER_MYSQL, DB_OPTION_DOCKER_MYSQL));
+        db = promptForMissingValueWithOptions("Which database would you like to use?", db, null, options);
+        switch(db){
+            case(DB_OPTION_H2): {
+                server.setDbDriver(SDKConstants.DRIVER_H2);
+                if (server.getDbUri() == null) {
+                    server.setDbUri(SDKConstants.URI_H2);
+                }
+                server.setDbUser("root");
+                server.setDbPassword("root");
+                break;
+            }
+            case(DB_OPTION_MYSQL):{
+                promptForMySQLDb(server);
+                break;
+            }
+            case(DB_OPTION_SDK_DOCKER_MYSQL):{
+                promptForDockerizedSdkMysql(server, dockerHelper);
+                break;
+            }
+            case(DB_OPTION_DOCKER_MYSQL):{
+                promptForDockerizedMysql(server, dockerHelper);
+            }
+        }
+    }
+
+    @Override
+    public void promptForMySQLDb(Server server) throws MojoExecutionException {
         if(server.getDbDriver() == null){
             server.setDbDriver(SDKConstants.DRIVER_MYSQL);
         }
@@ -574,20 +616,43 @@ public class DefaultWizard implements Wizard {
         promptForDbCredentialsIfMissing(server);
     }
 
-    @Override
-    public void promptForH2Db(Server server) {
-        boolean h2 = promptYesNo(
-                "Would you like to use the h2 database (-DdbDriver) (note that some modules do not support it)?");
-        if(h2) {
-            server.setDbDriver(SDKConstants.DRIVER_H2);
-            if (server.getDbUri() == null) {
-                server.setDbUri(SDKConstants.URI_H2);
-            }
-            server.setDbUser("root");
-            server.setDbPassword("root");
-        } else {
-            promptForMySQLDb(server);
+    public void promptForDockerizedSdkMysql(Server server, DockerHelper dockerHelper) throws MojoExecutionException {
+        if(server.getDbDriver() == null){
+            server.setDbDriver(SDKConstants.DRIVER_MYSQL);
         }
+        String dbUri = (SDKConstants.URI_MYSQL.replace("3306", DockerHelper.DOCKER_MYSQL_PORT));
+        if (dbUri.startsWith("jdbc:mysql:")) {
+            dbUri = addMySQLParamsIfMissing(dbUri);
+        }
+        server.setDbUri(dbUri);
+        server.setDbUser(DockerHelper.DOCKER_MYSQL_USERNAME);
+        server.setDbPassword(DockerHelper.DOCKER_MYSQL_PASSWORD);
+        server.setContainerId(DockerHelper.DOCKER_DEFAULT_CONTAINER_ID);
+
+        dockerHelper.createMySql();
+        dockerHelper.runMySql();
+    }
+
+    public void promptForDockerizedMysql(Server server, DockerHelper dockerHelper) throws MojoExecutionException {
+        if(server.getDbDriver() == null){
+            server.setDbDriver(SDKConstants.DRIVER_MYSQL);
+        }
+
+        String containerId = prompt("Please specify your full container id (you can get it using command 'docker inspect {container name} | grep 'Id'')");
+        String username = prompt("Please specify MySQL username");
+        String password = prompt("Please specify MySQL password");
+
+        String dbUri = promptForValueIfMissingWithDefault(
+                "Please specify database uri (-D%s) (default: '%s')", server.getDbUri(), "dbUri", SDKConstants.URI_MYSQL);
+        if (dbUri.startsWith("jdbc:mysql:")) {
+            dbUri = addMySQLParamsIfMissing(dbUri);
+        }
+        server.setDbUri(dbUri);
+        server.setDbUser(username);
+        server.setDbPassword(password);
+        server.setContainerId(containerId);
+
+        dockerHelper.runMySql(containerId, server.getMySqlPort(), username, password);
     }
 
     @Override

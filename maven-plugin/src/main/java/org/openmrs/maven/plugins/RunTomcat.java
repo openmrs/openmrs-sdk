@@ -5,14 +5,18 @@ import org.apache.catalina.LifecycleException;
 import org.apache.catalina.loader.WebappLoader;
 import org.apache.catalina.startup.Tomcat;
 import org.apache.commons.lang.StringUtils;
+import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
+import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.classworlds.ClassWorld;
 import org.codehaus.plexus.classworlds.realm.ClassRealm;
 import org.codehaus.plexus.classworlds.realm.DuplicateRealmException;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.model.Version;
+import org.openmrs.maven.plugins.utility.DockerHelper;
 import org.openmrs.maven.plugins.utility.Project;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 import org.openmrs.maven.plugins.utility.Wizard;
@@ -27,6 +31,29 @@ import java.util.Set;
  * @requiresProject false
  */
 public class RunTomcat extends AbstractMojo {
+
+
+	/**
+	 * The project currently being build.
+	 *
+	 * @parameter expression="${project}"
+	 */
+	MavenProject mavenProject;
+
+	/**
+	 * The current Maven session.
+	 *
+	 * @parameter expression="${session}"
+	 */
+	MavenSession mavenSession;
+
+	/**
+	 * The Maven BuildPluginManager component.
+	 *
+	 * @component
+	 * @required
+	 */
+	BuildPluginManager pluginManager;
 
 	/**
 	 * @parameter expression="${serverId}"
@@ -93,6 +120,14 @@ public class RunTomcat extends AbstractMojo {
 				warFile = file.getName();
 				break;
 			}
+		}
+
+		if(StringUtils.isNotBlank(server.getContainerId())){
+			new DockerHelper(mavenProject, mavenSession, pluginManager, wizard).runMySql(
+					server.getContainerId(),
+					server.getMySqlPort(),
+					server.getDbUser(),
+					server.getDbPassword());
 		}
 
 		Tomcat tomcat = new Tomcat();

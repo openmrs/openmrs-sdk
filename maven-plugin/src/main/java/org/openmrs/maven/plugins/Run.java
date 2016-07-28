@@ -103,8 +103,6 @@ public class Run extends AbstractTask {
 		}
 	}
 
-
-
 	private void runInFork(Server server) throws MojoExecutionException, MojoFailureException {
 
 		if (server.hasWatchedProjects()) {
