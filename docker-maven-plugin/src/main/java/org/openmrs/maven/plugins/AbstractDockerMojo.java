@@ -23,7 +23,7 @@ abstract class AbstractDockerMojo extends AbstractMojo {
     protected static final String DEFAULT_MYSQL_PASSWORD = "Admin123";
     protected static final String MYSQL_5_6 = "mysql:5.6";
     protected static final String DEFAULT_MYSQL_EXPOSED_PORT = "3307";
-    protected static final String DOCKER_MYSQL_DBURI = "jdbc:mysql://localhost:3307/";
+    protected static final String DEFAULT_MYSQL_DBURI = "jdbc:mysql://localhost:3307/";
     private static final String DEFAULT_HOST_LINUX = "unix:///var/run/docker.sock";
 
     /**

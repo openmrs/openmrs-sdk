@@ -652,7 +652,7 @@ public class DefaultWizard implements Wizard {
         server.setDbPassword(password);
         server.setContainerId(containerId);
 
-        dockerHelper.runMySql(containerId, server.getMySqlPort(), username, password);
+        dockerHelper.runMySql(containerId, server.getDbUri(), username, password);
     }
 
     @Override

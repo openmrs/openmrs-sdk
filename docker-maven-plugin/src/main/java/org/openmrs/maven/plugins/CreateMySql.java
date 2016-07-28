@@ -10,6 +10,7 @@ import com.github.dockerjava.api.model.Ports;
 import com.github.dockerjava.api.model.PullResponseItem;
 import com.github.dockerjava.api.model.Volume;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.SystemUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 
@@ -89,6 +90,10 @@ public class CreateMySql extends AbstractDockerMojo {
         Map<String, String> labels = new HashMap<>();
         labels.put(DEFAULT_MYSQL_CONTAINER_ID, "true");
 
+        if(SystemUtils.IS_OS_WINDOWS){
+            prepareVolumeWindowsPath();
+        }
+
         Volume volume = new Volume("/var/lib/mysql");
 
         docker.createContainerCmd(MYSQL_5_6)
@@ -101,6 +106,10 @@ public class CreateMySql extends AbstractDockerMojo {
                 .withAttachStdout(true)
                 .withLabels(labels)
                 .exec();
+    }
+
+    private void prepareVolumeWindowsPath() {
+        dataVolume =  "//"+dataVolume.replace("\\", "/").replace(":", "");
     }
 
     private void pullMySqlImage(DockerClient docker) {
