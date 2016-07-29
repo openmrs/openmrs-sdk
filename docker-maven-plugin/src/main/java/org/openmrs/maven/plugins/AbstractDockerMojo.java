@@ -76,8 +76,9 @@ abstract class AbstractDockerMojo extends AbstractMojo {
             }
         }
 
+        String name = "/"+id;
         for (Container container: containers) {
-            if (Arrays.asList(container.getNames()).contains(id)) {
+            if (Arrays.asList(container.getNames()).contains(name)) {
                 return container;
             }
         }
