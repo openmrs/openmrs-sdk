@@ -97,7 +97,7 @@ public class Run extends AbstractTask {
 		}
 
 		if (Boolean.FALSE.equals(fork)) {
-			new RunTomcat(serverId, port, wizard).execute();
+			new RunTomcat(serverId, port, mavenSession, mavenProject, pluginManager, wizard).execute();
 		} else {
 			runInFork(server);
 		}

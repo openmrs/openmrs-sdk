@@ -79,10 +79,13 @@ public class RunTomcat extends AbstractMojo {
 	public RunTomcat() {
 	}
 
-	public RunTomcat(String serverId, Integer port, Wizard wizard) {
+	public RunTomcat(String serverId, Integer port, MavenSession mavenSession, MavenProject mavenProject, BuildPluginManager pluginManager, Wizard wizard) {
 		this.serverId = serverId;
 		this.port = port;
 		this.wizard = wizard;
+		this.mavenProject = mavenProject;
+		this.mavenSession = mavenSession;
+		this.pluginManager = pluginManager;
 	}
 
 	@Override
