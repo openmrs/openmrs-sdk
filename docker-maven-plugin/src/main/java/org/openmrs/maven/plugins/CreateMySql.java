@@ -3,7 +3,6 @@ package org.openmrs.maven.plugins;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.model.Bind;
-import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.api.model.ExposedPort;
 import com.github.dockerjava.api.model.Image;
 import com.github.dockerjava.api.model.Ports;
@@ -37,9 +36,9 @@ public class CreateMySql extends AbstractDockerMojo {
     /**
      * port exposed by mysql container to connect with db
      *
-     * @parameter expression="${containerId}"
+     * @parameter expression="${container}"
      */
-    protected String containerId;
+    protected String container;
 
     /**
      * password for root user of mysql
@@ -59,7 +58,7 @@ public class CreateMySql extends AbstractDockerMojo {
     public void executeTask() throws MojoExecutionException, MojoFailureException {
 
         if (StringUtils.isBlank(port)) port = DEFAULT_MYSQL_EXPOSED_PORT;
-        if (StringUtils.isBlank(dataVolume)) dataVolume = prompt("Please specify path to directory with data volume");
+        if (StringUtils.isBlank(dataVolume)) dataVolume = prompt("Please specify the path to directory with data volume");
         //root password may be blank but not null, if user wants to have empty password
         if (rootPassword == null) rootPassword = DEFAULT_MYSQL_PASSWORD;
 
@@ -67,7 +66,7 @@ public class CreateMySql extends AbstractDockerMojo {
             pullMySqlImage(docker);
         }
 
-        if (noMysqlContainer(docker)) {
+        if (findContainer(DEFAULT_MYSQL_CONTAINER) == null) {
             createMysqlContainer(docker);
         }
     }
@@ -77,18 +76,15 @@ public class CreateMySql extends AbstractDockerMojo {
         return mysql.size() == 0;
     }
 
-    private boolean noMysqlContainer(DockerClient docker) {
-        List<Container> containers = docker.listContainersCmd().withShowAll(true).withLabelFilter(DEFAULT_MYSQL_CONTAINER_ID).exec();
-        return containers.size() == 0;
-    }
-
     private void createMysqlContainer(DockerClient docker) {
+        if (container == null) container = DEFAULT_MYSQL_CONTAINER;
+
         ExposedPort tcp3306 = ExposedPort.tcp(3306);
         Ports portBindings = new Ports();
         portBindings.bind(tcp3306, new Ports.Binding("localhost", port));
 
         Map<String, String> labels = new HashMap<>();
-        labels.put(DEFAULT_MYSQL_CONTAINER_ID, "true");
+        labels.put(container, "true");
 
         if(SystemUtils.IS_OS_WINDOWS){
             prepareVolumeWindowsPath();
@@ -99,7 +95,7 @@ public class CreateMySql extends AbstractDockerMojo {
         docker.createContainerCmd(MYSQL_5_6)
                 .withExposedPorts(tcp3306)
                 .withPortBindings(portBindings)
-                .withName(DEFAULT_MYSQL_CONTAINER_ID)
+                .withName(container)
                 .withEnv("MYSQL_ROOT_PASSWORD="+rootPassword)
                 .withVolumes(volume)
                 .withBinds(new Bind(dataVolume, volume))

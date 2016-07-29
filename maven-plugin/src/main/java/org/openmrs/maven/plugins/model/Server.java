@@ -22,7 +22,7 @@ public class Server {
     // attributes
     public static final String PROPERTY_SERVER_ID = "server.id";
     public static final String PROPERTY_DB_DRIVER = "connection.driver_class";
-    public static final String PROPERTY_DOCKER_MYSQL = "db.docker.container.id";
+    public static final String PROPERTY_DOCKER_MYSQL = "db.docker.container";
     public static final String PROPERTY_DB_USER = "connection.username";
     public static final String PROPERTY_DB_PASS = "connection.password";
     public static final String PROPERTY_DB_URI = "connection.url";

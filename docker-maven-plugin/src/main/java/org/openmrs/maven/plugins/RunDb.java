@@ -5,24 +5,22 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 
+import java.net.URI;
 import java.sql.DriverManager;
-import java.util.List;
-
-import static org.openmrs.maven.plugins.CreateMySql.DEFAULT_MYSQL_EXPOSED_PORT;
 
 /**
- * @goal run-mysql
+ * @goal run-db
  * @requiresProject false
  */
-public class RunMySql extends AbstractDockerMojo {
+public class RunDb extends AbstractDockerMojo {
 
     public static final String JDBC_MYSQL = "jdbc:mysql://";
     /**
      * port exposed by mysql container to connect with db
      *
-     * @parameter expression="${containerId}"
+     * @parameter expression="${container}"
      */
-    protected String containerId;
+    protected String container;
 
     /**
      * uri to connect with db
@@ -47,52 +45,47 @@ public class RunMySql extends AbstractDockerMojo {
 
     @Override
     public void executeTask() throws MojoExecutionException, MojoFailureException {
-        Container container = null;
+        Container dbContainer = null;
 
-        if (StringUtils.isNotBlank(containerId)) {
-            container = findContainerById(containerId);
-        } else {
-            container = findContainerByLabel(DEFAULT_MYSQL_CONTAINER_ID);
+        if (StringUtils.isNotBlank(container)) {
+            dbContainer = findContainer(container);
         }
 
-        if (container == null) {
-            throw new MojoExecutionException("Failed to start container - container with given id " + containerId + " doesn't exist");
+        if (dbContainer == null) {
+            throw new MojoExecutionException("Failed to find the '" + container + "' container. Run `docker ps` to see available containers.");
         }
 
-        if (!container.getStatus().contains("Up")) {
-            docker.startContainerCmd(container.getId()).exec();
+        if (!dbContainer.getStatus().contains("Up")) {
+            docker.startContainerCmd(dbContainer.getId()).exec();
 
             if (StringUtils.isBlank(dbUri)){
                 dbUri = DEFAULT_MYSQL_DBURI;
-            } else {
-                prepareDbUri();
             }
+            dbUri = stripOffDbName(dbUri);
 
             if (StringUtils.isBlank(username)) username = "root";
-            if (StringUtils.isBlank(password)) password = DEFAULT_MYSQL_EXPOSED_PORT;
+            if (StringUtils.isBlank(password)) password = DEFAULT_MYSQL_PASSWORD;
 
             //wait until MySQL is ready for connections, usually takes miliseconds,
             //but if there is automatically created connection after start-up, it may be refused
             long start = System.currentTimeMillis();
-            showMessage("\nInitializing MySQL DB...\n");
+            showMessage("Trying to connect to the DB...");
             while (System.currentTimeMillis() - start < 30000) {
                 try {
                     DriverManager.getConnection(dbUri, username, password);
                     //breaks only if connection is established
-                    showMessage("\nFinished initializing MySQL DB\n");
+                    showMessage("Connected to the DB.");
                     return;
                 } catch (Exception e) {
                     //do nothing, iterate again
                 }
             }
-            throw new MojoExecutionException("Failed to initialize MySQL DB in container");
+            throw new MojoExecutionException("Failed to connect to the DB in the '" + this.container + "' container at '" + dbUri + "'");
         }
     }
 
-    private void prepareDbUri() throws MojoExecutionException {
-        if((dbUri.contains(JDBC_MYSQL))){
-            int indexAfterPort = dbUri.replace(JDBC_MYSQL, "").indexOf("/")+JDBC_MYSQL.length();
-            dbUri = dbUri.substring(0, indexAfterPort);
-        } else throw new MojoExecutionException("Invalid database URI, should be JDBC:MYSQL URL, but was"+dbUri);
+    public String stripOffDbName(String dbUri) {
+        int startOfDbName = dbUri.indexOf("/", dbUri.indexOf("//") + 2);
+        return dbUri.substring(0, startOfDbName);
     }
 }

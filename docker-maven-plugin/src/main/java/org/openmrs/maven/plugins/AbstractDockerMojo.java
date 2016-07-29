@@ -15,11 +15,12 @@ import org.codehaus.plexus.components.interactivity.PrompterException;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 
 abstract class AbstractDockerMojo extends AbstractMojo {
 
-    protected static final String DEFAULT_MYSQL_CONTAINER_ID = "openmrs-mysql";
+    protected static final String DEFAULT_MYSQL_CONTAINER = "openmrs-sdk-mysql";
     protected static final String DEFAULT_MYSQL_PASSWORD = "Admin123";
     protected static final String MYSQL_5_6 = "mysql:5.6";
     protected static final String DEFAULT_MYSQL_EXPOSED_PORT = "3307";
@@ -66,20 +67,27 @@ abstract class AbstractDockerMojo extends AbstractMojo {
         docker = DockerClientBuilder.getInstance(dockerHost).build();
     }
 
-    protected Container findContainerById(String id){
+    protected Container findContainer(String id){
         List<Container> containers = docker.listContainersCmd().withShowAll(true).exec();
-        for(Container container : containers){
-            if (container.getId().equals(id)){
+
+        for (Container container : containers) {
+            if (container.getId().equals(id) || Arrays.asList(container.getNames()).contains(id) || container.getLabels().containsKey(id)) {
+                return container;
+            }
+        }
+
+        for (Container container: containers) {
+            if (Arrays.asList(container.getNames()).contains(id)) {
+                return container;
+            }
+        }
+
+        for (Container container: containers) {
+            if (container.getLabels().containsKey(id)) {
                 return container;
             }
         }
         return null;
-    }
-
-    protected Container findContainerByLabel(String label) {
-        List<Container> containers = docker.listContainersCmd().withShowAll(true).withLabelFilter(label).exec();
-        if(containers.size() > 0) return containers.get(0);
-        else return null;
     }
 
     protected String prompt(String message, String defaultValue) {
@@ -109,7 +117,7 @@ abstract class AbstractDockerMojo extends AbstractMojo {
     }
 
     protected void showMessage(String message) {
-        System.out.println(message);
+        System.out.println("\n" + message);
     }
 }
 

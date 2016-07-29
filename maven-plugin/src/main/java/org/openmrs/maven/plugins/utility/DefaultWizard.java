@@ -1,9 +1,9 @@
 package org.openmrs.maven.plugins.utility;
 
 import com.google.common.collect.Lists;
-import com.google.inject.internal.util.Maps;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.SystemUtils;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.maven.artifact.versioning.ArtifactVersion;
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
@@ -22,6 +22,7 @@ import org.openmrs.maven.plugins.model.UpgradeDifferential;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -66,14 +67,15 @@ public class DefaultWizard implements Wizard {
     public static final String DISTRIBUTION_VERSION_PROMPT = "You can deploy the following versions of distribution";
 
     public static final String DB_OPTION_H2 = "H2";
-    public static final String DB_OPTION_MYSQL = "Pre-installed MySQL";
-    public static final String DB_OPTION_SDK_DOCKER_MYSQL = "MySQL 5.6 in SDK docker container (docker required)";
-    public static final String DB_OPTION_DOCKER_MYSQL = "Existing docker container (docker required)";
+    public static final String DB_OPTION_MYSQL = "MySQL 5.6 (requires pre-installed MySQL 5.6)";
+    public static final String DB_OPTION_SDK_DOCKER_MYSQL = "MySQL 5.6 in SDK docker container (requires pre-installed Docker)";
+    public static final String DB_OPTION_DOCKER_MYSQL = "Existing docker container (requires pre-installed Docker)";
     public static final Map<String,String> DB_OPTIONS_MAP = new HashMap<String, String>() {{
         put("mysql", DB_OPTION_MYSQL);
         put("h2", DB_OPTION_H2);
         put("docker", DB_OPTION_SDK_DOCKER_MYSQL);
     }};
+    public static final String DBNAME_URL_VARIABLE = "@DBNAME@";
 
     @Requirement
     Prompter prompter;
@@ -596,7 +598,7 @@ public class DefaultWizard implements Wizard {
                 break;
             }
             case(DB_OPTION_DOCKER_MYSQL):{
-                promptForDockerizedMysql(server, dockerHelper);
+                promptForDockerizedDb(server, dockerHelper);
             }
         }
     }
@@ -612,6 +614,8 @@ public class DefaultWizard implements Wizard {
         if (dbUri.startsWith("jdbc:mysql:")) {
             dbUri = addMySQLParamsIfMissing(dbUri);
         }
+        dbUri = dbUri.replace(DBNAME_URL_VARIABLE, server.getServerId());
+
         server.setDbUri(dbUri);
         promptForDbCredentialsIfMissing(server);
     }
@@ -620,39 +624,48 @@ public class DefaultWizard implements Wizard {
         if(server.getDbDriver() == null){
             server.setDbDriver(SDKConstants.DRIVER_MYSQL);
         }
+
         String dbUri = (SDKConstants.URI_MYSQL.replace("3306", DockerHelper.DOCKER_MYSQL_PORT));
-        if (dbUri.startsWith("jdbc:mysql:")) {
-            dbUri = addMySQLParamsIfMissing(dbUri);
+        //Windows and Mac use the Docker Machine, which gets assigned an IP different than the host
+        if (SystemUtils.IS_OS_WINDOWS || SystemUtils.IS_OS_MAC) {
+            try {
+                URI uri = new URI(dockerHelper.getDockerHost());
+                dbUri = dbUri.replace("localhost", uri.getHost());
+            } catch (URISyntaxException e) {
+                throw new IllegalStateException(e);
+            }
         }
+        dbUri = dbUri.replace(DBNAME_URL_VARIABLE, server.getServerId());
+        dbUri = addMySQLParamsIfMissing(dbUri);
+
         server.setDbUri(dbUri);
         server.setDbUser(DockerHelper.DOCKER_MYSQL_USERNAME);
         server.setDbPassword(DockerHelper.DOCKER_MYSQL_PASSWORD);
         server.setContainerId(DockerHelper.DOCKER_DEFAULT_CONTAINER_ID);
 
-        dockerHelper.createMySql();
-        dockerHelper.runMySql();
+        dockerHelper.createMySqlContainer(DockerHelper.DOCKER_DEFAULT_CONTAINER_ID, DockerHelper.DOCKER_MYSQL_PORT);
+        dockerHelper.runDbContainer(server.getContainerId(), server.getDbUri(), server.getDbUser(), server.getDbPassword());
     }
 
-    public void promptForDockerizedMysql(Server server, DockerHelper dockerHelper) throws MojoExecutionException {
-        if(server.getDbDriver() == null){
-            server.setDbDriver(SDKConstants.DRIVER_MYSQL);
-        }
-
-        String containerId = prompt("Please specify your full container id (you can get it using command 'docker inspect {container name} | grep 'Id'')");
-        String username = prompt("Please specify MySQL username");
-        String password = prompt("Please specify MySQL password");
+    public void promptForDockerizedDb(Server server, DockerHelper dockerHelper) throws MojoExecutionException {
+        String containerId = prompt("Please specify your container id/name/label (you can get it using command `docker ps -a`)");
+        String username = prompt("Please specify DB username");
+        String password = prompt("Please specify DB password");
 
         String dbUri = promptForValueIfMissingWithDefault(
                 "Please specify database uri (-D%s) (default: '%s')", server.getDbUri(), "dbUri", SDKConstants.URI_MYSQL);
         if (dbUri.startsWith("jdbc:mysql:")) {
+            server.setDbDriver(SDKConstants.DRIVER_MYSQL);
             dbUri = addMySQLParamsIfMissing(dbUri);
         }
+        dbUri = dbUri.replace(DBNAME_URL_VARIABLE, server.getServerId());
+
         server.setDbUri(dbUri);
         server.setDbUser(username);
         server.setDbPassword(password);
         server.setContainerId(containerId);
 
-        dockerHelper.runMySql(containerId, server.getDbUri(), username, password);
+        dockerHelper.runDbContainer(containerId, server.getDbUri(), username, password);
     }
 
     @Override

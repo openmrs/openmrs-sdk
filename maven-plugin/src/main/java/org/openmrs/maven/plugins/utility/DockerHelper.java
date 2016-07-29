@@ -27,7 +27,7 @@ import static org.twdata.maven.mojoexecutor.MojoExecutor.version;
 
 public class DockerHelper {
 
-    public static String DOCKER_DEFAULT_CONTAINER_ID = "openmrs-mysql";
+    public static String DOCKER_DEFAULT_CONTAINER_ID = "openmrs-sdk-mysql";
     public static final String DOCKER_MYSQL_PORT = "3307";
     public static final String DOCKER_MYSQL_USERNAME = "root";
     public static final String DOCKER_MYSQL_PASSWORD = "Admin123";
@@ -98,11 +98,7 @@ public class DockerHelper {
         saveSdkProperties(sdkProperties);
     }
 
-    public void createMySql() throws MojoExecutionException {
-        createMySql(DOCKER_DEFAULT_CONTAINER_ID, DOCKER_MYSQL_PORT);
-    }
-
-    public void createMySql(String containerId, String port) throws MojoExecutionException {
+    public void createMySqlContainer(String container, String port) throws MojoExecutionException {
         File storage = new File(Server.getServersPath(), SDKConstants.OPENMRS_DOCKER_MYSQL_STORAGE);
         if(!storage.exists()){
             storage.mkdirs();
@@ -114,7 +110,7 @@ public class DockerHelper {
 
         Artifact sdkInfo = SDKConstants.getSDKInfo();
 
-        wizard.showMessage("Creating Docker container for MySQL...");
+        wizard.showMessage("Creating '" + container + "' DB docker container...");
         executeMojo(
                 plugin(
                         groupId(sdkInfo.getGroupId()),
@@ -125,7 +121,7 @@ public class DockerHelper {
                 configuration(
                         element("dockerHost", dockerHost),
                         element("port", port),
-                        element("containerId", containerId),
+                        element("container", container),
                         element("dataVolume", storage.getAbsolutePath())),
                 executionEnvironment(mavenProject, mavenSession, pluginManager)
         );
@@ -143,44 +139,22 @@ public class DockerHelper {
         }
     }
 
-    public void runMySql() throws MojoExecutionException {
+    public void runDbContainer(String container, String dbUri, String username, String password) throws MojoExecutionException {
         Artifact sdkInfo = SDKConstants.getSDKInfo();
         String dockerHost = getDockerHost();
         dockerHost = promptForDockerHostIfMissing(dockerHost);
 
-        wizard.showMessage("Starting Docker container for MySQL...\n");
+        wizard.showMessage("Starting '" + container + "' DB docker container...");
         executeMojo(
                 plugin(
                         groupId(sdkInfo.getGroupId()),
                         artifactId(SDKConstants.PLUGIN_DOCKER_ARTIFACT_ID),
                         version(sdkInfo.getVersion())
                 ),
-                goal("run-mysql"),
-                configuration(
-                        //do not specify container id, so docker plugin will use default mysql container with label
-                        element("dockerHost", dockerHost),
-                        element("username", DOCKER_MYSQL_USERNAME),
-                        element("password", DOCKER_MYSQL_PASSWORD)),
-                executionEnvironment(mavenProject, mavenSession, pluginManager)
-        );
-    }
-
-    public void runMySql(String containerId, String dbUri, String username, String password) throws MojoExecutionException {
-        Artifact sdkInfo = SDKConstants.getSDKInfo();
-        String dockerHost = getDockerHost();
-        dockerHost = promptForDockerHostIfMissing(dockerHost);
-
-        wizard.showMessage("Starting Docker container for MySQL...\n");
-        executeMojo(
-                plugin(
-                        groupId(sdkInfo.getGroupId()),
-                        artifactId(SDKConstants.PLUGIN_DOCKER_ARTIFACT_ID),
-                        version(sdkInfo.getVersion())
-                ),
-                goal("run-mysql"),
+                goal("run-db"),
                 configuration(
                         element("dockerHost", dockerHost),
-                        element("containerId", containerId),
+                        element("container", container),
                         element("username", username),
                         element("password", password),
                         element("dbUri", dbUri)),
