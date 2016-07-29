@@ -107,12 +107,17 @@ public class Pull extends AbstractTask {
             wizard.showMessage(String.format(MODULE_UPDATED_SUCCESSFULLY_MESSAGE, project.getArtifactId()));
         } catch (Exception e) {
             String moduleName = project.getArtifactId();
+
+            CompositeException allExceptions = new CompositeException("Failed to pull");
+            allExceptions.add(path, e);
+
             try {
                 cleanUp(path, moduleName);
-                wizard.showError(moduleName + " " + String.format(CONFLICT_ERROR_MESSAGE, e.getMessage()));
-            } catch (IllegalStateException e1) {
-                wizard.showError(moduleName + " " + String.format(CONFLICT_ERROR_MESSAGE, e1.getMessage()));
+            } catch (Exception e1) {
+                allExceptions.add(path, e1);
             }
+
+            allExceptions.checkAndThrow();
         }
     }
 
@@ -136,21 +141,21 @@ public class Pull extends AbstractTask {
                 }
                 try {
                     pullLatestUpstream(project.getPath());
+                    updatedModules.add(project.getArtifactId());
                 } catch (Exception e) {
                     allExceptions.add(project.getPath(), e);
+                    notUpdatedModules.add(project.getArtifactId() + DASH + e.getMessage());
                     try {
                         cleanUp(project.getPath(), project.getArtifactId());
-                        notUpdatedModules.add(project.getArtifactId() + DASH + String.format(CONFLICT_ERROR_MESSAGE, e.getMessage()));
                     } catch (IllegalStateException e1) {
                         allExceptions.add(project.getPath(), e1);
-                        notUpdatedModules.add(project.getArtifactId() + DASH + String.format(CONFLICT_ERROR_MESSAGE, e.getMessage()) + ". " + e1.getMessage());
                     }
                 }
-                updatedModules.add(project.getArtifactId());
             }
             displayUpdatedModules();
             displayNotUpdatedModules();
             allExceptions.checkAndThrow();
+            wizard.showMessage("");
         }else {
             wizard.showMessage(String.format(NO_WATCHED_MODULES_MESSAGE, serverId));
         }
@@ -189,6 +194,8 @@ public class Pull extends AbstractTask {
      * @throws Exception
      */
     private void pullLatestUpstream(String path) throws Exception {
+        wizard.showMessage("Pulling changes for " + path);
+
         String newBranch = SDK_DASH + serverId;
         Repository localRepo = gitHelper.getLocalRepository(path);
         Git git = new Git(localRepo);
@@ -386,7 +393,7 @@ public class Pull extends AbstractTask {
         if (updatedModules.size() != 0) {
             wizard.showMessage(MODULES_UPDATED_SUCCESSFULLY_MESSAGE);
             for(String moduleName: updatedModules){
-                wizard.showMessage(DASH + moduleName);
+                wizard.showMessage("+ " + moduleName);
             }
         }
     }
@@ -396,9 +403,9 @@ public class Pull extends AbstractTask {
      */
     private void displayNotUpdatedModules(){
         if (notUpdatedModules.size() != 0) {
-            wizard.showError(MODULES_NOT_UPDATED_MESSAGE);
+            wizard.showMessage(MODULES_NOT_UPDATED_MESSAGE);
             for(String moduleName: notUpdatedModules){
-                wizard.showMessage(DASH + moduleName);
+                wizard.showMessage("- " + moduleName);
             }
         }
     }

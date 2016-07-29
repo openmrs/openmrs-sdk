@@ -138,25 +138,14 @@ public class Clone extends AbstractTask {
         }
 
         try {
-            try (Git repository = Git.cloneRepository()
+            Git repository = Git.cloneRepository()
                     .setURI(originUrl)
                     .setDirectory(localPath)
-                    .call()) {
-                addUpstream(repository, repoUrl);
-            }
-        } catch (GitAPIException e) {
+                    .call();
+            Git git = new Git(gitHelper.getLocalRepository(localPath.getAbsolutePath()));
+            gitHelper.addRemoteUpstream(git, localPath.getAbsolutePath());
+        } catch (Exception e) {
             throw new IllegalStateException("Failed to clone repository", e);
-        }
-    }
-
-    private void addUpstream(Git repository, String upstreamHttpKey) {
-        wizard.showMessage("Adding " + upstreamHttpKey + " as the \"upstream\" remote repository");
-        StoredConfig config = repository.getRepository().getConfig();
-        config.setString("remote", "upstream", "url", upstreamHttpKey);
-        try {
-            config.save();
-        } catch (IOException e) {
-            throw new IllegalStateException("Failed to add \"upstream\" remote repository", e);
         }
     }
 }

@@ -83,6 +83,12 @@ public class Build extends AbstractTask {
     private void buildWatchedProjects() throws MojoExecutionException, MojoFailureException {
         serverId = wizard.promptForExistingServerIdIfMissing(serverId);
         Server server = loadValidatedServer(serverId);
+
+        if (server.getWatchedProjects().isEmpty()) {
+            wizard.showMessage("There are no watched projects for " + serverId + " server.");
+            return;
+        }
+
         File tempFolder = createTempReactorProject(server);
         try {
             cleanInstallServerProject(tempFolder.getAbsolutePath());

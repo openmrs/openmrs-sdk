@@ -166,4 +166,24 @@ public class Project {
 		return new ToStringBuilder(this).append("groupId", getGroupId()).append("artifactId", getArtifactId())
 		        .append("version", getVersion()).append("path", getPath()).toString();
 	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+
+		Project project = (Project) o;
+
+		return getPath() != null ? getPath().equals(project.getPath()) : project.getPath() == null;
+
+	}
+
+	@Override
+	public int hashCode() {
+		if (getPath() != null) {
+			return getPath().hashCode();
+		} else {
+			return super.hashCode();
+		}
+	}
 }
