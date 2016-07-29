@@ -71,7 +71,7 @@ abstract class AbstractDockerMojo extends AbstractMojo {
         List<Container> containers = docker.listContainersCmd().withShowAll(true).exec();
 
         for (Container container : containers) {
-            if (container.getId().equals(id) || Arrays.asList(container.getNames()).contains(id) || container.getLabels().containsKey(id)) {
+            if (container.getId().equals(id)) {
                 return container;
             }
         }
