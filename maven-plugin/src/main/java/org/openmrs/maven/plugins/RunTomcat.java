@@ -128,7 +128,7 @@ public class RunTomcat extends AbstractMojo {
 		if(StringUtils.isNotBlank(server.getContainerId())){
 			new DockerHelper(mavenProject, mavenSession, pluginManager, wizard).runDbContainer(
 					server.getContainerId(),
-					server.getMySqlPort(),
+					server.getDbUri(),
 					server.getDbUser(),
 					server.getDbPassword());
 		}
