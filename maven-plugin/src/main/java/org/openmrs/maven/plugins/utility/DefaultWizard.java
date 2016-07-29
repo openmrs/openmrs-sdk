@@ -122,7 +122,6 @@ public class DefaultWizard implements Wizard {
     }
 
 
-
     /**
      * Prompt for a value if it not set, and default value is set
      *
@@ -135,6 +134,10 @@ public class DefaultWizard implements Wizard {
      */
     @Override
     public String promptForValueIfMissingWithDefault(String message, String value, String parameterName, String defValue) {
+        return promptForValueIfMissingWithDefault(message, value, parameterName, defValue, false);
+    }
+
+    public String promptForValueIfMissingWithDefault(String message, String value, String parameterName, String defValue, boolean password) {
         String textToShow;
         if (StringUtils.isBlank(defValue)){
             textToShow = String.format(message != null ? message : DEFAULT_VALUE_TMPL, parameterName);
@@ -149,7 +152,12 @@ public class DefaultWizard implements Wizard {
             return getAnswer(textToShow);
         }
 
-        String val = prompt(textToShow);
+        String val;
+        if (password) {
+            val = promptForPassword(textToShow);
+        } else {
+            val = prompt(textToShow);
+        }
         if (StringUtils.isBlank(val)) {
             val = defValue;
         }
@@ -214,6 +222,15 @@ public class DefaultWizard implements Wizard {
             throw new RuntimeException(e);
         }
     }
+
+    private String promptForPassword(String textToShow){
+        try {
+            return prompter.promptForPassword("\n" + textToShow);
+        } catch (PrompterException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public void showMessage(String textToShow){
         System.out.println("\n" + textToShow);
     }
@@ -251,6 +268,18 @@ public class DefaultWizard implements Wizard {
     @Override
     public String promptForValueIfMissing(String value, String parameterName) {
         return promptForValueIfMissingWithDefault(null, value, parameterName, EMPTY_STRING);
+    }
+
+    /**
+     * Prompt for a value if it not set, and default value is NOT set
+     * @param value
+     * @param parameterName
+     * @return
+     * @throws PrompterException
+     */
+    @Override
+    public String promptForPasswordValueIfMissing(String value, String parameterName) {
+        return promptForValueIfMissingWithDefault(null, value, parameterName, EMPTY_STRING, true);
     }
 
     /**

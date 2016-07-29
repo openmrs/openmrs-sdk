@@ -24,13 +24,13 @@ import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
 
 /**
  *  @goal clone
- *
+ *  @requiresProject false
  */
-
 public class Clone extends AbstractTask {
 
+    public static final String GITHUB_COM = "github.com/";
     /**
-     * @parameter expression="${groupId}" default-value="org.openmrs.module"
+     * @parameter expression="${groupId}"
      */
     private String groupId;
 
@@ -49,38 +49,24 @@ public class Clone extends AbstractTask {
      */
     private String githubPassword;
 
-    private static final String GOAL_COPY = "copy";
-    private static final String OPENMRS_GITHUB_KEY = "openmrs";
-
     @Override
     public void executeTask() throws MojoExecutionException, MojoFailureException {
-
-        if (artifactId == null) {
-            artifactId = wizard.promptForValueIfMissing(null, "artifactId");
-        }
+        groupId = wizard.promptForValueIfMissingWithDefault(null, groupId, "groupId", "org.openmrs.module");
+        artifactId = wizard.promptForValueIfMissing(artifactId, "artifactId");
 
         String version = versionsHelper.getLatestReleasedVersion(new Artifact(artifactId, "0", groupId));
-        String gitHubHttpKey;
+        String repoUrl;
 
         try {
-            gitHubHttpKey = extractGitHubHttpKeyFromModulePom(artifactId, version, groupId);
+            repoUrl = extractGitHubHttpKeyFromModulePom(artifactId, version, groupId);
         } catch (IOException e) {
-            throw new IllegalStateException("Failed to fetch github data from module repository", e);
+            throw new IllegalStateException("Failed to fetch scm url from maven repository", e);
         }
 
-        if (githubUsername == null) {
-            githubUsername = wizard.promptForValueIfMissing(null, "GitHub username");
-            // Remove eventually mistakes like spaces, tabs etc.
-            githubUsername = githubUsername.replaceAll("\\s+", "");
-        }
+        githubUsername = wizard.promptForValueIfMissing(githubUsername, "your GitHub username");
+        githubPassword = wizard.promptForPasswordValueIfMissing(githubPassword, "your GitHub password");
 
-        if (githubPassword == null) {
-            githubPassword = wizard.promptForValueIfMissing(null, "GitHub password");
-        }
-
-        cloneRepo(gitHubHttpKey, OPENMRS_GITHUB_KEY);
-
-        wizard.showMessage("");
+        cloneRepo(repoUrl);
     }
 
     private String extractGitHubHttpKeyFromModulePom(String artifactId, String version, String groupId) throws MojoExecutionException, IOException {
@@ -92,7 +78,11 @@ public class Clone extends AbstractTask {
         String url = pomProperties.getScm().getUrl();
         pom.delete();
         pomDir.delete();
-        return StringUtils.removeEnd(url, "/") + ".git";
+        if (!url.endsWith(".git")) {
+            return StringUtils.removeEnd(url, "/") + ".git";
+        } else {
+            return url;
+        }
     }
 
     private void downloadModulePom(Artifact artifact) throws MojoExecutionException {
@@ -106,82 +96,67 @@ public class Clone extends AbstractTask {
                         artifactId(SDKConstants.PLUGIN_DEPENDENCIES_ARTIFACT_ID),
                         version(SDKConstants.PLUGIN_DEPENDENCIES_VERSION)
                 ),
-                goal(GOAL_COPY),
+                goal("copy"),
                 configuration(configuration.toArray(new Element[0])),
                 executionEnvironment(mavenProject, mavenSession, pluginManager)
         );
     }
 
-    private void forkRepo(String repoToForkName) {
-
-        wizard.showMessage("Forking repository:");
-        String repoToForkOwner = "openmrs";
+    private void forkRepo(String repoName, String repoOwner) {
+        wizard.showMessage("Forking " + repoName + " from " + repoOwner);
         GitHubClient client = new GitHubClient();
-        System.out.print("- Client authentication");
         client.setCredentials(githubUsername, githubPassword);
-        wizard.showMessage(" - DONE");
         RepositoryService service = new RepositoryService();
-
-        System.out.print("- Service authentication");
         service.getClient().setCredentials(githubUsername, githubPassword);
-        wizard.showMessage(" - DONE");
-        RepositoryId toBeForked = new RepositoryId(repoToForkOwner, repoToForkName);
+        RepositoryId toBeForked = new RepositoryId(repoOwner, repoName);
         try {
-            System.out.print("- Forking");
             service.forkRepository(toBeForked);
-            wizard.showMessage(" - DONE");
         } catch (IOException e) {
-            throw new IllegalStateException("Failed to fork repository \"" + repoToForkOwner + "/" + repoToForkName+ "\"", e);
+            throw new IllegalStateException("Failed to fork repository", e);
         }
     }
 
-    private void cloneRepo(String upstreamHttpKey, String repoOwner) {
+    private void cloneRepo(String repoUrl) {
+        String repoOwner = repoUrl.substring(repoUrl.indexOf(GITHUB_COM) + GITHUB_COM.length(), repoUrl.lastIndexOf("/"));
+        String repoOwnerUrlPart = "/" + repoOwner + "/";
+        String originUrl = repoUrl.replace(repoOwnerUrlPart, "/" + githubUsername + "/");
 
-        repoOwner = "/" + repoOwner + "/";
-
-        String originHttpKey = upstreamHttpKey.replace(repoOwner, "/" + githubUsername + "/");
-
-        String repoName = upstreamHttpKey.substring(
-                upstreamHttpKey.indexOf(repoOwner) + repoOwner.length(),
-                upstreamHttpKey.indexOf(".git")
+        String repoName = repoUrl.substring(
+                repoUrl.indexOf(repoOwnerUrlPart) + repoOwnerUrlPart.length(),
+                repoUrl.indexOf(".git")
         );
 
         if ("false".equals(testMode)) {
-            forkRepo(repoName);
+            forkRepo(repoName, repoOwner);
         }
 
-        wizard.showMessage("Cloning repository:");
+        wizard.showMessage("Cloning from " + originUrl + " into " + repoName);
 
-        System.out.print("- Creating directory " + repoName);
         File localPath = new File(repoName, "");
         if (localPath.exists()) {
-            throw new IllegalStateException("Destination path \"" + repoName + "\" allready exists." + localPath.getAbsolutePath());
+            throw new IllegalStateException("Destination path \"" + localPath.getAbsolutePath() + "\" already exists.");
         }
-        wizard.showMessage(" - DONE");
 
-        System.out.print("- Cloning from " + originHttpKey + " to " + localPath);
         try {
             try (Git repository = Git.cloneRepository()
-                    .setURI(originHttpKey)
+                    .setURI(originUrl)
                     .setDirectory(localPath)
                     .call()) {
-                wizard.showMessage(" - DONE");
-                addUpstream(repository, upstreamHttpKey);
+                addUpstream(repository, repoUrl);
             }
         } catch (GitAPIException e) {
-            throw new IllegalStateException("Failed to clone repository from " + originHttpKey + ".", e);
+            throw new IllegalStateException("Failed to clone repository", e);
         }
     }
 
     private void addUpstream(Git repository, String upstreamHttpKey) {
-        System.out.print("- Adding \"upstream\" remote repository");
+        wizard.showMessage("Adding " + upstreamHttpKey + " as the \"upstream\" remote repository");
         StoredConfig config = repository.getRepository().getConfig();
         config.setString("remote", "upstream", "url", upstreamHttpKey);
         try {
             config.save();
-            wizard.showMessage(" - DONE");
         } catch (IOException e) {
-            throw new IllegalStateException("Failed to add \"upstream\" remote repository (" + upstreamHttpKey + ")", e);
+            throw new IllegalStateException("Failed to add \"upstream\" remote repository", e);
         }
     }
 }

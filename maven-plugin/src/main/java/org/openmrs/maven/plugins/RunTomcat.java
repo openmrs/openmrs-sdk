@@ -90,8 +90,8 @@ public class RunTomcat extends AbstractMojo {
 
 	@Override
 	public void execute() throws MojoExecutionException, MojoFailureException {
-		System.out.println("\nUsing JAVA_HOME: " + System.getProperty("java.home") + "\n");
-		System.out.println("Using MAVEN_OPTS: " + System.getenv("MAVEN_OPTS") + "\n");
+		wizard.showMessage("\nUsing JAVA_HOME: " + System.getProperty("java.home"));
+		wizard.showMessage("Using MAVEN_OPTS: " + System.getenv("MAVEN_OPTS"));
 
 		serverId = wizard.promptForExistingServerIdIfMissing(serverId);
 
@@ -132,6 +132,8 @@ public class RunTomcat extends AbstractMojo {
 					server.getDbUser(),
 					server.getDbPassword());
 		}
+
+		wizard.showMessage("Starting Tomcat...\n");
 
 		Tomcat tomcat = new Tomcat();
 		if (port == null) {
