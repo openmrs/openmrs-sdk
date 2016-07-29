@@ -45,8 +45,8 @@ public class DefaultWizard implements Wizard {
     private static final String DEFAULT_OPTION_TMPL = "%d) %s";
     private static final String DEFAULT_CUSTOM_OPTION_TMPL = "%d) Other...";
     private static final String DEFAULT_SERVER_NAME = "server";
-    private static final String DEFAULT_VALUE_TMPL = "Please specify '%s'";
-    private static final String DEFAULT_VALUE_TMPL_WITH_DEFAULT = "Please specify '%s': (default: '%s')";
+    private static final String DEFAULT_VALUE_TMPL = "Please specify %s";
+    private static final String DEFAULT_VALUE_TMPL_WITH_DEFAULT = "Please specify %s: (default: '%s')";
     private static final String DEFAULT_FAIL_MESSAGE = "Server with such serverId is not exists";
     private static final String INVALID_SERVER = "Invalid server Id";
     private static final String YESNO = " [Y/n]";
@@ -621,6 +621,8 @@ public class DefaultWizard implements Wizard {
     }
 
     public void promptForDockerizedSdkMysql(Server server, DockerHelper dockerHelper) throws MojoExecutionException {
+        promptForDockerHostIfMissing(dockerHelper);
+
         if(server.getDbDriver() == null){
             server.setDbDriver(SDKConstants.DRIVER_MYSQL);
         }
@@ -647,7 +649,23 @@ public class DefaultWizard implements Wizard {
         dockerHelper.runDbContainer(server.getContainerId(), server.getDbUri(), server.getDbUser(), server.getDbPassword());
     }
 
+    private void promptForDockerHostIfMissing(DockerHelper dockerHelper) {
+        if (StringUtils.isBlank(dockerHelper.getDockerHost())) {
+            String dockerHost;
+            if(SystemUtils.IS_OS_LINUX){
+                dockerHost = promptForValueIfMissingWithDefault("Please specify Docker host URL (either 'tcp://' or 'unix://')",
+                        dockerHelper.getDockerHost(), "dockerHost", DockerHelper.DEFAULT_HOST_LINUX);
+            } else {
+                dockerHost = promptForValueIfMissingWithDefault(
+                        "Please specify Docker Machine URL (find out by running `docker-machine url`)",dockerHelper.getDockerHost(), "dockerHost", null);
+            }
+            dockerHelper.saveDockerHost(dockerHost);
+        }
+    }
+
     public void promptForDockerizedDb(Server server, DockerHelper dockerHelper) throws MojoExecutionException {
+        promptForDockerHostIfMissing(dockerHelper);
+
         String containerId = prompt("Please specify your container id/name/label (you can get it using command `docker ps -a`)");
         String username = prompt("Please specify DB username");
         String password = prompt("Please specify DB password");

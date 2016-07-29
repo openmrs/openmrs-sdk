@@ -32,6 +32,7 @@ public class DockerHelper {
     public static final String DOCKER_MYSQL_USERNAME = "root";
     public static final String DOCKER_MYSQL_PASSWORD = "Admin123";
     private static final String DOCKER_HOST_KEY = "dockerHost";
+    public static final String DEFAULT_HOST_LINUX = "unix:///var/run/docker.sock";
 
     private static final String DOCKER_HOST_MSG_WINDOWS = "To use dockerized MySQL, You have to pass Docker Host URL to SDK. " +
             "You should run SDK from docker-machine command line, so SDK can connect to your Docker. Your individual docker host URL can be obtained by calling command" +
