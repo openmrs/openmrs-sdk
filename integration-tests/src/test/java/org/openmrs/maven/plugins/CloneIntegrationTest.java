@@ -24,6 +24,7 @@ public class CloneIntegrationTest extends AbstractSdkIntegrationTest {
         String username = "tmarzeion";
         String password = "TEST CASE";
 
+        addTaskParam("groupId", "org.openmrs.module");
         addTaskParam("artifactId", moduleArtifactId);
         addTaskParam("githubUsername", username);
         addTaskParam("githubPassword", password);
