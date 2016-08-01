@@ -21,16 +21,28 @@ import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.model.UpgradeDifferential;
 
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.*;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Properties;
+import java.util.Set;
+import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -223,11 +235,19 @@ public class DefaultWizard implements Wizard {
         }
     }
 
-    private String promptForPassword(String textToShow){
-        try {
-            return prompter.promptForPassword("\n" + textToShow);
-        } catch (PrompterException e) {
-            throw new RuntimeException(e);
+    public String promptForPassword(String textToShow){
+        return new String(System.console().readPassword(textToShow));
+    }
+
+    public String promptForPasswordIfMissing(String value, String parameter){
+        if (value != null) {
+            return value;
+        } else if(!interactiveMode){
+            return getAnswer(parameter);
+        } if(System.console() == null){
+            return promptForValueIfMissing(value, parameter);
+        }else {
+            return new String(System.console().readPassword("\n"+DEFAULT_VALUE_TMPL+": ", parameter));
         }
     }
 
@@ -268,18 +288,6 @@ public class DefaultWizard implements Wizard {
     @Override
     public String promptForValueIfMissing(String value, String parameterName) {
         return promptForValueIfMissingWithDefault(null, value, parameterName, EMPTY_STRING);
-    }
-
-    /**
-     * Prompt for a value if it not set, and default value is NOT set
-     * @param value
-     * @param parameterName
-     * @return
-     * @throws PrompterException
-     */
-    @Override
-    public String promptForPasswordValueIfMissing(String value, String parameterName) {
-        return promptForValueIfMissingWithDefault(null, value, parameterName, EMPTY_STRING, true);
     }
 
     /**

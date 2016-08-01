@@ -107,7 +107,7 @@ public class Release extends AbstractTask {
         }
 
         githubUsername = wizard.promptForValueIfMissing(githubUsername, "github username");
-        githubPassword = wizard.promptForValueIfMissing(githubPassword, "github password");
+        githubPassword = wizard.promptForPasswordIfMissing(githubPassword, "ithub password");
 
         String defaultReleaseVersion = StringUtils.stripEnd(mavenProject.getVersion(), "-SNAPSHOT");
         releaseVersion = wizard.promptForValueIfMissingWithDefault(null, releaseVersion, "release version",defaultReleaseVersion);
@@ -248,7 +248,7 @@ public class Release extends AbstractTask {
             boolean useCurrent = wizard.promptYesNo("Would you like to use it?(if no, you will be asked for new credentials)");
             if(!useCurrent){
                 String bintrayUser = wizard.promptForValueIfMissing(null, "bintray username");
-                String bintrayApiKey = wizard.promptForValueIfMissing(null, "bintray api key");
+                String bintrayApiKey = wizard.promptForPasswordIfMissing(null, "bintray api key");
                 bintray.setUsername(bintrayUser);
                 bintray.setPassword(bintrayApiKey);
                 settingsManager.apply();
@@ -258,7 +258,7 @@ public class Release extends AbstractTask {
             bintray = new Server();
             bintray.setId(BINTRAY_SERVER_ID);
             String bintrayUser = wizard.promptForValueIfMissing(null, "bintray username");
-            String bintrayApiKey = wizard.promptForValueIfMissing(null, "bintray api key");
+            String bintrayApiKey = wizard.promptForPasswordIfMissing(null, "bintray api key");
             bintray.setUsername(bintrayUser);
             bintray.setPassword(bintrayApiKey);
 
