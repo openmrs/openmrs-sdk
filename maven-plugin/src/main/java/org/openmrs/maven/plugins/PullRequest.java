@@ -5,7 +5,9 @@ import com.atlassian.jira.rest.client.domain.Issue;
 import com.google.common.collect.Iterables;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.eclipse.jgit.api.CreateBranchCommand;
 import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.openmrs.maven.plugins.git.GithubPrRequest;
@@ -73,8 +75,7 @@ public class PullRequest extends AbstractTask {
         } catch (IOException e) {
             throw new MojoFailureException("Error during accessing local repository", e);
         }
-        String localRef = "refs/heads/"+localBranch;
-        String upstreamRef = "refs/remotes/upstream/"+branch;
+
         Git git = new Git(localRepository);
 
         if(gitHelper.checkIfUncommitedChanges(git)){
@@ -82,7 +83,23 @@ public class PullRequest extends AbstractTask {
             throw new MojoExecutionException("There are uncommitted changes. Please commit before proceeding.");
         }
 
+        if (localBranch.equals("master")) {
+            boolean yes = wizard.promptYesNo("Creating pull request from the master branch is not recommended. Would you like to create a feature branch '" + issueId + "'?");
+            if (yes) {
+                try {
+                    git.branchCreate().setName(issueId).call();
+                    git.checkout().setName(issueId).call();
+                    localBranch = issueId;
+                } catch (GitAPIException e) {
+                    throw new IllegalStateException(e);
+                }
+            }
+        }
+
         gitHelper.pullRebase(this, branch, new Project(mavenProject.getModel()));
+
+        String localRef = "refs/heads/"+localBranch;
+        String upstreamRef = "refs/remotes/upstream/"+branch;
 
         squashCommitsIfAccepted(git, localRef, upstreamRef);
 
@@ -91,13 +108,16 @@ public class PullRequest extends AbstractTask {
             return;
         }
 
-        String url = mavenProject.getScm().getUrl();
-        repoName = url.substring(url.lastIndexOf("/")+1);
-        username = wizard.promptForValueIfMissing(username, "github username");
-        password = wizard.promptForPasswordIfMissing(password, "github password");
+        String scmUrl = mavenProject.getScm().getUrl();
+        repoName = scmUrl.substring(scmUrl.lastIndexOf("/")+1);
+        username = wizard.promptForValueIfMissing(username, "your GitHub username");
 
-        gitHelper.push(git, username, password, "refs/heads/"+localBranch, "origin", false);
+        String originUrl = gitHelper.adjustRemoteOrigin(git, scmUrl, username);
+        wizard.showMessage("Changes will be pushed to " + localBranch + " branch at " + originUrl);
 
+        password = wizard.promptForPasswordIfMissing(password, "your GitHub password");
+
+        gitHelper.push(git, username, password, "refs/heads/"+localBranch, "origin", true);
         createUpdatePullRequest(issue, localBranch, repoName);
     }
 
@@ -170,7 +190,7 @@ public class PullRequest extends AbstractTask {
     private void createUpdatePullRequest(Issue issue, String originBranch, String repoName) {
         org.eclipse.egit.github.core.PullRequest pr = gitHelper.getPullRequestIfExists(branch, username +":"+originBranch, repoName);
         if(pr == null){
-            wizard.showMessage("creating new pull request...");
+            wizard.showMessage("Creating new pull request...");
             String description = wizard.promptForValueIfMissingWithDefault("You can include a short %s (optional)", null, "description", " ");
             description = "https://issues.openmrs.org/browse/"+ issueId +"\n\n"+description;
             GithubPrRequest request = new GithubPrRequest.Builder()

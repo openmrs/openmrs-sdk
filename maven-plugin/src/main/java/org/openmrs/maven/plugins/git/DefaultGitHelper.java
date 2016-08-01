@@ -12,7 +12,9 @@ import org.eclipse.egit.github.core.service.RepositoryService;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.RebaseCommand;
 import org.eclipse.jgit.api.RemoteAddCommand;
+import org.eclipse.jgit.api.RemoteListCommand;
 import org.eclipse.jgit.api.RemoteRemoveCommand;
+import org.eclipse.jgit.api.RemoteSetUrlCommand;
 import org.eclipse.jgit.api.ResetCommand;
 import org.eclipse.jgit.api.RevertCommand;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -41,6 +43,8 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.openmrs.maven.plugins.Clone.GITHUB_COM;
 
 public class DefaultGitHelper implements GitHelper {
 
@@ -363,6 +367,87 @@ public class DefaultGitHelper implements GitHelper {
                 throw new Exception(CREATING_REMOTE_UPSTREAM_REASON, e);
             }
         }
+    }
+
+    @Override
+    public String adjustRemoteOrigin(Git git, String scmUrl, String username) {
+        final String originName = "origin";
+
+        String scmOwner = scmUrl.substring(scmUrl.indexOf(GITHUB_COM) + GITHUB_COM.length(), scmUrl.lastIndexOf("/"));
+        String scmOwnerUrlPart = "/" + scmOwner + "/";
+        String originUrl = scmUrl.replace(scmOwnerUrlPart, "/" + username + "/");
+
+        RemoteConfig origin = getRemote(git, originName);
+        if (origin != null) {
+            if (!hasUri(origin, originUrl)) {
+                removeRemote(git, originName);
+                addRemote(git, originName, originUrl);
+            }
+        } else {
+            addRemote(git, originName, originUrl);
+        }
+
+        return originUrl;
+    }
+
+    private void addRemote(Git git, String name, String uri) {
+        RemoteAddCommand remoteAdd = git.remoteAdd();
+        remoteAdd.setName(name);
+        try {
+			remoteAdd.setUri(new URIish(uri));
+		} catch (URISyntaxException e) {
+			throw new IllegalStateException(e);
+		}
+        try {
+			remoteAdd.call();
+		} catch (GitAPIException e) {
+			throw new IllegalStateException(e);
+		}
+    }
+
+    private void removeRemote(Git git, String name) {
+        RemoteRemoveCommand remoteRemove = git.remoteRemove();
+        remoteRemove.setName(name);
+        try {
+			remoteRemove.call();
+		} catch (GitAPIException e) {
+			throw new IllegalStateException(e);
+		}
+    }
+
+    private RemoteConfig getRemote(Git git, String name) {
+        List<RemoteConfig> remotes;
+        try {
+            remotes = git.remoteList().call();
+        } catch (GitAPIException e) {
+            throw new IllegalStateException(e);
+        }
+
+        for (RemoteConfig remote: remotes) {
+            if (remote.getName().equals(name)) {
+                return remote;
+            }
+        }
+
+        return null;
+    }
+
+    private boolean hasUri(RemoteConfig remote, String uri) {
+        List<URIish> remoteUris = new ArrayList<>();
+        remoteUris.addAll(remote.getURIs());
+        remoteUris.addAll(remote.getPushURIs());
+
+        if (remoteUris.isEmpty()) {
+            return false;
+        }
+
+        for (URIish remoteUri: remoteUris) {
+            if (!remoteUri.toString().equals(uri)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**

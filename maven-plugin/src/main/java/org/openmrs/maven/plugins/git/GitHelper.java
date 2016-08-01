@@ -120,4 +120,6 @@ public interface GitHelper {
      * @throws Exception
      */
     void addRemoteUpstream(Git git, String path) throws Exception;
+
+    String adjustRemoteOrigin(Git git, String scmUrl, String username);
 }

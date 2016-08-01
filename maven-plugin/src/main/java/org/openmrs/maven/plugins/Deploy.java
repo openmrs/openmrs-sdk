@@ -31,10 +31,10 @@ import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
  */
 public class Deploy extends AbstractTask {
 
-    private static final String DEFAULT_OK_MESSAGE = "Module '%s' installed successfully";
+    private static final String DEFAULT_OK_MESSAGE = "Module '%s' deployed successfully";
     private static final String DEFAULT_UPDATE_MESSAGE = "Module '%s' was updated to version '%s'";
-    private static final String TEMPLATE_UPDATE = "Module is installed already. Do you want to update it to version '%s'?";
-    private static final String TEMPLATE_DOWNGRADE = "Installed version '%s' of module higher than target '%s'. Please note that downgrades are not recommended";
+    private static final String TEMPLATE_UPDATE = "Do you want to update module '%s' in version '%s' to version '%s'?";
+    private static final String TEMPLATE_DOWNGRADE = "Please note that downgrades are not recommended";
     private static final String TEMPLATE_CURRENT_VERSION = "The server currently has the OpenMRS %s in version %s installed.";
 
     private static final String DEPLOY_MODULE_OPTION = "Module";
@@ -344,13 +344,18 @@ public class Deploy extends AbstractTask {
             if (moduleId.equals(parts[0])) {
                 Version oldVersion = new Version(oldV.substring(0, oldV.lastIndexOf('.')));
                 Version newVersion = new Version(artifact.getVersion());
-                if (oldVersion.higher(newVersion)) {
-                    wizard.showMessage(String.format(TEMPLATE_DOWNGRADE, oldVersion.toString(), newVersion.toString()));
+
+                if (!oldVersion.equals(newVersion)) {
+                    if (oldVersion.higher(newVersion)) {
+                        wizard.showMessage(String.format(TEMPLATE_DOWNGRADE, oldVersion.toString(), newVersion.toString()));
+                    }
+
+                    boolean agree = wizard.promptYesNo(String.format(TEMPLATE_UPDATE, moduleId, oldVersion, artifact.getVersion()));
+                    if (!agree) {
+                        return false;
+                    }
                 }
-                boolean agree = wizard.promptYesNo(String.format(TEMPLATE_UPDATE, artifact.getVersion()));
-                if (!agree) {
-                    return false;
-                }
+
                 server.removeUserModule(new Artifact(moduleId+"-omod", oldVersion.toString(), artifact.getGroupId()));
                 return itemModule.delete();
             }

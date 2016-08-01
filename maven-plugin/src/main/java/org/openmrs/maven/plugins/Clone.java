@@ -26,7 +26,7 @@ import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
  */
 public class Clone extends AbstractTask {
 
-    public static final String GITHUB_COM = "github.com/";
+    public static final String GITHUB_COM = "https://github.com/";
     /**
      * @parameter expression="${groupId}"
      */
