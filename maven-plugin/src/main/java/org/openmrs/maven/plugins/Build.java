@@ -1,12 +1,15 @@
 package org.openmrs.maven.plugins;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.maven.it.VerificationException;
-import org.apache.maven.it.Verifier;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Writer;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.shared.invoker.DefaultInvocationRequest;
+import org.apache.maven.shared.invoker.DefaultInvoker;
+import org.apache.maven.shared.invoker.InvocationRequest;
+import org.apache.maven.shared.invoker.InvocationResult;
+import org.apache.maven.shared.invoker.Invoker;
 import org.apache.maven.shared.invoker.MavenInvocationException;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.utility.Project;
@@ -20,7 +23,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Properties;
 import java.util.Set;
 
 import static org.twdata.maven.mojoexecutor.MojoExecutor.artifactId;
@@ -91,12 +96,13 @@ public class Build extends AbstractTask {
 
         File tempFolder = createTempReactorProject(server);
         try {
-            cleanInstallServerProject(tempFolder.getAbsolutePath());
-        } catch (VerificationException e) {
+            cleanInstallServerProject(tempFolder);
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to build project in "+tempFolder.getAbsolutePath(), e);
+        } finally {
             deleteTempReactorProject(tempFolder);
-            throw new RuntimeException("Failed to install watched modules", e);
         }
-        deleteTempReactorProject(tempFolder);
+
         try {
             deployWatchedModules(server);
         } catch (MavenInvocationException e) {
@@ -242,13 +248,28 @@ public class Build extends AbstractTask {
 
     /**
      * Run "mvn clean install -DskipTests" command in the given directory
-     * @param directory
+     * @param tempProject
      * @throws MojoFailureException
      */
-    private void cleanInstallServerProject(String directory) throws MojoFailureException, VerificationException {
-        Verifier verifier = new Verifier(directory, true);
-        verifier.setAutoclean(true);
-        verifier.addCliOption("-DskipTests");
-        verifier.executeGoal("install");
+    private void cleanInstallServerProject(File tempProject) throws MojoFailureException, MavenInvocationException {
+        Properties properties = new Properties();
+        properties.put("skipTests", "true");
+
+        InvocationRequest request = new DefaultInvocationRequest();
+        request.setGoals(Arrays.asList("clean install"))
+                .setProperties(properties)
+                .setShowErrors(mavenSession.getRequest().isShowErrors())
+                .setOffline(mavenSession.getRequest().isOffline())
+                .setLocalRepositoryDirectory(mavenSession.getRequest().getLocalRepositoryPath())
+                .setUpdateSnapshots(mavenSession.getRequest().isUpdateSnapshots())
+                .setShowVersion(true)
+                .setBaseDirectory(tempProject);
+
+
+        Invoker invoker = new DefaultInvoker();
+        InvocationResult result = invoker.execute(request);
+        if (result.getExitCode() != 0 ) {
+            throw new IllegalStateException("Failed building project in "+tempProject.getAbsolutePath(), result.getExecutionException());
+        }
     }
 }
