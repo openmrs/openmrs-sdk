@@ -1,10 +1,12 @@
 package org.openmrs.maven.plugins;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.utility.DBConnector;
+import org.openmrs.maven.plugins.utility.DockerHelper;
 
 import java.io.IOException;
 import java.sql.SQLException;
@@ -28,11 +30,18 @@ public class Delete extends AbstractTask{
             Server server = loadValidatedServer(serverId);
             FileUtils.deleteDirectory(server.getServerDirectory());
 
+            if(StringUtils.isNotBlank(server.getContainerId())){
+                new DockerHelper(mavenProject, mavenSession, pluginManager, wizard).runDbContainer(
+                        server.getContainerId(),
+                        server.getMySqlPort(),
+                        server.getDbUser(),
+                        server.getDbPassword());
+            }
             if (server.isMySqlDb()) {
-                String dbName = server.getParam(Server.PROPERTY_DB_NAME);
-                String dbUser = server.getParam(Server.PROPERTY_DB_USER);
-                String dbPass = server.getParam(Server.PROPERTY_DB_PASS);
-                String dbUri = server.getParam(Server.PROPERTY_DB_URI);
+                String dbName = server.getDbName();
+                String dbUser = server.getDbUser();
+                String dbPass = server.getDbPassword();
+                String dbUri = server.getDbUri();
                 DBConnector connector = new DBConnector(dbUri, dbUser, dbPass, dbName);
                 connector.dropDatabase();
                 connector.close();

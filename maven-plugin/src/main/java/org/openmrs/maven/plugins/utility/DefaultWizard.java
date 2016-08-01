@@ -319,6 +319,9 @@ public class DefaultWizard implements Wizard {
     public String promptForExistingServerIdIfMissing(String serverId) {
         File omrsHome = new File(Server.getServersPath());
         List<String> servers = getListOfServers();
+        if(servers.isEmpty()){
+            throw new RuntimeException("There is no servers available");
+        }
         serverId = promptForMissingValueWithOptions("You have the following servers:", serverId, "serverId", servers);
         if (serverId.equals(NONE)) {
             throw new RuntimeException(INVALID_SERVER);
