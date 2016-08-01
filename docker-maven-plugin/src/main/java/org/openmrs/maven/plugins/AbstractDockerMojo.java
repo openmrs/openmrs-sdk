@@ -76,7 +76,10 @@ abstract class AbstractDockerMojo extends AbstractMojo {
             }
         }
 
-        String name = "/"+id;
+        String name = id;
+        if(SystemUtils.IS_OS_LINUX){
+            name = "/"+name;
+        }
         for (Container container: containers) {
             if (Arrays.asList(container.getNames()).contains(name)) {
                 return container;
