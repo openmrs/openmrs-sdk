@@ -94,7 +94,7 @@ public class PullRequest extends AbstractTask {
         String url = mavenProject.getScm().getUrl();
         repoName = url.substring(url.lastIndexOf("/")+1);
         username = wizard.promptForValueIfMissing(username, "github username");
-        password = wizard.promptForValueIfMissing(password, "github password");
+        password = wizard.promptForPasswordIfMissing(password, "github password");
 
         gitHelper.push(git, username, password, "refs/heads/"+localBranch, "origin", false);
 

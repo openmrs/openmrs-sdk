@@ -43,7 +43,7 @@ public interface Wizard {
 
     String promptForValueIfMissing(String value, String parameterName);
 
-    String promptForPasswordValueIfMissing(String value, String parameterName);
+    String promptForPasswordIfMissing(String value, String parameter);
 
     void promptForJavaHomeIfMissing(Server server);
 

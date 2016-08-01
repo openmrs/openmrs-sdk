@@ -8,8 +8,6 @@ import org.eclipse.egit.github.core.RepositoryId;
 import org.eclipse.egit.github.core.client.GitHubClient;
 import org.eclipse.egit.github.core.service.RepositoryService;
 import org.eclipse.jgit.api.Git;
-import org.eclipse.jgit.api.errors.GitAPIException;
-import org.eclipse.jgit.lib.StoredConfig;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.utility.Project;
 import org.openmrs.maven.plugins.utility.SDKConstants;
@@ -64,7 +62,7 @@ public class Clone extends AbstractTask {
         }
 
         githubUsername = wizard.promptForValueIfMissing(githubUsername, "your GitHub username");
-        githubPassword = wizard.promptForPasswordValueIfMissing(githubPassword, "your GitHub password");
+        githubPassword = wizard.promptForPasswordIfMissing(githubPassword, "your GitHub password");
 
         cloneRepo(repoUrl);
     }

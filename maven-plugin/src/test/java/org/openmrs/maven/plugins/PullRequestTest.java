@@ -97,6 +97,7 @@ public class PullRequestTest {
         //mock wizard
         pullRequest.wizard = wizard;
         when(wizard.promptForValueIfMissing(anyString(), anyString())).then(AdditionalAnswers.returnsFirstArg());
+        when(wizard.promptForPasswordIfMissing(anyString(), anyString())).then(AdditionalAnswers.returnsFirstArg());
         when(wizard.promptYesNo(anyString())).thenReturn(true);
 
         //mock jira integration
