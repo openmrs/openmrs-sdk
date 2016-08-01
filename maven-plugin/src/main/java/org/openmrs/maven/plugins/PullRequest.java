@@ -86,13 +86,8 @@ public class PullRequest extends AbstractTask {
         if (localBranch.equals("master")) {
             boolean yes = wizard.promptYesNo("Creating pull request from the master branch is not recommended. Would you like to create a feature branch '" + issueId + "'?");
             if (yes) {
-                try {
-                    git.branchCreate().setName(issueId).call();
-                    git.checkout().setName(issueId).call();
-                    localBranch = issueId;
-                } catch (GitAPIException e) {
-                    throw new IllegalStateException(e);
-                }
+                gitHelper.checkoutToNewBranch(git, issueId);
+                localBranch = issueId;
             }
         }
 

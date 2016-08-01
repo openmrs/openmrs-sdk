@@ -118,7 +118,7 @@ public class PullRequestTest {
         pullRequest.executeTask();
         verify(gitHelper, atLeastOnce()).addIssueIdIfMissing(any(Git.class), eq(issueId), eq(2));
         verify(gitHelper, atLeastOnce()).squashLastCommits(any(Git.class), eq(2));
-        verify(gitHelper, atLeastOnce()).push(any(Git.class), eq(username), eq(password), anyString(), anyString(), eq(false));
+        verify(gitHelper, atLeastOnce()).push(any(Git.class), eq(username), eq(password), anyString(), anyString(), eq(true));
         verify(jira, atLeastOnce()).getIssue(issueId);
     }
 
@@ -153,7 +153,7 @@ public class PullRequestTest {
     public void should_buildProperPullRequest() throws Exception {
         GithubPrRequest pr = new GithubPrRequest.Builder()
                 .setBase("master")
-                .setHead(username+":"+"master")
+                .setHead(username+":"+issueId)
                 .setUsername(username)
                 .setPassword(password)
                 .setDescription("https://issues.openmrs.org/browse/"+ issueId +"\n\n"+"null")

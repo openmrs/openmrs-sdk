@@ -507,5 +507,15 @@ public class DefaultGitHelper implements GitHelper {
         String url = model.getScm().getUrl();
         return StringUtils.removeEnd(url, "/") + ".git";
     }
+
+    @Override
+    public void checkoutToNewBranch(Git git, String branchName) {
+        try {
+            git.branchCreate().setName(branchName).call();
+            git.checkout().setName(branchName).call();
+        } catch (GitAPIException e) {
+            throw new IllegalStateException(e);
+        }
+    }
 }
 

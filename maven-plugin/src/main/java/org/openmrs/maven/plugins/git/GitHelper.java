@@ -122,4 +122,6 @@ public interface GitHelper {
     void addRemoteUpstream(Git git, String path) throws Exception;
 
     String adjustRemoteOrigin(Git git, String scmUrl, String username);
+
+    void checkoutToNewBranch(Git git, String branchName);
 }
