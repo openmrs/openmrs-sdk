@@ -84,7 +84,7 @@ public class Release extends AbstractTask {
     @Override
     public void executeTask() throws MojoExecutionException, MojoFailureException {
         if(mavenProject.getScm()==null){
-            boolean agreeToAddScm = wizard.promptYesNo("There is no SCM section in project's pom.xml, would You like to configure it?(it can affect formatting of your pom file)");
+            boolean agreeToAddScm = wizard.promptYesNo("There is no SCM section in project's pom.xml, would you like to configure it? (it can affect formatting of your pom file)");
             if(agreeToAddScm){
                 addScm();
                 saveMavenProject();
@@ -106,8 +106,8 @@ public class Release extends AbstractTask {
             scmUrl = createScmUrl();
         }
 
-        githubUsername = wizard.promptForValueIfMissing(githubUsername, "github username");
-        githubPassword = wizard.promptForPasswordIfMissing(githubPassword, "ithub password");
+        githubUsername = wizard.promptForValueIfMissing(githubUsername, "your GitHub username");
+        githubPassword = wizard.promptForPasswordIfMissing(githubPassword, "your GitHub password");
 
         String defaultReleaseVersion = StringUtils.stripEnd(mavenProject.getVersion(), "-SNAPSHOT");
         releaseVersion = wizard.promptForValueIfMissingWithDefault(null, releaseVersion, "release version",defaultReleaseVersion);
@@ -120,17 +120,18 @@ public class Release extends AbstractTask {
         //enable batch mode, so prepare mojo use created release.properties
         mavenSession.getSettings().setInteractiveMode(false);
         try{
-            wizard.showMessage("Prepare release ...");
+            wizard.showMessage("Preparing release...");
             executeMojo(
                     SDKConstants.getReleasePlugin(),
                     goal("prepare"),
                     configuration(
                             element(name("username"), githubUsername),
-                            element(name("password"), githubPassword)
+                            element(name("password"), githubPassword),
+                            element(name("autoVersionSubmodules"), "true")
                     ),
                     executionEnvironment(mavenProject, mavenSession, pluginManager)
             );
-            wizard.showMessage("Perform release...");
+            wizard.showMessage("Performing release...");
             executeMojo(
                     SDKConstants.getReleasePlugin(),
                     goal("perform"),
@@ -142,13 +143,13 @@ public class Release extends AbstractTask {
                     executionEnvironment(mavenProject, mavenSession, pluginManager)
             );
         } catch (Exception e){
-            CompositeException allExceptions = new CompositeException("Failed to perform release");
-            allExceptions.add("Error during performing release", e);
+            CompositeException allExceptions = new CompositeException("Failed to release");
+            allExceptions.add("Error during release", e);
             handleError(git, backupCommit, allExceptions);
             allExceptions.checkAndThrow();
         }
         cleanupPluginFiles();
-        wizard.showMessage("Release Performed!");
+        wizard.showMessage("Release Completed");
     }
 
 
@@ -187,7 +188,7 @@ public class Release extends AbstractTask {
     }
 
     private void saveReleaseProperties() {
-        String projectId = "openmrs:"+mavenProject.getArtifactId();
+        String projectId = mavenProject.getGroupId() + ":" + mavenProject.getArtifactId();
         Properties properties = new Properties();
         properties.setProperty("project.dev."+projectId, developmentVersion);
         properties.setProperty("project.scm."+projectId+".tag", releaseVersion);
@@ -197,6 +198,7 @@ public class Release extends AbstractTask {
         properties.setProperty("project.rel."+projectId, releaseVersion);
         properties.setProperty("scm.tagNameFormat", "${project.version}");
         properties.setProperty("scm.tag", releaseVersion);
+        properties.setProperty("autoVersionSubmodules", "true");
         File propsFile = new File(mavenProject.getBasedir(), "release.properties");
         try {
             properties.store(new FileOutputStream(propsFile), null);
@@ -244,21 +246,21 @@ public class Release extends AbstractTask {
             }
         }
         if (bintray != null) {
-            wizard.showMessage(String.format("Found Bintray access configuration with username: %s and API key: %s", bintray.getUsername(), bintray.getPassword()));
-            boolean useCurrent = wizard.promptYesNo("Would you like to use it?(if no, you will be asked for new credentials)");
+            wizard.showMessage(String.format("Found Bintray credentials for username '%s'", bintray.getUsername(), bintray.getPassword()));
+            boolean useCurrent = wizard.promptYesNo("Would you like to use them? (if no, you will be asked for new credentials)");
             if(!useCurrent){
-                String bintrayUser = wizard.promptForValueIfMissing(null, "bintray username");
-                String bintrayApiKey = wizard.promptForPasswordIfMissing(null, "bintray api key");
+                String bintrayUser = wizard.promptForValueIfMissing(null, "your Bintray username");
+                String bintrayApiKey = wizard.promptForPasswordIfMissing(null, "your Bintray API key (can be found under API keys at https://bintray.com/profile/edit after you log in)");
                 bintray.setUsername(bintrayUser);
                 bintray.setPassword(bintrayApiKey);
                 settingsManager.apply();
             }
         } else {
-            wizard.showMessage("No Bintray server configuration found, you have to provide bintray user credentials to proceed");
+            wizard.showMessage("No Bintray server configuration found, you have to provide Bintray credentials to proceed");
             bintray = new Server();
             bintray.setId(BINTRAY_SERVER_ID);
-            String bintrayUser = wizard.promptForValueIfMissing(null, "bintray username");
-            String bintrayApiKey = wizard.promptForPasswordIfMissing(null, "bintray api key");
+            String bintrayUser = wizard.promptForValueIfMissing(null, "your Bintray username");
+            String bintrayApiKey = wizard.promptForPasswordIfMissing(null, "your Bintray API key");
             bintray.setUsername(bintrayUser);
             bintray.setPassword(bintrayApiKey);
 
@@ -272,8 +274,8 @@ public class Release extends AbstractTask {
 
     private void addScm() throws MojoExecutionException {
         Scm scm = new Scm();
-        String githubUser = wizard.promptForValueIfMissing(null, "github username");
-        String githubRepo = wizard.promptForValueIfMissing(null, "github repository");
+        String githubUser = wizard.promptForValueIfMissing(null, "your GitHub username");
+        String githubRepo = wizard.promptForValueIfMissing(null, "your GitHub repository");
 
         scm.setConnection(String.format(SCM_TMPL_CONNECTION, githubUser, githubRepo));
         scm.setDeveloperConnection(String.format(SCM_TMPL_DEV_CONNECTION, githubUser, githubRepo));
