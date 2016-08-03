@@ -421,16 +421,9 @@ public class Deploy extends AbstractTask {
             project = Project.loadProject(userDir);
         }
         if (artifactId == null && project != null && project.isOpenmrsModule()) {
-            if (project.getParent() != null) {
-                moduleGroupId = project.getParent().getGroupId();
-                moduleArtifactId = project.getParent().getArtifactId() + "-omod";
-                moduleVersion = (version != null) ? version : project.getParent().getVersion();
-
-            } else {
-                moduleGroupId = project.getGroupId();
-                moduleArtifactId = project.getArtifactId() + "-omod";
-                moduleVersion = (version != null) ? version : project.getVersion();
-            }
+            moduleGroupId = project.getGroupId();
+            moduleArtifactId = project.getArtifactId() + "-omod";
+            moduleVersion = (version != null) ? version : project.getVersion();
         } else {
             moduleGroupId = wizard.promptForValueIfMissingWithDefault(null, groupId, "groupId", Artifact.GROUP_MODULE);
             moduleArtifactId = wizard.promptForValueIfMissing(artifactId, "artifactId");

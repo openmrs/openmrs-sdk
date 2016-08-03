@@ -1,49 +1,108 @@
-#set( $symbol_pound = '#' )
-#set( $symbol_dollar = '$' )
-#set( $symbol_escape = '\' )
 <?xml version="1.0" encoding="UTF-8"?>
 
 <module configVersion="1.2">
-
-	<!-- Module Properties -->
-	<id>${symbol_dollar}{project.parent.artifactId}</id>
-	<name>${symbol_dollar}{project.parent.name}</name>
-	<version>${symbol_dollar}{project.parent.version}</version>
-	<package>${symbol_dollar}{project.parent.groupId}.${symbol_dollar}{project.parent.artifactId}</package>
-	<author>${module-author}</author>
+	
+	<!-- Base Module Properties -->
+	<id>${project.parent.artifactId}</id>
+	<name>${project.parent.name}</name>
+	<version>${project.parent.version}</version>
+	<package>${package}</package>
+	<author>${moduleAuthor}</author>
 	<description>
-		${symbol_dollar}{project.parent.description}
+			${project.parent.description}
 	</description>
-	<updateURL>https://modules.openmrs.org/modules/download/${symbol_dollar}{project.parent.artifactId}/update.rdf</updateURL>
-	<require_version>${symbol_dollar}{openMRSVersion}</require_version>
-	<!-- / Module Properties -->
+
+	<activator>${package}.${moduleClassnamePrefix}Activator</activator>
+	
+	<!-- <updateURL>https://modules.openmrs.org/modules/download/@MODULE_ID@/update.rdf</updateURL> -->
+	<!-- /Base Module Properties -->
+	
+	<require_version>${openmrsPlatformVersion}</require_version>
 
 	<require_modules>
-		<require_module version="${symbol_dollar}{uiframeworkVersion}">
-			${groupId}.uiframework
+		<require_module version="${appframeworkVersion}">
+			org.openmrs.module.appframework
+		</require_module>
+		<require_module version="${uiframeworkVersion}">
+			org.openmrs.module.uiframework
+		</require_module>
+		<require_module version="${uicommonsModuleVersion}">
+			org.openmrs.module.uicommons
+		</require_module>
+		<require_module version="${appuiVersion}">
+			org.openmrs.module.appui
 		</require_module>
 	</require_modules>
-
 	
-	<!-- Module Activator -->
-	<activator>${symbol_dollar}{project.parent.groupId}.${symbol_dollar}{project.parent.artifactId}.${D-moduleClassPrefix}Activator</activator>
-	
-	
-	<!-- Adds link to admin page -->
+	<!-- Extensions -->
 	<extension>
 		<point>org.openmrs.admin.list</point>
-		<class>${symbol_dollar}{project.parent.groupId}.${symbol_dollar}{project.parent.artifactId}.extension.html.AdminList</class>
+		<class>${package}.extension.html.AdminList</class>
 	</extension>
+
+	<aware_of_modules>
+		<aware_of_module>org.openmrs.module.legacyui</aware_of_module>
+	</aware_of_modules>
 	
-	<!-- Maps hibernate file's, if present -->
-	<mappingFiles>
+	
+	<!-- AOP
+	<advice>
+		<point>org.openmrs.api.FormService</point>
+		<class>@MODULE_PACKAGE@.advice.DuplicateFormAdvisor</class>
+	</advice>
+	 /AOP -->
+	
+	
+	<!-- Required Privileges 
+	<privilege>
+		<name>Form Entry</name>
+		<description>Allows user to access Form Entry pages/functions</description>
+	</privilege>
+	 /Required Privileges -->
 
-        ${D-moduleClassPrefix}.hbm.xml
-				
-	</mappingFiles>
 
+	<!-- Required Global Properties 
+	<globalProperty>
+		<property>@MODULE_ID@.someProperty</property>
+		<defaultValue></defaultValue>
+		<description>
+			A description of the global property goes here.  The description
+			should explain enough for administrators to understand the purpose
+			and possible values for the global property.
+		</description>
+	</globalProperty>
+	/Required Global Properties -->
+	
+	<!--
+	<dwr>
+		<allow>
+			<create creator="new" javascript="DWRFormEntryService">
+				<param name="class" value="org.openmrs.module.@MODULE_ID@.web.DWRFormEntryService"/>
+				<include method="enterForm"/>
+			</create>
+		</allow>
+
+		<signatures>
+			<![CDATA[
+			import @MODULE_PACKAGE@.web.DWRFormEntryService;
+			DWRFormEntryService.enterForm(Integer patientId, Integer formId, boolean useEncounter, List<String> fields);
+			]]>
+		</signatures>	
+	</dwr>
+	-->
+	
+	<!-- Servlets -->
+	<!-- Accessed through the url /pageContext()/moduleServlet/<moduleId>/<servlet-name> 
+	<servlet>
+		<servlet-name>formDownload</servlet-name>
+		<servlet-class>@MODULE_PACKAGE@.web.FormDownloadServlet</servlet-class>
+	</servlet>
+	-->
+	<!-- /Servlets -->
+	
+	
 	<!-- Internationalization -->
-	<!-- All message codes should start with ${symbol_dollar}{project.parent.artifactId}. -->
+	<!-- All message codes should start with @MODULE_ID@.* -->
 	<messages>
 		<lang>en</lang>
 		<file>messages.properties</file>
@@ -57,6 +116,6 @@
 		<file>messages_es.properties</file>
 	</messages>
 	<!-- /Internationalization -->
-
+	
 </module>
 

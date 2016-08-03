@@ -12,7 +12,6 @@ import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.shared.invoker.Invoker;
-import org.openmrs.maven.plugins.model.SdkStatistics;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 import org.openmrs.maven.plugins.utility.StatsManager;
 import org.openmrs.maven.plugins.utility.Wizard;
@@ -47,22 +46,26 @@ public class CreateProject extends CreateProjectFromArchetypeMojo {
     public static final String OPTION_REFAPP = "Reference Application module";
 
     private static final String MODULE_ID_INFO =
-            "Module id uniquely identifies your module in the OpenMRS world.\n" +
-                    "It is advised to consult your module id on https://talk.openmrs.org to eliminate possible collisions. \n" +
-                    "Module id must consists of lowercase letters, must start from a letter, can contain alphanumerics and dots,\n" +
-                    "e.g. webservices.rest, metadatasharing, reporting, htmlformentry.";
+            "Module id uniquely identifies your module in the OpenMRS world.\n\n" +
+                    "It is advised to consult your module id on https://talk.openmrs.org \n" +
+                    "to eliminate possible collisions. \n\n" +
+                    "Module id must consists of lowercase letters, must start from \n" +
+                    "a letter, can contain alphanumerics and dots, e.g. webservices.rest, \n" +
+                    "metadatasharing, reporting, htmlformentry.";
     private static final String MODULE_NAME_INFO =
-            "Module name is a user friendly name displayed to the user instead of the module id. \n" +
+            "Module name is a user friendly name displayed to the user " +
+                    "\ninstead of the module id. \n\n" +
                     "By convention it is a module id with spaces between words.";
     private static final String MAVEN_INFO =
-            "GroupId, artifactId and version combined together identify your module in the maven repository. \n" +
-                    "By convention OpenMRS modules use 'org.openmrs.module' as a groupId and the module id as an artifactId. \n" +
-                    "The version should follow maven versioning convention, which in short is: major.minor.maintenance(-SNAPSHOT).";
+            "GroupId, artifactId and version combined together identify \nyour module in the maven repository. \n\n" +
+                    "By convention OpenMRS modules use 'org.openmrs.module' as a groupId \n" +
+                    "(must follow convention for naming java packages) and the module id \n" +
+                    "as an artifactId. The version should follow maven versioning convention, \n" +
+                    "which in short is: major.minor.maintenance(-SNAPSHOT).";
 
-    private static final String DESCRIPTION_PROMPT_TMPL = "Describe Your module in a few sentences %s";
-    private static final String GROUP_ID_PROMPT_TMPL = "Please specify %s (default: '%s', must follow java conventions for naming packages): ";
-    private static final String ARTIFACT_ID_PROMPT_TMPL = "Please specify '%s' (all lowercase, must start from a letter, allowed a-z, 0-9)";
-    private static final String AUTHOR_PROMPT_TMPL = "Who is the author of the module?%s";
+    private static final String DESCRIPTION_PROMPT_TMPL = "Describe your module in a few sentences";
+    private static final String GROUP_ID_PROMPT_TMPL = "Please specify %s (default: '%s'): ";
+    private static final String AUTHOR_PROMPT_TMPL = "Who is the author of the module? (default: '%s')";
     private static final String MODULE_TYPE_PROMPT = "What kind of project would you like to create?";
 
     /** @component */
@@ -192,16 +195,16 @@ public class CreateProject extends CreateProjectFromArchetypeMojo {
     /**
      * The generated project's package name.
      *
-     * @parameter default-value="org.openmrs.module.basicexample"
+     * @parameter expression="${package}"
      */
     private String packageName;
 
     /**
      * The generated project's module name (no spaces).
      *
-     * @parameter expression="${moduleNameNoSpaces}" default-value="BasicExample"
+     * @parameter expression="${moduleClassnamePrefix}"
      */
-    private String moduleNameNoSpaces;
+    private String moduleClassnamePrefix;
 
     /**
      * The generated project's module name.
@@ -225,61 +228,18 @@ public class CreateProject extends CreateProjectFromArchetypeMojo {
     private String moduleAuthor;
 
     /**
-     * The generated project's prefix for classes from archetype
+     * The generated project's Openmrs Platform Version.
      *
-     * @parameter expression="${moduleClassPrefix}"
+     * @parameter expression="${platform}"
      */
-    private String moduleClassPrefix;
+    private String platform;
 
     /**
-     * The generated project's openMRSVersion.
+     * The generated project's Openmrs Reference Application Version.
      *
-     * @parameter expression="${openmrsVersion}" default-value="1.8.2"
+     * @parameter expression="${refapp}"
      */
-
-    private String openmrsVersion;
-
-    /**
-     * The generated project's object name
-     *
-     * @parameter expression="${serviceDaoName}" default-value="BasicExample"
-     */
-    private String serviceDaoName;
-
-    /**
-     * The generated project's hibernate name.
-     *
-     * @parameter expression="${objectName}" default-value="BasicExample"
-     */
-    private String objectName;
-
-    /**
-     * The generated project's admin link condition.
-     *
-     * @parameter expression="${adminLinkReply}" default-value="y"
-     */
-    private String adminLinkReply;
-
-    /**
-     * The generated project's service/dao/hibernate condition.
-     *
-     * @parameter expression="${serviceReply}" default-value="y"
-     */
-    private String serviceReply;
-
-    /**
-     * The generated project's dependent modules list.
-     *
-     * @parameter expression="${dependentModules}" default-value="[none]"
-     */
-    private String dependentModules;
-
-    /**
-     * The generated project's dependent modules condition.
-     *
-     * @parameter expression="${dependentModulesReply}" default-value="n"
-     */
-    private String dependentModulesReply;
+    private String refapp;
 
     /**
      * unique identifier module in the OpenMRS world
@@ -293,17 +253,6 @@ public class CreateProject extends CreateProjectFromArchetypeMojo {
      * @parameter expression="${type}"
      */
     private String type;
-    /**
-     * The generated project's moduleActivatorManagement condition.
-     * Depending on this property module activator will
-     * implement Activator interface or extend BaseModuleActivator abstract class
-     *
-     * @parameter expression="${moduleActivatorManagement}" default-value="y"
-     */
-    private String moduleActivatorManagement;
-
-    private SdkStatistics sdkStatistics;
-
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
@@ -324,65 +273,67 @@ public class CreateProject extends CreateProjectFromArchetypeMojo {
 
         wizard.showMessage(MODULE_ID_INFO);
         moduleId = wizard.promptForValueIfMissingWithDefault(null, moduleId, "module id", "basicexample");
+        moduleId = moduleId.toLowerCase();
+        while (!moduleId.matches("[a-z][a-z0-9\\.]*")) {
+            wizard.showError("The specified moduleId " + moduleId + " is not valid. It must start from a letter and can contain only alphanumerics and dots.");
+            moduleId = null;
+            moduleId = wizard.promptForValueIfMissingWithDefault(null, moduleId, "module id", "basicexample");
+            moduleId = moduleId.toLowerCase();
+        }
 
         wizard.showMessage(MODULE_NAME_INFO);
-        moduleName = wizard.promptForValueIfMissingWithDefault(null, moduleName, "module name", "Basic example");
+        moduleName = wizard.promptForValueIfMissingWithDefault(null, moduleName, "module name", StringUtils.capitalize(moduleId));
+        while (!moduleName.matches("[a-zA-Z][a-zA-Z0-9\\.\\s]*")) {
+            wizard.showError("The specified module name " + moduleName + " is not valid. It must start from a letter and can contain only alphanumerics and dots.");
+            moduleName = null;
+            moduleName = wizard.promptForValueIfMissingWithDefault(null, moduleName, "module name", StringUtils.capitalize(moduleId));
+        }
+        moduleName = StringUtils.capitalize(moduleName);
+        moduleClassnamePrefix = StringUtils.deleteWhitespace(moduleName).replace(".", "");
+
         moduleDescription = wizard.promptForValueIfMissingWithDefault(DESCRIPTION_PROMPT_TMPL, moduleDescription, "", "no description");
 
         wizard.showMessage(MAVEN_INFO);
         groupId = wizard.promptForValueIfMissingWithDefault(GROUP_ID_PROMPT_TMPL, groupId, "groupId", "org.openmrs.module");
-        artifactId = wizard.promptForValueIfMissingWithDefault(ARTIFACT_ID_PROMPT_TMPL, artifactId, "artifactId", "basicexample");
+        while (!groupId.matches("[a-z][a-z0-9.]*")) {
+            wizard.showError("The specified groupId " + groupId + " is not valid. It must start from a letter and can contain only alphanumerics and dots.");
+            groupId = null;
+            groupId = wizard.promptForValueIfMissingWithDefault(GROUP_ID_PROMPT_TMPL, groupId, "groupId", "org.openmrs.module");
+        }
+
+        artifactId = moduleId;
+
         version = wizard.promptForValueIfMissingWithDefault(null, version, "initial version", "1.0.0-SNAPSHOT");
+
         moduleAuthor = wizard.promptForValueIfMissingWithDefault(AUTHOR_PROMPT_TMPL, moduleAuthor, "", "anonymous");
 
         if(TYPE_PLATFORM.equals(type)){
-            openmrsVersion = wizard.promptForValueIfMissingWithDefault("What is the lowest version of the "+OPTION_PLATFORM+" you want to support?%s", openmrsVersion, "", "");
+            platform = wizard.promptForValueIfMissingWithDefault("What is the lowest version of the platform (-D%s) you want to support? (default: %s)", platform, "platform", "1.11.6");
             archetypeArtifactId = SDKConstants.PLATFORM_ARCH_ARTIFACT_ID;
         } else if(TYPE_REFAPP.equals(type)) {
-            openmrsVersion = wizard.promptForValueIfMissingWithDefault("What is the lowest version of the "+OPTION_REFAPP+" you want to support?%s", openmrsVersion, "", "");
+            refapp = wizard.promptForValueIfMissingWithDefault("What is the lowest version of the Reference Application (-D%s) you want to support? (default: %s)", refapp, "refapp", "2.4");
             archetypeArtifactId = SDKConstants.REFAPP_ARCH_ARTIFACT_ID;
         } else {
             throw new MojoExecutionException("Invalid project type");
         }
 
         archetypeVersion = getSdkVersion();
-
-        try {
-            setParameterWithOutSpaces("moduleNameNoSpaces", moduleName);
-            setParameterWithOutSpaces("serviceDaoName", serviceDaoName);
-            setParameterWithOutSpaces("objectName", objectName);
-        }
-        catch (Exception e) {
-            throw new MojoExecutionException("Error in removing spaces " + e);
-        }
-
-        moduleNameNoSpaces = moduleNameNoSpaces.toLowerCase();
         packageName = "org.openmrs.module." + artifactId;
-        moduleName = moduleName + " Module";
-        String serviceDaoBeanId = Character.toLowerCase(serviceDaoName.charAt(0))
-                + (serviceDaoName.length() > 1 ? serviceDaoName.substring(1) : "");
 
         Properties properties = new Properties();
         properties.setProperty("artifactId", artifactId);
         properties.setProperty("groupId", groupId);
         properties.setProperty("version", version);
-        properties.setProperty("module-name-no-spaces", moduleNameNoSpaces);
-        properties.setProperty("module-name", moduleName);
-        properties.setProperty("module-description", moduleDescription);
-        properties.setProperty("module-author", moduleAuthor);
-        properties.setProperty("openmrs-version", openmrsVersion);
-        properties.setProperty("service-dao-name-no-spaces", serviceDaoName);
-        properties.setProperty("service-dao-bean-id", serviceDaoBeanId);
-        properties.setProperty("object-name-no-spaces", objectName);
-        properties.setProperty("package", packageName);
-        properties.setProperty("adminLinkReply", adminLinkReply);
-        properties.setProperty("serviceReply", serviceReply);
-        properties.setProperty("dependentModules", dependentModules);
-        properties.setProperty("moduleActivatorManagement", moduleActivatorManagement);
-        if(TYPE_REFAPP.equals(type)){
-            moduleClassPrefix = StringUtils.capitalize(moduleName).replace(" ", "");
-            properties.setProperty("D-moduleClassPrefix", moduleClassPrefix);
+        properties.setProperty("moduleClassnamePrefix", moduleClassnamePrefix);
+        properties.setProperty("moduleName", moduleName);
+        properties.setProperty("moduleDescription", moduleDescription);
+        properties.setProperty("moduleAuthor", moduleAuthor);
+        if (platform != null) {
+            properties.setProperty("openmrsPlatformVersion", platform);
+        } else if (refapp != null) {
+            properties.setProperty("openmrsRefappVersion", refapp);
         }
+        properties.setProperty("package", packageName);
         session.getExecutionProperties().putAll(properties);
 
         // Using custom prompts, avoid manager plugin interaction
@@ -407,15 +358,6 @@ public class CreateProject extends CreateProjectFromArchetypeMojo {
         Map<String, String> archetypeToVersion = new LinkedHashMap<>();
 
         archetypeToVersion.put(archetypeArtifactId, archetypeVersion);
-        
-        if(TYPE_PLATFORM.equals(type)){
-            if ("y".equalsIgnoreCase(adminLinkReply)) {
-                archetypeToVersion.put("openmrs-archetype-adminpagelink-creation", "1.1.1");
-            }
-            if ("y".equalsIgnoreCase(serviceReply)) {
-                archetypeToVersion.put("openmrs-archetype-service-dao-hibernate-creation", "1.1.1");
-            }
-        }
 
         for (Map.Entry<String, String> archetype : archetypeToVersion.entrySet()) {
             getLog().info("Archetype: " + archetype.getKey());
@@ -437,23 +379,6 @@ public class CreateProject extends CreateProjectFromArchetypeMojo {
             IOUtils.closeQuietly(sdkPom);
         }
         return sdk.getProperty("version");
-    }
-
-    /**
-     * Removes spaces from the WizardMojo fields. Mainly used for setting fields whose values are
-     * used for naming files in archetypes.
-     */
-    protected void setParameterWithOutSpaces(String fieldName, String value) throws NoSuchFieldException,
-            IllegalAccessException {
-
-        Field fi = CreateProject.class.getDeclaredField(fieldName);
-        String brk[] = value.split(" ");
-        String valueWithNoSpace = "";
-        for (String string : brk) {
-            valueWithNoSpace += string;
-        }
-        fi.set(this, valueWithNoSpace);
-
     }
 
     protected void setPrivateField(String fieldName, Object value) throws MojoExecutionException {

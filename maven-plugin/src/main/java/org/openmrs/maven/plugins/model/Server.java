@@ -734,7 +734,11 @@ public class Server {
             throw new MojoExecutionException("Server "+getServerId()+" has none or more than one installed OpenMRS webapp copies");
         } else {
             //format of webapp name is openmrs-{version}.war
-            return org.apache.maven.shared.utils.StringUtils.stripEnd(org.apache.maven.shared.utils.StringUtils.stripStart(files[0].getName(), "openmrs-"), ".war");
+            String version = files[0].getName();
+            version = StringUtils.stripStart(version, "openmrs-");
+            //StringUtils.stripEnd incorrectly stripped 2.0.0-beta.war to 2.0.0-bet
+            version = version.substring(0, version.lastIndexOf(".war"));
+            return version;
         }
     }
 }

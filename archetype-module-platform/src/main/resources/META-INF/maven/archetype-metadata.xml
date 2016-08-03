@@ -3,17 +3,20 @@
 					  xmlns="http://maven.apache.org/plugins/maven-archetype-plugin/archetype-descriptor/1.0.0"
 					  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 	<requiredProperties>
-		<requiredProperty key="module-name">
+		<requiredProperty key="moduleName">
 			<defaultValue>Basic Module</defaultValue>
 		</requiredProperty>
-		<requiredProperty key="module-name-no-spaces">
+		<requiredProperty key="moduleClassnamePrefix">
 			<defaultValue>BasicModule</defaultValue>
 		</requiredProperty>
-		<requiredProperty key="module-description">
+		<requiredProperty key="moduleDescription">
 			<defaultValue>Basic Module. Useful for creating other modules.</defaultValue>
 		</requiredProperty>
-		<requiredProperty key="module-author">
+		<requiredProperty key="moduleAuthor">
 			<defaultValue>Ben Wolfe</defaultValue>
+		</requiredProperty>
+		<requiredProperty key="openmrsPlatformVersion">
+			<defaultValue>1.11.6</defaultValue>
 		</requiredProperty>
 	</requiredProperties>
 	<fileSets>
@@ -37,6 +40,25 @@
 					<directory>src/main/java</directory>
 					<includes>
 						<include>**/*.java</include>
+					</includes>
+				</fileSet>
+				<fileSet filtered="true" encoding="UTF-8">
+					<directory>src/main/resources</directory>
+					<includes>
+						<include>**/*.xml</include>
+						<include>**/*.properties</include>
+					</includes>
+				</fileSet>
+				<fileSet filtered="true" packaged="true" encoding="UTF-8">
+					<directory>src/test/java</directory>
+					<includes>
+						<include>**/*.java</include>
+					</includes>
+				</fileSet>
+				<fileSet filtered="true" encoding="UTF-8">
+					<directory>src/test/resources</directory>
+					<includes>
+						<include>**/*.xml</include>
 					</includes>
 				</fileSet>
 			</fileSets>

@@ -8,50 +8,17 @@
         </requiredProperty>
 		<requiredProperty key="artifactId" />
 		<requiredProperty key="version">
-            <defaultValue>1.0-SNAPSHOT</defaultValue>
+            <defaultValue>1.0.0-SNAPSHOT</defaultValue>
         </requiredProperty>
 		<requiredProperty key="package">
 			<defaultValue>${groupId}.${artifactId}</defaultValue>
 		</requiredProperty>
-        <requiredProperty key="module-name" />
-        <requiredProperty key="module-description"/>
-        <requiredProperty key="module-author" />
-		<requiredProperty key="D-moduleClassPrefix">
-			<defaultValue>${module-name.substring(0,1).toUpperCase()}${module-name.substring(1).replaceAll(" ", "")}</defaultValue>
-		</requiredProperty>
+        <requiredProperty key="moduleName" />
+        <requiredProperty key="moduleDescription"/>
+        <requiredProperty key="moduleAuthor" />
+		<requiredProperty key="moduleClassnamePrefix" />
+		<requiredProperty key="openmrsRefappVersion" />
     </requiredProperties>
-  <fileSets>
-    <fileSet filtered="true" encoding="UTF-8">
-      <directory>.idea</directory>
-      <includes>
-        <include>**/*.xml</include>
-      </includes>
-    </fileSet>
-    <fileSet filtered="true" encoding="UTF-8">
-      <directory>.idea/copyright</directory>
-      <includes>
-        <include>**/*.xml</include>
-      </includes>
-    </fileSet>
-    <fileSet filtered="true" encoding="UTF-8">
-      <directory>.idea/scopes</directory>
-      <includes>
-        <include>**/*.xml</include>
-      </includes>
-    </fileSet>
-    <fileSet filtered="true" encoding="UTF-8">
-      <directory>.idea/libraries</directory>
-      <includes>
-        <include>**/*.xml</include>
-      </includes>
-    </fileSet>
-    <fileSet encoding="UTF-8">
-      <directory>.idea</directory>
-      <includes>
-        <include>**/*.name</include>
-      </includes>
-    </fileSet>
-  </fileSets>
   <modules>
     <module id="${rootArtifactId}-api" dir="api" name="${rootArtifactId}-api">
       <fileSets>
@@ -103,12 +70,10 @@
             <include>**/*.css</include>
           </includes>
         </fileSet>
-        <fileSet encoding="UTF-8">
-          <directory>src/main/compass</directory>
+        <fileSet filtered="true" packaged="true" encoding="UTF-8">
+          <directory>src/test/java</directory>
           <includes>
-            <include>**/*.scss</include>
-            <include>**/*.scssc</include>
-            <include>**/*.rb</include>
+            <include>**/*.java</include>
           </includes>
         </fileSet>
       </fileSets>

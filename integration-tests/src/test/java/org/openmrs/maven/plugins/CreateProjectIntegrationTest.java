@@ -14,8 +14,6 @@ public class CreateProjectIntegrationTest extends AbstractSdkIntegrationTest {
 
     Model model;
 
-    List<String> options = Arrays.asList("moduleId", "moduleName", "version", "groupId", "artifactId", "moduleDescription");
-
     @Before
     public void setup() throws Exception {
         //test pom needs reset after this test, because archetype plugin modifies it
@@ -33,12 +31,14 @@ public class CreateProjectIntegrationTest extends AbstractSdkIntegrationTest {
     public void createProject_shouldCreateRefappModuleProject() throws Exception{
         addTaskParam("type", "referenceapplication-module");
 
-        addTaskParam("serviceReply", "n");
-        addTaskParam("adminLinkReply", "n");
-        for( String option : options){
-            addTaskParam(option, "test");
-        }
-        addAnswer("test");
+        addTaskParam("moduleId", "test");
+        addTaskParam("moduleName", "Test");
+        addTaskParam("moduleDescription", "none");
+        addTaskParam("groupId", "org.openmrs.module");
+        addTaskParam("version", "1.0.0-SNAPSHOT");
+
+        addAnswer("2.4");
+
         addTaskParam(BATCH_ANSWERS, getAnswers()); //only to set interactive mode to false
 
         executeTask("create-project");
@@ -48,17 +48,13 @@ public class CreateProjectIntegrationTest extends AbstractSdkIntegrationTest {
 
     @Test
     public void createProject_shouldCreateRefappModuleProjectUsingBatchAnswers() throws Exception{
-
-        addTaskParam("serviceReply", "n");
-        addTaskParam("adminLinkReply", "n");
-
         addAnswer("Reference Application module");
         addAnswer("test");
-        addAnswer("test");
-        addAnswer("test");
-        addAnswer("test");
-        addAnswer("test");
-        addAnswer("test");
+        addAnswer("Test");
+        addAnswer("none");
+        addAnswer("org.openmrs.module");
+        addAnswer("1.0.0-SNAPSHOT");
+        addAnswer("2.4");
 
         executeTask("create-project");
         assertSuccess();
@@ -69,10 +65,13 @@ public class CreateProjectIntegrationTest extends AbstractSdkIntegrationTest {
     public void createProject_shouldCreatePlatformModuleProject() throws Exception{
         addTaskParam("type", "platform-module");
 
-        for( String option : options){
-            addTaskParam(option, "test");
-        }
-        addAnswer("test");
+        addTaskParam("moduleId", "test");
+        addTaskParam("moduleName", "Test");
+        addTaskParam("moduleDescription", "none");
+        addTaskParam("groupId", "org.openmrs.module");
+        addTaskParam("version", "1.0.0-SNAPSHOT");
+
+        addAnswer("1.11.6");
         addTaskParam(BATCH_ANSWERS, getAnswers()); //only to set interactive mode to false
 
         executeTask("create-project");
