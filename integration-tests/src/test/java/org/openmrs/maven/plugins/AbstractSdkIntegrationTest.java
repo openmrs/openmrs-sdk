@@ -1,6 +1,7 @@
 package org.openmrs.maven.plugins;
 
 import com.google.common.collect.Lists;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.it.VerificationException;
@@ -10,7 +11,6 @@ import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 import org.apache.maven.model.io.xpp3.MavenXpp3Writer;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.shared.utils.io.FileUtils;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 import org.junit.After;
 import org.junit.Before;
@@ -85,7 +85,7 @@ public abstract class AbstractSdkIntegrationTest {
     public void teardown() throws Exception {
         for(File file : testDirectory.listFiles()){
             if(!testFilesToPersist.contains(file)){
-                FileUtils.deleteDirectory(file);
+                FileUtils.deleteQuietly(file);
             }
         }
         cleanAnswers();
@@ -117,7 +117,7 @@ public abstract class AbstractSdkIntegrationTest {
 
     public static void deleteTestServer(String serverId) throws Exception{
         File testDir = ResourceExtractor.simpleExtractResources(AbstractSdkIntegrationTest.class, TEST_DIRECTORY);
-        FileUtils.deleteDirectory(testDir.getAbsolutePath() + File.separator + serverId);
+        FileUtils.deleteDirectory(new File(testDir, serverId));
     }
 
     /**

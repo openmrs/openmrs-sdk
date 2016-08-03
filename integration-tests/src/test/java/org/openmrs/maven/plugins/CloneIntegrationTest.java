@@ -3,7 +3,6 @@ package org.openmrs.maven.plugins;
 import org.eclipse.jgit.lib.Config;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.lib.RepositoryBuilder;
-import org.junit.After;
 import org.junit.Test;
 
 import java.io.File;
@@ -37,19 +36,11 @@ public class CloneIntegrationTest extends AbstractSdkIntegrationTest {
         assertFilePresent("/openmrs-module-appui/pom.xml");
 
         // Check if upstream was added
-        String absolutePath = new File(testDirectory.getAbsolutePath(), "/openmrs-module-appui").getAbsolutePath();
+        String absolutePath = new File(testDirectory.getAbsolutePath(), "openmrs-module-appui").getAbsolutePath();
         Repository repository = new RepositoryBuilder().findGitDir(new File(absolutePath)).build();
         Config storedConfig = repository.getConfig();
         Set<String> remotes = storedConfig.getSubsections("remote");
 
         assertThat(remotes, hasItem("upstream"));
-    }
-
-    @After
-    public void deleteLocalRepo() throws Exception {
-        File repoDir = new File("/openmrs-module-appui");
-        if (repoDir.exists()) {
-            repoDir.delete();
-        }
     }
 }

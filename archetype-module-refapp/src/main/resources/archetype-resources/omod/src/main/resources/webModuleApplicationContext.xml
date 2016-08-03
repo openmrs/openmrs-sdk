@@ -1,6 +1,3 @@
-#set( $symbol_pound = '#' )
-#set( $symbol_dollar = '$' )
-#set( $symbol_escape = '\' )
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -23,17 +20,9 @@
   		    http://www.springframework.org/schema/util
   		    http://www.springframework.org/schema/util/spring-util-3.0.xsd">
 
-	<!-- Add here beans related to the web context -->
-
-	 
-	<!-- Annotation based controllers -->
-	<bean class="org.springframework.web.servlet.mvc.annotation.DefaultAnnotationHandlerMapping"/>
+	<context:component-scan base-package="${package}.web.controller" />
 
 	<bean class="org.openmrs.ui.framework.StandardModuleUiConfiguration">
-		<property name="moduleId" value="${symbol_dollar}{project.parent.artifactId}"/>
+		<property name="moduleId" value="${project.parent.artifactId}"/>
 	</bean>
-	
-	<context:component-scan base-package="${package}.web.controller" />
- 
-		
 </beans>
