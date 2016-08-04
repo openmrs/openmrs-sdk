@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/openmrs/openmrs-sdk.svg?branch=master)](https://travis-ci.org/openmrs/openmrs-sdk)
+
 It is a repository of OpenMRS Software Development Kit (SDK).
 
 For more details visit [the project page](https://wiki.openmrs.org/display/docs/OpenMRS+SDK).
