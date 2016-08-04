@@ -8,7 +8,7 @@
 #     - GITHUB_API_KEY - the one generated above
 # 3) Go to Bintray and create new openmrs-sdk package in maven repo
 
-LAST_COMMIT = `git log --oneline -1 | grep "Releasing $TRAVIS_TAG"`
+LAST_COMMIT=`git log --oneline -1 | grep "Releasing $TRAVIS_TAG"`
 if [ -z "$LAST_COMMIT" ]
 then 
 echo "Setting version to $TRAVIS_TAG"
