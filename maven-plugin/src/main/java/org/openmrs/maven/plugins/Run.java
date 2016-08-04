@@ -153,10 +153,10 @@ public class Run extends AbstractTask {
 		Properties properties = new Properties();
 		properties.put("serverId", server.getServerId());
 		if (port != null) {
-			properties.put("port", port);
+			properties.put("port", port.toString());
 		}
 		if (isWatchApi()) {
-			properties.put("watchApi", watchApi);
+			properties.put("watchApi", "true");
 		}
 		if (server.hasWatchedProjects() && isWatchApi()) {
 			properties.put("springloaded", "inclusions=org.openmrs..*");
