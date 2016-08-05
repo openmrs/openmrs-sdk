@@ -28,3 +28,12 @@ To run a SNAPSHOT version of SDK, you need to specify groupId:artifactId:version
 `mvn org.openmrs.maven.plugins:openmrs-sdk-maven-plugin:2.1.3-SNAPSHOT:setup-platform`
 
 You can also debug commands by creating maven run configurations for the SNAPSHOT version in your IDE and starting them in the debug mode.
+
+## Releasing
+
+Create [a new tag](https://github.com/openmrs/openmrs-sdk/releases) named in the following format: `release.version_new.dev.version-SNAPSHOT` e.g. `3.1.3_3.1.4-SNAPSHOT` (the underscore separates release and development versions).
+
+A new Travis-CI build will be triggered, which will create a new tag named after the release version and set a new development version in the master branch. 
+
+The tag will be then built and deployed to [Bintray](https://bintray.com/openmrs/maven/openmrs-sdk). You will have to sign-in and [sync with Maven Central](https://bintray.com/openmrs/maven/openmrs-sdk#central). 
+
