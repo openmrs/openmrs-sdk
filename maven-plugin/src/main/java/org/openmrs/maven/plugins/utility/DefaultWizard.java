@@ -57,7 +57,8 @@ public class DefaultWizard implements Wizard {
     private static final String DEFAULT_OPTION_TMPL = "%d) %s";
     private static final String DEFAULT_CUSTOM_OPTION_TMPL = "%d) Other...";
     private static final String DEFAULT_SERVER_NAME = "server";
-    private static final String DEFAULT_VALUE_TMPL = "Please specify %s";
+    private static final String DEFAULT_PROMPT_TMPL = "Please specify %s";
+    private static final String DEFAULT_VALUE_TMPL = " (default: '%s')";
     private static final String DEFAULT_VALUE_TMPL_WITH_DEFAULT = "Please specify %s: (default: '%s')";
     private static final String DEFAULT_FAIL_MESSAGE = "Server with such serverId is not exists";
     private static final String INVALID_SERVER = "Invalid server Id";
@@ -129,7 +130,7 @@ public class DefaultWizard implements Wizard {
             indx++;
             defaultServerId = DEFAULT_SERVER_NAME + String.valueOf(indx);
         }
-        String serverId =  promptForValueIfMissingWithDefault("Specify server id (-D%s) (default: '%s')", server.getServerId(), "serverId", defaultServerId);
+        String serverId =  promptForValueIfMissingWithDefault("Specify server id (-D%s)", server.getServerId(), "serverId", defaultServerId);
         server.setServerId(serverId);
     }
 
@@ -151,11 +152,11 @@ public class DefaultWizard implements Wizard {
 
     public String promptForValueIfMissingWithDefault(String message, String value, String parameterName, String defValue, boolean password) {
         String textToShow;
-        if (StringUtils.isBlank(defValue)){
-            textToShow = String.format(message != null ? message : DEFAULT_VALUE_TMPL, parameterName);
+        if (StringUtils.isEmpty(defValue)){
+            textToShow = String.format(message != null ? message : DEFAULT_PROMPT_TMPL, parameterName);
         }
         else {
-            textToShow = String.format(message != null? message : DEFAULT_VALUE_TMPL_WITH_DEFAULT, parameterName, defValue);
+            textToShow = String.format(message != null? message : DEFAULT_PROMPT_TMPL, parameterName) + String.format(DEFAULT_VALUE_TMPL, defValue);
         }
 
         if (value != null) {
@@ -247,7 +248,7 @@ public class DefaultWizard implements Wizard {
         } if(System.console() == null){
             return promptForValueIfMissing(value, parameter);
         }else {
-            return new String(System.console().readPassword("\n"+DEFAULT_VALUE_TMPL+": ", parameter));
+            return new String(System.console().readPassword("\n"+ DEFAULT_PROMPT_TMPL +": ", parameter));
         }
     }
 
@@ -272,7 +273,7 @@ public class DefaultWizard implements Wizard {
     public String promptForValueWithDefaultList(String value, String parameterName, List<String> values) {
         if (value != null) return value;
         String defaultValue = values.size() > 0 ? values.get(0) : NONE;
-        final String text = DEFAULT_VALUE_TMPL_WITH_DEFAULT + " (possible: %s)";
+        final String text = DEFAULT_PROMPT_TMPL + DEFAULT_VALUE_TMPL + " (possible: %s)";
         String val = prompt(String.format(text, parameterName, defaultValue, StringUtils.join(values.toArray(), ", ")));
         if (val.equals(EMPTY_STRING)) val = defaultValue;
         return val;
@@ -599,7 +600,7 @@ public class DefaultWizard implements Wizard {
         }
 
         String version = promptForMissingValueWithOptions(DISTRIBUTION_VERSION_PROMPT,
-                null, "distribution artifact", Lists.newArrayList(optionsMap.keySet()), "Please specify %s (default: '%s')", REFERENCEAPPLICATION_2_4);
+                null, "distribution artifact", Lists.newArrayList(optionsMap.keySet()), "Please specify %s", REFERENCEAPPLICATION_2_4);
 
         String artifact = optionsMap.get(version);
         if (artifact != null) {
@@ -649,7 +650,7 @@ public class DefaultWizard implements Wizard {
             server.setDbDriver(SDKConstants.DRIVER_MYSQL);
         }
         String dbUri = promptForValueIfMissingWithDefault(
-                "The distribution requires MySQL database. Please specify database uri (-D%s) (default: '%s')",
+                "The distribution requires MySQL database. Please specify database uri (-D%s)",
                 server.getDbUri(), "dbUri", SDKConstants.URI_MYSQL);
         if (dbUri.startsWith("jdbc:mysql:")) {
             dbUri = addMySQLParamsIfMissing(dbUri);
@@ -713,7 +714,7 @@ public class DefaultWizard implements Wizard {
         String dockerHost = dockerHelper.getDockerHost();
 
         String dbUri = promptForValueIfMissingWithDefault(
-                "Please specify database uri (-D%s) (default: '%s')", server.getDbUri(), "dbUri", getDefaultUri(dockerHost));
+                "Please specify database uri (-D%s)", server.getDbUri(), "dbUri", SDKConstants.URI_MYSQL);
         if (dbUri.startsWith("jdbc:mysql:")) {
             server.setDbDriver(SDKConstants.DRIVER_MYSQL);
             dbUri = addMySQLParamsIfMissing(dbUri);
@@ -743,13 +744,13 @@ public class DefaultWizard implements Wizard {
     public void promptForDbCredentialsIfMissing(Server server) {
         String defaultUser = "root";
         String user = promptForValueIfMissingWithDefault(
-                "Please specify database username (-D%s) (default: '%s')",
+                "Please specify database username (-D%s)",
                 server.getDbUser(), "dbUser", defaultUser);
         server.setDbUser(user);
         //set password
         String dbPassword = promptForValueIfMissingWithDefault(
-                "Please specify database password (-D%s) (default: '')",
-                server.getDbPassword(), "dbPassword", "");
+                "Please specify database password (-D%s)",
+                server.getDbPassword(), "dbPassword", " ");
         server.setDbPassword(dbPassword);
     }
 

@@ -31,7 +31,7 @@ import java.util.Set;
  */
 public class Pull extends AbstractTask {
 
-    private static final String ENTER_BRANCH_NAME_MESSAGE = "Enter name of the upstream branch you want to pull(default: master)";
+    private static final String ENTER_BRANCH_NAME_MESSAGE = "Enter name of the upstream branch you want to pull";
     private static final String CLEAN_UP_ERROR_MESSAGE = "problem with resolving git command. " +
                                                             "Please run \"git checkout %s\" and \"git stash apply\" in %s directory to revert changes";
     private static final String NO_WATCHED_MODULES_MESSAGE = "Server with id %s has no watched modules";

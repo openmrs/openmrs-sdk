@@ -9,6 +9,8 @@ import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.Server;
 
 import java.io.File;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -54,6 +56,14 @@ public class SdkMatchers {
             @Override
             protected String featureValueOf(final File actual) {
                 return actual.getName();
+            }
+        };
+    }
+    public static Matcher<Server> hasPropertyEqualTo(final String propertyName, final String propertyValue) {
+        return new FeatureMatcher<Server, String>(equalTo(propertyValue), "property value", "property value") {
+            @Override
+            protected String featureValueOf(final Server actual) {
+                return actual.getCustomProperties().get(propertyName);
             }
         };
     }
