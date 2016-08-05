@@ -23,7 +23,7 @@ echo "Setting development version to $NEW_DEV_VERSION"
 mvn versions:set -DnewVersion=$NEW_DEV_VERSION
 git add -u
 git commit -m "Increasing development version to $NEW_DEV_VERSION"
-git push --quiet "https://$GITHUB_API_KEY@github.com/$TRAVIS_REPO_SLUG.git" master > /dev/null 2>&1
+git push --quiet "https://$GITHUB_API_KEY@github.com/$TRAVIS_REPO_SLUG.git" HEAD:master > /dev/null 2>&1
 else
 echo "Releasing version $TRAVIS_TAG"
 mvn deploy -Pbintray -DskipTests
