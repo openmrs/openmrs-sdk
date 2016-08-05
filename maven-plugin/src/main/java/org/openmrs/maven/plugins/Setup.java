@@ -1,6 +1,7 @@
 package org.openmrs.maven.plugins;
 
 import org.apache.commons.io.output.NullOutputStream;
+import org.apache.commons.lang.StringUtils;
 import org.apache.ibatis.jdbc.ScriptRunner;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -23,6 +24,7 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * @goal setup
@@ -143,7 +145,9 @@ public class Setup extends AbstractTask {
             moduleInstaller.installCoreModules(server, isCreatePlatform, distroProperties);
             distroProperties.saveTo(server.getServerDirectory());
         }
-        
+
+        distroHelper.savePropertiesToServer(distroProperties, server);
+
         if(server.getDbDriver() == null) {
             boolean h2supported = true;
             if(distroProperties != null) {
@@ -172,6 +176,9 @@ public class Setup extends AbstractTask {
                 wizard.showMessage("The specified database "+server.getDbName()+" does not exist and it will be created for you.");
             }
         }
+
+        server.toString();
+        server.toString();
 
 
         server.setUnspecifiedToDefault();
