@@ -152,6 +152,8 @@ public class Setup extends AbstractTask {
             wizard.promptForDb(server, dockerHelper, h2supported, dbDriver);
         }
 
+        server.toString();
+
         if(server.getDbDriver() != null){
             if(server.getDbName() == null){
                 server.setDbName(determineDbName(server.getDbUri(), server.getServerId()));
