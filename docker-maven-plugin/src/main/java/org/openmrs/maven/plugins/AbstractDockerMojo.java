@@ -5,6 +5,7 @@ import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.api.model.Frame;
 import com.github.dockerjava.core.DockerClientBuilder;
+import com.github.dockerjava.core.DockerClientConfig;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.SystemUtils;
 import org.apache.maven.plugin.AbstractMojo;
@@ -64,7 +65,13 @@ abstract class AbstractDockerMojo extends AbstractMojo {
                 dockerHost = prompt("Please specify you Docker Machine host URL (format is: 'tcp://{docker-machine url}')","");
             }
         }
-        docker = DockerClientBuilder.getInstance(dockerHost).build();
+
+        DockerClientConfig config = DockerClientConfig.createDefaultConfigBuilder()
+                .withDockerHost(dockerHost)
+                .withApiVersion("1.18")
+                .build();
+
+        docker = DockerClientBuilder.getInstance(config).build();
     }
 
     protected Container findContainer(String id){
@@ -76,12 +83,16 @@ abstract class AbstractDockerMojo extends AbstractMojo {
             }
         }
 
-        String name = id;
-        if(SystemUtils.IS_OS_LINUX){
-            name = "/"+name;
-        }
         for (Container container: containers) {
-            if (Arrays.asList(container.getNames()).contains(name)) {
+            if (Arrays.asList(container.getNames()).contains(id)) {
+                return container;
+            }
+        }
+
+        //on Linux name is prepended with '/'
+        String idWithSlash = "/"+id;
+        for (Container container: containers) {
+            if (Arrays.asList(container.getNames()).contains(idWithSlash)) {
                 return container;
             }
         }
