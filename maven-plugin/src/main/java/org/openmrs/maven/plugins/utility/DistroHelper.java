@@ -37,10 +37,16 @@ public class DistroHelper {
      */
     BuildPluginManager pluginManager;
 
-    public DistroHelper(MavenProject mavenProject, MavenSession mavenSession, BuildPluginManager pluginManager) {
+    /**
+     *
+     */
+    Wizard wizard;
+
+    public DistroHelper(MavenProject mavenProject, MavenSession mavenSession, BuildPluginManager pluginManager, Wizard wizard) {
         this.mavenProject = mavenProject;
         this.mavenSession = mavenSession;
         this.pluginManager = pluginManager;
+        this.wizard = wizard;
     }
 
     /**
@@ -65,6 +71,30 @@ public class DistroHelper {
         }
         else {
             return null;
+        }
+    }
+
+    public void savePropertiesToServer(DistroProperties properties, Server server) {
+        if (properties != null) {
+            Set<String> propertiesNames = properties.getPropertiesNames();
+            for(String propertyName: propertiesNames){
+                String propertyValue = properties.getPropertyValue(propertyName);
+                String propertyPrompt = properties.getPropertyPromt(propertyName);
+                String propertyDefault = properties.getPropertyDefault(propertyName);
+                if(propertyValue != null){
+                    server.setParam(propertyName, propertyValue);
+                } else {
+                    if(propertyPrompt != null){
+                        if(propertyDefault != null){
+                            propertyValue = wizard.promptForValueIfMissingWithDefault(propertyPrompt, null, propertyName, propertyDefault);
+                            server.setParam(propertyName, propertyValue);
+                        } else {
+                            propertyValue = wizard.promptForValueIfMissingWithDefault(propertyPrompt, null, propertyName, null);
+                            server.setParam(propertyName, propertyValue);
+                        }
+                    }
+                }
+            }
         }
     }
 

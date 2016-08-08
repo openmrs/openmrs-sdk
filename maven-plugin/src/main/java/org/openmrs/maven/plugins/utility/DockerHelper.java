@@ -41,7 +41,7 @@ public class DockerHelper {
 
     private static final String DOCKER_HOST_MSG_LINUX = "To use dockerized MySQL, You have to pass Docker Host URL to SDK. " +
             "Authorization to access docker socket file is required. To ensure this, run command 'sudo usermod -aG docker ${USER}'." +
-            "\nPlease specify %s (default: %s)";
+            "\nPlease specify %s";
 
     private static final String DOCKER_HOST_DEFAULT_LINUX = "unix:///var/run/docker.sock";
 

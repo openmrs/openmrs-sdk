@@ -153,7 +153,7 @@ public abstract class AbstractTask extends AbstractMojo {
             moduleInstaller = new ModuleInstaller(mavenProject, mavenSession, pluginManager, versionsHelper);
         }
         if(distroHelper == null){
-            distroHelper = new DistroHelper(mavenProject, mavenSession, pluginManager);
+            distroHelper = new DistroHelper(mavenProject, mavenSession, pluginManager, wizard);
         }
         if(dockerHelper == null){
             dockerHelper = new DockerHelper(mavenProject, mavenSession, pluginManager, wizard);

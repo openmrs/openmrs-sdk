@@ -712,6 +712,10 @@ public class Server {
         setParam(PROPERTY_DOCKER_MYSQL, containerId);
     }
 
+    public void setPropertyValue(String propertyName, String value){
+        setParam("property."+propertyName+".default", value);
+    }
+
     public void deleteServerTmpDirectory() {
         File tmpDirectory = getServerTmpDirectory();
         if (tmpDirectory.exists()) {
