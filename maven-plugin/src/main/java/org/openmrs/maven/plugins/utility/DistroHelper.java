@@ -99,8 +99,19 @@ public class DistroHelper {
             return SDKConstants.SUPPPORTED_REFAPP_VERSIONS_2_3_1_OR_LOWER.contains(version);
         } else return false;
     }
+
     public static boolean isRefapp2_3_1orLower(Artifact artifact){
         return isRefapp2_3_1orLower(artifact.getArtifactId(), artifact.getVersion());
+    }
+
+    public static boolean isRefappBelow2_1(String artifactId, String version){
+        if(artifactId!=null&&artifactId.equals(SDKConstants.REFERENCEAPPLICATION_ARTIFACT_ID)){
+            return new Version(version).lower(new Version("2.1"));
+        } else return false;
+    }
+
+    public static boolean isRefappBelow2_1(Artifact artifact){
+        return isRefappBelow2_1(artifact.getArtifactId(), artifact.getVersion());
     }
 
     public File downloadDistro(File path, Artifact artifact) throws MojoExecutionException {
@@ -199,7 +210,9 @@ public class DistroHelper {
             Artifact artifact = parseDistroArtifact(distro);
             if(isRefapp2_3_1orLower(artifact)){
                 result = new DistroProperties(artifact.getVersion());
-            } else if (!new Version(artifact.getVersion()).lower(new Version("2.4"))) {
+            } else if (isRefappBelow2_1(artifact)) {
+                throw new MojoExecutionException("Reference Application versions below 2.1 are not supported!");
+            } else {
                 result = downloadDistroProperties(new File(System.getProperty("user.dir")), artifact);
             }
         }
