@@ -1,5 +1,6 @@
 package org.openmrs.maven.plugins;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.output.NullOutputStream;
 import org.apache.ibatis.jdbc.ScriptRunner;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -129,67 +130,73 @@ public class Setup extends AbstractTask {
         File serverPath = new File(Server.getServersPathFile(), server.getServerId());
         server.setServerDirectory(serverPath);
 
-        if (distroProperties == null) {
-            if(isCreatePlatform){
-                Artifact webapp = new Artifact(SDKConstants.WEBAPP_ARTIFACT_ID, SDKConstants.SETUP_DEFAULT_PLATFORM_VERSION, Artifact.GROUP_WEB);
-                wizard.promptForPlatformVersionIfMissing(server, versionsHelper.getVersionAdvice(webapp, 6));
-                moduleInstaller.installCoreModules(server, isCreatePlatform, distroProperties);
-            } else {
-                wizard.promptForRefAppVersionIfMissing(server, versionsHelper);
-                distroProperties = extractDistroToServer(server, isCreatePlatform, serverPath);
-                distroProperties.saveTo(server.getServerDirectory());
-            }
-        } else {
-            moduleInstaller.installCoreModules(server, isCreatePlatform, distroProperties);
-            distroProperties.saveTo(server.getServerDirectory());
-        }
-        
-        if(server.getDbDriver() == null) {
-            boolean h2supported = true;
-            if(distroProperties != null) {
-                h2supported = distroProperties.isH2Supported();
-            }
-            wizard.promptForDb(server, dockerHelper, h2supported, dbDriver);
-        }
 
-        if(server.getDbDriver() != null){
-            if(server.getDbName() == null){
-                server.setDbName(determineDbName(server.getDbUri(), server.getServerId()));
-            }
-            if (server.isMySqlDb()){
-                boolean mysqlDbCreated = connectMySqlDatabase(server);
-                if(mysqlDbCreated && !"null".equals(dbSql)){
-                    if(dbSql != null){
-                        importMysqlDb(server, dbSql);
-                    } else {
-                        importMysqlDb(server, CLASSPATH_SCRIPT_PREFIX+ "openmrs-platform.sql");
-                    }
+        try {
+            if (distroProperties == null) {
+                if(isCreatePlatform){
+                    Artifact webapp = new Artifact(SDKConstants.WEBAPP_ARTIFACT_ID, SDKConstants.SETUP_DEFAULT_PLATFORM_VERSION, Artifact.GROUP_WEB);
+                    wizard.promptForPlatformVersionIfMissing(server, versionsHelper.getVersionAdvice(webapp, 6));
+                    moduleInstaller.installCoreModules(server, isCreatePlatform, distroProperties);
                 } else {
-                    throw new IllegalStateException("Failed to connect to the specified database " + server.getDbUri());
+                    wizard.promptForRefAppVersionIfMissing(server, versionsHelper);
+                    distroProperties = extractDistroToServer(server, isCreatePlatform, serverPath);
+                    distroProperties.saveTo(server.getServerDirectory());
                 }
             } else {
-                moduleInstaller.installModule(SDKConstants.H2_ARTIFACT, server.getServerDirectory().getPath());
-                wizard.showMessage("The specified database "+server.getDbName()+" does not exist and it will be created for you.");
+                moduleInstaller.installCoreModules(server, isCreatePlatform, distroProperties);
+                distroProperties.saveTo(server.getServerDirectory());
             }
+
+            if(server.getDbDriver() == null) {
+                boolean h2supported = true;
+                if(distroProperties != null) {
+                    h2supported = distroProperties.isH2Supported();
+                }
+                wizard.promptForDb(server, dockerHelper, h2supported, dbDriver);
+            }
+
+            if(server.getDbDriver() != null){
+                if(server.getDbName() == null){
+                    server.setDbName(determineDbName(server.getDbUri(), server.getServerId()));
+                }
+                if (server.isMySqlDb()){
+                    boolean mysqlDbCreated = connectMySqlDatabase(server);
+                    if(mysqlDbCreated && !"null".equals(dbSql)){
+                        if(dbSql != null){
+                            importMysqlDb(server, dbSql);
+                        } else {
+                            importMysqlDb(server, CLASSPATH_SCRIPT_PREFIX+ "openmrs-platform.sql");
+                        }
+                    } else {
+                        throw new IllegalStateException("Failed to connect to the specified database " + server.getDbUri());
+                    }
+                } else {
+                    moduleInstaller.installModule(SDKConstants.H2_ARTIFACT, server.getServerDirectory().getPath());
+                    wizard.showMessage("The specified database "+server.getDbName()+" does not exist and it will be created for you.");
+                }
+            }
+
+
+            server.setUnspecifiedToDefault();
+            configureVersion(server, isCreatePlatform);
+
+            String platformVersion = server.getPlatformVersion();
+            if (platformVersion.startsWith("1.")) {
+                wizard.showMessage("Note: JDK 1.7 is needed for platform version " + platformVersion + ".");
+            }
+            else {
+                wizard.showMessage("Note: JDK 1.8 is needed for platform version " + platformVersion + ".");
+            }
+
+            wizard.promptForJavaHomeIfMissing(server);
+
+            server.save();
+
+            return serverPath.getPath();
+        } catch (Exception e) {
+            FileUtils.deleteQuietly(serverPath);
+            throw new MojoExecutionException("Failed to setup server", e);
         }
-
-
-        server.setUnspecifiedToDefault();
-        configureVersion(server, isCreatePlatform);
-
-        String platformVersion = server.getPlatformVersion();
-        if (platformVersion.startsWith("1.")) {
-            wizard.showMessage("Note: JDK 1.7 is needed for platform version " + platformVersion + ".");
-        }
-        else {
-            wizard.showMessage("Note: JDK 1.8 is needed for platform version " + platformVersion + ".");
-        }
-
-        wizard.promptForJavaHomeIfMissing(server);
-
-        server.save();
-
-        return serverPath.getPath();
     }
 
     private DistroProperties extractDistroToServer(Server server, boolean isCreatePlatform, File serverPath) throws MojoExecutionException, MojoFailureException {
