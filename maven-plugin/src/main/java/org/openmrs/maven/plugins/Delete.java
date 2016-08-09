@@ -2,6 +2,7 @@ package org.openmrs.maven.plugins;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.maven.plugin.Mojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.openmrs.maven.plugins.model.Server;
@@ -26,8 +27,8 @@ public class Delete extends AbstractTask{
 
     public void executeTask() throws MojoExecutionException, MojoFailureException {
         serverId = wizard.promptForExistingServerIdIfMissing(serverId);
+        Server server = loadValidatedServer(serverId);
         try {
-            Server server = loadValidatedServer(serverId);
             FileUtils.deleteDirectory(server.getServerDirectory());
 
             if(StringUtils.isNotBlank(server.getContainerId())){
@@ -50,7 +51,7 @@ public class Delete extends AbstractTask{
         } catch (IOException e) {
             throw new MojoExecutionException(e.getMessage());
         } catch (SQLException e) {
-            throw new MojoExecutionException(e.getMessage());
+            throw new MojoExecutionException("Failed to drop database", e);
         }
     }
 }

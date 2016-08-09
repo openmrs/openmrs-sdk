@@ -601,7 +601,7 @@ public class Server {
     }
 
     public boolean isMySqlDb() {
-        return getDbUri().startsWith("jdbc:mysql");
+        return getDbUri().startsWith("jdbc:mysql") || getDbDriver().equals(SDKConstants.DRIVER_MYSQL);
     }
 
     public String getDbUri() {
