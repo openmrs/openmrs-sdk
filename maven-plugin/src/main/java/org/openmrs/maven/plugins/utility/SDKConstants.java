@@ -55,6 +55,7 @@ public class SDKConstants {
     public static final String OPENMRS_SDK_PROPERTIES_JAVA_HOME_OPTIONS = "javaHomeOptions";
     // dbUri for different db
     public static final String URI_MYSQL = "jdbc:mysql://localhost:3306/@DBNAME@";
+    public static final String URI_MYSQL_DOCKER = "jdbc:mysql://%s:3306/@DBNAME@";
     public static final String URI_POSTGRESQL = "jdbc:postgresql://localhost:5740/@DBNAME@";
     public static final String URI_H2 = "jdbc:h2:@APPLICATIONDATADIR@/database/@DBNAME@;AUTO_RECONNECT=TRUE;DB_CLOSE_DELAY=-1";
     // dbDriver class for different db

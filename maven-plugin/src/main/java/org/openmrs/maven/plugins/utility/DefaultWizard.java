@@ -710,8 +710,10 @@ public class DefaultWizard implements Wizard {
         String username = prompt("Please specify DB username");
         String password = prompt("Please specify DB password");
 
+        String dockerHost = dockerHelper.getDockerHost();
+
         String dbUri = promptForValueIfMissingWithDefault(
-                "Please specify database uri (-D%s) (default: '%s')", server.getDbUri(), "dbUri", SDKConstants.URI_MYSQL);
+                "Please specify database uri (-D%s) (default: '%s')", server.getDbUri(), "dbUri", getDefaultUri(dockerHost));
         if (dbUri.startsWith("jdbc:mysql:")) {
             server.setDbDriver(SDKConstants.DRIVER_MYSQL);
             dbUri = addMySQLParamsIfMissing(dbUri);
@@ -724,6 +726,17 @@ public class DefaultWizard implements Wizard {
         server.setContainerId(containerId);
 
         dockerHelper.runDbContainer(containerId, server.getDbUri(), username, password);
+    }
+
+    private String getDefaultUri(String dockerHost) {
+        if(SystemUtils.IS_OS_LINUX){
+            return SDKConstants.URI_MYSQL;
+        } else {
+            int beginIndex = dockerHost.indexOf("//");
+            int endIndex = dockerHost.lastIndexOf(":");
+            String dockerMachineIp = dockerHost.substring(beginIndex+2, endIndex);
+            return String.format(SDKConstants.URI_MYSQL_DOCKER, dockerMachineIp);
+        }
     }
 
     @Override
