@@ -55,6 +55,8 @@ public class DefaultGitHelper implements GitHelper {
     private static final String CREATING_URL_FROM_POM_REASON = "problem with getting URL from pom.xml";
     private static final String NO_GIT_PROJECT_FOUND_REASON = "no git project found";
     private static final String UPSTREAM = "upstream";
+    public static final String SCM_GIT_URL = "scm:git:git@github.com:";
+    public static final String HTTPS_GIT_URL = "https://github.com/";
 
     /**
      * @inheritDoc
@@ -505,7 +507,13 @@ public class DefaultGitHelper implements GitHelper {
             throw new MojoExecutionException("Failed to parse pom.xml",e);
         }
         String url = model.getScm().getUrl();
-        return StringUtils.removeEnd(url, "/") + ".git";
+
+        if (url.startsWith(SCM_GIT_URL)) {
+            url = url.replace(SCM_GIT_URL, HTTPS_GIT_URL);
+        } else {
+            url = StringUtils.removeEnd(url, "/") + ".git";
+        }
+        return url;
     }
 
     @Override
