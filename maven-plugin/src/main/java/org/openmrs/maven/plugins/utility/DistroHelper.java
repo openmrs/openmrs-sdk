@@ -195,7 +195,9 @@ public class DistroHelper {
     public DistroProperties retrieveDistroProperties(String distro) throws MojoExecutionException {
         DistroProperties result;
         result = getDistroPropertiesFromDir(new File(distro));
-        if(result==null){
+        if(result != null && mavenProject != null){
+            result.resolvePlaceholders(getProjectProperties());
+        } else {
             Artifact artifact = parseDistroArtifact(distro);
             if(isRefapp2_3_1orLower(artifact)){
                 result = new DistroProperties(artifact.getVersion());
@@ -204,6 +206,13 @@ public class DistroHelper {
             }
         }
         return result;
+    }
+
+    private Properties getProjectProperties() {
+        Properties properties = mavenProject.getProperties();
+        properties.setProperty("project.parent.version", mavenProject.getVersion());
+        properties.setProperty("project.version", mavenProject.getVersion());
+        return properties;
     }
 
     /**
