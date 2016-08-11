@@ -11,8 +11,8 @@
 if [[ "$TRAVIS_TAG" == *_* ]]
 then 
 VERSIONS=(${TRAVIS_TAG//_/ })
-NEW_VERSION=$VERSIONS[0]
-NEW_DEV_VERSION=$VERSIONS[1]
+NEW_VERSION=${VERSIONS[0]}
+NEW_DEV_VERSION=${VERSIONS[1]}
 echo "Setting version to $NEW_VERSION"
 mvn versions:set -DnewVersion=$NEW_VERSION
 git add -u
