@@ -64,8 +64,8 @@ public class CreateProject extends CreateProjectFromArchetypeMojo {
                     "which in short is: major.minor.maintenance(-SNAPSHOT).";
 
     private static final String DESCRIPTION_PROMPT_TMPL = "Describe your module in a few sentences";
-    private static final String GROUP_ID_PROMPT_TMPL = "Please specify %s (default: '%s'): ";
-    private static final String AUTHOR_PROMPT_TMPL = "Who is the author of the module? (default: '%s')";
+    private static final String GROUP_ID_PROMPT_TMPL = "Please specify %s";
+    private static final String AUTHOR_PROMPT_TMPL = "Who is the author of the module?";
     private static final String MODULE_TYPE_PROMPT = "What kind of project would you like to create?";
 
     /** @component */
@@ -308,10 +308,10 @@ public class CreateProject extends CreateProjectFromArchetypeMojo {
         moduleAuthor = wizard.promptForValueIfMissingWithDefault(AUTHOR_PROMPT_TMPL, moduleAuthor, "", "anonymous");
 
         if(TYPE_PLATFORM.equals(type)){
-            platform = wizard.promptForValueIfMissingWithDefault("What is the lowest version of the platform (-D%s) you want to support? (default: %s)", platform, "platform", "1.11.6");
+            platform = wizard.promptForValueIfMissingWithDefault("What is the lowest version of the platform (-D%s) you want to support?", platform, "platform", "1.11.6");
             archetypeArtifactId = SDKConstants.PLATFORM_ARCH_ARTIFACT_ID;
         } else if(TYPE_REFAPP.equals(type)) {
-            refapp = wizard.promptForValueIfMissingWithDefault("What is the lowest version of the Reference Application (-D%s) you want to support? (default: %s)", refapp, "refapp", "2.4");
+            refapp = wizard.promptForValueIfMissingWithDefault("What is the lowest version of the Reference Application (-D%s) you want to support?", refapp, "refapp", "2.4");
             archetypeArtifactId = SDKConstants.REFAPP_ARCH_ARTIFACT_ID;
         } else {
             throw new MojoExecutionException("Invalid project type");

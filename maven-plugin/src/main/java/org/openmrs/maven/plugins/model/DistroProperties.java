@@ -2,7 +2,6 @@ package org.openmrs.maven.plugins.model;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.project.MavenProject;
 
 
 import java.io.File;
@@ -11,7 +10,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -22,6 +21,7 @@ import java.util.Set;
  */
 public class DistroProperties {
 
+    public static final String PROPERTY_PROMPT_KEY = "property.%s.prompt";
     private static final String DEAFAULT_FILE_NAME = "openmrs-distro-%s.properties";
     private static final String TYPE_OMOD = "omod";
     private static final String TYPE_WAR = "war";
@@ -31,7 +31,8 @@ public class DistroProperties {
     private static final String GROUP_ID = "groupId";
     public static final String DISTRO_FILE_NAME = "openmrs-distro.properties";
     private static final String DB_SQL = "db.sql";
-
+    public static final String PROPERTY_DEFAULT_VALUE_KEY = "property.%s.default";
+    public static final String PROPERTY_KEY = "property.%s";
 
 
     private Properties properties;
@@ -192,6 +193,39 @@ public class DistroProperties {
 
     public String getName(){
         return getParam("name");
+    }
+
+    public String getPropertyPromt(String propertyName){
+        return getParam(String.format(PROPERTY_PROMPT_KEY, propertyName));
+    }
+
+    public String getPropertyDefault(String propertyName){
+        return getParam(String.format(PROPERTY_DEFAULT_VALUE_KEY, propertyName));
+    }
+
+    public String getPropertyValue(String propertyName){
+        return getParam(String.format(PROPERTY_KEY, propertyName));
+    }
+
+    public Set<String> getPropertiesNames(){
+        Set<String> propertiesNames = new HashSet<>();
+        for(Object key: getAllKeys()){
+            if(key.toString().startsWith("property.")){
+                propertiesNames.add(extractPropertyName(key.toString()));
+            }
+        }
+        return propertiesNames;
+    }
+
+    private String extractPropertyName(String key) {
+        int beginIndex = key.indexOf(".");
+        if(key.endsWith(".default")){
+            return key.substring(beginIndex+1, key.length()-8);
+        } else if(key.endsWith(".prompt")){
+            return key.substring(beginIndex+1, key.length()-7);
+        } else {
+            return key.substring(beginIndex+1);
+        }
     }
 
 

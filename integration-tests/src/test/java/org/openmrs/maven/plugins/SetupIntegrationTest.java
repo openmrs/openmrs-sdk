@@ -13,6 +13,7 @@ import java.util.UUID;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
+import static org.openmrs.maven.plugins.SdkMatchers.hasPropertyEqualTo;
 import static org.openmrs.maven.plugins.SdkMatchers.serverHasVersion;
 
 public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
@@ -74,6 +75,7 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
         addMockDbSettings();
 
         addAnswer(serverId);
+        addAnswer("nameValue");
         addAnswer(System.getProperty("java.home"));
 
 
@@ -84,6 +86,11 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
         assertFilePresent(serverId + File.separator + "openmrs-1.11.5.war");
         assertFilePresent(serverId + File.separator + "modules");
         assertModulesInstalled(serverId, "owa-1.4.omod", "uicommons-1.7.omod", "uiframework-3.6.omod");
+
+        Server.setServersPath(testDirectory.getAbsolutePath());
+        Server server = Server.loadServer(serverId);
+        assertThat(server, hasPropertyEqualTo("test", "testValue"));
+        assertThat(server, hasPropertyEqualTo("pih.default.config", "nameValue"));
     }
 
     @Test
@@ -92,6 +99,8 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
         addTaskParam("serverId", serverId);
         addMockDbSettings();
 
+        addAnswer("OpenMRS Concepts OWA server 1.0 from current directory");
+        addAnswer("nameValue");
         addAnswer(System.getProperty("java.home"));
 
         executeTask("setup");
@@ -101,6 +110,11 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
         assertFilePresent(serverId + File.separator + "openmrs-1.11.5.war");
         assertFilePresent(serverId + File.separator + "modules");
         assertModulesInstalled(serverId, "owa-1.4.omod", "uicommons-1.7.omod", "uiframework-3.6.omod");
+
+        Server.setServersPath(testDirectory.getAbsolutePath());
+        Server server = Server.loadServer(serverId);
+        assertThat(server, hasPropertyEqualTo("test", "testValue"));
+        assertThat(server, hasPropertyEqualTo("pih.default.config", "nameValue"));
     }
 
     @Test

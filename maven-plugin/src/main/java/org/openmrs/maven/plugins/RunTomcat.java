@@ -23,6 +23,7 @@ import org.openmrs.maven.plugins.utility.Wizard;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
 
@@ -150,6 +151,8 @@ public class RunTomcat extends AbstractMojo {
 				new File(serverPath, SDKConstants.OPENMRS_SERVER_PROPERTIES).getAbsolutePath());
 		System.setProperty("OPENMRS_APPLICATION_DATA_DIRECTORY", serverPath.getAbsolutePath() + File.separator);
 
+		setServerCustomProperties(server);
+
 		setSystemPropertiesForWatchedProjects(serverPath);
 
 		ClassLoader originalClassLoader = Thread.currentThread().getContextClassLoader();
@@ -164,6 +167,13 @@ public class RunTomcat extends AbstractMojo {
 			throw new MojoExecutionException("Tomcat failed to start", e);
 		} finally {
 			Thread.currentThread().setContextClassLoader(originalClassLoader);
+		}
+	}
+
+	private void setServerCustomProperties(Server server) {
+		HashMap<String, String> customProperties = server.getCustomProperties();
+		for(String key: customProperties.keySet()){
+			System.setProperty(key, customProperties.get(key));
 		}
 	}
 

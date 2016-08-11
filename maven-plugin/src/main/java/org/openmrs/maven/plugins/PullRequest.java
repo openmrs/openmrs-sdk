@@ -186,7 +186,7 @@ public class PullRequest extends AbstractTask {
         org.eclipse.egit.github.core.PullRequest pr = gitHelper.getPullRequestIfExists(branch, username +":"+originBranch, repoName);
         if(pr == null){
             wizard.showMessage("Creating new pull request...");
-            String description = wizard.promptForValueIfMissingWithDefault("You can include a short %s (optional)", null, "description", " ");
+            String description = wizard.promptForValueIfMissingWithDefault("You can include a short %s (optional)", null, "description", "");
             description = "https://issues.openmrs.org/browse/"+ issueId +"\n\n"+description;
             GithubPrRequest request = new GithubPrRequest.Builder()
                     .setBase(branch)

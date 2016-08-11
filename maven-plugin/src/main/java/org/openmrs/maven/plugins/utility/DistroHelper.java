@@ -37,10 +37,16 @@ public class DistroHelper {
      */
     BuildPluginManager pluginManager;
 
-    public DistroHelper(MavenProject mavenProject, MavenSession mavenSession, BuildPluginManager pluginManager) {
+    /**
+     *
+     */
+    Wizard wizard;
+
+    public DistroHelper(MavenProject mavenProject, MavenSession mavenSession, BuildPluginManager pluginManager, Wizard wizard) {
         this.mavenProject = mavenProject;
         this.mavenSession = mavenSession;
         this.pluginManager = pluginManager;
+        this.wizard = wizard;
     }
 
     /**
@@ -67,6 +73,41 @@ public class DistroHelper {
             return null;
         }
     }
+
+    /**
+     * Saves all custom properties from distroProperties starting with "property." to server
+     * @param properties
+     * @param server
+     */
+    public void savePropertiesToServer(DistroProperties properties, Server server) {
+        if (properties != null) {
+            Properties userBashProperties = mavenSession.getRequest().getUserProperties();
+            Set<String> propertiesNames = properties.getPropertiesNames();
+            for(String propertyName: propertiesNames){
+                String propertyValue = properties.getPropertyValue(propertyName);
+                String propertyValueBash = userBashProperties.getProperty(propertyName);
+                String propertyPrompt = properties.getPropertyPromt(propertyName);
+                String propertyDefault = properties.getPropertyDefault(propertyName);
+                if(propertyValueBash != null){
+                    server.setPropertyValue(propertyName, propertyValueBash);
+                } else if(propertyValue != null){
+                    server.setPropertyValue(propertyName, propertyValue);
+                } else {
+                    if(propertyPrompt != null){
+                        if(propertyDefault != null){
+                            propertyValue = wizard.promptForValueIfMissingWithDefault(propertyPrompt, null, propertyName, propertyDefault);
+                            server.setPropertyValue(propertyName, propertyValue);
+                        } else {
+                            propertyValue = wizard.promptForValueIfMissingWithDefault(propertyPrompt, null, propertyName, null);
+                            server.setPropertyValue(propertyName, propertyValue);
+                        }
+                    }
+
+                }
+            }
+        }
+    }
+
 
     /**
      * valid formats are 'groupId:artifactId:version' and 'artifactId:version'

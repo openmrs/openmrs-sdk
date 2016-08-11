@@ -712,6 +712,10 @@ public class Server {
         setParam(PROPERTY_DOCKER_MYSQL, containerId);
     }
 
+    public void setPropertyValue(String propertyName, String value){
+        setParam("property."+propertyName, value);
+    }
+
     public void deleteServerTmpDirectory() {
         File tmpDirectory = getServerTmpDirectory();
         if (tmpDirectory.exists()) {
@@ -740,5 +744,20 @@ public class Server {
             version = version.substring(0, version.lastIndexOf(".war"));
             return version;
         }
+    }
+
+    public HashMap<String, String> getCustomProperties(){
+        HashMap<String, String> customProperties = new LinkedHashMap<>();
+        for(Object key: properties.keySet()){
+            if(key.toString().startsWith("property.")){
+                String newKey = removePropertyStringFromKey(key.toString());
+                customProperties.put(newKey, properties.getProperty(key.toString()));
+            }
+        }
+        return customProperties;
+    }
+
+    private String removePropertyStringFromKey(String key) {
+        return key.substring(key.indexOf(".")+1);
     }
 }
