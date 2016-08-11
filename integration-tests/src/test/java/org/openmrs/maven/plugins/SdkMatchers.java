@@ -1,19 +1,19 @@
 package org.openmrs.maven.plugins;
 
+import org.hamcrest.CustomMatcher;
 import org.hamcrest.FeatureMatcher;
 import org.hamcrest.Matcher;
 import org.openmrs.maven.plugins.bintray.BintrayId;
 import org.openmrs.maven.plugins.bintray.BintrayPackage;
+import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.Server;
 
 import java.io.File;
-import java.util.Collection;
 import java.util.List;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.startsWith;
-import static org.hamcrest.Matchers.greaterThan;
 
 public class SdkMatchers {
 

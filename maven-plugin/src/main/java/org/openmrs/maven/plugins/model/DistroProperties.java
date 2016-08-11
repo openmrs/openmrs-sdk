@@ -2,6 +2,7 @@ package org.openmrs.maven.plugins.model;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.project.MavenProject;
 
 
 import java.io.File;
@@ -10,7 +11,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
@@ -214,5 +217,41 @@ public class DistroProperties {
         }
     }
 
+    public void resolvePlaceholders(Properties projectProperties){
+        for(Map.Entry<Object, Object> property: properties.entrySet()){
+            if(hasPlaceholder(property.getValue())){
+                try{
+                    Object placeholderValue = projectProperties.get(getPlaceholderKey((String)property.getValue()));
+                    if(placeholderValue == null){
+                        throw new IllegalArgumentException("Failed to resolve property placeholders in distro file, no property for key: "+property.getKey());
+                    } else {
+                            property.setValue(putInPlaceholder((String)property.getValue(), (String)placeholderValue));
+                        }
+                } catch(ClassCastException e){
+                    throw new IllegalArgumentException("Property with key "+property.getKey()+" and value "+property.getValue()+"is not placeholder.");
+                }
+            }
+        }
+    }
 
+    private String getPlaceholderKey(String string){
+        int startIndex = string.indexOf("${")+2;
+        int endIndex = string.indexOf("}", startIndex);
+        return string.substring(startIndex, endIndex);
+    }
+
+    private String putInPlaceholder(String value, String placeholderValue) {
+        return value.replace("${"+getPlaceholderKey(value)+"}", placeholderValue);
+    }
+
+    private boolean hasPlaceholder(Object object){
+        String asString;
+        try{
+            asString = (String) object;
+        } catch(ClassCastException e){
+            return false;
+        }
+        int index = asString.indexOf("{");
+        return index != -1 && asString.substring(index).contains("}");
+    }
 }
