@@ -74,4 +74,22 @@ public class VersionsHelperTest {
                 createTestVersions("1.1.2", "1.5.6", "1.5.7-SNAPSHOT" , "1.1.2-alpha", "1.1.0-SNAPSHOT", "1.3.0-SNAPSHOT", "1.3.0", "1.1.0"), 6);
         assertThat(res, contains("1.5.7-SNAPSHOT", "1.5.6", "1.3.0", "1.1.2"));
     }
+    @Test
+    public void getVersionAdvice_shouldContainOnlyLatestSnapshot(){
+        List<String> res = helper.getVersionAdvice(
+                createTestVersions("1.1.2", "1.5.6", "1.5.7-SNAPSHOT","1.4.5-SNAPSHOT", "1.1.0-SNAPSHOT", "1.3.0-SNAPSHOT"), 6);
+        assertThat(res, contains("1.5.7-SNAPSHOT", "1.5.6", "1.1.2"));
+    }
+    @Test
+    public void getVersionAdvice_shouldContainNoMoreThanRequestedQuantity(){
+        List<String> res = helper.getVersionAdvice(
+                createTestVersions("1.4.0", "1.5.0", "1.8.0"), 2);
+        assertThat(res, contains("1.8.0", "1.5.0"));
+    }
+    @Test
+    public void getVersionAdvice_shouldContainOnlyOneReleaseFromMajorAndMinor(){
+        List<String> res = helper.getVersionAdvice(
+                createTestVersions("1.5.2", "1.5.6", "1.5.7-SNAPSHOT"), 6);
+        assertThat(res, contains("1.5.7-SNAPSHOT", "1.5.6"));
+    }
 }

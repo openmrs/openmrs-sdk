@@ -18,7 +18,6 @@ import java.util.List;
 public class VersionsHelper {
 
     private static final String RELEASE_VERSION_REGEX = "[0-9\\.]+(-alpha)?(-beta)?";
-    private static final String SNAPSHOT_RELEASE_VERSION_REGEX = "[0-9\\.]+(-alpha)?(-beta)?(-SNAPSHOT)?";
     private static final String NONE_VERSION_AVAILABLE_MSG = "None version is available in remote repositories!";
 
     /**
@@ -151,9 +150,9 @@ public class VersionsHelper {
             return Collections.emptyList();
         }
         sortDescending(allVersions);
-        List<String> advices = new ArrayList<String>();
+        List<String> advices = new ArrayList<>();
 
-        //add first element
+        //add first element, presumably last SNAPSHOT version
         advices.add(allVersions.get(0).toString());
         ArtifactVersion previous = allVersions.get(0);
         //start from second element
@@ -185,7 +184,7 @@ public class VersionsHelper {
     }
 
     private boolean isNotFeatureVersion(ArtifactVersion version) {
-        return version.toString().matches(SNAPSHOT_RELEASE_VERSION_REGEX);
+        return version.toString().matches(RELEASE_VERSION_REGEX);
     }
 
     private boolean isSnapshot(ArtifactVersion version){
