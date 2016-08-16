@@ -5,7 +5,6 @@ import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.project.MavenProject;
-import org.openmrs.maven.plugins.Deploy;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.Server;
@@ -57,18 +56,11 @@ public class ModuleInstaller {
             // install modules for each version
             installModules(artifacts, modules.getPath());
         } else {
-            coreModules = SDKConstants.getCoreModules(server.getVersion(), isCreatePlatform);
+            coreModules = SDKConstants.getCoreModules(server.getPlatformVersion(), isCreatePlatform);
             if (coreModules == null) {
-                throw new MojoExecutionException(String.format("Invalid version: '%s'", server.getVersion()));
+                throw new MojoExecutionException(String.format("Invalid version: '%s'", server.getPlatformVersion()));
             }
             installModules(coreModules, server.getServerDirectory().getPath());
-        }
-        // install user modules
-        if (server != null) {
-            List<Artifact> userModules = server.getUserModules();
-            for(Artifact module : userModules){
-                installModule(module, new File(server.getServerDirectory(), SDKConstants.OPENMRS_SERVER_MODULES).getAbsolutePath());
-            }
         }
     }
 

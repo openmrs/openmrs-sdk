@@ -31,7 +31,7 @@ public class Undeploy extends AbstractTask {
     private String groupId;
 
     public void executeTask() throws MojoExecutionException, MojoFailureException {
-        Deploy deployer = new Deploy();
+        Deploy deployer = new Deploy(this);
         if (serverId == null) {
             File currentProperties = Server.checkCurrentDirForServer();
             if (currentProperties != null) serverId = currentProperties.getName();
@@ -47,8 +47,8 @@ public class Undeploy extends AbstractTask {
                 boolean deleted = mod.delete();
                 if (deleted) {
                     Server properties = Server.loadServer(serverId);
-                    properties.removeUserModule(artifact);
-                    properties.save();
+                    properties.removeModuleProperties(artifact);
+                    properties.saveAndSynchronizeDistro();
                     getLog().info(String.format("Module with groupId: '%s', artifactId: '%s' was successfully removed from server.",
                             artifact.getGroupId(), artifact.getArtifactId()));
                     return;

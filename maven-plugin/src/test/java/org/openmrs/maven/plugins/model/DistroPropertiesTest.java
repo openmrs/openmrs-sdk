@@ -45,7 +45,7 @@ public class DistroPropertiesTest {
         List<Artifact> distroArtifacts = distro.getModuleArtifacts();
         assertThat(distroArtifacts, hasSize(5));
         assertThat(findArtifactByArtifactId(distroArtifacts, "appui-omod"), hasVersion("1.6.7"));
-        assertThat(distro.getServerVersion(), is("1"));
+        assertThat(distro.getVersion(), is("1"));
         assertThat(distro.getPlatformVersion(), is("222"));
     }
 

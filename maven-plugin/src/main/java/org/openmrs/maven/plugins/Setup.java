@@ -8,7 +8,6 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.Server;
-import org.openmrs.maven.plugins.model.Version;
 import org.openmrs.maven.plugins.utility.DBConnector;
 import org.openmrs.maven.plugins.utility.DistroHelper;
 import org.openmrs.maven.plugins.utility.SDKConstants;
@@ -176,9 +175,8 @@ public class Setup extends AbstractTask {
                 }
             }
 
-
-            server.setUnspecifiedToDefault();
-            configureVersion(server, isCreatePlatform);
+            configureVersion(server, distroProperties);
+            distroProperties = createDistroForPlatform(distroProperties, server);
 
             String platformVersion = server.getPlatformVersion();
             if (platformVersion.startsWith("1.")) {
@@ -189,7 +187,8 @@ public class Setup extends AbstractTask {
             }
 
             wizard.promptForJavaHomeIfMissing(server);
-
+            server.setValuesFromDistroProperties(distroProperties);
+            server.setUnspecifiedToDefault();
             server.save();
 
             return serverPath.getPath();
@@ -197,6 +196,17 @@ public class Setup extends AbstractTask {
             FileUtils.deleteQuietly(serverPath);
             throw new MojoExecutionException("Failed to setup server", e);
         }
+    }
+
+    private DistroProperties createDistroForPlatform(DistroProperties distroProperties, Server server) throws MojoExecutionException {
+        if(distroProperties == null){
+            distroProperties = new DistroProperties(server.getServerId(), server.getPlatformVersion());
+            if(server.getDbDriver().equals(SDKConstants.DRIVER_H2)){
+                distroProperties.setH2Support(true);
+            }
+            distroProperties.saveTo(server.getServerDirectory());
+        }
+        return distroProperties;
     }
 
     private DistroProperties extractDistroToServer(Server server, boolean isCreatePlatform, File serverPath) throws MojoExecutionException, MojoFailureException {
@@ -210,22 +220,13 @@ public class Setup extends AbstractTask {
         return distroProperties;
     }
 
-    private void configureVersion(Server server, boolean isCreatePlatform){
-        if (isCreatePlatform){
-            server.setPlatformVersion(server.getVersion());
-            server.setParam(Server.PROPERTY_VERSION, "");
-        } else {
-            // set web app version for OpenMRS 2.2 and higher
-            if (new Version(server.getVersion()).higher(new Version(Version.PRIOR))) {
-                for (File f: server.getServerDirectory().listFiles()) {
-                    if (f.getName().endsWith("." + Artifact.TYPE_WAR)) {
-                        server.setPlatformVersion(Version.parseVersionFromFile(f.getName()));
-                        break;
-                    }
-                }
+    private void configureVersion(Server server, DistroProperties distroProperties){
+        if (distroProperties != null) {
+            if(server.getPlatformVersion() == null){
+                server.setPlatformVersion(distroProperties.getPlatformVersion());
             }
-            else {
-                server.setPlatformVersion(SDKConstants.WEBAPP_VERSIONS.get(server.getVersion()));
+            if(server.getVersion() == null){
+                server.setVersion(distroProperties.getVersion());
             }
         }
     }
@@ -374,7 +375,7 @@ public class Setup extends AbstractTask {
             distroProperties = DistroHelper.getDistroPropertiesFromDir();
 
             if(distroProperties!=null){
-                options.add(distroProperties.getName() + " " + distroProperties.getServerVersion() + " from current directory");
+                options.add(distroProperties.getName() + " " + distroProperties.getVersion() + " from current directory");
             }
             options.add(DISTRIBUTION);
             options.add(PLATFORM);
@@ -393,17 +394,17 @@ public class Setup extends AbstractTask {
                 default:
                     createPlatform = false;
                     server.setPlatformVersion(distroProperties.getPlatformVersion());
-                    server.setVersion(distroProperties.getServerVersion());
+                    server.setVersion(distroProperties.getVersion());
             }
         } else if (platform != null) {
-            server.setVersion(platform);
+            server.setPlatformVersion(platform);
             createPlatform = true;
         } else {
             distroProperties = distroHelper.retrieveDistroProperties(distro);
             if(distroProperties == null){
                 throw new IllegalArgumentException("Distro "+distro+"could not be retrieved");
             }
-            server.setVersion(distroProperties.getServerVersion());
+            server.setVersion(distroProperties.getVersion());
             server.setPlatformVersion(distroProperties.getPlatformVersion());
             createPlatform = false;
         }

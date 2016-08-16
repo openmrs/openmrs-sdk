@@ -18,7 +18,7 @@ import java.util.*;
 /**
  * Class for Server model
  */
-public class Server {
+public class Server extends BaseSdkProperties {
     // attributes
     public static final String PROPERTY_SERVER_ID = "server.id";
     public static final String PROPERTY_DB_DRIVER = "connection.driver_class";
@@ -45,8 +45,6 @@ public class Server {
 
     private static String serversPath = System.getProperty("user.home")+File.separator+SDKConstants.OPENMRS_SERVER_PATH;
 
-    private Properties properties;
-
     private File propertiesFile;
 
     private File serverDirectory;
@@ -54,12 +52,12 @@ public class Server {
     private String interactiveMode;
 
     public static class ServerBuilder {
+
         private Server server = new Server();
 
         public ServerBuilder(Server server){
             this.server.properties = server.properties;
         }
-
         public ServerBuilder(){}
 
         public ServerBuilder setInteractiveMode(String nestedInteractiveMode) {
@@ -87,7 +85,7 @@ public class Server {
             return this;
         }
 
-        public ServerBuilder serPlatformVersion(String platformVersion) {
+        public ServerBuilder setPlatformVersion(String platformVersion) {
             server.setPlatformVersion(platformVersion);
             return this;
         }
@@ -127,15 +125,20 @@ public class Server {
             return this;
         }
 
+        public ServerBuilder setContainerId(String id){
+            server.setContainerId(id);
+            return this;
+        }
+
         public Server build() {
             return server;
         }
+
     }
 
     private Server() {
         properties = new Properties();
     };
-
     private Server(File file, Properties properties) {
         if (file != null) {
             this.propertiesFile = new File(file, SDKConstants.OPENMRS_SERVER_PROPERTIES);
@@ -251,6 +254,7 @@ public class Server {
         File backupProperties = new File(getServerDirectory(), OLD_PROPERTIES_FILENAME);
         saveTo(backupProperties);
     }
+
     public void deleteBackupProperties() throws MojoExecutionException {
         File backupProperties = new File(getServerDirectory(), OLD_PROPERTIES_FILENAME);
         backupProperties.delete();
@@ -259,7 +263,6 @@ public class Server {
     public File getDistroPropertiesFile(){
         return new File(getServerDirectory(), DistroProperties.DISTRO_FILE_NAME);
     }
-
     public void delete() {
         propertiesFile.delete();
     }
@@ -281,7 +284,9 @@ public class Server {
         setPropertyIfNotSpecified("module_web_admin", "true");
         setPropertyIfNotSpecified("install_method", "auto");
         setPropertyIfNotSpecified("admin_user_password", "Admin123");
+        setPropertyIfNotSpecified("version", "");
     }
+
     private void setPropertyIfNotSpecified(String key, String value){
         if(properties.getProperty(key)==null){
             properties.setProperty(key, value);
@@ -299,7 +304,6 @@ public class Server {
             setParam(Server.PROPERTY_DB_URI, dbUri);
         }
     }
-
     public boolean addWatchedProject(Project project) {
         Set<Project> watchedProjects = getWatchedProjects();
         if (watchedProjects.add(project)) {
@@ -421,17 +425,8 @@ public class Server {
      */
     public List<Artifact> getServerModules() throws MojoExecutionException {
         List<Artifact> artifacts = new ArrayList<>();
-        File propertiesFile = getDistroPropertiesFile();
-        if(propertiesFile.exists()){
-            DistroProperties distroProperties = new DistroProperties(propertiesFile);
-            artifacts.addAll(distroProperties.getModuleArtifacts());
-            artifacts.addAll(distroProperties.getWarArtifacts());
-
-            artifacts = mergeArtifactLists(artifacts, getUserModules());
-
-        } else {
-            artifacts.addAll(getUserModules());
-        }
+        artifacts.addAll(getModuleArtifacts());
+        artifacts.addAll(getWarArtifacts());
         return artifacts;
     }
 
@@ -479,14 +474,24 @@ public class Server {
         }
     }
 
+    public void setValuesFromDistroProperties(DistroProperties distroProperties) {
+        if (distroProperties != null) {
+            this.properties.putAll(distroProperties.getModuleProperties());
+            setName(distroProperties.getName());
+            setVersion(distroProperties.getVersion());
+        }
+    }
+
     public void saveUserOWA(BintrayId id){
         addToValueList(PROPERTY_USER_OWAS, id.getName()+SLASH+id.getVersion());
     }
+
     public void removeUserOWA(BintrayId id){
         List<BintrayId> owas = getUserOWAs();
         owas.remove(id);
         setUserOWAs(owas);
     }
+
     public void setUserOWAs(List<BintrayId> ids){
         properties.remove(PROPERTY_USER_OWAS);
         for(BintrayId id : ids){
@@ -505,17 +510,6 @@ public class Server {
         }
         return owas;
     }
-
-    /**
-     * Get param from properties
-     *
-     * @param key - property key
-     * @return - property value
-     */
-    public String getParam(String key) {
-        return properties.getProperty(key);
-    }
-
     /**
      * Set param to properties object (without applying)
      *
@@ -581,6 +575,18 @@ public class Server {
         }
     }
 
+    public void removeUserModulesProperty(){
+        properties.remove(Server.PROPERTY_USER_MODULES);
+    }
+
+    public void removePlatformVersionProperty(){
+        properties.remove(Server.PROPERTY_PLATFORM);
+    }
+
+    public void removeOpenmrsVersionProperty() {
+        properties.remove(Server.PROPERTY_VERSION);
+    }
+
     public void setJavaHome(String path) {
         setParam(PROPERTY_JAVA_HOME, path);
     }
@@ -641,10 +647,6 @@ public class Server {
 
     public void setInteractiveMode(String interactiveMode) { this.interactiveMode = interactiveMode; }
 
-    public String getVersion() { return getParam(PROPERTY_VERSION); }
-
-    public void setVersion(String version) { setParam(PROPERTY_VERSION, version); }
-
     public String getJavaHome() {
         String javaHome = getParam(PROPERTY_JAVA_HOME);
         return javaHome;
@@ -658,11 +660,9 @@ public class Server {
         setParam(PROPERTY_DEMO_DATA, String.valueOf(includeDemoData));
     }
 
-    public String getPlatformVersion(){
+    @Deprecated
+    public String getOpenmrsCoreVersion(){
         return getParam(PROPERTY_PLATFORM);
-    }
-    public void setPlatformVersion(String platformVersion){
-        setParam(PROPERTY_PLATFORM, platformVersion);
     }
 
     public String getDbName(){
@@ -760,5 +760,16 @@ public class Server {
 
     private String removePropertyStringFromKey(String key) {
         return key.substring(key.indexOf(".")+1);
+    }
+
+    public DistroProperties getDistroProperties() throws MojoExecutionException {
+        return new DistroProperties(getDistroPropertiesFile());
+    }
+
+    public void saveAndSynchronizeDistro() throws MojoExecutionException {
+        DistroProperties distroProperties = getDistroProperties();
+        synchronize(distroProperties);
+        distroProperties.saveTo(getServerDirectory());
+        save();
     }
 }

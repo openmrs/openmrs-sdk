@@ -1,16 +1,13 @@
 package org.openmrs.maven.plugins;
 
-import org.hamcrest.CustomMatcher;
 import org.hamcrest.FeatureMatcher;
 import org.hamcrest.Matcher;
 import org.openmrs.maven.plugins.bintray.BintrayId;
 import org.openmrs.maven.plugins.bintray.BintrayPackage;
-import org.openmrs.maven.plugins.model.Artifact;
+import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.Server;
 
 import java.io.File;
-import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -24,6 +21,14 @@ public class SdkMatchers {
             @Override
             protected String featureValueOf(final Server actual) {
                 return actual.getVersion();
+            }
+        };
+    }
+    public static Matcher<Server> serverHasName(final String name) {
+        return new FeatureMatcher<Server, String>(equalTo(name), "distribution name", "distribution name") {
+            @Override
+            protected String featureValueOf(final Server actual) {
+                return actual.getName();
             }
         };
     }
@@ -64,6 +69,38 @@ public class SdkMatchers {
             @Override
             protected String featureValueOf(final Server actual) {
                 return actual.getCustomProperties().get(propertyName);
+            }
+        };
+    }
+    public static Matcher<Server> hasModuleVersion(final String artifactId, final String version){
+        return new FeatureMatcher<Server, String>(equalTo(version), "module version", "module version") {
+            @Override
+            protected String featureValueOf(Server actual) {
+                return actual.getParam("omod."+artifactId);
+            }
+        };
+    }
+    public static Matcher<DistroProperties> hasModuleVersionInDisstro(final String artifactId, final String version){
+        return new FeatureMatcher<DistroProperties, String>(equalTo(version), "module version", "module version") {
+            @Override
+            protected String featureValueOf(DistroProperties actual) {
+                return actual.getParam("omod."+artifactId);
+            }
+        };
+    }
+    public static Matcher<Server> hasPlatformVersion(final String version){
+        return new FeatureMatcher<Server, String>(equalTo(version), "war version", "war version") {
+            @Override
+            protected String featureValueOf(Server actual) {
+                return actual.getPlatformVersion();
+            }
+        };
+    }
+    public static Matcher<DistroProperties> hasWarVersion(final String version){
+        return new FeatureMatcher<DistroProperties, String>(equalTo(version), "war version", "war version") {
+            @Override
+            protected String featureValueOf(DistroProperties actual) {
+                return actual.getPlatformVersion();
             }
         };
     }

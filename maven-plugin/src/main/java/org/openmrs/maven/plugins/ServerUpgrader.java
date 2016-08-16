@@ -9,7 +9,6 @@ import org.openmrs.maven.plugins.utility.DistroHelper;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 
 import java.io.File;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -44,7 +43,6 @@ public class ServerUpgrader {
         boolean confirmed = parentTask.wizard.promptForConfirmDistroUpgrade(upgradeDifferential, server, distroProperties);
 		if(confirmed){
 			server.saveBackupProperties();
-			List<Artifact> userModules = server.getUserModules();
 
 			String modulesDir = server.getServerDirectory().getPath()+File.separator+SDKConstants.OPENMRS_SERVER_MODULES;
 			if(upgradeDifferential.getPlatformArtifact()!=null){
@@ -52,30 +50,48 @@ public class ServerUpgrader {
 			}
 			if(!upgradeDifferential.getModulesToAdd().isEmpty()){
 				parentTask.moduleInstaller.installModules(upgradeDifferential.getModulesToAdd(), modulesDir);
+				for(Artifact artifact: upgradeDifferential.getModulesToAdd()){
+					server.setModuleProperties(artifact);
+				}
+			}
+			if(!upgradeDifferential.getModulesToDelete().isEmpty()){
+				for(Artifact artifact: upgradeDifferential.getModulesToDelete()){
+					File moduleToDelete = new File(modulesDir, artifact.getDestFileName());
+					moduleToDelete.delete();
+					server.removeModuleProperties(artifact);
+				}
 			}
 			if(!upgradeDifferential.getUpdateOldToNewMap().isEmpty()){
 				for(Map.Entry<Artifact, Artifact> updateEntry : upgradeDifferential.getUpdateOldToNewMap().entrySet()){
-					File oldModule = new File(modulesDir, updateEntry.getKey().getDestFileName());
-					oldModule.delete();
-					parentTask.moduleInstaller.installModule(updateEntry.getValue(), modulesDir);
-					if(userModules.contains(updateEntry.getKey())){
-						userModules.remove(updateEntry.getKey());
-					}
+					updateModule(server, modulesDir, updateEntry);
+				}
+			}
+			if(!upgradeDifferential.getDowngradeNewToOldMap().isEmpty()){
+				for(Map.Entry<Artifact, Artifact> downgradeEntry : upgradeDifferential.getDowngradeNewToOldMap().entrySet()){
+					updateModule(server, modulesDir, downgradeEntry);
 				}
 			}
 
-			server.setUserModules(userModules);
-			server.setVersion(distroProperties.getServerVersion());
-			server.save();
+			server.setVersion(distroProperties.getVersion());
+			server.setName(distroProperties.getName());
 			server.getDistroPropertiesFile().delete();
 			distroProperties.saveTo(server.getServerDirectory());
 			server.deleteBackupProperties();
 			deleteDependencyPluginMarker();
+			server.saveAndSynchronizeDistro();
 			parentTask.getLog().info("Server upgraded successfully");
 		} else {
 			parentTask.wizard.showMessage("Server upgrade aborted");
 		}
 
+	}
+
+	private void updateModule(Server server, String modulesDir, Map.Entry<Artifact, Artifact> updateEntry) throws MojoExecutionException {
+		File oldModule = new File(modulesDir, updateEntry.getKey().getDestFileName());
+		oldModule.delete();
+		server.removeModuleProperties(updateEntry.getKey());
+		parentTask.moduleInstaller.installModule(updateEntry.getValue(), modulesDir);
+		server.setModuleProperties(updateEntry.getValue());
 	}
 
 	/**
@@ -120,7 +136,7 @@ public class ServerUpgrader {
         Artifact webappArtifact = new Artifact(SDKConstants.WEBAPP_ARTIFACT_ID, version, Artifact.GROUP_WEB, Artifact.TYPE_WAR);
         parentTask.moduleInstaller.installModule(webappArtifact, server.getServerDirectory().getPath());
         server.setPlatformVersion(version);
-        server.save();
+		server.saveAndSynchronizeDistro();
     }
 
 	public void validateServerMetadata(File serverPath) throws MojoExecutionException {
@@ -160,8 +176,8 @@ public class ServerUpgrader {
 					server.setPlatformVersion(server.getWebappVersionFromFilesystem());
 				}
 			}
-			if(StringUtils.isNotBlank(server.getVersion())){
-				if(server.getVersion().equals("2.3")){
+			if(StringUtils.isNotBlank(server.getParam(Server.PROPERTY_VERSION))){
+				if(server.getParam(Server.PROPERTY_VERSION).equals("2.3")){
 					this.parentTask.wizard.showMessage("Please note that Reference Application 2.3 is not supported" +
 							"\nFunctions other than 'run' will not work properly, " +
 							"\nIt is recommended to use version 2.3.1 instead" +
@@ -170,13 +186,33 @@ public class ServerUpgrader {
 				}
 				configureMissingDistroArtifact(server);
 				if(!new File(serverPath, DistroProperties.DISTRO_FILE_NAME).exists()){
-					String distro = server.getDistroArtifactId() + ":" + server.getVersion();
+					String distro = server.getDistroArtifactId() + ":" + server.getParam(Server.PROPERTY_VERSION);
 					parentTask.distroHelper.saveDistroPropertiesTo(serverPath, distro);
 				}
+			} else if(StringUtils.isBlank(server.getVersion())){
+				DistroProperties distroProperties = new DistroProperties(server.getServerId(), server.getOpenmrsCoreVersion());
+				distroProperties.saveTo(serverPath.getAbsoluteFile());
+			}
+			if(StringUtils.isNotBlank(server.getParam(Server.PROPERTY_PLATFORM))){
+				server.setValuesFromDistroProperties(server.getDistroProperties());
+				updateModulesPropertiesWithUserModules(server);
+				server.removePlatformVersionProperty();
+				server.removeUserModulesProperty();
+				server.removeOpenmrsVersionProperty();
+				server.save();
 			}
 		} else throw new MojoExecutionException("There is no server properties file in this directory");
 
 		server.save();
+	}
+
+	private void updateModulesPropertiesWithUserModules(Server server) throws MojoExecutionException {
+		List<Artifact> userModules = server.getUserModules();
+		for(Artifact userModule: userModules){
+			server.removeModuleProperties(userModule);
+			server.setModuleProperties(userModule);
+		}
+		server.saveAndSynchronizeDistro();
 	}
 
 	private void configureMissingDistroArtifact(Server server) {

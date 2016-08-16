@@ -162,7 +162,7 @@ public class BuildDistro extends AbstractTask {
 
         wizard.showMessage("Creating Docker Compose configuration...\n");
         String distroName = adjustImageName(distroProperties.getName());
-        String distroVersion = adjustImageName(distroProperties.getServerVersion());
+        String distroVersion = adjustImageName(distroProperties.getVersion());
         writeDockerCompose(targetDirectory, distroName, distroVersion);
         copyBuildDistroResource("setenv.sh", new File(targetDirectory, "setenv.sh"));
         copyBuildDistroResource("startup.sh", new File(targetDirectory, "startup.sh"));
@@ -170,7 +170,7 @@ public class BuildDistro extends AbstractTask {
         copyDockerfile(targetDirectory, distroProperties);
 
         dbDumpStream = getSqlDumpStream(StringUtils.isNotBlank(dbSql) ? dbSql : distroProperties.getSqlScriptPath(), targetDirectory, distroArtifact);
-        if(dbDumpStream != null){
+        if(dbDumpStream != null) {
             copyDbDump(targetDirectory, dbDumpStream);
         }
         //clean up extracted sql file
@@ -193,7 +193,6 @@ public class BuildDistro extends AbstractTask {
     }
 
     private void copyDockerfile(File targetDirectory, DistroProperties distroProperties) {
-        //Remember to change this invocation if Adam's PR is merged
         int majorVersion = new Version(distroProperties.getPlatformVersion()).getMajorVersion();
         if(majorVersion == 1){
             copyBuildDistroResource("Dockerfile-jre7", new File(targetDirectory, "Dockerfile"));
