@@ -3,6 +3,7 @@ package org.openmrs.maven.plugins;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.SystemUtils;
 import org.apache.maven.archetype.ArchetypeManager;
 import org.apache.maven.archetype.generator.ArchetypeGenerator;
 import org.apache.maven.archetype.mojos.CreateProjectFromArchetypeMojo;
@@ -24,6 +25,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
+import java.net.URL;
 import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -438,6 +440,7 @@ public class CreateProject extends CreateProjectFromArchetypeMojo {
             runMojoExecutor(Arrays.asList(element("arguments", "install -g yo generator-openmrs-owa"), element("installDirectory", file.getAbsolutePath())), "npm");
             files = file.listFiles();
             runYeoman(file);
+            addHelperScripts(file.getAbsolutePath());
         } catch (IOException e) {
             throw new IllegalStateException("Failed starting yeoman", e);
         } catch (InterruptedException e) {
@@ -445,6 +448,20 @@ public class CreateProject extends CreateProjectFromArchetypeMojo {
         } finally {
             deleteTempFiles(files);
         }
+    }
+
+    private void addHelperScripts(String path) {
+        File npmCmd = new File(path, "npm.cmd");
+        URL npmCmdSrc = getClass().getClassLoader().getResource("npm.cmd");
+        File npm = new File(path, "npm");
+        URL npmSrc = getClass().getClassLoader().getResource("npm");
+        try {
+            FileUtils.copyURLToFile(npmSrc, npm);
+            FileUtils.copyURLToFile(npmCmdSrc, npmCmd);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
     }
 
     private void runMojoExecutor(List<MojoExecutor.Element> configuration, String goal) throws MojoExecutionException {
@@ -462,20 +479,30 @@ public class CreateProject extends CreateProjectFromArchetypeMojo {
 
     private void deleteTempFiles(File[] files) {
         for(File file: files){
-            FileUtils.deleteQuietly(file);
+            if (!file.getName().equals("node")) {
+                FileUtils.deleteQuietly(file);
+            }
         }
     }
 
     private void runYeoman(File directory) throws InterruptedException, IOException {
         ProcessBuilder builder = new ProcessBuilder()
                 .directory(directory)
-                .command(getYoCmd(), "openmrs-owa")
+                .command(getNodeExecutable(), getYoCmd(), "openmrs-owa")
                 .redirectErrorStream(true)
                 .inheritIO();
 
         Process process = builder.start();
         process.waitFor();
 
+    }
+
+    private String getNodeExecutable() {
+        if(SystemUtils.IS_OS_WINDOWS){
+            return "node"+File.separator+"node.exe";
+        } else {
+            return "node"+File.separator+"node";
+        }
     }
 
     private String getYoCmd(){
