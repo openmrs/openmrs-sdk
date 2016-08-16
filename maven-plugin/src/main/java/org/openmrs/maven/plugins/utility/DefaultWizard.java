@@ -703,9 +703,8 @@ public class DefaultWizard implements Wizard {
                 dockerHost = promptForValueIfMissingWithDefault("Please specify Docker host URL (either 'tcp://' or 'unix://')",
                         dockerHelper.getDockerHost(), "dockerHost", DockerHelper.DEFAULT_HOST_LINUX);
             } else {
-                if (SystemUtils.IS_OS_MAC) {
-                    showMessage("If you are running 'Docker for Mac', the default is: 'unix:///var/tmp/docker.sock'.");
-                }
+                showMessage("Please note that neither 'Docker for Mac' nor 'Docker for Windows' are currently supported.");
+
                 showMessage("If you are running 'Docker Toolbox', you can find out the URL by running `docker-machine url`.");
                 dockerHost = promptForValueIfMissingWithDefault(
                         "Please specify Docker host URL", dockerHelper.getDockerHost(), "dockerHost", null);
