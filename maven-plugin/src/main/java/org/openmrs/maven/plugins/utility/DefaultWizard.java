@@ -668,17 +668,7 @@ public class DefaultWizard implements Wizard {
             server.setDbDriver(SDKConstants.DRIVER_MYSQL);
         }
 
-        String dbUri = (SDKConstants.URI_MYSQL.replace("3306", DockerHelper.DOCKER_MYSQL_PORT));
-        //Windows and Mac use the Docker Machine, which gets assigned an IP different than the host
-        if (SystemUtils.IS_OS_WINDOWS || SystemUtils.IS_OS_MAC) {
-            try {
-                URI uri = new URI(dockerHelper.getDockerHost());
-                dbUri = dbUri.replace("localhost", uri.getHost());
-            } catch (URISyntaxException e) {
-                throw new IllegalStateException(e);
-            }
-        }
-        dbUri = dbUri.replace(DBNAME_URL_VARIABLE, server.getServerId());
+        String dbUri = getDefaultDbUri(server, dockerHelper);
         dbUri = addMySQLParamsIfMissing(dbUri);
 
         server.setDbUri(dbUri);
@@ -690,15 +680,35 @@ public class DefaultWizard implements Wizard {
         dockerHelper.runDbContainer(server.getContainerId(), server.getDbUri(), server.getDbUser(), server.getDbPassword());
     }
 
+    private String getDefaultDbUri(Server server, DockerHelper dockerHelper) {
+        String dbUri = SDKConstants.URI_MYSQL.replace("3306", DockerHelper.DOCKER_MYSQL_PORT);
+        //In case of using the Docker Machine, which gets assigned an IP different than the host
+        if (dockerHelper.getDockerHost().startsWith("tcp://")) {
+            try {
+                URI uri = new URI(dockerHelper.getDockerHost());
+                dbUri = dbUri.replace("localhost", uri.getHost());
+            } catch (URISyntaxException e) {
+                throw new IllegalStateException(e);
+            }
+        }
+        dbUri = dbUri.replace(DBNAME_URL_VARIABLE, server.getServerId());
+        return dbUri;
+    }
+
     private void promptForDockerHostIfMissing(DockerHelper dockerHelper) {
         if (StringUtils.isBlank(dockerHelper.getDockerHost())) {
+            showMessage("Docker Host URL is needed in order to connect to your Docker instance.");
             String dockerHost;
             if(SystemUtils.IS_OS_LINUX){
                 dockerHost = promptForValueIfMissingWithDefault("Please specify Docker host URL (either 'tcp://' or 'unix://')",
                         dockerHelper.getDockerHost(), "dockerHost", DockerHelper.DEFAULT_HOST_LINUX);
             } else {
+                if (SystemUtils.IS_OS_MAC) {
+                    showMessage("If you are running 'Docker for Mac', the default is: 'unix:///var/tmp/docker.sock'.");
+                }
+                showMessage("If you are running 'Docker Toolbox', you can find out the URL by running `docker-machine url`.");
                 dockerHost = promptForValueIfMissingWithDefault(
-                        "Please specify Docker Machine URL (find out by running `docker-machine url`)",dockerHelper.getDockerHost(), "dockerHost", null);
+                        "Please specify Docker host URL", dockerHelper.getDockerHost(), "dockerHost", null);
             }
             dockerHelper.saveDockerHost(dockerHost);
         }
@@ -711,10 +721,10 @@ public class DefaultWizard implements Wizard {
         String username = prompt("Please specify DB username");
         String password = prompt("Please specify DB password");
 
-        String dockerHost = dockerHelper.getDockerHost();
+        String defaultDbUri = getDefaultDbUri(server, dockerHelper);
 
         String dbUri = promptForValueIfMissingWithDefault(
-                "Please specify database uri (-D%s)", server.getDbUri(), "dbUri", SDKConstants.URI_MYSQL);
+                "Please specify database uri (-D%s)", server.getDbUri(), "dbUri", defaultDbUri);
         if (dbUri.startsWith("jdbc:mysql:")) {
             server.setDbDriver(SDKConstants.DRIVER_MYSQL);
             dbUri = addMySQLParamsIfMissing(dbUri);
