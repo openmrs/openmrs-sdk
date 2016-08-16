@@ -1,5 +1,6 @@
 package org.openmrs.maven.plugins;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.archetype.ArchetypeManager;
@@ -9,12 +10,15 @@ import org.apache.maven.archetype.ui.generation.ArchetypeGenerationConfigurator;
 import org.apache.maven.archetype.ui.generation.ArchetypeSelector;
 import org.apache.maven.artifact.repository.ArtifactRepository;
 import org.apache.maven.execution.MavenSession;
+import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.project.MavenProject;
 import org.apache.maven.shared.invoker.Invoker;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 import org.openmrs.maven.plugins.utility.StatsManager;
 import org.openmrs.maven.plugins.utility.Wizard;
+import org.twdata.maven.mojoexecutor.MojoExecutor;
 
 import java.io.File;
 import java.io.IOException;
@@ -26,6 +30,16 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+
+import static org.twdata.maven.mojoexecutor.MojoExecutor.artifactId;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.configuration;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.element;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.executeMojo;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.executionEnvironment;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.goal;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.groupId;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.plugin;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.version;
 
 /**
  *
@@ -41,9 +55,13 @@ public class CreateProject extends CreateProjectFromArchetypeMojo {
 
     private static final String TYPE_REFAPP = "referenceapplication-module";
 
+    private static final String TYPE_OWA = "owa-project";
+
     private static final String OPTION_PLATFORM = "Platform module";
 
     public static final String OPTION_REFAPP = "Reference Application module";
+
+    private static final String OPTION_OWA = "Open Web App";
 
     private static final String MODULE_ID_INFO =
             "Module id uniquely identifies your module in the OpenMRS world.\n\n" +
@@ -67,6 +85,10 @@ public class CreateProject extends CreateProjectFromArchetypeMojo {
     private static final String GROUP_ID_PROMPT_TMPL = "Please specify %s";
     private static final String AUTHOR_PROMPT_TMPL = "Who is the author of the module?";
     private static final String MODULE_TYPE_PROMPT = "What kind of project would you like to create?";
+
+    private final static String FRONTEND_BUILDER_GROUP_ID = "com.github.eirslett";
+    private final static String FRONTEND_BUILDER_ARTIFACT_ID = "frontend-maven-plugin";
+    private final static String FRONTEND_BUILDER_VERSION = "1.0";
 
     /** @component */
     private ArchetypeManager manager;
@@ -163,6 +185,21 @@ public class CreateProject extends CreateProjectFromArchetypeMojo {
      * @readonly
      */
     private MavenSession session;
+
+    /**
+     * The project currently being build.
+     *
+     * @parameter expression="${project}"
+     */
+    MavenProject mavenProject;
+
+    /**
+     * The Maven BuildPluginManager component.
+     *
+     * @component
+     * @required
+     */
+    BuildPluginManager pluginManager;
 
     /**
      * Additional goals that can be specified by the user during the creation of the manager.
@@ -263,14 +300,29 @@ public class CreateProject extends CreateProjectFromArchetypeMojo {
         }
 
         new StatsManager(wizard, session).incrementGoalStats();
-        String choice = wizard.promptForMissingValueWithOptions(MODULE_TYPE_PROMPT, type, null, Arrays.asList(OPTION_PLATFORM, OPTION_REFAPP));
+        setProjectType();
+
+        if(TYPE_OWA.equals(type)){
+            createOwaProject();
+        } else {
+            createModule();
+        }
+
+    }
+
+    private void setProjectType() {
+        String choice = wizard.promptForMissingValueWithOptions(MODULE_TYPE_PROMPT, type, null, Arrays.asList(OPTION_PLATFORM, OPTION_REFAPP, OPTION_OWA));
 
         if(OPTION_PLATFORM.equals(choice)){
             type = TYPE_PLATFORM;
         } else if(OPTION_REFAPP.equals(choice)) {
             type = TYPE_REFAPP;
+        } else if(OPTION_OWA.equals(choice)){
+            type = TYPE_OWA;
         }
+    }
 
+    private void createModule() throws MojoExecutionException, MojoFailureException {
         wizard.showMessage(MODULE_ID_INFO);
         moduleId = wizard.promptForValueIfMissingWithDefault(null, moduleId, "module id", "basicexample");
         moduleId = moduleId.toLowerCase();
@@ -366,6 +418,68 @@ public class CreateProject extends CreateProjectFromArchetypeMojo {
             // Execute creating archetype for each archetype id
             super.execute();
         }
+    }
+
+    private void createOwaProject() throws MojoExecutionException {
+        File file = new File(System.getProperty("user.dir"));
+
+        boolean createNewDir = wizard.promptYesNo("Would you like to create new directory for your OWA app? ");
+        if(createNewDir){
+            String folderName = wizard.promptForValueIfMissingWithDefault(null, null, "folder name", null);
+            file = new File(file, folderName);
+            file.mkdir();
+        }
+
+        wizard.showMessage("Creating OWA project...");
+        runMojoExecutor(Arrays.asList(element("nodeVersion", "v4.4.5"), element("npmVersion", "2.15.5"), element("installDirectory", file.getAbsolutePath())), "install-node-and-npm");
+
+        File[] files = file.listFiles();
+        try {
+            runMojoExecutor(Arrays.asList(element("arguments", "install -g yo generator-openmrs-owa"), element("installDirectory", file.getAbsolutePath())), "npm");
+            files = file.listFiles();
+            runYeoman(file);
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed starting yeoman", e);
+        } catch (InterruptedException e) {
+            throw new IllegalStateException("Failed running yeoman", e);
+        } finally {
+            deleteTempFiles(files);
+        }
+    }
+
+    private void runMojoExecutor(List<MojoExecutor.Element> configuration, String goal) throws MojoExecutionException {
+        executeMojo(
+                plugin(
+                        groupId(FRONTEND_BUILDER_GROUP_ID),
+                        artifactId(FRONTEND_BUILDER_ARTIFACT_ID),
+                        version(FRONTEND_BUILDER_VERSION)
+                ),
+                goal(goal),
+                configuration(configuration.toArray(new MojoExecutor.Element[0])),
+                executionEnvironment(mavenProject, session, pluginManager)
+        );
+    }
+
+    private void deleteTempFiles(File[] files) {
+        for(File file: files){
+            FileUtils.deleteQuietly(file);
+        }
+    }
+
+    private void runYeoman(File directory) throws InterruptedException, IOException {
+        ProcessBuilder builder = new ProcessBuilder()
+                .directory(directory)
+                .command(getYoCmd(), "openmrs-owa")
+                .redirectErrorStream(true)
+                .inheritIO();
+
+        Process process = builder.start();
+        process.waitFor();
+
+    }
+
+    private String getYoCmd(){
+        return "lib"+File.separator+"node_modules"+File.separator+"yo"+File.separator+"lib"+File.separator+"cli.js";
     }
 
     private String getSdkVersion() throws MojoExecutionException {
