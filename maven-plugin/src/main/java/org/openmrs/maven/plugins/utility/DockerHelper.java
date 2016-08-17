@@ -106,7 +106,7 @@ public class DockerHelper {
 
         Artifact sdkInfo = SDKConstants.getSDKInfo();
 
-        wizard.showMessage("Creating '" + container + "' DB docker container...");
+        wizard.showMessage("Preparing '" + container + "' DB docker container...");
         executeMojo(
                 plugin(
                         groupId(sdkInfo.getGroupId()),

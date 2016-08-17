@@ -18,7 +18,7 @@ import java.util.List;
 
 abstract class AbstractDockerMojo extends AbstractMojo {
 
-    protected static final String DEFAULT_MYSQL_CONTAINER = "openmrs-sdk-mysql-v-3-2";
+    protected static final String DEFAULT_MYSQL_CONTAINER = "openmrs-sdk-mysql-v3-2";
     protected static final String DEFAULT_MYSQL_EXPOSED_PORT = "3308";
     protected static final String DEFAULT_MYSQL_PASSWORD = "Admin123";
     protected static final String MYSQL_5_6 = "mysql:5.6";
@@ -87,7 +87,7 @@ abstract class AbstractDockerMojo extends AbstractMojo {
         }
 
         //on Linux name is prepended with '/'
-        String idWithSlash = "/"+id;
+        String idWithSlash = "/" + id;
         for (Container container: containers) {
             if (Arrays.asList(container.getNames()).contains(idWithSlash)) {
                 return container;
