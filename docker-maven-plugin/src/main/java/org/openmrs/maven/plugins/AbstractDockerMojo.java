@@ -1,9 +1,7 @@
 package org.openmrs.maven.plugins;
 
 import com.github.dockerjava.api.DockerClient;
-import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.model.Container;
-import com.github.dockerjava.api.model.Frame;
 import com.github.dockerjava.core.DockerClientBuilder;
 import com.github.dockerjava.core.DockerClientConfig;
 import org.apache.commons.lang.StringUtils;
@@ -14,17 +12,16 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.codehaus.plexus.components.interactivity.Prompter;
 import org.codehaus.plexus.components.interactivity.PrompterException;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
 abstract class AbstractDockerMojo extends AbstractMojo {
 
-    protected static final String DEFAULT_MYSQL_CONTAINER = "openmrs-sdk-mysql";
+    protected static final String DEFAULT_MYSQL_CONTAINER = "openmrs-sdk-mysql-v-3-2";
+    protected static final String DEFAULT_MYSQL_EXPOSED_PORT = "3308";
     protected static final String DEFAULT_MYSQL_PASSWORD = "Admin123";
     protected static final String MYSQL_5_6 = "mysql:5.6";
-    protected static final String DEFAULT_MYSQL_EXPOSED_PORT = "3307";
     protected static final String DEFAULT_MYSQL_DBURI = "jdbc:mysql://localhost:3307/";
     private static final String DEFAULT_HOST_LINUX = "unix:///var/run/docker.sock";
 

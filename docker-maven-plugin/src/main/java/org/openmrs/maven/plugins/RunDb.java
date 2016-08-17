@@ -5,7 +5,6 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 
-import java.net.URI;
 import java.sql.DriverManager;
 
 /**
@@ -55,7 +54,7 @@ public class RunDb extends AbstractDockerMojo {
             throw new MojoExecutionException("Failed to find the '" + container + "' container. Run `docker ps` to see available containers.");
         }
 
-        if (!dbContainer.getStatus().contains("Up")) {
+        if (!dbContainer.getStatus().toLowerCase().contains("up")) {
             docker.startContainerCmd(dbContainer.getId()).exec();
 
             if (StringUtils.isBlank(dbUri)){

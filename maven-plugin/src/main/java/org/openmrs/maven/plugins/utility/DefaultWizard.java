@@ -705,7 +705,7 @@ public class DefaultWizard implements Wizard {
             } else {
                 showMessage("Please note that neither 'Docker for Mac' nor 'Docker for Windows' are currently supported.");
 
-                showMessage("If you are running 'Docker Toolbox', you can find out the URL by running `docker-machine url`.");
+                showMessage("If you are running 'Docker Toolbox', you can find out the URL by running `docker-machine url`. Note that you have to run SDK commands from Docker Toolbox.");
                 dockerHost = promptForValueIfMissingWithDefault(
                         "Please specify Docker host URL", dockerHelper.getDockerHost(), "dockerHost", null);
             }

@@ -2,14 +2,12 @@ package org.openmrs.maven.plugins;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.async.ResultCallback;
-import com.github.dockerjava.api.model.Bind;
 import com.github.dockerjava.api.model.ExposedPort;
 import com.github.dockerjava.api.model.Image;
 import com.github.dockerjava.api.model.Ports;
 import com.github.dockerjava.api.model.PullResponseItem;
 import com.github.dockerjava.api.model.Volume;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.SystemUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 
@@ -47,18 +45,10 @@ public class CreateMySql extends AbstractDockerMojo {
      */
     protected String rootPassword;
 
-    /**
-     * path to directory of data volume
-     *
-     * @parameter expression="${dataVolume}"
-     */
-    protected String dataVolume;
-
     @Override
     public void executeTask() throws MojoExecutionException, MojoFailureException {
 
         if (StringUtils.isBlank(port)) port = DEFAULT_MYSQL_EXPOSED_PORT;
-        if (StringUtils.isBlank(dataVolume)) dataVolume = prompt("Please specify the path to directory with data volume");
         //root password may be blank but not null, if user wants to have empty password
         if (rootPassword == null) rootPassword = DEFAULT_MYSQL_PASSWORD;
 
@@ -79,6 +69,8 @@ public class CreateMySql extends AbstractDockerMojo {
     private void createMysqlContainer(DockerClient docker) {
         if (container == null) container = DEFAULT_MYSQL_CONTAINER;
 
+        docker.createVolumeCmd().withName(container + "-data").exec();
+
         ExposedPort tcp3306 = ExposedPort.tcp(3306);
         Ports portBindings = new Ports();
         portBindings.bind(tcp3306, new Ports.Binding("localhost", port));
@@ -86,26 +78,17 @@ public class CreateMySql extends AbstractDockerMojo {
         Map<String, String> labels = new HashMap<>();
         labels.put(container, "true");
 
-        if(SystemUtils.IS_OS_WINDOWS){
-            prepareVolumeWindowsPath();
-        }
-
-        Volume volume = new Volume("/var/lib/mysql");
+        Volume volume = new Volume(container + "-data:/var/lib/mysql");
 
         docker.createContainerCmd(MYSQL_5_6)
                 .withExposedPorts(tcp3306)
                 .withPortBindings(portBindings)
                 .withName(container)
                 .withEnv("MYSQL_ROOT_PASSWORD="+rootPassword)
-                .withVolumes(volume)
-                .withBinds(new Bind(dataVolume, volume))
                 .withAttachStdout(true)
                 .withLabels(labels)
+                .withVolumes(volume)
                 .exec();
-    }
-
-    private void prepareVolumeWindowsPath() {
-        dataVolume =  "//"+dataVolume.replace("\\", "/").replace(":", "");
     }
 
     private void pullMySqlImage(DockerClient docker) {

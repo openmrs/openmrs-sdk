@@ -27,8 +27,8 @@ import static org.twdata.maven.mojoexecutor.MojoExecutor.version;
 
 public class DockerHelper {
 
-    public static String DOCKER_DEFAULT_CONTAINER_ID = "openmrs-sdk-mysql";
-    public static final String DOCKER_MYSQL_PORT = "3307";
+    public static String DOCKER_DEFAULT_CONTAINER_ID = "openmrs-sdk-mysql-v3-2";
+    public static final String DOCKER_MYSQL_PORT = "3308";
     public static final String DOCKER_MYSQL_USERNAME = "root";
     public static final String DOCKER_MYSQL_PASSWORD = "Admin123";
     private static final String DOCKER_HOST_KEY = "dockerHost";
@@ -100,11 +100,6 @@ public class DockerHelper {
     }
 
     public void createMySqlContainer(String container, String port) throws MojoExecutionException {
-        File storage = new File(Server.getServersPath(), SDKConstants.OPENMRS_DOCKER_MYSQL_STORAGE);
-        if(!storage.exists()){
-            storage.mkdirs();
-        }
-
         String dockerHost = getDockerHost();
 
         dockerHost = promptForDockerHostIfMissing(dockerHost);
@@ -122,8 +117,7 @@ public class DockerHelper {
                 configuration(
                         element("dockerHost", dockerHost),
                         element("port", port),
-                        element("container", container),
-                        element("dataVolume", storage.getAbsolutePath())),
+                        element("container", container)),
                 executionEnvironment(mavenProject, mavenSession, pluginManager)
         );
 
