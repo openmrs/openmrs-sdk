@@ -33,6 +33,11 @@
                     <name>OpenMRS Thirdparty Nexus Repository</name>
                     <url>http://mavenrepo.openmrs.org/nexus/content/repositories/thirdparty</url>
                 </repository>
+                <repository>
+                    <id>openmrs-bintray-repo</id>
+                    <name>OpeMRS Maven Bintray Repository</name>
+                    <url>https://dl.bintray.com/openmrs/maven/</url>
+                </repository>
             </repositories>
             <pluginRepositories>
                 <pluginRepository>
