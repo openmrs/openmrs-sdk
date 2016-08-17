@@ -69,6 +69,14 @@ abstract class AbstractDockerMojo extends AbstractMojo {
                 .build();
 
         docker = DockerClientBuilder.getInstance(config).build();
+
+        try {
+            docker.infoCmd().exec();
+        } catch (Exception e) {
+            String message = "Could not run `docker info`. If you are using 'Docker Toolbox', please make sure you run the SDK command from the 'Docker Toolbox' terminal.";
+            showMessage(message);
+            throw new RuntimeException(message, e);
+        }
     }
 
     protected Container findContainer(String id){

@@ -8,9 +8,11 @@ import com.github.dockerjava.api.model.Ports;
 import com.github.dockerjava.api.model.PullResponseItem;
 import com.github.dockerjava.api.model.Volume;
 import org.apache.commons.lang.StringUtils;
+import org.apache.http.client.ClientProtocolException;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 
+import javax.ws.rs.ProcessingException;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.HashMap;
@@ -59,6 +61,7 @@ public class CreateMySql extends AbstractDockerMojo {
         if (findContainer(DEFAULT_MYSQL_CONTAINER) == null) {
             createMysqlContainer(docker);
         }
+
     }
 
     private boolean noMySqlImage(DockerClient docker) {

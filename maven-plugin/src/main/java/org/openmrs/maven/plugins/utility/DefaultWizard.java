@@ -705,12 +705,34 @@ public class DefaultWizard implements Wizard {
             } else {
                 showMessage("Please note that neither 'Docker for Mac' nor 'Docker for Windows' are currently supported.");
 
-                showMessage("If you are running 'Docker Toolbox', you can find out the URL by running `docker-machine url`. Note that you have to run SDK commands from Docker Toolbox.");
+                String defaultDockerHost = getDefaultDockerHost();
+
                 dockerHost = promptForValueIfMissingWithDefault(
-                        "Please specify Docker host URL", dockerHelper.getDockerHost(), "dockerHost", null);
+                        "Please specify Docker host URL", dockerHelper.getDockerHost(), "dockerHost", defaultDockerHost);
             }
             dockerHelper.saveDockerHost(dockerHost);
         }
+    }
+
+    private String getDefaultDockerHost() {
+        try {
+            showMessage("Running `docker-machine url` to determine the docker host...");
+			Process process = new ProcessBuilder("docker-machine", "url").redirectErrorStream(true).start();
+            List<String> lines = IOUtils.readLines(process.getInputStream());
+			process.waitFor();
+			//if success
+			if (process.exitValue() == 0) {
+                showMessage("Your docker-machine url is: " + lines.get(0));
+				return lines.get(0);
+			} else {
+                throw new IllegalStateException("Process exited with error " + process.exitValue() + ", returned: " + StringUtils.join(lines.iterator(), "\n"));
+            }
+
+		} catch (Exception e) {
+			showMessage("Could not determine the docker host due to: " + e.getMessage());
+            showMessage("If you are using 'Docker Toolbox', try to find out the URL by running `docker-machine url` manually. If you have not run the SDK command from 'Docker Toolbox' exit with Ctrl+C and run again.");
+		}
+        return null;
     }
 
     public void promptForDockerizedDb(Server server, DockerHelper dockerHelper) throws MojoExecutionException {
