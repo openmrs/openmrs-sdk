@@ -105,8 +105,10 @@ public class OwaHelper {
 		try {
 			FileUtils.copyURLToFile(npmSrc, npm);
 			FileUtils.copyURLToFile(npmCmdSrc, npmCmd);
+			npm.setExecutable(true);
+			npmCmd.setExecutable(true);
 		} catch (IOException e) {
-			e.printStackTrace();
+			throw new RuntimeException("Could not copy helper scripts to OWA directory", e);
 		}
 
 	}
