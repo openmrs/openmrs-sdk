@@ -6,12 +6,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.CollectionType;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpException;
-import org.apache.commons.httpclient.UsernamePasswordCredentials;
-import org.apache.commons.httpclient.auth.BasicScheme;
 import org.apache.commons.httpclient.methods.ByteArrayRequestEntity;
+import org.apache.commons.httpclient.methods.EntityEnclosingMethod;
+import org.apache.commons.httpclient.methods.FileRequestEntity;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.methods.PostMethod;
+import org.apache.commons.httpclient.methods.PutMethod;
+import org.apache.commons.httpclient.methods.StringRequestEntity;
 import org.apache.commons.io.FileUtils;
 
 import java.io.File;
@@ -140,9 +141,7 @@ public class Bintray {
     public BintrayPackage createPackage(String owner, String repository, CreatePackageRequest request){
         String url = String.format("https://api.bintray.com/packages/%s/%s/", owner, repository);
         PostMethod post = new PostMethod(url);
-        if(username==null||password==null){
-            throw new IllegalStateException("Cannot create package without credentials");
-        }
+        assertAuthorized();
         post.addRequestHeader("Authorization", "Basic "+ new String(Base64.encodeBase64((username+":"+password).getBytes())));
         ObjectMapper mapper = new ObjectMapper();
         try{
@@ -158,10 +157,76 @@ public class Bintray {
             if(bintrayPackage.getName() != null){
                 return bintrayPackage;
             } else {
-                throw new RuntimeException("Failed to create package");
+                throw new RuntimeException("Failed to create package, cause : "+(post.getStatusCode()+" - "+ post.getStatusText()));
             }
         } catch (IOException e) {
             throw new RuntimeException("Failed to create package", e);
+        }
+    }
+
+    private void assertAuthorized() {
+        if(username==null||password==null){
+            throw new IllegalStateException("Cannot create package without credentials");
+        }
+    }
+
+    public void uploadFile(BintrayPackage bintrayPackage, String targetPath, String version, File file) {
+        uploadFile(bintrayPackage, targetPath, file, version, "application/zip");
+    }
+
+    public void uploadFile(BintrayPackage bintrayPackage, String targetPath, File file, String version, String contentType){
+        String url = String.format("https://api.bintray.com/content/%s/%s/%s/%s/%s?publish=1",
+                bintrayPackage.getOwner(),
+                bintrayPackage.getRepository(),
+                bintrayPackage.getName(),
+                version,
+                targetPath);
+        PutMethod put = new PutMethod(url);
+        assertAuthorized();
+        put.addRequestHeader("Authorization", "Basic "+ new String(Base64.encodeBase64((username+":"+password).getBytes())));
+        put.setRequestEntity(new FileRequestEntity(file, contentType));
+
+        try{
+            new HttpClient().executeMethod(put);
+            validateAuthorizedRequestResult(bintrayPackage.getOwner(), put, 201);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to upload files to package: "+bintrayPackage.getName(), e);
+        }
+    }
+
+    private void validateAuthorizedRequestResult(String authorizedUser, EntityEnclosingMethod method, int expectedStatusCode) throws Exception {
+        if(method.getStatusCode()==401){
+            throw new IOException("Unauthorized, this user have no rights to publish packages as "+authorizedUser+", or API key is invalid");
+        } else if(method.getStatusCode() != expectedStatusCode){
+            throw new Exception(method.getStatusCode()+" : "+ method.getStatusText());
+        }
+    }
+
+    public void createVersion(String owner, String repository, String packageName, String versionName){
+        String url = String.format("https://api.bintray.com/packages/%s/%s/%s/versions", owner, repository, packageName);
+        PostMethod post = new PostMethod(url);
+        assertAuthorized();
+        post.addRequestHeader("Authorization", "Basic "+ new String(Base64.encodeBase64((username+":"+password).getBytes())));
+        post.setRequestEntity(new ByteArrayRequestEntity(("{\"name\":\""+versionName+"\"}").getBytes(), "application/json"));
+        try{
+            new HttpClient().executeMethod(post);
+            validateAuthorizedRequestResult(owner, post, 201);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to create version in package: "+packageName, e);
+        }
+    }
+
+    public void publishVersion(String owner, String repository, String packageName, String versionName){
+        String url = String.format("https://api.bintray.com/content/%s/%s/%s/%s/publish", owner, repository, packageName, versionName);
+        PostMethod post = new PostMethod(url);
+        assertAuthorized();
+        post.addRequestHeader("Authorization", "Basic "+ new String(Base64.encodeBase64((username+":"+password).getBytes())));
+        post.setRequestEntity(new ByteArrayRequestEntity(("{\"publish-wait-for-secs\":\"-1\"}").getBytes(), "application/json"));
+        try{
+            new HttpClient().executeMethod(post);
+            validateAuthorizedRequestResult(owner, post, 200);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to publish version "+versionName+" in package: "+packageName, e);
         }
     }
 }

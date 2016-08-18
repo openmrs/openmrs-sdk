@@ -47,7 +47,7 @@ public class Release extends AbstractTask {
 
     private static final String BINTRAY_SERVER_ID = "bintray";
 
-    private static final String BINTRAY_REPO_URL_TMPL = "https://api.bintray.com/maven/%s/%s/%s";
+    private static final String BINTRAY_MAVEN_REPO_URL_TMPL = "https://api.bintray.com/maven/%s/%s/%s/";
 
     /**
      * version of next development iteration, should contain -SNAPSHOT suffix
@@ -99,7 +99,7 @@ public class Release extends AbstractTask {
         RevCommit backupCommit = gitHelper.getLastCommit(git);
 
         UsernamePasswordCredentials credentials = configureBintrayServer();
-        String bintrayUrl = createBintrayUrl(credentials);
+        String bintrayUrl = createPackageBintrayUrl(credentials, OpenmrsBintray.OPENMRS_MAVEN_REPO);
         String bintrayDeploymentRepository = "bintray::default::"+bintrayUrl;
 
         if(scmUrl == null){
@@ -138,10 +138,22 @@ public class Release extends AbstractTask {
                     configuration(
                             element(name("username"), githubUsername),
                             element(name("password"), githubPassword),
-                            element(name("arguments"), "-DaltDeploymentRepository="+bintrayDeploymentRepository)
+                            element(name("arguments"), "-DaltDeploymentRepository="+bintrayDeploymentRepository+" -Dmaven.javadoc.failOnError=false")
                     ),
                     executionEnvironment(mavenProject, mavenSession, pluginManager)
             );
+            wizard.showMessage("Release to OpenMRS Maven Bintray repository completed");
+
+            OpenmrsBintray bintray = new OpenmrsBintray(credentials.getUserName(), credentials.getPassword());
+
+
+            File omodDir = new File(mavenProject.getBasedir(), "omod");
+            if(omodDir.exists()){
+                deployOmod(credentials, omodDir);
+            }
+            
+            bintray.publishOpenmrsPackageVersion(OpenmrsBintray.OPENMRS_MAVEN_REPO, mavenProject.getArtifactId(), releaseVersion);
+            wizard.showMessage("Artifacts published");
         } catch (Exception e){
             CompositeException allExceptions = new CompositeException("Failed to release");
             allExceptions.add("Error during release", e);
@@ -150,6 +162,21 @@ public class Release extends AbstractTask {
         }
         cleanupPluginFiles();
         wizard.showMessage("Release Completed");
+    }
+
+    private void deployOmod(UsernamePasswordCredentials credentials, File omodDir) {
+        String omodName = mavenProject.getArtifactId()+"-"+releaseVersion+".omod";
+        wizard.showMessage("Omod submodule detected...");
+        File omodFile = new File(omodDir, "target"+File.separator+omodName);
+
+        OpenmrsBintray openmrsBintray = new OpenmrsBintray(credentials.getUserName(), credentials.getPassword());
+        BintrayPackage bintrayPackage = openmrsBintray.getPackageMetadata(OpenmrsBintray.OPENMRS_OMOD_REPO, mavenProject.getArtifactId());
+        if(bintrayPackage == null){
+            bintrayPackage =  openmrsBintray.createPackage(mavenProject, OpenmrsBintray.OPENMRS_OMOD_REPO);
+        }
+        wizard.showMessage("Deploying "+omodName+" to Bintray OpenMRS Omod repository...");
+        openmrsBintray.uploadOmod(bintrayPackage, omodName, omodFile, releaseVersion);
+        wizard.showMessage(omodName+" deployed");
     }
 
 
@@ -163,6 +190,7 @@ public class Release extends AbstractTask {
         String pomPath = mavenProject.getBasedir().getAbsolutePath()+File.separator+"pom.xml";
         RevCommit lastCommit = gitHelper.getLastCommit(git);
         try {
+            cleanupPluginFiles();
             gitHelper.addRemoteUpstream(git, pomPath);
             if(!lastCommit.getName().equals(backup.getName())) {
                 Iterable<RevCommit> commitDifferential = gitHelper.getCommitDifferential(git, "refs/remotes/upstream/master", "refs/heads/master");
@@ -170,7 +198,6 @@ public class Release extends AbstractTask {
                 gitHelper.push(git, githubUsername, githubPassword, "refs/heads/master", "upstream", false);
             }
             gitHelper.deleteTag(git, releaseVersion, githubUsername, githubPassword);
-            cleanupPluginFiles();
         } catch (Exception e) {
             allExceptions.add("Failure during clean up", e);
         }
@@ -178,7 +205,6 @@ public class Release extends AbstractTask {
     }
 
     private void cleanupPluginFiles() throws MojoExecutionException {
-        wizard.showMessage("Perform cleanup...");
         executeMojo(
                 SDKConstants.getReleasePlugin(),
                 goal("clean"),
@@ -225,14 +251,14 @@ public class Release extends AbstractTask {
         return connection;
     }
 
-    private String createBintrayUrl(UsernamePasswordCredentials creds){
+    private String createPackageBintrayUrl(UsernamePasswordCredentials creds, String repository){
         OpenmrsBintray bintray = new OpenmrsBintray(creds.getUserName(), creds.getPassword());
-        BintrayPackage bintrayPackage = bintray.getMavenPackageMetadata(mavenProject.getArtifactId());
+        BintrayPackage bintrayPackage = bintray.getPackageMetadata(repository, mavenProject.getArtifactId());
 
         if(bintrayPackage == null){
-            bintray.createMavenPackage(mavenProject);
+            bintray.createPackage(mavenProject, repository);
         }
-        return String.format(BINTRAY_REPO_URL_TMPL, OpenmrsBintray.OPENMRS_USERNAME, bintray.OPENMRS_MAVEN_REPO, mavenProject.getArtifactId());
+        return String.format(BINTRAY_MAVEN_REPO_URL_TMPL, OpenmrsBintray.OPENMRS_USERNAME, repository, mavenProject.getArtifactId());
     }
 
     private UsernamePasswordCredentials configureBintrayServer() throws MojoExecutionException {
