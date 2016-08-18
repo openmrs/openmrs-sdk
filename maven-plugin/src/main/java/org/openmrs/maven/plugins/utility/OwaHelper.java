@@ -49,7 +49,7 @@ public class OwaHelper {
 
 		wizard.showMessage("Creating OWA project in " + owaDir.getAbsolutePath() + "...\n");
 
-		runMojoExecutor(Arrays.asList(MojoExecutor.element("nodeVersion", "v4.4.5"), MojoExecutor.element("npmVersion", "2.15.5"), MojoExecutor.element("installDirectory", owaDir.getAbsolutePath())), "install-node-and-npm");
+		runMojoExecutor(Arrays.asList(MojoExecutor.element("nodeVersion", SDKConstants.NODE_VERSION), MojoExecutor.element("npmVersion", SDKConstants.NPM_VERSION), MojoExecutor.element("installDirectory", owaDir.getAbsolutePath())), "install-node-and-npm");
 		runMojoExecutor(Arrays.asList(MojoExecutor.element("arguments", "install -g yo generator-openmrs-owa"), MojoExecutor.element("installDirectory", owaDir.getAbsolutePath())), "npm");
 
 		try {
@@ -127,7 +127,7 @@ public class OwaHelper {
 		if (SystemUtils.IS_OS_WINDOWS) {
 			return new String[]{new File(directory, "node\\node.exe").getAbsolutePath(), "node\\node_modules\\yo\\lib\\cli.js", "openmrs-owa"};
 		} else {
-			return new String[]{"node/node", "node/node_modules/yo/lib/cli.js", "openmrs-owa"};
+			return new String[]{"node/node", "lib/node_modules/yo/lib/cli.js", "openmrs-owa"};
 		}
 	}
 

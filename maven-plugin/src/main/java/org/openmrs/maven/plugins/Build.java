@@ -13,6 +13,7 @@ import org.apache.maven.shared.invoker.Invoker;
 import org.apache.maven.shared.invoker.MavenInvocationException;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.utility.Project;
+import org.openmrs.maven.plugins.utility.SDKConstants;
 import org.twdata.maven.mojoexecutor.MojoExecutor;
 
 import java.io.File;
@@ -115,8 +116,8 @@ public class Build extends AbstractTask {
         System.out.println("Building OWA project...");
 
         List<MojoExecutor.Element> configuration = new ArrayList<MojoExecutor.Element>();
-        configuration.add(element("nodeVersion", "v4.4.5"));
-        configuration.add(element("npmVersion", "2.15.5"));
+        configuration.add(element("nodeVersion", SDKConstants.NODE_VERSION));
+        configuration.add(element("npmVersion", SDKConstants.NPM_VERSION));
         executeMojo(
                 plugin(
                         groupId(FRONTEND_BUILDER_GROUP_ID),
