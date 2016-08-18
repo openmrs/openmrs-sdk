@@ -168,9 +168,11 @@ public class Build extends AbstractTask {
      */
     private File createTempReactorProject(Server server) throws MojoFailureException, MojoExecutionException {
         File tempFolder = new File(server.getServerDirectory(), "temp-project");
-        if (!tempFolder.exists()) {
-            tempFolder.mkdir();
+        if (tempFolder.exists()) {
+            deleteTempReactorProject(tempFolder);
         }
+        tempFolder.mkdir();
+
         Model tempModel = createModel();
         Set<Project> watchedModules = server.getWatchedProjects();
         for(Project module: watchedModules){
