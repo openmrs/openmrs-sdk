@@ -6,7 +6,6 @@ import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
-import org.openmrs.maven.plugins.utility.Wizard;
 import org.twdata.maven.mojoexecutor.MojoExecutor;
 
 import java.io.File;
@@ -31,11 +30,19 @@ public class OwaHelper {
 
 	private MavenSession session;
 
+	private File installationDir;
+
 	private MavenProject mavenProject;
 
 	private BuildPluginManager pluginManager;
 
 	private final Wizard wizard;
+
+	//enable chaining
+	public OwaHelper setInstallationDir(File installationDir) {
+		this.installationDir = installationDir;
+		return this;
+	}
 
 	public OwaHelper(MavenSession session, MavenProject mavenProject, BuildPluginManager pluginManager, Wizard wizard) {
 		this.session = session;
@@ -45,7 +52,7 @@ public class OwaHelper {
 	}
 
 	public void createOwaProject() throws MojoExecutionException {
-		File owaDir = prepareOwaDir();
+		File owaDir = installationDir != null ? installationDir : prepareOwaDir();
 
 		wizard.showMessage("Creating OWA project in " + owaDir.getAbsolutePath() + "...\n");
 
@@ -66,7 +73,7 @@ public class OwaHelper {
 		File owaDir = new File(System.getProperty("user.dir"));
 		boolean pathCorrect = false;
 		do {
-			String owaDirValue = wizard.promptForValueIfMissingWithDefault("Please specify a directory for OWA project (a relative or absolute path)", null, null, null);
+			String owaDirValue = wizard.promptForValueIfMissingWithDefault("Please specify a directory for OWA project (a relative or absolute path)", owaDir.getName(), null, null);
 			File owaDirPath = new File(owaDirValue);
 			if (owaDirPath.isAbsolute()) {
 				owaDir = owaDirPath;
