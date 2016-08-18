@@ -174,6 +174,11 @@ public class Build extends AbstractTask {
         Model tempModel = createModel();
         Set<Project> watchedModules = server.getWatchedProjects();
         for(Project module: watchedModules){
+            if (!module.getModel().getPomFile().exists()) {
+                throw new IllegalStateException("Module " + module.getArtifactId() + " could not be found at " + module.getModel().getPomFile().getAbsolutePath() + ". " +
+                        "Unwatch this module by running mvn openmrs-sdk:unwatch -DartifactId="+module.getArtifactId()+" -DserverId=" + serverId);
+            }
+
             Path newLink = Paths.get(new File(tempFolder, module.getArtifactId()).getAbsolutePath());
             Path existingfile = Paths.get(module.getPath());
             try {
