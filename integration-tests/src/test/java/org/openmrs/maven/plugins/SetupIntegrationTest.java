@@ -15,6 +15,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.openmrs.maven.plugins.SdkMatchers.hasPropertyEqualTo;
 import static org.openmrs.maven.plugins.SdkMatchers.serverHasName;
+import static org.openmrs.maven.plugins.SdkMatchers.serverHasDebugPort;
 import static org.openmrs.maven.plugins.SdkMatchers.serverHasVersion;
 
 public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
@@ -26,6 +27,7 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
         addTaskParam("distro", "referenceapplication:2.3.1");
         addMockDbSettings();
         addAnswer(serverId);
+        addAnswer("1044");
         addAnswer(System.getProperty("java.home"));
 
         executeTask("setup");
@@ -42,6 +44,7 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
         Server.setServersPath(testDirectory.getAbsolutePath());
         Server server = Server.loadServer(serverId);
         assertThat(server, serverHasVersion("2.3.1"));
+        assertThat(server, serverHasDebugPort("1044"));
     }
 
     @Test
@@ -52,6 +55,7 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
         addMockDbSettings();
 
         addAnswer(serverId);
+        addAnswer("1044");
         addAnswer(System.getProperty("java.home"));
 
         executeTask("setup");
@@ -67,6 +71,7 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
         assertThat(server, serverHasVersion("1.0"));
         assertFilePresent(serverId + File.separator + "openmrs-distro.properties");
         assertThat(server, serverHasName(serverId));
+        assertThat(server, serverHasDebugPort("1044"));
     }
 
     @Test
@@ -74,6 +79,7 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
         String serverId = UUID.randomUUID().toString();
 
         addTaskParam("distro", testDirectory.getAbsolutePath() + File.separator + "openmrs-distro.properties");
+        addTaskParam("debug", "1044");
         addMockDbSettings();
 
         addAnswer(serverId);
@@ -94,12 +100,14 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
         assertThat(server, serverHasName("OpenMRS Concepts OWA server"));
         assertThat(server, hasPropertyEqualTo("test", "testValue"));
         assertThat(server, hasPropertyEqualTo("pih.default.config", "nameValue"));
+        assertThat(server, serverHasDebugPort("1044"));
     }
 
     @Test
     public void setup_shouldInstallServerFromDistroPropertiesDir() throws Exception{
         String serverId = UUID.randomUUID().toString();
         addTaskParam("serverId", serverId);
+        addTaskParam("debug", "1044");
         addMockDbSettings();
 
         addAnswer("OpenMRS Concepts OWA server 1.0 from current directory");
@@ -119,11 +127,13 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
         assertThat(server, serverHasName("OpenMRS Concepts OWA server"));
         assertThat(server, hasPropertyEqualTo("test", "testValue"));
         assertThat(server, hasPropertyEqualTo("pih.default.config", "nameValue"));
+        assertThat(server, serverHasDebugPort("1044"));
     }
 
     @Test
     public void setup_shouldInstallServerWithDefaultJavaHome() throws Exception{
         String serverId = UUID.randomUUID().toString();
+        addTaskParam("debug", "1044");
 
         addMockDbSettings();
 
@@ -154,6 +164,7 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
         addAnswer(serverId);
         addAnswer("Distribution");
         addAnswer("referenceapplication:2.2");
+        addAnswer("1044");
 
         addMockDbSettings();
 
@@ -171,6 +182,10 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
 		File sdkProperties = new File(testDirectory.getAbsoluteFile(), "sdk.properties");
 		String javaHomes = readValueFromPropertyKey(sdkProperties, "javaHomeOptions");
 		assertThat(javaHomes, is(customJavaHome));
+
+        Server.setServersPath(testDirectory.getAbsolutePath());
+        Server server = Server.loadServer(serverId);
+        assertThat(server, serverHasDebugPort("1044"));
     }
 
     private String readValueFromPropertyKey(File propertiesFile, String key) throws Exception {

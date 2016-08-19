@@ -41,7 +41,10 @@ public class Server extends BaseSdkProperties {
     public static final String COMMA = ",";
 
     public static final String SLASH = "/";
+
     public static final String CLASSPATH_SCRIPT_PREFIX = "classpath://";
+
+    public static final String PROPERTY_DEBUG_PORT = "debug.port";
 
     private static String serversPath = System.getProperty("user.home")+File.separator+SDKConstants.OPENMRS_SERVER_PATH;
 
@@ -52,9 +55,7 @@ public class Server extends BaseSdkProperties {
     private String interactiveMode;
 
     public static class ServerBuilder {
-
         private Server server = new Server();
-
         public ServerBuilder(Server server){
             this.server.properties = server.properties;
         }
@@ -125,8 +126,13 @@ public class Server extends BaseSdkProperties {
             return this;
         }
 
-        public ServerBuilder setContainerId(String id){
+        public ServerBuilder setContainerId(String id) {
             server.setContainerId(id);
+            return this;
+        }
+
+        public ServerBuilder setDebugPort(String port){
+            server.setDebugPort(port);
             return this;
         }
 
@@ -259,7 +265,6 @@ public class Server extends BaseSdkProperties {
         File backupProperties = new File(getServerDirectory(), OLD_PROPERTIES_FILENAME);
         backupProperties.delete();
     }
-
     public File getDistroPropertiesFile(){
         return new File(getServerDirectory(), DistroProperties.DISTRO_FILE_NAME);
     }
@@ -292,7 +297,6 @@ public class Server extends BaseSdkProperties {
             properties.setProperty(key, value);
         }
     }
-
     /**
      * It's a quick fix for OpenMRS, which doesn't pick up the database_name property correctly and
      * doesn't replace DBNAME with the specified value.
@@ -510,6 +514,7 @@ public class Server extends BaseSdkProperties {
         }
         return owas;
     }
+
     /**
      * Set param to properties object (without applying)
      *
@@ -629,6 +634,14 @@ public class Server extends BaseSdkProperties {
 
     public String getDbUser() {
         return getParam(PROPERTY_DB_USER);
+    }
+
+    public void setDebugPort(String debug) {
+        setParam(PROPERTY_DEBUG_PORT, debug);
+    }
+
+    public String getDebugPort(){
+        return getParam(PROPERTY_DEBUG_PORT);
     }
 
     public void setDbUser(String dbUser) {

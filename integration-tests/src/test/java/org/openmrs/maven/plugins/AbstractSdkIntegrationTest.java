@@ -104,6 +104,7 @@ public abstract class AbstractSdkIntegrationTest {
 
         addTaskParam(setupServer, "openMRSPath", testDirectory.getAbsolutePath());
         addTaskParam(setupServer, "distro", "referenceapplication:2.2");
+        addTaskParam(setupServer, "debug", "1044");
         addMockDbSettings(setupServer);
 
         addAnswer(serverId);
