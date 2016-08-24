@@ -6,17 +6,16 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
 import org.openmrs.maven.plugins.utility.DefaultJira;
-import org.openmrs.maven.plugins.utility.Jira;
 
 import java.io.File;
 import java.util.Arrays;
 import java.util.List;
-import java.util.UUID;
 
 public class OpenmrsBintray extends Bintray{
     public static final String OPENMRS_USERNAME = "openmrs";
     public static final String BINTRAY_OWA_REPO = "owa";
     public static final String OPENMRS_MAVEN_REPO = "maven";
+    public static final String OPENMRS_OMOD_REPO = "omod";
     public static final String OPENMRS_OWA_PREFIX = "openmrs-owa-";
 
     private static final String OWA_PACKAGE_EXTENSION = ".zip";
@@ -71,29 +70,40 @@ public class OpenmrsBintray extends Bintray{
         }
     }
 
-    public BintrayPackage getMavenPackageMetadata(String name) {
-        return getPackageMetadata(OPENMRS_USERNAME, OPENMRS_MAVEN_REPO, name);
+    public BintrayPackage getPackageMetadata(String repository, String name) {
+        return getPackageMetadata(OPENMRS_USERNAME, repository, name);
     }
 
     public List<BintrayId> getMavenAvailablePackages(String repo) {
         return getAvailablePackages(OPENMRS_USERNAME, OPENMRS_MAVEN_REPO);
     }
 
-    public BintrayPackage createMavenPackage(MavenProject mavenProject){
+    public BintrayPackage createPackage(MavenProject mavenProject, String repository){
         CreatePackageRequest request = new CreatePackageRequest();
         request.setName(mavenProject.getArtifactId());
         request.setDescription(mavenProject.getDescription());
 
         String githubUrl = mavenProject.getScm().getUrl();
-        String githubRepo = githubUrl.substring(githubUrl.lastIndexOf("/"));
-        request.setVcsUrl(githubUrl+".git");
+        if(githubUrl.endsWith("/")) githubUrl = StringUtils.stripEnd(githubUrl, "/");
+        String githubRepo = githubUrl.substring(githubUrl.lastIndexOf("/")).replace(".git", "");
+        request.setVcsUrl(githubUrl + (githubUrl.endsWith(".git") ? "" : ".git"));
         request.setGithubRepo(OPENMRS_USERNAME+githubRepo);
         request.setWebsiteUrl("http://openmrs.org/");
 
         request.setIssueTrackerUrl(new DefaultJira().getJiraUrl());
         //so far all OpenMRS projects have MPL-2.0 license
-        //TODO: resolve it dynamically?
         request.setLicenses(Arrays.asList("MPL-2.0"));
-        return createPackage(OPENMRS_USERNAME, OPENMRS_MAVEN_REPO, request);
+        return createPackage(OPENMRS_USERNAME, repository, request);
+    }
+
+    /**
+     * creates new version of omod package and uploads the file
+     */
+    public void uploadOmod(BintrayPackage bintrayPackage, String targetPath, File omodFile, String version){
+        uploadFile(bintrayPackage, targetPath, version, omodFile);
+    }
+
+    public void publishOpenmrsPackageVersion(String repository, String packageName, String versionName){
+        publishVersion(OPENMRS_USERNAME, repository, packageName, versionName);
     }
 }
