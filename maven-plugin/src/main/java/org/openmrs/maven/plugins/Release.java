@@ -79,7 +79,21 @@ public class Release extends AbstractTask {
      * @parameter expression="${scmUrl}"
      */
     private String scmUrl;
-
+    /**
+     *
+     * @parameter expression="${bintrayApiKey}"
+     */
+    private String bintrayApiKey;
+    /**
+     *
+     * @parameter expression="${bintrayUsername}"
+     */
+    private String bintrayUsername;
+    /**
+     *
+     * @parameter expression="${defaultVersions}"
+     */
+    private String defaultVersions;
 
     @Override
     public void executeTask() throws MojoExecutionException, MojoFailureException {
@@ -110,10 +124,15 @@ public class Release extends AbstractTask {
         githubPassword = wizard.promptForPasswordIfMissing(githubPassword, "your GitHub password");
 
         String defaultReleaseVersion = StringUtils.stripEnd(mavenProject.getVersion(), "-SNAPSHOT");
-        releaseVersion = wizard.promptForValueIfMissingWithDefault(null, releaseVersion, "release version",defaultReleaseVersion);
-
         String defaultDevelopmentVersion = createNewDevelopmentVersion(mavenProject.getVersion());
-        developmentVersion = wizard.promptForValueIfMissingWithDefault(null, developmentVersion, "new development version", defaultDevelopmentVersion);
+
+        if (wizard.checkYes(defaultVersions)) {
+            releaseVersion = defaultReleaseVersion;
+            developmentVersion = defaultDevelopmentVersion;
+        } else {
+            releaseVersion = wizard.promptForValueIfMissingWithDefault(null, releaseVersion, "release version",defaultReleaseVersion);
+            developmentVersion = wizard.promptForValueIfMissingWithDefault(null, developmentVersion, "new development version", defaultDevelopmentVersion);
+        }
 
 
         saveReleaseProperties();
@@ -245,7 +264,7 @@ public class Release extends AbstractTask {
                 break;
             }
         }
-        if (bintray != null) {
+        if (bintray != null && StringUtils.isNotBlank(bintrayApiKey) && StringUtils.isNotBlank(bintrayUsername)) {
             wizard.showMessage(String.format("Found Bintray credentials for username '%s'", bintray.getUsername(), bintray.getPassword()));
             boolean useCurrent = wizard.promptYesNo("Would you like to use them? (if no, you will be asked for new credentials)");
             if(!useCurrent){
@@ -259,8 +278,8 @@ public class Release extends AbstractTask {
             wizard.showMessage("No Bintray server configuration found, you have to provide Bintray credentials to proceed");
             bintray = new Server();
             bintray.setId(BINTRAY_SERVER_ID);
-            String bintrayUser = wizard.promptForValueIfMissing(null, "your Bintray username");
-            String bintrayApiKey = wizard.promptForPasswordIfMissing(null, "your Bintray API key");
+            String bintrayUser = wizard.promptForValueIfMissing(this.bintrayUsername, "your Bintray username");
+            String bintrayApiKey = wizard.promptForPasswordIfMissing(this.bintrayApiKey, "your Bintray API key");
             bintray.setUsername(bintrayUser);
             bintray.setPassword(bintrayApiKey);
 
