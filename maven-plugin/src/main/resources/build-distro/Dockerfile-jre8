@@ -1,0 +1,7 @@
+FROM tomcat:7-jre8
+
+COPY openmrs.war  /usr/local/tomcat/webapps/openmrs.war
+COPY modules /usr/local/tomcat/.OpenMRS/modules
+
+COPY openmrs-server.properties /usr/local/tomcat/openmrs-server.properties
+COPY setenv.sh /usr/local/tomcat/bin/setenv.sh

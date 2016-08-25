@@ -2,7 +2,6 @@ package org.openmrs.maven.plugins;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.output.NullOutputStream;
-import org.apache.commons.lang.StringUtils;
 import org.apache.ibatis.jdbc.ScriptRunner;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -25,7 +24,6 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 /**
  * @goal setup
@@ -37,7 +35,6 @@ public class Setup extends AbstractTask {
     private static final String PLATFORM = "Platform";
     public static final String SETTING_UP_A_NEW_SERVER = "Setting up a new server...";
     public static final String SETUP_SERVERS_PROMPT = "You can setup the following servers";
-    private static final String CLASSPATH_SCRIPT_PREFIX = "classpath://";
 
     /**
      * Server id (folder name)
@@ -168,7 +165,7 @@ public class Setup extends AbstractTask {
                         if(dbSql != null){
                             importMysqlDb(server, dbSql);
                         } else {
-                            importMysqlDb(server, CLASSPATH_SCRIPT_PREFIX+ "openmrs-platform.sql");
+                            importMysqlDb(server, Server.CLASSPATH_SCRIPT_PREFIX+ "openmrs-platform.sql");
                         }
                     } else {
                         throw new IllegalStateException("Failed to connect to the specified database " + server.getDbUri());
@@ -268,8 +265,8 @@ public class Setup extends AbstractTask {
 
         File extractedSqlFile = null;
         InputStream sqlStream;
-        if(sqlScriptPath.startsWith(CLASSPATH_SCRIPT_PREFIX)){
-            String sqlScript = sqlScriptPath.replace(CLASSPATH_SCRIPT_PREFIX, "");
+        if(sqlScriptPath.startsWith(Server.CLASSPATH_SCRIPT_PREFIX)){
+            String sqlScript = sqlScriptPath.replace(Server.CLASSPATH_SCRIPT_PREFIX, "");
             sqlStream = (Setup.class.getClassLoader().getResourceAsStream(sqlScript));
             if(sqlStream == null){
                 Artifact distroArtifact = new Artifact(server.getDistroArtifactId(), server.getVersion(), server.getDistroGroupId(), "jar");
