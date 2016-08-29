@@ -61,13 +61,16 @@ public class SettingsManager {
         settingsFile = new File(mavenHome, SDKConstants.MAVEN_SETTINGS);
         InputStream stream = null;
         try{
-            if(settingsFile.exists()){
+            if (settingsFile.exists()) {
                 stream = new FileInputStream(settingsFile);
+                settings = new SettingsXpp3Reader().read(stream);
             } else {
+                //this machine doesn't have any settings yet, create new...
+                settings = new Settings();
+                settingsFile.createNewFile();
                 OutputStream emptySettings = new FileOutputStream(settingsFile);
                 apply(emptySettings);
             }
-            settings = new SettingsXpp3Reader().read(stream);
         } catch (IOException|XmlPullParserException e) {
             throw new MojoExecutionException("Failed to load settings.xml",e);
         } finally {
