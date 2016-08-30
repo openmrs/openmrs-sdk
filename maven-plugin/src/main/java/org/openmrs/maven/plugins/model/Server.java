@@ -41,6 +41,7 @@ public class Server {
     public static final String COMMA = ",";
 
     public static final String SLASH = "/";
+    public static final String CLASSPATH_SCRIPT_PREFIX = "classpath://";
 
     private static String serversPath = System.getProperty("user.home")+File.separator+SDKConstants.OPENMRS_SERVER_PATH;
 
