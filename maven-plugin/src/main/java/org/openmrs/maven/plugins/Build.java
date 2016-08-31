@@ -1,6 +1,7 @@
 package org.openmrs.maven.plugins;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Writer;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -65,25 +66,60 @@ public class Build extends AbstractTask {
 
     @Override
     public void executeTask() throws MojoExecutionException, MojoFailureException {
-        File configFile = new File("webpack.config.js");
-        if (configFile.exists()) {
-            boolean buildOwa = wizard.promptYesNo("OWA Project found in this directory, do You want to build it?");
-            if (buildOwa) {
-                buildOwaProject();
-            }
-            else {
-                boolean buildWatchedProjects = wizard.promptYesNo("Do You want to build all watched projects instead?");
-                if (buildWatchedProjects) {
-                    buildWatchedProjects();
+        boolean projectDetected = false;
+        boolean buildExecuted = false;
+
+        //if user specified serverId, omit checking directory for projects
+        if(StringUtils.isBlank(serverId)){
+            //check if there's owa project in current dir
+            File configFile = new File("webpack.config.js");
+            if (configFile.exists()) {
+                projectDetected = true;
+                boolean buildOwa = wizard.promptYesNo("OWA Project found in this directory, do you want to build it?");
+                if (buildOwa) {
+                    buildOwaProject();
+                    buildExecuted = true;
                 }
-                else {
-                    throw new IllegalStateException("Task aborted");
+            }
+            //check if there's maven project in current dir
+            File userDir = new File(System.getProperty("user.dir"));
+            if(Project.hasProject(userDir)) {
+                Project config = Project.loadProject(userDir);
+                String artifactId = config.getArtifactId();
+                String groupId = config.getGroupId();
+                String version = config.getVersion();
+                if ((artifactId != null) && (groupId != null) && version != null) {
+                    projectDetected = true;
+                    boolean buildMavenProject = wizard.promptYesNo(String.format(
+                            "Maven artifact %s:%s:%s detected in this directory, would you like to build it?",
+                            groupId, artifactId, version)
+                    );
+                    if(buildMavenProject){
+                        try {
+                            cleanInstallServerProject(userDir);
+                            buildExecuted = true;
+                        } catch (Exception e) {
+                            throw new RuntimeException("Failed to build project");
+                        }
+                    }
                 }
             }
         }
-        else {
+
+        //no project found, start default workflow
+        if(!projectDetected){
             buildWatchedProjects();
         }
+        //found owa or maven project, but didn't build
+        else if(!buildExecuted) {
+            boolean buildWatched = wizard.promptYesNo("Do you want to build all watched projects instead?");
+            if(buildWatched){
+                buildWatchedProjects();
+            } else {
+                wizard.showMessage("Task aborted");
+            }
+        }
+        //otherwise just finish
     }
 
     private void buildWatchedProjects() throws MojoExecutionException, MojoFailureException {

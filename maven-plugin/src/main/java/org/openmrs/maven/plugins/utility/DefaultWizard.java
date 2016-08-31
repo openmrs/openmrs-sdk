@@ -337,7 +337,7 @@ public class DefaultWizard implements Wizard {
         }
         File serverPath = new File(omrsHome, serverId);
         if (!serverPath.exists()) {
-            throw new RuntimeException("There is no server with the given server id. Please create it first using openmrs-sdk:setup.");
+            throw new RuntimeException("There is no server with server id: "+serverId+". Please create it first using openmrs-sdk:setup.");
         }
         return serverId;
     }
