@@ -570,6 +570,11 @@ public class DefaultWizard implements Wizard {
 
 	@Override
     public void promptForRefAppVersionIfMissing(Server server, VersionsHelper versionsHelper) throws MojoExecutionException {
+        promptForRefAppVersionIfMissing(server, versionsHelper, null);
+    }
+
+    @Override
+    public void promptForRefAppVersionIfMissing(Server server, VersionsHelper versionsHelper, String customMessage) throws MojoExecutionException {
         if(server.getVersion()==null){
             String choice = promptForRefAppVersion(versionsHelper);
             Artifact distro = DistroHelper.parseDistroArtifact(choice);
@@ -586,6 +591,10 @@ public class DefaultWizard implements Wizard {
     }
 
     public String promptForRefAppVersion(VersionsHelper versionsHelper) {
+        return promptForRefAppVersion(versionsHelper, null);
+    }
+
+    public String promptForRefAppVersion(VersionsHelper versionsHelper, String customMessage) {
         int maxOptionsSize = 5;
         Map<String, String> optionsMap = new LinkedHashMap<>();
         Set<String> versions = new LinkedHashSet<>(versionsHelper.getVersionAdvice(SDKConstants.getReferenceModule("2.3.1"), maxOptionsSize));
@@ -599,7 +608,8 @@ public class DefaultWizard implements Wizard {
             if(optionsMap.size()== maxOptionsSize) break;
         }
 
-        String version = promptForMissingValueWithOptions(DISTRIBUTION_VERSION_PROMPT,
+        String message = customMessage != null ? customMessage : DISTRIBUTION_VERSION_PROMPT;
+        String version = promptForMissingValueWithOptions(message,
                 null, "distribution artifact", Lists.newArrayList(optionsMap.keySet()), "Please specify %s", REFERENCEAPPLICATION_2_4);
 
         String artifact = optionsMap.get(version);

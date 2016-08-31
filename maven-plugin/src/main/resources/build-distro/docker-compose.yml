@@ -17,6 +17,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    entrypoint: /usr/local/tomcat/startup.sh
     depends_on:
       - openmrs-<distro>-<version>-mysql
     ports: 

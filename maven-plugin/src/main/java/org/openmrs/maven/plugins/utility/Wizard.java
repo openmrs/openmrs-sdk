@@ -27,6 +27,8 @@ public interface Wizard {
 
     public void promptForRefAppVersionIfMissing(Server server, VersionsHelper versionsHelper) throws MojoExecutionException;
 
+    void promptForRefAppVersionIfMissing(Server server, VersionsHelper versionsHelper, String customMessage) throws MojoExecutionException;
+
     String promptForRefAppVersion(VersionsHelper versionsHelper);
 
     String promptForMissingValueWithOptions(String message, String value, String parameterName, List<String> options);

@@ -295,7 +295,7 @@ public class Build extends AbstractTask {
      * @param tempProject
      * @throws MojoFailureException
      */
-    private void cleanInstallServerProject(File tempProject) throws MojoFailureException, MavenInvocationException {
+    public void cleanInstallServerProject(File tempProject) throws MojoFailureException {
         Properties properties = new Properties();
         properties.put("skipTests", "true");
 
@@ -311,7 +311,12 @@ public class Build extends AbstractTask {
 
 
         Invoker invoker = new DefaultInvoker();
-        InvocationResult result = invoker.execute(request);
+        InvocationResult result = null;
+        try {
+            result = invoker.execute(request);
+        } catch (MavenInvocationException e) {
+            throw new RuntimeException("Failed to build project in directory: "+tempProject);
+        }
         if (result.getExitCode() != 0 ) {
             throw new IllegalStateException("Failed building project in "+tempProject.getAbsolutePath(), result.getExecutionException());
         }

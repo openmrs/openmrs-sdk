@@ -1,6 +1,7 @@
 package org.openmrs.maven.plugins.model;
 
 import com.google.common.base.Objects;
+import org.apache.commons.lang.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -162,6 +163,13 @@ public class Artifact {
 
     @Override
     public String toString() {
-        return artifactId + ':' + version + ':' + groupId;
+        return groupId + ':' + artifactId + ':' + version;
+    }
+
+    public boolean isValid() {
+        return StringUtils.isNotBlank(groupId)
+                && StringUtils.isNotBlank(artifactId)
+                && StringUtils.isNotBlank(version)
+                && StringUtils.isNotBlank(type);
     }
 }
