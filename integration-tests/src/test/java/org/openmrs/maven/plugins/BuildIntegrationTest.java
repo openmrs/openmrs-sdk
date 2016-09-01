@@ -56,6 +56,7 @@ public class BuildIntegrationTest extends AbstractSdkIntegrationTest{
 
         addTaskParam("openMRSPath",testDirectory.getAbsolutePath());
 
+        addAnswer("n"); // Maven Project found in this directory, do You want to build it?
         addAnswer("n"); // OWA Project found in this directory, do You want to build it?
         addAnswer("y"); // Do You want to build all watched projects instead?
 
@@ -72,20 +73,31 @@ public class BuildIntegrationTest extends AbstractSdkIntegrationTest{
     @Test
     public void build_shouldBuildOwaProject() throws Exception{
 
-
         addTaskParam("openMRSPath",testDirectory.getAbsolutePath());
 
         addAnswer("y"); // OWA Project found in this directory, do You want to build it?
+        addAnswer("n"); // Maven Project found in this directory, do You want to build it?
 
         addTaskParam(BATCH_ANSWERS, getAnswers());
 
         executeTask("build");
 
         verifier.verifyTextInLog("[INFO] BUILD SUCCESS");
-
         assertFilePresent("node");
         assertFilePresent("node_modules");
     }
 
+    @Test
+    public void build_shouldDetectMavenProject() throws Exception{
 
+        addTaskParam("openMRSPath",testDirectory.getAbsolutePath());
+        addAnswer("n"); // OWA Project found in this directory, do You want to build it?
+        addAnswer("y"); // Maven Project found in this directory, do You want to build it?
+        addTaskParam(BATCH_ANSWERS, getAnswers());
+
+        executeTask("build");
+
+        //just check logs, because purpose of this test is to determine if sdk detects projects, not if build is ok
+        assertSuccess();
+    }
 }
