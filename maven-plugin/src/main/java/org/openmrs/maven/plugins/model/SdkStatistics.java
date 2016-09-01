@@ -129,6 +129,7 @@ public class SdkStatistics {
         builder.append("&entry.2088950996="+statistics.getProperty("statsPrCalls"));
         builder.append("&entry.1875021849="+statistics.getProperty("statsCloneCalls"));
         builder.append("&entry.2038776811="+statistics.getProperty("statsReleaseCalls"));
+        builder.append("&entry.1366642496="+statistics.getProperty("statsBuild-distroCalls"));
 
         return builder.toString();
     }
@@ -148,7 +149,13 @@ public class SdkStatistics {
      */
     public void incrementGoal(String goal){
         String key = String.format("stats%sCalls", goal);
-        int calls = Integer.parseInt(statistics.getProperty(key));
+        String property = statistics.getProperty(key);
+        int calls ;
+        if(StringUtils.isBlank(property)){
+            calls = 0;
+        } else {
+            calls = Integer.parseInt(property);
+        }
         calls++;
         statistics.setProperty(key, String.valueOf(calls));
     }
