@@ -54,14 +54,14 @@ public class DistroHelper {
      */
     public static DistroProperties getDistroPropertiesFromDir() {
         File distroFile = new File(new File(System.getProperty("user.dir")), "openmrs-distro.properties");
-        return getDistroPropertiesFromDir(distroFile);
+        return getDistroPropertiesFromFile(distroFile);
     }
 
     /**
      * @param distroFile file which contains distro properties
      * @return distro properties loaded from specified file or null if file is not distro properties
      */
-    public static DistroProperties getDistroPropertiesFromDir(File distroFile) {
+    public static DistroProperties getDistroPropertiesFromFile(File distroFile) {
         if(distroFile.exists()){
             try {
                 return new DistroProperties(distroFile);
@@ -119,7 +119,11 @@ public class DistroHelper {
         if(split.length == 2){
             return new Artifact(inferDistroArtifactId(split[0], Artifact.GROUP_DISTRO), split[1], Artifact.GROUP_DISTRO);
         } else if (split.length == 3){
-            return new Artifact(inferDistroArtifactId(split[1], split[0]), split[2], split[0]);
+            Artifact artifact = new Artifact(inferDistroArtifactId(split[1], split[0]), split[2], split[0]);
+            if(artifact.getGroupId().equals(Artifact.GROUP_MODULE)){
+                artifact.setArtifactId(artifact.getArtifactId()+"-omod");
+            }
+            return artifact;
         } else {
             throw new MojoExecutionException("Invalid distro: "+distro);
         }
@@ -246,7 +250,7 @@ public class DistroHelper {
      */
     public DistroProperties retrieveDistroProperties(String distro) throws MojoExecutionException {
         DistroProperties result;
-        result = getDistroPropertiesFromDir(new File(distro));
+        result = getDistroPropertiesFromFile(new File(distro));
         if(result != null && mavenProject != null){
             result.resolvePlaceholders(getProjectProperties());
         } else {

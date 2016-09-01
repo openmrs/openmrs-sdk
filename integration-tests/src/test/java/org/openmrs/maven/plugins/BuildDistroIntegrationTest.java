@@ -12,12 +12,12 @@ public class BuildDistroIntegrationTest extends AbstractSdkIntegrationTest {
         addTaskParam("distro", "referenceapplication:2.3.1");
         executeTask("build-distro");
 
-        ZipFile zipFile = new ZipFile(new File(testDirectory, "referenceapplication-2.3.1"));
-        zipFile.extractAll(testDirectory.getAbsolutePath());
-        assertFilePresent("referenceapplication-2.3.1");
+        testDirectory = new File(testDirectory, "referenceapplication-2.3.1");
         assertFilePresent("Dockerfile");
         assertFilePresent("docker-compose.yml");
         assertFilePresent("setenv.sh");
+        assertFilePresent("startup.sh");
+        assertFilePresent("wait-for-it.sh");
         assertFilePresent("modules");
         assertFilePresent("openmrs.war");
         assertSuccess();
