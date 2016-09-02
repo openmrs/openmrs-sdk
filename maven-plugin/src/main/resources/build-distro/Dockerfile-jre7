@@ -8,3 +8,6 @@ COPY setenv.sh /usr/local/tomcat/bin/setenv.sh
 
 COPY wait-for-it.sh /usr/local/tomcat/wait-for-it.sh
 COPY startup.sh /usr/local/tomcat/startup.sh
+
+RUN chmod +x /usr/local/tomcat/wait-for-it.sh
+RUN chmod +x /usr/local/tomcat/startup.sh
