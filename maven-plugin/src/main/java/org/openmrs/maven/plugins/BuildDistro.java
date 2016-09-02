@@ -46,6 +46,11 @@ public class BuildDistro extends AbstractTask {
      */
     private String distro;
 
+	/**
+	 * @parameter expression="${dir}"
+     */
+    private String dir;
+
     /**
      * @parameter expression="${dbSql}"
      */
@@ -53,69 +58,109 @@ public class BuildDistro extends AbstractTask {
 
     @Override
     public void executeTask() throws MojoExecutionException, MojoFailureException {
-
-        File userDir = new File(System.getProperty("user.dir"));
-        File targetDirectory = new File(userDir, ".temp");
-        targetDirectory.mkdir();
+        File buildDirectory = getBuildDirectory();
 
         Server server = getDefaultServer();
-        server.setServerDirectory(targetDirectory);
+        server.setServerDirectory(buildDirectory);
         server.save();
 
+        File userDir = new File(System.getProperty("user.dir"));
+
         Artifact distroArtifact = null;
-        DistroProperties distroProperties = distro != null ? distroHelper.retrieveDistroProperties(distro) : null;
+        DistroProperties distroProperties = null;
 
-        File distroFile = new File(userDir, DistroProperties.DISTRO_FILE_NAME);
-
-        if(distroProperties == null && distroFile.exists()){
-            boolean useDistro = wizard.promptYesNo("Would you like to use openmrs-distro.properties file from current directory?");
-            if(useDistro){
+        if (distro == null) {
+            File distroFile = new File(userDir, DistroProperties.DISTRO_FILE_NAME);
+            if(distroFile.exists()){
+                wizard.showMessage("Building distribution from the distro file at " + distroFile + "...\n");
                 distroProperties = new DistroProperties(distroFile);
-            }
-        }
+            } else if (Project.hasProject(userDir)) {
+                Project config = Project.loadProject(userDir);
+                distroArtifact = DistroHelper.parseDistroArtifact(config.getGroupId()+":"+config.getArtifactId()+":"+config.getVersion());
 
-        if (distroProperties == null && Project.hasProject(userDir)) {
-            Project config = Project.loadProject(userDir);
-            distroArtifact = DistroHelper.parseDistroArtifact(config.getGroupId()+":"+config.getArtifactId()+":"+config.getVersion());
-            boolean useProject = wizard.promptYesNo("Would you like to create distro from project ("+distroArtifact+") in current directory?");
-            if(useProject){
-                wizard.showMessage("Building project...");
+                wizard.showMessage("Building distribution from the source at " + userDir + "...\n");
                 new Build(this).cleanInstallServerProject(userDir);
-                distroFile = distroHelper.extractFileFromDistro(targetDirectory, distroArtifact, DistroProperties.DISTRO_FILE_NAME);
+                distroFile = distroHelper.extractFileFromDistro(buildDirectory, distroArtifact, DistroProperties.DISTRO_FILE_NAME);
+
                 if(distroFile.exists()){
                     distroProperties = new DistroProperties(distroFile);
                 } else {
-                    throw new IllegalArgumentException("Couldn't find "+DistroProperties.DISTRO_FILE_NAME+" in "+distroArtifact);
+                    wizard.showMessage("Couldn't find " + DistroProperties.DISTRO_FILE_NAME + " in " + distroArtifact);
                 }
             }
+        } else if (StringUtils.isNotBlank(distro)){
+            distroProperties = distroHelper.retrieveDistroProperties(distro);
         }
 
-        if(distroProperties == null){
+        if (distroProperties == null){
             wizard.promptForRefAppVersionIfMissing(server, versionsHelper, DISTRIBUTION_VERSION_PROMPT);
             if(DistroHelper.isRefapp2_3_1orLower(server.getDistroArtifactId(), server.getVersion())){
                 distroProperties = new DistroProperties(server.getVersion());
             } else {
-                distroProperties = distroHelper.downloadDistroProperties(targetDirectory, server);
+                distroProperties = distroHelper.downloadDistroProperties(buildDirectory, server);
                 distroArtifact = new Artifact(server.getDistroArtifactId(), server.getVersion(), server.getDistroGroupId(), "jar");
             }
         }
 
-        if(distroProperties == null) throw new IllegalArgumentException("Distro "+distro+" could not be retrieved");
-        String distroName = buildDistro(targetDirectory, distroArtifact, distroProperties);
-        targetDirectory.renameTo(new File(targetDirectory.getParent(), distroName));
-        wizard.showMessage("Finished!");
+        if (distroProperties == null) {
+            throw new IllegalArgumentException("The distro you specified '" + distro + "' could not be retrieved");
+        }
+
+        String distroName = buildDistro(buildDirectory, distroArtifact, distroProperties);
+
+        wizard.showMessage("The '" + distroName + "' distribution created! To start up the server run 'docker-compose up' from " + buildDirectory.getAbsolutePath() + "\n");
     }
-    
+
+    private File getBuildDirectory() {
+        final File targetDir;
+        if (StringUtils.isBlank(dir)) {
+            String directory = wizard.promptForValueIfMissingWithDefault("Specify build directory for generated files (-Ddir, default: 'docker')", dir, "dir", "docker");
+
+            targetDir = new File(directory);
+
+            if (targetDir.exists()) {
+                if (targetDir.isDirectory()) {
+                    if (targetDir.list().length != 0) {
+                        wizard.showMessage("The directory at '" + targetDir.getAbsolutePath() + "' is not empty. All its content will be lost.");
+                        boolean chooseDifferent = wizard.promptYesNo("Would you like to choose a different directory?");
+                        if (chooseDifferent) {
+                            return getBuildDirectory();
+                        }
+                    }
+                } else {
+                    wizard.showMessage("The specified path '" + dir + "' is not a directory.");
+                    return getBuildDirectory();
+                }
+            }
+
+            dir = directory;
+        } else {
+            targetDir = new File(dir);
+        }
+
+        if (!targetDir.exists()) {
+            targetDir.mkdirs();
+        } else {
+            try {
+                FileUtils.cleanDirectory(targetDir);
+            } catch (IOException e) {
+                throw new IllegalStateException("Could not clean up directory", e);
+            }
+        }
+
+        return targetDir;
+    }
+
     private String buildDistro(File targetDirectory, Artifact distroArtifact, DistroProperties distroProperties) throws MojoExecutionException {
         InputStream dbDumpStream;
-        wizard.showMessage("Downloading modules...");
+        wizard.showMessage("Downloading modules...\n");
 
         moduleInstaller.installModules(distroProperties.getWarArtifacts(), targetDirectory.getAbsolutePath());
         renameWebApp(targetDirectory);
 
         moduleInstaller.installModules(distroProperties.getModuleArtifacts(), targetDirectory.getAbsolutePath()+File.separator+"modules");
 
-        wizard.showMessage("Creating Docker Compose configuration...");
+        wizard.showMessage("Creating Docker Compose configuration...\n");
         String distroName = adjustImageName(distroProperties.getName());
         String distroVersion = adjustImageName(distroProperties.getServerVersion());
         writeDockerCompose(targetDirectory, distroName, distroVersion);
@@ -132,7 +177,7 @@ public class BuildDistro extends AbstractTask {
         cleanupSqlFiles(targetDirectory);
 
 //        createZipFile(targetDirectory, distroName+"-"+distroVersion);
-        return distroName+"-"+distroVersion;
+        return distroName;
     }
 
     private void createZipFile(File targetDirectory, String zipFileName) {
@@ -181,7 +226,6 @@ public class BuildDistro extends AbstractTask {
         try(InputStream inputStream = composeUrl.openStream();FileWriter composeWriter = new FileWriter(compose)){
             String content = IOUtils.toString(inputStream);
             content = content.replaceAll("<distro>", distro);
-            content = content.replaceAll("<version>", version);
             composeWriter.write(content);
         } catch (IOException|NullPointerException e/*don't check if url is not null, because same error handling*/) {
             throw new RuntimeException("Failed to write docker-compose.yml file", e);
@@ -251,7 +295,7 @@ public class BuildDistro extends AbstractTask {
     }
 
     private void copyBuildDistroResource(String resource, File target) {
-        URL resourceUrl = getClass().getClassLoader().getResource("build-distro" + File.separator + resource);
+        URL resourceUrl = getClass().getClassLoader().getResource("build-distro/" + resource);
         try {
             FileUtils.copyURLToFile(resourceUrl, target);
         } catch (IOException e) {
@@ -267,6 +311,10 @@ public class BuildDistro extends AbstractTask {
                 return name.endsWith(".war");
             }
         });
+        for (File file: warFiles) {
+            System.out.println("file:" + file.getAbsolutePath());
+        }
+        System.out.println("target:" + targetDirectory);
         if(warFiles != null && warFiles.length == 1){
             boolean renameSuccess = warFiles[0].renameTo(openmrsWar);
             if(!renameSuccess){

@@ -1,31 +1,31 @@
 version: '2'
 
 services:
-  openmrs-<distro>-<version>-mysql:
+  openmrs-<distro>-mysql:
     image: mysql:5.6
-    container_name: openmrs-<distro>-<version>-mysql
+    container_name: openmrs-<distro>-mysql
     environment: 
       - MYSQL_DATABASE=openmrs
       - MYSQL_ROOT_PASSWORD=Admin123
     volumes: 
-      - openmrs-<distro>-<version>-mysql-data:/var/lib/mysql
+      - openmrs-<distro>-mysql-data:/var/lib/mysql
       # pass dump file to mysql image
       - ./dbdump:/docker-entrypoint-initdb.d
 
-  openmrs-<distro>-<version>:
-    container_name: openmrs-<distro>-<version>
+  openmrs-<distro>:
+    container_name: openmrs-<distro>
     build:
       context: .
       dockerfile: Dockerfile
     entrypoint: /usr/local/tomcat/startup.sh
     depends_on:
-      - openmrs-<distro>-<version>-mysql
+      - openmrs-<distro>-mysql
     ports: 
       - "8080:8080"
     links:
-      - openmrs-<distro>-<version>-mysql:mysql
+      - openmrs-<distro>-mysql:mysql
 
 
 volumes:
-  openmrs-<distro>-<version>-mysql-data:
+  openmrs-<distro>-mysql-data:
 
