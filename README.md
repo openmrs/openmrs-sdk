@@ -38,3 +38,7 @@ A new Travis-CI build will be triggered, which will create a new tag named after
 The tag will be then built and deployed to [Bintray](https://bintray.com/openmrs/maven/openmrs-sdk). You will have to sign-in and [sync with Maven Central](https://bintray.com/openmrs/maven/openmrs-sdk#central). 
 
 Finally point the previosly created release in GitHub to the new release version tag.
+
+## Usage statistics
+
+OpenMRS gathers anonymous [usage statistics](https://docs.google.com/spreadsheets/d/1yMcfBl10l32YxWtXneD0wJZh11-qaLBMAwQFC9JUogA/edit#gid=42570905), which are shared on request. Please contact the project lead to request read-only access.
