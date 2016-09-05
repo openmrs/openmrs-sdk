@@ -48,6 +48,11 @@
                         <enabled>false</enabled>
                     </snapshots>
                 </pluginRepository>
+                <pluginRepository>
+                    <id>openmrs-bintray-repo</id>
+                    <name>OpeMRS Maven Bintray Repository</name>
+                    <url>https://dl.bintray.com/openmrs/maven/</url>
+                </pluginRepository>
             </pluginRepositories>
         </profile>
     </profiles>
