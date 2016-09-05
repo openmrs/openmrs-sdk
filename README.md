@@ -41,4 +41,4 @@ Finally point the previosly created release in GitHub to the new release version
 
 ## Usage statistics
 
-OpenMRS gathers anonymous [usage statistics](https://docs.google.com/spreadsheets/d/1yMcfBl10l32YxWtXneD0wJZh11-qaLBMAwQFC9JUogA/edit#gid=42570905), which are shared on request. Please contact the project lead to request read-only access.
+OpenMRS SDK gathers anonymous [usage statistics](https://docs.google.com/spreadsheets/d/1yMcfBl10l32YxWtXneD0wJZh11-qaLBMAwQFC9JUogA/edit#gid=42570905), which are shared on request. Please contact the project lead to request read-only access.
