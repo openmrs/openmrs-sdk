@@ -51,7 +51,7 @@ public class StatsManager {
 
     private String getGoal() {
         for(String mvnGoal: mavenSession.getGoals()){
-            if(mvnGoal.contains("openmrs-sdk-maven-plugin")){
+            if(mvnGoal.contains("openmrs-sdk")){
                 String goal = mvnGoal.substring(mvnGoal.lastIndexOf(":")+1);
                 return goal.substring(0,1).toUpperCase() + goal.substring(1);
             }
