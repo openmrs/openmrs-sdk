@@ -26,7 +26,8 @@ import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
  */
 public class Clone extends AbstractTask {
 
-    public static final String GITHUB_COM = "https://github.com/";
+    public static final String GITHUB_COM = "github.com";
+    public static final String GITHUB_HTTP_SUFFIX = "https://github.com/";
     /**
      * @parameter expression="${groupId}"
      */
@@ -76,10 +77,28 @@ public class Clone extends AbstractTask {
         String url = pomProperties.getScm().getUrl();
         pom.delete();
         pomDir.delete();
-        if (!url.endsWith(".git")) {
-            return StringUtils.removeEnd(url, "/") + ".git";
-        } else {
-            return url;
+
+        return extractUniversalRepoUrl(url);
+    }
+
+    /**
+     * This method is modifying repoUrl extracted from OpenMRS' project's pom.xml
+     * There are some differences in repoUrl syntax for example:
+     * git@github.com:openmrs/openmrs-contrib-uitestframework.git
+     * or https://github.com/openmrs/openmrs-module-webservices.rest.git
+     * This method ensures that repoUrl will be always the same.
+     */
+    private String extractUniversalRepoUrl(String repoUrl) {
+        String result;
+        result = repoUrl.substring(repoUrl.indexOf(GITHUB_COM) + GITHUB_COM.length() + 1);
+
+        StringUtils.removeEnd(result,"/");
+
+        if (!repoUrl.endsWith(".git")) {
+            return result + ".git";
+        }
+        else {
+            return result;
         }
     }
 
@@ -115,29 +134,24 @@ public class Clone extends AbstractTask {
     }
 
     private void cloneRepo(String repoUrl) {
-        String repoOwner = repoUrl.substring(repoUrl.indexOf(GITHUB_COM) + GITHUB_COM.length(), repoUrl.lastIndexOf("/"));
-        String repoOwnerUrlPart = "/" + repoOwner + "/";
-        String originUrl = repoUrl.replace(repoOwnerUrlPart, "/" + githubUsername + "/");
+        String repoOwner = repoUrl.substring(0, repoUrl.indexOf("/"));
+        String originUrl = StringUtils.replaceOnce(repoUrl, repoOwner, githubUsername);
 
-        String repoName = repoUrl.substring(
-                repoUrl.indexOf(repoOwnerUrlPart) + repoOwnerUrlPart.length(),
-                repoUrl.indexOf(".git")
-        );
+        String repoName = repoUrl.substring(repoOwner.length() + 1, repoUrl.lastIndexOf(".git"));
 
         if ("false".equals(testMode)) {
             forkRepo(repoName, repoOwner);
         }
 
-        wizard.showMessage("Cloning from " + originUrl + " into " + repoName);
-
-        File localPath = new File(repoName, "");
+        File localPath = new File(repoName);
+        wizard.showMessage("Cloning from " + originUrl + " into " + localPath.getAbsolutePath());
         if (localPath.exists()) {
             throw new IllegalStateException("Destination path \"" + localPath.getAbsolutePath() + "\" already exists.");
         }
 
         try {
-            Git repository = Git.cloneRepository()
-                    .setURI(originUrl)
+            Git.cloneRepository()
+                    .setURI(GITHUB_HTTP_SUFFIX + originUrl)
                     .setDirectory(localPath)
                     .call();
             Git git = new Git(gitHelper.getLocalRepository(localPath.getAbsolutePath()));

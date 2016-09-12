@@ -13,20 +13,17 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 public class CloneIntegrationTest extends AbstractSdkIntegrationTest {
 
-    private static final String ORIGIN_URL = "https://github.com/tmarzeion/openmrs-module-appui.git";
-    private static final String UPSTREAM_URL = "https://github.com/openmrs/openmrs-module-appui.git";
-
     @Test
     public void clone_shouldCloneRepository() throws Exception{
 
-        String moduleArtifactId = "appui";
-        String username = "tmarzeion";
-        String password = "TEST CASE";
+        final String MODULE_ARTIFACT_ID = "appui";
+        final String USERNAME = "tmarzeion";
+        final String PASSWORD = "TEST CASE";
 
         addTaskParam("groupId", "org.openmrs.module");
-        addTaskParam("artifactId", moduleArtifactId);
-        addTaskParam("githubUsername", username);
-        addTaskParam("githubPassword", password);
+        addTaskParam("artifactId", MODULE_ARTIFACT_ID);
+        addTaskParam("githubUsername", USERNAME);
+        addTaskParam("githubPassword", PASSWORD);
         executeTask("clone");
 
         // Check build success
