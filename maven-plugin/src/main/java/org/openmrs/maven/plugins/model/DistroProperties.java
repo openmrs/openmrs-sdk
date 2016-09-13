@@ -9,9 +9,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -19,23 +17,14 @@ import java.util.Set;
 /**
  *
  */
-public class DistroProperties {
+public class DistroProperties extends BaseSdkProperties {
 
     public static final String PROPERTY_PROMPT_KEY = "property.%s.prompt";
     private static final String DEAFAULT_FILE_NAME = "openmrs-distro-%s.properties";
-    private static final String TYPE_OMOD = "omod";
-    private static final String TYPE_WAR = "war";
-    private static final String TYPE_JAR = "jar";
-    private static final String ARTIFACT_ID = "artifactId";
-    private static final String TYPE = "type";
-    private static final String GROUP_ID = "groupId";
     public static final String DISTRO_FILE_NAME = "openmrs-distro.properties";
     private static final String DB_SQL = "db.sql";
     public static final String PROPERTY_DEFAULT_VALUE_KEY = "property.%s.default";
     public static final String PROPERTY_KEY = "property.%s";
-
-
-    private Properties properties;
 
 
     public DistroProperties(String version){
@@ -45,6 +34,13 @@ public class DistroProperties {
         } catch (MojoExecutionException e) {
             e.printStackTrace();
         }
+    }
+
+    public DistroProperties(String name, String version){
+        properties = new Properties();
+        setName(name);
+        setVersion("1.0");
+        setPlatformVersion(version);
     }
 
     public DistroProperties(Properties properties){
@@ -90,109 +86,16 @@ public class DistroProperties {
         }
     }
 
-    public List<Artifact> getModuleArtifacts(){
-        List<Artifact> artifactList = new ArrayList<>();
-        for (Object keyObject: getAllKeys()) {
-            String key = keyObject.toString();
-            String artifactType = getArtifactType(key);
-            if(artifactType.equals(TYPE_OMOD)) {
-                artifactList.add(new Artifact(checkIfOverwritten(key, ARTIFACT_ID), getParam(key), checkIfOverwritten(key, GROUP_ID), checkIfOverwritten(key, TYPE), "omod"));
-            }
-        }
-        return  artifactList;
-    }
-
-    public List<Artifact> getWarArtifacts(){
-        List<Artifact> artifactList = new ArrayList<>();
-        for (Object keyObject: getAllKeys()) {
-            String key = keyObject.toString();
-            String artifactType = getArtifactType(key);
-            if(artifactType.equals(TYPE_WAR)) {
-                artifactList.add(new Artifact(checkIfOverwritten(key, ARTIFACT_ID), getParam(key), checkIfOverwritten(key, GROUP_ID), checkIfOverwritten(key, TYPE)));
-            }
-        }
-        return  artifactList;
-    }
-
-    private String checkIfOverwritten(String key, String param) {
-        String newKey = key + "." + param;
-        if (getParam(newKey) != null) {
-            return getParam(newKey);
-        } else {
-            if (param.equals(ARTIFACT_ID)) {
-                return extractArtifactId(key);
-            } else if (param.equals(GROUP_ID)) {
-                if (getArtifactType(key).equals(TYPE_WAR)) { //for openmrs.war use org.openmrs.web groupId
-                    return Artifact.GROUP_WEB;
-                } else if(getArtifactType(key).equals(TYPE_OMOD)){
-                    return Artifact.GROUP_MODULE;
-                }else {
-                    return "";
-                }
-
-            } else if (param.equals(TYPE)) {
-                if(getArtifactType(key).equals(TYPE_OMOD)){
-                    return TYPE_JAR;
-                }else if(getArtifactType(key).equals(TYPE_WAR)){
-                    return TYPE_WAR;
-                }else {
-                    return "";
-                }
-            } else {
-                return "";
-            }
-        }
-    }
-
-    private Set<Object> getAllKeys(){
-        return properties.keySet();
-    }
-
-    private String getArtifactType(String key){
-        String[] wordsArray = key.split("\\.");
-        if(!(wordsArray[wordsArray.length-1].equals(TYPE) || wordsArray[wordsArray.length-1].equals(ARTIFACT_ID) || wordsArray[wordsArray.length-1].equals(GROUP_ID))){
-            if(key.contains(".")){
-                return key.substring(0, key.indexOf("."));
-            }else {
-                return "";
-            }
-        }else {
-            return "";
-        }
-    }
-
-    private String extractArtifactId(String key){
-        String type = getArtifactType(key);
-        StringBuilder stringBuilder = new StringBuilder(key.substring(key.indexOf(".")+1, key.length()));
-        if(type.equals(TYPE_OMOD)) {
-            stringBuilder.append("-");
-            stringBuilder.append(type);
-        } else if(type.equals(TYPE_WAR)){
-            stringBuilder.append("-");
-            stringBuilder.append("webapp");
-        }
-
-        return  stringBuilder.toString();
-    }
-
     public boolean isH2Supported(){
         return Boolean.parseBoolean(getParam("db.h2.supported"));
     }
 
+    public void setH2Support(boolean supported) {
+        properties.setProperty("db.h2.supported", String.valueOf(supported));
+    }
+
     public String getSqlScriptPath() {
         return getParam(DB_SQL);
-    }
-
-    public String getServerVersion(){
-        return getParam("version");
-    }
-
-    public String getPlatformVersion() {
-        return getParam("war.openmrs");
-    }
-
-    public String getName(){
-        return getParam("name");
     }
 
     public String getPropertyPromt(String propertyName){
@@ -227,14 +130,6 @@ public class DistroProperties {
             return key.substring(beginIndex+1);
         }
     }
-
-
-    /**
-     * get param from properties
-     * @param key
-     * @return
-     */
-    public String getParam(String key) {return properties.getProperty(key); }
 
     public void saveTo(File path) throws MojoExecutionException {
         FileOutputStream out = null;

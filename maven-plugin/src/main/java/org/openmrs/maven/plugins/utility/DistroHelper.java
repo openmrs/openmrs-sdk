@@ -305,8 +305,16 @@ public class DistroHelper {
                     if(isHigherVersion(oldListModule, newListModule)){
                         if(isOpenmrsWebapp(newListModule)){
                             upgradeDifferential.setPlatformArtifact(newListModule);
+                            upgradeDifferential.setPlatformUpgraded(true);
                         } else {
                             upgradeDifferential.putUpdateEntry(oldListModule, newListModule);
+                        }
+                    } else if(isLowerVersion(oldListModule, newListModule)){
+                        if(isOpenmrsWebapp(newListModule)){
+                            upgradeDifferential.setPlatformArtifact(newListModule);
+                            upgradeDifferential.setPlatformUpgraded(false);
+                        } else {
+                            upgradeDifferential.putDowngradeEntry(oldListModule, newListModule);
                         }
                     }
                     toAdd = false;
@@ -315,6 +323,22 @@ public class DistroHelper {
             }
             if(toAdd){
                 upgradeDifferential.addModuleToAdd(newListModule);
+            }
+        }
+        for(Artifact oldListModule: oldList){
+            boolean moduleNotFound = true;
+            for(Artifact newListModule: newList){
+                if(isSameArtifact(newListModule, oldListModule)){
+                    moduleNotFound = false;
+                    break;
+                }
+            }
+            if(moduleNotFound){
+                if (isOpenmrsWebapp(oldListModule)) {
+                    throw new IllegalStateException("You can delete only modules. Deleting openmrs core is not available");
+                } else {
+                    upgradeDifferential.addModuleToDelete(oldListModule);
+                }
             }
         }
         return upgradeDifferential;
@@ -333,17 +357,14 @@ public class DistroHelper {
         if (index == -1) return name;
         return name.substring(0, index);
     }
+
     /**
      * checks if next artifact is higher version of the same artifact
      * returns true for equal version snapshots
      */
     private static boolean isHigherVersion(Artifact previous, Artifact next){
-        if(previous==null||next==null
-                ||previous.getArtifactId()==null||next.getArtifactId()==null
-                ||previous.getVersion()==null||next.getVersion()==null
-                ||!isSameArtifact(previous, next)){
-            return false;
-        }
+        if (!validateArtifactsToCompare(previous, next)) return false;
+
         Version previousVersion = new Version(previous.getVersion());
         Version nextVersion = new Version(next.getVersion());
 
@@ -354,6 +375,30 @@ public class DistroHelper {
         } else {
             return false;
         }
+    }
+    private static boolean isLowerVersion(Artifact previous, Artifact next) {
+        if (!validateArtifactsToCompare(previous, next)) return false;
+
+        Version previousVersion = new Version(previous.getVersion());
+        Version nextVersion = new Version(next.getVersion());
+
+        if(nextVersion.lower(previousVersion)){
+            return true;
+        } else if(nextVersion.equal(previousVersion)){
+            return(previousVersion.isSnapshot()&&nextVersion.isSnapshot());
+        } else {
+            return false;
+        }
+    }
+
+    private static boolean validateArtifactsToCompare(Artifact previous, Artifact next) {
+        if(previous==null||next==null
+                ||previous.getArtifactId()==null||next.getArtifactId()==null
+                ||previous.getVersion()==null||next.getVersion()==null
+                ||!isSameArtifact(previous, next)){
+            return false;
+        }
+        return true;
     }
 
 }

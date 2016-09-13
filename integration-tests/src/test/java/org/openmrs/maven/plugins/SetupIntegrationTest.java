@@ -14,6 +14,7 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.openmrs.maven.plugins.SdkMatchers.hasPropertyEqualTo;
+import static org.openmrs.maven.plugins.SdkMatchers.serverHasName;
 import static org.openmrs.maven.plugins.SdkMatchers.serverHasVersion;
 
 public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
@@ -63,8 +64,9 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
 
         Server.setServersPath(testDirectory.getAbsolutePath());
         Server server = Server.loadServer(serverId);
-        assertThat(server, serverHasVersion(""));
-
+        assertThat(server, serverHasVersion("1.0"));
+        assertFilePresent(serverId + File.separator + "openmrs-distro.properties");
+        assertThat(server, serverHasName(serverId));
     }
 
     @Test
@@ -89,6 +91,7 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
 
         Server.setServersPath(testDirectory.getAbsolutePath());
         Server server = Server.loadServer(serverId);
+        assertThat(server, serverHasName("OpenMRS Concepts OWA server"));
         assertThat(server, hasPropertyEqualTo("test", "testValue"));
         assertThat(server, hasPropertyEqualTo("pih.default.config", "nameValue"));
     }
@@ -113,6 +116,7 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
 
         Server.setServersPath(testDirectory.getAbsolutePath());
         Server server = Server.loadServer(serverId);
+        assertThat(server, serverHasName("OpenMRS Concepts OWA server"));
         assertThat(server, hasPropertyEqualTo("test", "testValue"));
         assertThat(server, hasPropertyEqualTo("pih.default.config", "nameValue"));
     }

@@ -74,7 +74,9 @@ public class DefaultWizard implements Wizard {
             "in a forked mode, correct the java.home property in %s\n";
     private static final String UPGRADE_CONFIRM_TMPL = "\nThe %s %s introduces the following changes:";
     private static final String UPDATE_MODULE_TMPL = "^ Updates %s %s to %s";
+    private static final String DOWNGRADE_MODULE_TMPL = "v Downgrades %s %s to %s";
     private static final String ADD_MODULE_TMPL = "+ Adds %s %s";
+    private static final String DELETE_MODULE_TMPL = "- Deletes %s %s";
     private static final String NO_DIFFERENTIAL = "\nNo modules to update or add found";
     public static final String PLATFORM_VERSION_PROMPT = "You can deploy the following versions of a platform";
     public static final String DISTRIBUTION_VERSION_PROMPT = "You can deploy the following versions of distribution";
@@ -345,8 +347,8 @@ public class DefaultWizard implements Wizard {
     @Override
     public void promptForPlatformVersionIfMissing(Server server, List<String> versions) {
         String version = promptForMissingValueWithOptions(PLATFORM_VERSION_PROMPT,
-                server.getVersion(), "version", versions, "Please specify platform version", null);
-        server.setVersion(version);
+                server.getPlatformVersion(), "version", versions, "Please specify platform version", null);
+        server.setPlatformVersion(version);
     }
 
 	@Override
@@ -858,11 +860,8 @@ public class DefaultWizard implements Wizard {
         boolean needConfirmation = false;
 
         if(upgradeDifferential.getPlatformArtifact() !=null){
-            if(!needConfirmation){
-                System.out.println(String.format(UPGRADE_CONFIRM_TMPL, distroProperties.getName(), distroProperties.getServerVersion()));
-                needConfirmation = true;
-            }
-            System.out.println(String.format(UPDATE_MODULE_TMPL,
+            needConfirmation = showUpdateHeader(distroProperties, needConfirmation);
+            System.out.println(String.format(upgradeDifferential.isPlatformUpgraded() ? UPDATE_MODULE_TMPL:DOWNGRADE_MODULE_TMPL,
                     upgradeDifferential.getPlatformArtifact().getArtifactId(),
                     server.getPlatformVersion(),
                     upgradeDifferential.getPlatformArtifact().getVersion()));
@@ -872,10 +871,7 @@ public class DefaultWizard implements Wizard {
             //(e.g. update 'appui 0.2-SNAPSHOT' to 'appui 0.2-SNAPSHOT')
             //updating to same SNAPSHOT doesn't require confirmation, they are not shown
             if(!updateEntry.getKey().getVersion().equals(updateEntry.getValue().getVersion())){
-                if(!needConfirmation){
-                    System.out.println(String.format(UPGRADE_CONFIRM_TMPL, distroProperties.getName(), distroProperties.getServerVersion()));
-                    needConfirmation = true;
-                }
+                needConfirmation = showUpdateHeader(distroProperties, needConfirmation);
                 System.out.println(String.format(UPDATE_MODULE_TMPL,
                         updateEntry.getKey().getArtifactId(),
                         updateEntry.getKey().getVersion(),
@@ -883,20 +879,42 @@ public class DefaultWizard implements Wizard {
             }
         }
 
-        for(Artifact addArtifact : upgradeDifferential.getModulesToAdd()){
-            if(!needConfirmation){
-                System.out.println(String.format(UPGRADE_CONFIRM_TMPL, distroProperties.getName(), distroProperties.getServerVersion()));
-                needConfirmation = true;
+        for(Entry<Artifact, Artifact> downgradeEntry : upgradeDifferential.getDowngradeNewToOldMap().entrySet()){
+            if(!downgradeEntry.getKey().getVersion().equals(downgradeEntry.getValue().getVersion())){
+                needConfirmation = showUpdateHeader(distroProperties, needConfirmation);
+                System.out.println(String.format(DOWNGRADE_MODULE_TMPL,
+                        downgradeEntry.getKey().getArtifactId(),
+                        downgradeEntry.getKey().getVersion(),
+                        downgradeEntry.getValue().getVersion()));
             }
+        }
+
+        for(Artifact addArtifact : upgradeDifferential.getModulesToAdd()){
+            needConfirmation = showUpdateHeader(distroProperties, needConfirmation);
             System.out.println(String.format(ADD_MODULE_TMPL,
                     addArtifact.getArtifactId(),
                     addArtifact.getVersion()));
+        }
+
+        for(Artifact deleteArtifact : upgradeDifferential.getModulesToDelete()){
+            needConfirmation = showUpdateHeader(distroProperties, needConfirmation);
+            System.out.println(String.format(DELETE_MODULE_TMPL,
+                    deleteArtifact.getArtifactId(),
+                    deleteArtifact.getVersion()));
         }
 
         if(needConfirmation){
             return promptYesNo(String.format("Would you like to apply those changes to '%s'?", server.getServerId()));
         }
         else return true;
+    }
+
+    private boolean showUpdateHeader(DistroProperties distroProperties, boolean needConfirmation) {
+        if(!needConfirmation){
+            System.out.println(String.format(UPGRADE_CONFIRM_TMPL, distroProperties.getName(), distroProperties.getVersion()));
+            needConfirmation = true;
+        }
+        return needConfirmation;
     }
 
     @Override

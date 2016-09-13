@@ -58,6 +58,13 @@ public class DistroHelperTest {
         assertThat(upgradeDifferential.getModulesToAdd(), hasSize(1));
     }
     @Test
+    public void calculateUpdateDifferentialShouldFindArtifactsToDeleteList() throws Exception{
+        UpgradeDifferential upgradeDifferential = DistroHelper.calculateUpdateDifferential(getMockOldArtifactList(), getMockNewArtifactList());
+
+        assertThat(upgradeDifferential.getModulesToDelete(), hasItem(new Artifact("owa", "1.5")));
+        assertThat(upgradeDifferential.getModulesToAdd(), hasSize(1));
+    }
+    @Test
     public void calculateUpdateDifferentialShouldAddSnapshotToUpdateMap() throws Exception{
         UpgradeDifferential upgradeDifferential = DistroHelper.calculateUpdateDifferential(getMockOldArtifactList(), getMockNewArtifactList());
 
@@ -66,7 +73,14 @@ public class DistroHelperTest {
         assertThat(upgradeDifferential.getUpdateOldToNewMap().values(), hasItem(new Artifact("webservices","1.2")));
         assertThat(upgradeDifferential.getUpdateOldToNewMap().keySet(), hasSize(2));
     }
+    @Test
+    public void calculateUpdateDifferentialShouldAddSnapshotToDowngradeMap() throws Exception{
+        UpgradeDifferential upgradeDifferential = DistroHelper.calculateUpdateDifferential(getMockOldArtifactList(), getMockNewArtifactList());
 
+        assertThat(upgradeDifferential.getDowngradeNewToOldMap().keySet(), hasItem(new Artifact("legacyui","1.5")));
+        assertThat(upgradeDifferential.getDowngradeNewToOldMap().values(), hasItem(new Artifact("legacyui","1.4")));
+        assertThat(upgradeDifferential.getDowngradeNewToOldMap().keySet(), hasSize(1));
+    }
     @Test
     public void calculateUpdateDifferentialShouldFindPlatformUpdate() throws Exception{
         Artifact oldPlatform = new Artifact("openmrs-webapp", "10.7", Artifact.GROUP_WEB, Artifact.TYPE_WAR);
@@ -74,6 +88,13 @@ public class DistroHelperTest {
 
         UpgradeDifferential upgradeDifferential = DistroHelper.calculateUpdateDifferential(Arrays.asList(oldPlatform), Arrays.asList(newPlatform));
         assertThat(upgradeDifferential.getPlatformArtifact(), is(newPlatform));
+    }
+    @Test(expected = IllegalStateException.class)
+    public void calculateUpdateDifferentialShouldNotAllowToDeletePlatform() throws Exception{
+        Artifact oldPlatform = new Artifact("openmrs-webapp", "10.7", Artifact.GROUP_WEB, Artifact.TYPE_WAR);
+        Artifact artifact = new Artifact("owa", "12.0");
+
+        UpgradeDifferential upgradeDifferential = DistroHelper.calculateUpdateDifferential(Arrays.asList(oldPlatform), Arrays.asList(artifact));
     }
 
     @Test
@@ -112,6 +133,8 @@ public class DistroHelperTest {
         oldList.addAll(Arrays.asList(
                 new Artifact("webservices","1.0"),
                 new Artifact("webapp", "1.12"),
+                new Artifact("owa", "1.5"),
+                new Artifact("legacyui", "1.5"),
                 new Artifact("appui", "0.1-SNAPSHOT"),
                 new Artifact("openmrs-webapp", "10.7", Artifact.GROUP_WEB, Artifact.TYPE_WAR)
         ));
@@ -125,6 +148,7 @@ public class DistroHelperTest {
                 new Artifact("webservices","1.2"),
                 new Artifact("webapp", "1.12"),
                 new Artifact("appui", "0.1-SNAPSHOT"),
+                new Artifact("legacyui", "1.4"),
                 new Artifact("drugs", "0.2-SNAPSHOT"),
                 new Artifact("openmrs-webapp", "12.0", Artifact.GROUP_WEB, Artifact.TYPE_WAR)
         ));

@@ -16,7 +16,6 @@ import org.openmrs.maven.plugins.model.Version;
 import org.openmrs.maven.plugins.utility.DistroHelper;
 import org.openmrs.maven.plugins.utility.Project;
 import org.openmrs.maven.plugins.utility.SDKConstants;
-import org.openmrs.maven.plugins.utility.Wizard;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -147,7 +146,7 @@ public class Deploy extends AbstractTask {
             case(DEPLOY_DISTRO_OPTION):{
                 wizard.showMessage(String.format(
                         TEMPLATE_CURRENT_VERSION,
-                        "Reference Application distribution",
+                        server.getName(),
                         server.getVersion()));
 
                 distro = wizard.promptForRefAppVersion(versionsHelper);
@@ -275,7 +274,7 @@ public class Deploy extends AbstractTask {
         executeMojoPlugin(artifactItems);
 
         server.setPlatformVersion(mavenProject.getVersion());
-        server.save();
+        server.saveAndSynchronizeDistro();
         getLog().info("OpenMRS war has been successfully deployed");
     }
 
@@ -299,8 +298,8 @@ public class Deploy extends AbstractTask {
 
         executeMojoPlugin(artifactItems);
 
-        server.saveUserModule(artifact);
-        server.save();
+        server.setModuleProperties(artifact);
+        server.saveAndSynchronizeDistro();
         if (moduleRemoved) {
             getLog().info(String.format(DEFAULT_UPDATE_MESSAGE, artifact.getArtifactId(), artifact.getVersion()));
         }
@@ -356,7 +355,8 @@ public class Deploy extends AbstractTask {
                     }
                 }
 
-                server.removeUserModule(new Artifact(moduleId+"-omod", oldVersion.toString(), artifact.getGroupId()));
+                server.removeModuleProperties(new Artifact(moduleId, oldVersion.toString(), artifact.getGroupId()));
+                server.saveAndSynchronizeDistro();
                 return itemModule.delete();
             }
         }
@@ -388,9 +388,8 @@ public class Deploy extends AbstractTask {
         if (distroProperties!=null) {
             String message = String.format(
                     "Would you like to deploy %s %s from the current directory?",
-                    server.getServerId(),
                     distroProperties.getName(),
-                    distroProperties.getServerVersion());
+                    distroProperties.getVersion());
 
             boolean agree = wizard.promptYesNo(message);
             if(agree){
@@ -421,9 +420,16 @@ public class Deploy extends AbstractTask {
             project = Project.loadProject(userDir);
         }
         if (artifactId == null && project != null && project.isOpenmrsModule()) {
-            moduleGroupId = project.getGroupId();
-            moduleArtifactId = project.getArtifactId() + "-omod";
-            moduleVersion = (version != null) ? version : project.getVersion();
+            if (project.getParent() != null) {
+                moduleGroupId = project.getParent().getGroupId();
+                moduleArtifactId = project.getParent().getArtifactId() + "-omod";
+                moduleVersion = (version != null) ? version : project.getParent().getVersion();
+
+            } else {
+                moduleGroupId = project.getGroupId();
+                moduleArtifactId = project.getArtifactId() + "-omod";
+                moduleVersion = (version != null) ? version : project.getVersion();
+            }
         } else {
             moduleGroupId = wizard.promptForValueIfMissingWithDefault(null, groupId, "groupId", Artifact.GROUP_MODULE);
             moduleArtifactId = wizard.promptForValueIfMissing(artifactId, "artifactId");

@@ -18,6 +18,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.BlockJUnit4ClassRunner;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.DistroProperties;
+import org.openmrs.maven.plugins.model.Server;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -30,6 +31,12 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.openmrs.maven.plugins.SdkMatchers.hasModuleVersion;
+import static org.openmrs.maven.plugins.SdkMatchers.hasModuleVersionInDisstro;
+import static org.openmrs.maven.plugins.SdkMatchers.hasPlatformVersion;
+import static org.openmrs.maven.plugins.SdkMatchers.hasWarVersion;
 
 
 @RunWith(BlockJUnit4ClassRunner.class)
@@ -159,6 +166,20 @@ public abstract class AbstractSdkIntegrationTest {
 
     public File getLogFile(){
         return new File(testDirectory, "log.txt");
+    }
+
+    protected void assertPlatformUpdated(String serverId, String version) throws MojoExecutionException {
+        Server.setServersPath(testDirectory.getAbsolutePath());
+        Server server = Server.loadServer(serverId);
+        assertThat(server, hasPlatformVersion(version));
+        assertThat(server.getDistroProperties(), hasWarVersion(version));
+    }
+
+    protected void assertModuleUpdated(String serverId, String artifactId, String version) throws MojoExecutionException {
+        Server.setServersPath(testDirectory.getAbsolutePath());
+        Server server = Server.loadServer(serverId);
+        assertThat(server, hasModuleVersion(artifactId, version));
+        assertThat(server.getDistroProperties(), hasModuleVersionInDisstro(artifactId, version));
     }
 
     /**
