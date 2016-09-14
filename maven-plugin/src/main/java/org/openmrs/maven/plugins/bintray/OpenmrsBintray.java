@@ -17,6 +17,7 @@ public class OpenmrsBintray extends Bintray{
     public static final String OPENMRS_MAVEN_REPO = "maven";
     public static final String OPENMRS_OMOD_REPO = "omod";
     public static final String OPENMRS_OWA_PREFIX = "openmrs-owa-";
+    public static final String OPENMRS_MODULE_PREFIX = "openmrs-module-";
 
     private static final String OWA_PACKAGE_EXTENSION = ".zip";
 
