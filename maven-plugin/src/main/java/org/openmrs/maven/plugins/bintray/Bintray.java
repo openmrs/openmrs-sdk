@@ -41,7 +41,7 @@ public class Bintray {
         GetMethod get = new GetMethod(url);
         try {
             new HttpClient().executeMethod(get);
-            if (get.getStatusCode() != 200) {
+            if (get.getStatusLine() == null || get.getStatusCode() != 200) {
                 throw new IOException(get.getStatusLine().toString());
             }
             ObjectMapper mapper = new ObjectMapper();
@@ -49,9 +49,10 @@ public class Bintray {
             List<BintrayId> owaIds = mapper.readValue(get.getResponseBodyAsStream(), idListType);
             return owaIds;
         } catch (IOException e) {
-            if(get.getStatusCode() == 404){
+            //avoid NPE
+            if(get.getStatusLine() != null && get.getStatusCode() == 404){
                 throw new RuntimeException("Bintray repository not found!", e);
-            }else throw new RuntimeException(e);
+            } else throw new RuntimeException(e);
         }
     }
 
@@ -60,14 +61,14 @@ public class Bintray {
         GetMethod get = new GetMethod(url);
         try {
             new HttpClient().executeMethod(get);
-            if (get.getStatusCode() != 200) {
+            if (get.getStatusLine() == null || get.getStatusCode() != 200) {
                 throw new IOException(get.getStatusLine().toString());
             }
             JsonParser parser =  new JsonFactory().createParser(get.getResponseBodyAsStream());
             parser.setCodec(new ObjectMapper());
             return parser.readValueAs(BintrayPackage.class);
         } catch (IOException e) {
-            if(get.getStatusCode() == 404){
+            if(get.getStatusLine() != null &&  get.getStatusCode() == 404){
                 return null;
             } else throw new RuntimeException(e);
         }
@@ -78,7 +79,7 @@ public class Bintray {
         GetMethod get = new GetMethod(url);
         try {
             new HttpClient().executeMethod(get);
-            if (get.getStatusCode() != 200) {
+            if (get.getStatusLine() == null || get.getStatusCode() != 200) {
                 throw new IOException(get.getStatusLine().toString());
             }
             ObjectMapper mapper = new ObjectMapper();
@@ -86,7 +87,7 @@ public class Bintray {
             List<BintrayFile> bintrayFiles = mapper.readValue(get.getResponseBodyAsStream(), fileListType);
             return bintrayFiles;
         } catch (IOException e) {
-            if(get.getStatusCode() == 404){
+            if(get.getStatusLine() != null &&  get.getStatusCode() == 404){
                 throw new RuntimeException("Bintray package not found!", e);
             } else throw new RuntimeException(e);
         }
@@ -147,7 +148,7 @@ public class Bintray {
         try{
             post.setRequestEntity(new ByteArrayRequestEntity(mapper.writeValueAsBytes(request)));
             new HttpClient().executeMethod(post);
-            if(post.getStatusCode()==401){
+            if(post.getStatusLine() == null || post.getStatusCode()==401){
                 throw new IOException("Unauthorized, this user have no rights to publish packages as "+owner+", or API key is invalid");
             }
             JsonParser parser =  new JsonFactory().createParser(post.getResponseBodyAsStream());
@@ -195,7 +196,9 @@ public class Bintray {
     }
 
     private void validateAuthorizedRequestResult(String authorizedUser, EntityEnclosingMethod method, int expectedStatusCode) throws Exception {
-        if(method.getStatusCode()==401){
+        if(method.getStatusLine() == null){
+            throw new Exception("Failed to send request, status line is not available");
+        } else if(method.getStatusCode()==401){
             throw new IOException("Unauthorized, this user have no rights to publish packages as "+authorizedUser+", or API key is invalid");
         } else if(method.getStatusCode() != expectedStatusCode){
             throw new Exception(method.getStatusCode()+" : "+ method.getStatusText());
