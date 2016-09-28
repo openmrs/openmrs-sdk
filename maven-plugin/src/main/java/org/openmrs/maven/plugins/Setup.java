@@ -2,6 +2,7 @@ package org.openmrs.maven.plugins;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.output.NullOutputStream;
+import org.apache.commons.lang.StringUtils;
 import org.apache.ibatis.jdbc.ScriptRunner;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -34,6 +35,10 @@ public class Setup extends AbstractTask {
     private static final String PLATFORM = "Platform";
     public static final String SETTING_UP_A_NEW_SERVER = "Setting up a new server...";
     public static final String SETUP_SERVERS_PROMPT = "You can setup the following servers";
+    private static final String CLASSPATH_SCRIPT_PREFIX = "classpath://";
+    public static final String ENABLE_DEBUGGING_DEFAULT_MESSAGE = "If you want to enable remote debugging by default when running the server, " +
+            "\nspecify the %s here (e.g. 1044). Leave blank to disable debugging. \n(Do not do this on a production server)";
+
 
     /**
      * Server id (folder name)
@@ -108,6 +113,11 @@ public class Setup extends AbstractTask {
      */
     private String platform;
 
+    /**
+     * @parameter expression="${debug}"
+     */
+    private String debug;
+
     public Setup() {
         super();
     }
@@ -145,6 +155,7 @@ public class Setup extends AbstractTask {
                 distroProperties.saveTo(server.getServerDirectory());
             }
             distroHelper.savePropertiesToServer(distroProperties, server);
+            setDebugPort(server);
 
             if(server.getDbDriver() == null) {
                 boolean h2supported = true;
@@ -199,14 +210,31 @@ public class Setup extends AbstractTask {
     }
 
     private DistroProperties createDistroForPlatform(DistroProperties distroProperties, Server server) throws MojoExecutionException {
-        if(distroProperties == null){
+        if (distroProperties == null) {
             distroProperties = new DistroProperties(server.getServerId(), server.getPlatformVersion());
-            if(server.getDbDriver().equals(SDKConstants.DRIVER_H2)){
+            if (server.getDbDriver().equals(SDKConstants.DRIVER_H2)) {
                 distroProperties.setH2Support(true);
             }
             distroProperties.saveTo(server.getServerDirectory());
         }
         return distroProperties;
+    }
+
+    private void setDebugPort(Server server) {
+        if (StringUtils.isBlank(debug) || wizard.checkYes(debug)) {
+            while (!"no debugging".equals(debug) && !StringUtils.isNumeric(debug)) {
+                debug = wizard.promptForValueIfMissingWithDefault(
+                        ENABLE_DEBUGGING_DEFAULT_MESSAGE,
+                        server.getDebugPort(),
+                        "port number",
+                        "no debugging");
+                if(!StringUtils.isNumeric(debug)){
+                    wizard.showMessage("\nPort number must be numeric.");
+                } else if(!"no debugging".equals(debug)){
+                    server.setDebugPort(debug);
+                }
+            }
+        }
     }
 
     private DistroProperties extractDistroToServer(Server server, boolean isCreatePlatform, File serverPath) throws MojoExecutionException, MojoFailureException {
@@ -360,6 +388,7 @@ public class Setup extends AbstractTask {
                 .setDbPassword(dbPassword)
                 .setInteractiveMode(testMode)
                 .setJavaHome(javaHome)
+                .setDebugPort(debug)
                 .build();
         wizard.promptForNewServerIfMissing(server);
 

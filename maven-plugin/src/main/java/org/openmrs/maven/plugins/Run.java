@@ -138,15 +138,7 @@ public class Run extends AbstractTask {
 			mavenOpts += " -javaagent:" + new File(Server.getServersPath(), "springloaded.jar").getAbsolutePath() + " -noverify";
 		}
 
-		if (debug != null) {
-			String address = "1044";
-			if (StringUtils.isNumeric(debug)) {
-				address = debug;
-			}
-			mavenOpts += " -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=" + address;
-
-			System.out.println("\nConnect remote debugger with port " + address + "\n");
-		}
+		mavenOpts = setDebugPort(mavenOpts, server);
 
 		System.out.println("\nForking a new process... (use -Dfork=false to prevent forking)\n");
 
@@ -186,6 +178,43 @@ public class Run extends AbstractTask {
 		} catch (MavenInvocationException e) {
 			throw new MojoFailureException("Failed to start Tomcat process", e);
 		}
+	}
+
+	private String setDebugPort(String mavenOpts, Server server) {
+		String address = null;
+		if (StringUtils.isNotBlank(debug)) {
+			if (StringUtils.isNumeric(debug)) {
+				address = debug;
+			} else if("true".equals(debug)){
+				if(StringUtils.isNotBlank(server.getDebugPort())){
+					address = server.getDebugPort();
+				} else {
+					debug = wizard.promptForValueIfMissingWithDefault(
+							"Specify %s for debugging",
+							null,
+							"port number",
+							"1044");
+					if (StringUtils.isNumeric(debug)) {
+						address = debug;
+					} else {
+						wizard.showError("Port number must be numeric");
+					}
+				}
+			} else if("false".equals(debug)){
+				address = null;
+			} else {
+				wizard.showError("Port number must be numeric");
+			}
+		} else {
+			if(StringUtils.isNotBlank(server.getDebugPort())){
+				address = server.getDebugPort();
+			}
+		}
+		if (StringUtils.isNotBlank(address)) {
+			mavenOpts += " -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=" + address;
+			System.out.println("\nConnect remote debugger with port " + address + "\n");
+		}
+		return mavenOpts;
 	}
 
 	String adjustXmxToAtLeast(String input, Integer valueInMegabytes) {

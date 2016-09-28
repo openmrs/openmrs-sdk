@@ -96,11 +96,19 @@ public class SdkMatchers {
             }
         };
     }
-    public static Matcher<DistroProperties> hasWarVersion(final String version){
+    public static Matcher<DistroProperties> hasWarVersion(final String version) {
         return new FeatureMatcher<DistroProperties, String>(equalTo(version), "war version", "war version") {
             @Override
             protected String featureValueOf(DistroProperties actual) {
                 return actual.getPlatformVersion();
+            }
+        };
+    }
+    public static Matcher<Server> serverHasDebugPort(final String port) {
+        return new FeatureMatcher<Server, String>(equalTo(port), "debug port", "debug port") {
+            @Override
+            protected String featureValueOf(final Server actual) {
+                return actual.getDebugPort();
             }
         };
     }
