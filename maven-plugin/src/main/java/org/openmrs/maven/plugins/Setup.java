@@ -118,6 +118,11 @@ public class Setup extends AbstractTask {
      */
     private String debug;
 
+    /**
+     * @parameter expression="${run}"
+     */
+    private boolean run;
+
     public Setup() {
         super();
     }
@@ -441,5 +446,9 @@ public class Setup extends AbstractTask {
         // setup non-platform server
         String serverPath = setup(server, createPlatform, true, distroProperties);
         getLog().info("Server configured successfully, path: " + serverPath);
+
+        if(run){
+            new Run(this, server.getServerId()).execute();
+        }
     }
 }
