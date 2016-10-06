@@ -43,6 +43,11 @@ public class Run extends AbstractTask {
         super(other);
     }
 
+    public Run(AbstractTask other, String serverId){
+    	this(other);
+		this.serverId = serverId;
+	}
+
 	/**
 	 * @parameter expression="${serverId}"
 	 */
