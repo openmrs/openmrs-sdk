@@ -171,14 +171,16 @@ public class Setup extends AbstractTask {
                 }
                 if (server.isMySqlDb()){
                     boolean mysqlDbCreated = connectMySqlDatabase(server);
-                    if(mysqlDbCreated && !"null".equals(dbSql)){
+                    if(!mysqlDbCreated){
+                        throw new IllegalStateException("Failed to connect to the specified database " + server.getDbUri());
+                    }
+                    boolean mysqlImportEnabled = !"null".equals(dbSql);
+                    if(mysqlImportEnabled){
                         if(dbSql != null){
                             importMysqlDb(server, dbSql);
                         } else {
                             importMysqlDb(server, Server.CLASSPATH_SCRIPT_PREFIX+ "openmrs-platform.sql");
                         }
-                    } else {
-                        throw new IllegalStateException("Failed to connect to the specified database " + server.getDbUri());
                     }
                 } else {
                     moduleInstaller.installModule(SDKConstants.H2_ARTIFACT, server.getServerDirectory().getPath());
