@@ -38,6 +38,7 @@ public class Setup extends AbstractTask {
     private static final String CLASSPATH_SCRIPT_PREFIX = "classpath://";
     public static final String ENABLE_DEBUGGING_DEFAULT_MESSAGE = "If you want to enable remote debugging by default when running the server, " +
             "\nspecify the %s here (e.g. 1044). Leave blank to disable debugging. \n(Do not do this on a production server)";
+    private static final String NO_DEBUGGING_DEFAULT_ANSWER = "no debugging";
 
 
     /**
@@ -229,15 +230,15 @@ public class Setup extends AbstractTask {
 
     private void setDebugPort(Server server) {
         if (StringUtils.isBlank(debug) || wizard.checkYes(debug)) {
-            while (!"no debugging".equals(debug) && !StringUtils.isNumeric(debug)) {
+            while (!NO_DEBUGGING_DEFAULT_ANSWER.equals(debug) && !StringUtils.isNumeric(debug)) {
                 debug = wizard.promptForValueIfMissingWithDefault(
                         ENABLE_DEBUGGING_DEFAULT_MESSAGE,
                         server.getDebugPort(),
                         "port number",
-                        "no debugging");
-                if(!StringUtils.isNumeric(debug)){
+                        NO_DEBUGGING_DEFAULT_ANSWER);
+                if(!StringUtils.isNumeric(debug) && !NO_DEBUGGING_DEFAULT_ANSWER.equals(debug)){
                     wizard.showMessage("\nPort number must be numeric.");
-                } else if(!"no debugging".equals(debug)){
+                } else if(!NO_DEBUGGING_DEFAULT_ANSWER.equals(debug)){
                     server.setDebugPort(debug);
                 }
             }
