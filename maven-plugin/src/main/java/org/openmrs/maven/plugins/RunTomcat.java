@@ -141,6 +141,7 @@ public class RunTomcat extends AbstractMojo {
 			port = 8080;
 		}
 		tomcat.setPort(port);
+		tomcat.getConnector().setURIEncoding("UTF-8");
 		tomcat.setBaseDir(tempDirectory.getAbsolutePath());
 		tomcat.getHost().setAppBase(tempDirectory.getAbsolutePath());
 		tomcat.getHost().setAutoDeploy(true);
