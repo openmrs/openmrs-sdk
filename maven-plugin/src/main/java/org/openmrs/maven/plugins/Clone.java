@@ -92,7 +92,7 @@ public class Clone extends AbstractTask {
         String result;
         result = repoUrl.substring(repoUrl.indexOf(GITHUB_COM) + GITHUB_COM.length() + 1);
 
-        StringUtils.removeEnd(result,"/");
+        result = StringUtils.removeEnd(result,"/");
 
         if (!repoUrl.endsWith(".git")) {
             return result + ".git";
