@@ -13,6 +13,7 @@ import org.apache.maven.shared.invoker.InvocationResult;
 import org.apache.maven.shared.invoker.Invoker;
 import org.apache.maven.shared.invoker.MavenInvocationException;
 import org.openmrs.maven.plugins.model.Server;
+import org.openmrs.maven.plugins.utility.DistroHelper;
 import org.openmrs.maven.plugins.utility.Project;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 import org.twdata.maven.mojoexecutor.MojoExecutor;
@@ -133,6 +134,7 @@ public class Build extends AbstractTask {
 
         File tempFolder = createTempReactorProject(server);
         try {
+            buildCoreIfWatched(server);
             cleanInstallServerProject(tempFolder);
         } catch (Exception e) {
             throw new IllegalStateException("Failed to build project in "+tempFolder.getAbsolutePath(), e);
@@ -141,10 +143,20 @@ public class Build extends AbstractTask {
         }
 
         try {
-            deployWatchedModules(server);
+            deployWatchedProjects(server);
         } catch (MavenInvocationException e) {
             throw new MojoFailureException("Failed to deploy watched modules", e);
         }
+    }
+
+    private boolean buildCoreIfWatched(Server server) throws MojoFailureException {
+        for (Project project : server.getWatchedProjects()) {
+            if(project.isOpenmrsCore()){
+                cleanInstallServerProject(new File(project.getPath()));
+                return true;
+            }
+        }
+        return false;
     }
 
     private void buildOwaProject() throws MojoExecutionException {
@@ -217,15 +229,19 @@ public class Build extends AbstractTask {
                         "Unwatch this module by running mvn openmrs-sdk:unwatch -DartifactId="+module.getArtifactId()+" -DserverId=" + serverId);
             }
 
-            Path newLink = Paths.get(new File(tempFolder, module.getArtifactId()).getAbsolutePath());
-            Path existingfile = Paths.get(module.getPath());
-            try {
-                Files.createSymbolicLink(newLink, existingfile);
-            } catch (IOException e) {
-                copyModuleToTempServer(module.getPath(), newLink.toString());
-            }  finally {
-                tempModel.addModule(module.getArtifactId());
+            //core is built before, its plugins fail when it is built as submodule
+            if(!module.isOpenmrsCore()){
+                Path newLink = Paths.get(new File(tempFolder, module.getArtifactId()).getAbsolutePath());
+                Path existingfile = Paths.get(module.getPath());
+                try {
+                    Files.createSymbolicLink(newLink, existingfile);
+                } catch (IOException e) {
+                    copyModuleToTempServer(module.getPath(), newLink.toString());
+                }  finally {
+                    tempModel.addModule(module.getArtifactId());
+                }
             }
+
         }
 
         try {
@@ -282,11 +298,15 @@ public class Build extends AbstractTask {
      * @throws MojoExecutionException
      * @throws MavenInvocationException
      */
-    private void deployWatchedModules(Server server) throws MojoFailureException, MojoExecutionException, MavenInvocationException {
+    private void deployWatchedProjects(Server server) throws MojoFailureException, MojoExecutionException, MavenInvocationException {
         Set<Project> watchedProject = server.getWatchedProjects();
         for (Project module: watchedProject) {
             Project project = Project.loadProject(new File(module.getPath()));
-            new Deploy(this).deployModule(project.getGroupId(), project.getArtifactId(), project.getVersion(), server);
+            if(project.isOpenmrsModule()){
+                new Deploy(this).deployModule(project.getGroupId(), project.getArtifactId(), project.getVersion(), server);
+            } else if(project.isOpenmrsCore()){
+                new ServerUpgrader(this).upgradePlatform(server, project.getVersion());
+            }
         }
     }
 
