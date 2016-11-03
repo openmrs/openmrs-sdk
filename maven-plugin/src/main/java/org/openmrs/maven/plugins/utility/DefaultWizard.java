@@ -152,6 +152,10 @@ public class DefaultWizard implements Wizard {
         return promptForValueIfMissingWithDefault(message, value, parameterName, defValue, false);
     }
 
+    public String promptForPasswordIfMissingWithDefault(String message, String value, String parameterName, String defValue) {
+        return promptForValueIfMissingWithDefault(message, value, parameterName, defValue, true);
+    }
+
     public String promptForValueIfMissingWithDefault(String message, String value, String parameterName, String defValue, boolean password) {
         String textToShow;
         if (StringUtils.isEmpty(defValue)){
@@ -239,7 +243,7 @@ public class DefaultWizard implements Wizard {
     }
 
     public String promptForPassword(String textToShow){
-        return new String(System.console().readPassword(textToShow));
+        return new String(System.console().readPassword(textToShow + ": "));
     }
 
     public String promptForPasswordIfMissing(String value, String parameter){
@@ -791,7 +795,7 @@ public class DefaultWizard implements Wizard {
                 server.getDbUser(), "dbUser", defaultUser);
         server.setDbUser(user);
         //set password
-        String dbPassword = promptForValueIfMissingWithDefault(
+        String dbPassword = promptForPasswordIfMissingWithDefault(
                 "Please specify database password (-D%s)",
                 server.getDbPassword(), "dbPassword", " ");
         server.setDbPassword(dbPassword);
