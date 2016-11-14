@@ -177,7 +177,11 @@ public abstract class BaseSdkProperties {
             newProperties.putAll(properties);
             for(Object keyObject: properties.keySet()){
                 String key = keyObject.toString();
-                if(key.startsWith(TYPE_OMOD+"."+artifact.getArtifactId())){
+                if(key.equals(TYPE_OMOD+"."+artifact.getArtifactId())){
+                    newProperties.remove(key);
+                } else if(key.equals(TYPE_OMOD+"."+artifact.getArtifactId()+"."+TYPE)){
+                    newProperties.remove(key);
+                } else if(key.equals(TYPE_OMOD+"."+artifact.getArtifactId()+"."+GROUP_ID)){
                     newProperties.remove(key);
                 }
             }
