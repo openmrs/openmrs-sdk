@@ -30,7 +30,7 @@ import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
  */
 public class Deploy extends AbstractTask {
 
-    private static final String DEFAULT_OK_MESSAGE = "Module '%s' deployed successfully";
+    private static final String DEFAULT_ABORT_MESSAGE = "Deploying module '%s' aborted";
     private static final String DEFAULT_UPDATE_MESSAGE = "Module '%s' was updated to version '%s'";
     private static final String TEMPLATE_UPDATE = "Do you want to update module '%s' in version '%s' to version '%s'?";
     private static final String TEMPLATE_DOWNGRADE = "Please note that downgrades are not recommended";
@@ -296,14 +296,14 @@ public class Deploy extends AbstractTask {
 
         boolean moduleRemoved = deleteModuleFromServer(artifact, modules, server);
 
-        executeMojoPlugin(artifactItems);
-
-        server.setModuleProperties(artifact);
-        server.saveAndSynchronizeDistro();
         if (moduleRemoved) {
+            executeMojoPlugin(artifactItems);
+
+            server.setModuleProperties(artifact);
+            server.saveAndSynchronizeDistro();
             getLog().info(String.format(DEFAULT_UPDATE_MESSAGE, artifact.getArtifactId(), artifact.getVersion()));
         }
-        else getLog().info(String.format(DEFAULT_OK_MESSAGE, artifact.getArtifactId()));
+        else getLog().info(String.format(DEFAULT_ABORT_MESSAGE, artifact.getArtifactId()));
     }
 
     /**
@@ -331,7 +331,7 @@ public class Deploy extends AbstractTask {
      * @param artifact
      * @param serverModules
      * @param server
-     * @return true if module has been removed
+     * @return true if module has been removed or module does not exist
      * @throws MojoExecutionException
      */
     private boolean deleteModuleFromServer(Artifact artifact, File serverModules, Server server) throws MojoExecutionException {
@@ -360,7 +360,7 @@ public class Deploy extends AbstractTask {
                 return itemModule.delete();
             }
         }
-        return false;
+        return true;
     }
 
     /**
