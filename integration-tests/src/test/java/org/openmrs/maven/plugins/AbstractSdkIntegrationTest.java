@@ -31,8 +31,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
+import java.util.zip.ZipFile;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertNotNull;
 import static org.openmrs.maven.plugins.SdkMatchers.hasModuleVersion;
 import static org.openmrs.maven.plugins.SdkMatchers.hasModuleVersionInDisstro;
 import static org.openmrs.maven.plugins.SdkMatchers.hasPlatformVersion;
@@ -194,6 +196,12 @@ public abstract class AbstractSdkIntegrationTest {
      */
     public void assertFileNotPresent(String path){
         verifier.assertFileNotPresent(testDirectory.getAbsolutePath() + File.separator + path);
+    }
+
+    public void assertZipEntryPresent(String path, String zipEntryName) throws Exception {
+        File file = new File(testDirectory.getAbsolutePath(), path);
+        ZipFile zipFile = new ZipFile(file);
+        assertNotNull(zipFile.getEntry(zipEntryName));
     }
 
     /**
