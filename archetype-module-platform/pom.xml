@@ -5,12 +5,12 @@
   <parent>
     <groupId>org.openmrs.maven</groupId>
     <artifactId>openmrs-sdk</artifactId>
-    <version>3.4.6-SNAPSHOT</version>
+    <version>3.4.6</version>
   </parent>
   
   <groupId>org.openmrs.maven.archetypes</groupId>
   <artifactId>openmrs-sdk-archetype-module-platform</artifactId>
-  <version>3.4.6-SNAPSHOT</version>
+  <version>3.4.6</version>
   <packaging>maven-archetype</packaging>
 
   <name>OpenMRS Platform Module Maven Archetype</name>
