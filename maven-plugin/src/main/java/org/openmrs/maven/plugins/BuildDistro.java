@@ -41,6 +41,8 @@ public class BuildDistro extends AbstractTask {
 
     public static final String DB_DUMP_PATH = "dbdump" + File.separator + "dump.sql";
 
+    public static final String WAR_FILE_MODULES_DIRECTORY_NAME = "bundledModules";
+
     /**
      * @parameter expression="${distro}"
      */
@@ -55,6 +57,11 @@ public class BuildDistro extends AbstractTask {
      * @parameter expression="${dbSql}"
      */
     private String dbSql;
+
+    /**
+     * @parameter expression="${bundled}" default-value="false"
+     */
+    private boolean bundled;
 
     @Override
     public void executeTask() throws MojoExecutionException, MojoFailureException {
@@ -158,7 +165,27 @@ public class BuildDistro extends AbstractTask {
         moduleInstaller.installModules(distroProperties.getWarArtifacts(), targetDirectory.getAbsolutePath());
         renameWebApp(targetDirectory);
 
-        moduleInstaller.installModules(distroProperties.getModuleArtifacts(), targetDirectory.getAbsolutePath()+File.separator+"modules");
+        if (bundled) {
+            try {
+                ZipFile warfile = new ZipFile(new File(targetDirectory, OPENMRS_WAR));
+                File tempDir = new File(targetDirectory, "WEB-INF");
+                moduleInstaller.installModules(distroProperties.getModuleArtifacts(),
+                        new File(tempDir, WAR_FILE_MODULES_DIRECTORY_NAME).getAbsolutePath());
+                ZipParameters parameters = new ZipParameters();
+                warfile.addFolder(tempDir, parameters);
+                try {
+                    FileUtils.deleteDirectory(tempDir);
+                } catch (IOException e) {
+                    throw new RuntimeException("Failed to remove " + tempDir.getName() + " file", e);
+                }
+            } catch (ZipException e) {
+                throw new RuntimeException("Failed to bundle modules into *.war file", e);
+            }
+        }
+        else {
+            moduleInstaller.installModules(distroProperties.getModuleArtifacts(),
+                    new File(targetDirectory, "modules").getAbsolutePath());
+        }
 
         wizard.showMessage("Creating Docker Compose configuration...\n");
         String distroName = adjustImageName(distroProperties.getName());
