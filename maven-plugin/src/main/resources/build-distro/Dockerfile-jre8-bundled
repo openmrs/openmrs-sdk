@@ -1,0 +1,14 @@
+FROM tomcat:7-jre8
+
+COPY openmrs.war  /usr/local/tomcat/webapps/openmrs.war
+
+COPY openmrs-server.properties /usr/local/tomcat/openmrs-server.properties
+COPY setenv.sh /usr/local/tomcat/bin/setenv.sh
+
+COPY wait-for-it.sh /usr/local/tomcat/wait-for-it.sh
+COPY startup.sh /usr/local/tomcat/startup.sh
+
+RUN sed -i '/Connector port="8080"/a URIEncoding="UTF-8"' /usr/local/tomcat/conf/server.xml
+
+RUN chmod +x /usr/local/tomcat/wait-for-it.sh
+RUN chmod +x /usr/local/tomcat/startup.sh

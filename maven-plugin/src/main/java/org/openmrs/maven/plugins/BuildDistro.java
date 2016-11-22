@@ -222,9 +222,19 @@ public class BuildDistro extends AbstractTask {
     private void copyDockerfile(File targetDirectory, DistroProperties distroProperties) {
         int majorVersion = new Version(distroProperties.getPlatformVersion()).getMajorVersion();
         if(majorVersion == 1){
-            copyBuildDistroResource("Dockerfile-jre7", new File(targetDirectory, "Dockerfile"));
+            if (bundled) {
+                copyBuildDistroResource("Dockerfile-jre7-bundled", new File(targetDirectory, "Dockerfile"));
+            }
+            else {
+                copyBuildDistroResource("Dockerfile-jre7", new File(targetDirectory, "Dockerfile"));
+            }
         } else {
-            copyBuildDistroResource("Dockerfile-jre8", new File(targetDirectory, "Dockerfile"));
+            if (bundled) {
+                copyBuildDistroResource("Dockerfile-jre8-bundled", new File(targetDirectory, "Dockerfile"));
+            }
+            else {
+                copyBuildDistroResource("Dockerfile-jre8", new File(targetDirectory, "Dockerfile"));
+            }
         }
     }
 
