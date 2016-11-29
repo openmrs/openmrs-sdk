@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module>
+    <aware_of_modules>
+        <aware_of_module sdk-copy = "true">org.openmrs.module.owa</aware_of_module>
+    </aware_of_modules>
+</module>

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project>
+    <dependencies>
+        <dependency sdk-copy = "true">
+            <groupId>${project.parent.groupId}</groupId>
+            <artifactId>${project.parent.artifactId}-owa</artifactId>
+            <version>${project.parent.version}</version>
+            <type>zip</type>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin sdk-copy = "true">
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>include-owa</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>copy</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>${project.parent.groupId}</groupId>
+                                    <artifactId>${project.parent.artifactId}-owa</artifactId>
+                                    <version>${project.parent.version}</version>
+                                    <type>zip</type>
+                                    <destFileName>${project.parent.artifactId}.owa</destFileName>
+                                </artifactItem>
+                            </artifactItems>
+                            <outputDirectory>${project.build.directory}/classes/web/module/owas</outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>

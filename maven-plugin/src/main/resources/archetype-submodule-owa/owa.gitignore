@@ -1,0 +1,8 @@
+### npm owa ###
+owa/node_modules
+owa/dist
+owa/config.json
+owa/node
+owa/*.zip
+owa/etc
+###########
