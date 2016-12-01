@@ -173,7 +173,7 @@
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
         </dependency>
-        
+
         <!--zip-->
         <dependency>
             <groupId>net.lingala.zip4j</groupId>
@@ -190,12 +190,6 @@
         <dependency>
             <groupId>com.atlassian.jira</groupId>
             <artifactId>jira-rest-java-client</artifactId>
-        </dependency>
-
-        <!-- github client -->
-        <dependency>
-            <groupId>org.eclipse.mylyn.github</groupId>
-            <artifactId>org.eclipse.egit.github.core</artifactId>
         </dependency>
         <!-- Maven frontend builder -->
         <dependency>
@@ -245,5 +239,5 @@
             </plugin>
         </plugins>
     </build>
-    
+
 </project>

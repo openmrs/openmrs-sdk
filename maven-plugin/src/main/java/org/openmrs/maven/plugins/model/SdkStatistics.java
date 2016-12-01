@@ -309,6 +309,7 @@ public class SdkStatistics {
      * @throws MojoExecutionException
      */
     public void save() throws MojoExecutionException {
+        new File(Server.getServersPath()).mkdirs();
         saveTo(new File(Server.getServersPath(), SDK_STATS_FILE_NAME));
     }
 
