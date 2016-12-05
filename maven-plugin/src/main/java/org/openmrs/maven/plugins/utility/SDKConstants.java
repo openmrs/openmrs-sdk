@@ -73,6 +73,7 @@ public class SDKConstants {
     public static final String TMP = "tmp";
     // non-platform web app versions
     public static final String WEBAPP_ARTIFACT_ID = "openmrs-webapp";
+    public static final String PLATFORM_ARTIFACT_ID = "platform";
     public static final Map<String,String> WEBAPP_VERSIONS = new HashMap<String, String>() {{
         put("2.0", "1.9.7");
         put("2.1", "1.10.0");
