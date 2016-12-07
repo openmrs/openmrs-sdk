@@ -2,6 +2,7 @@ package org.openmrs.maven.plugins.utility;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -239,7 +240,11 @@ public class DistroHelper {
 
     public DistroProperties downloadDistroProperties(File serverPath, Server server) throws MojoExecutionException {
         Artifact artifact = new Artifact(server.getDistroArtifactId(), server.getVersion(), server.getDistroGroupId(), "jar");
-        return downloadDistroProperties(serverPath, artifact);
+        if (StringUtils.isNotBlank(artifact.getArtifactId())) {
+            return downloadDistroProperties(serverPath, artifact);
+        } else {
+            return null;
+        }
     }
 
     /**

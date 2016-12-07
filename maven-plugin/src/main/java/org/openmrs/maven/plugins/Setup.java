@@ -148,9 +148,17 @@ public class Setup extends AbstractTask {
         try {
             if (distroProperties == null) {
                 if(isCreatePlatform){
-                    Artifact webapp = new Artifact(SDKConstants.WEBAPP_ARTIFACT_ID, SDKConstants.SETUP_DEFAULT_PLATFORM_VERSION, Artifact.GROUP_WEB);
-                    wizard.promptForPlatformVersionIfMissing(server, versionsHelper.getVersionAdvice(webapp, 6));
-                    moduleInstaller.installCoreModules(server, isCreatePlatform, distroProperties);
+                    Artifact platform = new Artifact(SDKConstants.PLATFORM_ARTIFACT_ID, SDKConstants.SETUP_DEFAULT_PLATFORM_VERSION, Artifact.GROUP_DISTRO);
+                    wizard.promptForPlatformVersionIfMissing(server, versionsHelper.getVersionAdvice(platform, 6));
+                    platform.setVersion(server.getPlatformVersion());
+                    try {
+                        distroProperties = distroHelper.downloadDistroProperties(serverPath, platform);
+                        distroProperties.saveTo(server.getServerDirectory());
+                        moduleInstaller.installCoreModules(server, isCreatePlatform, distroProperties);
+                    } catch (MojoExecutionException e) {
+                        getLog().info("Fetching openmrs war file in version " + server.getPlatformVersion());
+                        moduleInstaller.installCoreModules(server, isCreatePlatform, distroProperties);
+                    }
                 } else {
                     wizard.promptForRefAppVersionIfMissing(server, versionsHelper);
                     distroProperties = extractDistroToServer(server, isCreatePlatform, serverPath);

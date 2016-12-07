@@ -44,7 +44,7 @@ public class ModuleInstaller {
     public void installCoreModules(Server server, boolean isCreatePlatform, DistroProperties properties) throws MojoExecutionException, MojoFailureException {
         List<Artifact> coreModules;
         // install other modules
-        if (!isCreatePlatform && properties != null) {
+        if (properties != null) {
             coreModules = properties.getWarArtifacts();
             if (coreModules == null) {
                 throw new MojoExecutionException(String.format("Invalid version: '%s'", server.getVersion()));
