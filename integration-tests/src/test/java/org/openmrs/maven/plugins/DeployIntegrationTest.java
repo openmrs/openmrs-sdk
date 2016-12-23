@@ -43,6 +43,21 @@ public class DeployIntegrationTest extends AbstractSdkIntegrationTest {
         assertSuccess();
         assertFilePresent(testServerId + File.separator + "openmrs-1.11.5.war");
         assertPlatformUpdated(testServerId, "1.11.5");
+        assertFileNotPresent(testServerId + File.separator + "modules" + File.separator + "webservices.rest-2.14.omod");
+    }
+
+    @Test
+    public void deploy_shouldReplaceDistroPlatform() throws Exception{
+        addTaskParam("platform", "2.0.2");
+
+        addAnswer(testServerId);
+        addAnswer("y");
+
+        executeTask("deploy");
+
+        assertSuccess();
+        assertFilePresent(testServerId + File.separator + "openmrs-2.0.2.war");
+        assertModulesInstalled(testServerId, "webservices.rest-2.16.omod");
     }
 
     @Test
