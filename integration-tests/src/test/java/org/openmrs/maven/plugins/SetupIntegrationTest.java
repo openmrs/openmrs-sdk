@@ -13,6 +13,7 @@ import java.util.UUID;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
+import static org.openmrs.maven.plugins.SdkMatchers.hasModuleVersion;
 import static org.openmrs.maven.plugins.SdkMatchers.hasPropertyEqualTo;
 import static org.openmrs.maven.plugins.SdkMatchers.serverHasName;
 import static org.openmrs.maven.plugins.SdkMatchers.serverHasDebugPort;
@@ -72,6 +73,32 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
         assertFilePresent(serverId + File.separator + "openmrs-distro.properties");
         assertThat(server, serverHasName(serverId));
         assertThat(server, serverHasDebugPort("1044"));
+    }
+
+    @Test
+    public void setup_shouldInstallDistroPlatform2_0_2() throws Exception{
+        String serverId = UUID.randomUUID().toString();
+
+        addTaskParam("platform", "2.0.2");
+        addMockDbSettings();
+
+        addAnswer(serverId);
+        addAnswer("1044");
+        addAnswer(System.getProperty("java.home"));
+
+        executeTask("setup");
+
+        assertSuccess();
+        assertServerInstalled(serverId);
+        assertFilePresent(serverId + File.separator + "openmrs-2.0.2.war");
+        assertFilePresent(serverId + File.separator + "modules");
+
+        Server.setServersPath(testDirectory.getAbsolutePath());
+        Server server = Server.loadServer(serverId);
+        assertThat(server, serverHasVersion("2.0.2"));
+        assertFilePresent(serverId + File.separator + "openmrs-distro.properties");
+        assertThat(server, serverHasDebugPort("1044"));
+        assertThat(server, hasModuleVersion("webservices.rest", "2.16"));
     }
 
     @Test

@@ -107,7 +107,7 @@ public class Deploy extends AbstractTask {
             Artifact artifact = checkCurrentDirectoryForOpenmrsWebappUpdate(server);
             DistroProperties distroProperties = checkCurrentDirectoryForDistroProperties(server);
             if(artifact != null){
-                deployOpenmrsWar(server, artifact);
+                deployOpenmrsFromDir(server, artifact);
             } else if(distroProperties!=null){
                 serverUpgrader.upgradeToDistro(server, distroProperties);
             } else if(checkCurrentDirForModuleProject()) {
@@ -119,7 +119,7 @@ public class Deploy extends AbstractTask {
             DistroProperties distroProperties = distroHelper.retrieveDistroProperties(distro);
             serverUpgrader.upgradeToDistro(server, distroProperties);
         } else if(platform != null) {
-            serverUpgrader.upgradePlatform(server, platform);
+            deployOpenmrs(server, platform);
         } else if(owa != null){
             BintrayId id = OpenmrsBintray.parseOwa(owa);
             deployOwa(server, id.getName(), id.getVersion());
@@ -159,9 +159,9 @@ public class Deploy extends AbstractTask {
                         TEMPLATE_CURRENT_VERSION,
                         "platform",
                         server.getPlatformVersion()));
-                Artifact webapp = new Artifact(SDKConstants.WEBAPP_ARTIFACT_ID, SDKConstants.SETUP_DEFAULT_PLATFORM_VERSION, Artifact.GROUP_WEB);
+                Artifact webapp = new Artifact(SDKConstants.PLATFORM_ARTIFACT_ID, SDKConstants.SETUP_DEFAULT_PLATFORM_VERSION, Artifact.GROUP_DISTRO);
                 platform = wizard.promptForPlatformVersion(versionsHelper.getVersionAdvice(webapp, 3));
-                upgrader.upgradePlatform(server, platform);
+                deployOpenmrs(server, platform);
                 break;
             }
             case(DEPLOY_OWA_OPTION):{
@@ -254,6 +254,35 @@ public class Deploy extends AbstractTask {
         groupId = wizard.promptForValueIfMissingWithDefault(null, groupId, "groupId", Artifact.GROUP_MODULE);
         artifactId = wizard.promptForValueIfMissing(artifactId, "artifactId");
         deployModule(groupId, artifactId, version, server);
+    }
+
+    public void deployOpenmrs(Server server, String version) throws MojoFailureException, MojoExecutionException {
+        Artifact artifact = new Artifact(SDKConstants.PLATFORM_ARTIFACT_ID, version, Artifact.GROUP_DISTRO);
+        try {
+            deployOpenmrsPlatform(server, artifact);
+        } catch (MojoExecutionException e) {
+            ServerUpgrader serverUpgrader = new ServerUpgrader(this);
+            serverUpgrader.upgradePlatform(server, platform);
+        }
+    }
+    
+    public void deployOpenmrsFromDir(Server server, Artifact artifact) throws MojoExecutionException, MojoFailureException {
+        String artifactId = artifact.getArtifactId();
+        if(artifactId.equals("openmrs-webapp")){
+            deployOpenmrsWar(server, artifact);
+        } else if(artifactId.equals("openmrs-distro-platform")){
+            artifact.setArtifactId("platform");
+            deployOpenmrsPlatform(server, artifact);
+        }
+    }
+
+    private void deployOpenmrsPlatform(Server server, Artifact artifact) throws MojoExecutionException, MojoFailureException {
+        DistroProperties platformDistroProperties = distroHelper.downloadDistroProperties(server.getServerDirectory(), artifact);
+        DistroProperties serverDistroProperties = server.getDistroProperties();
+        serverDistroProperties.setArtifacts(platformDistroProperties);
+        serverDistroProperties.saveTo(server.getServerDirectory());
+        ServerUpgrader serverUpgrader = new ServerUpgrader(this);
+        serverUpgrader.upgradeToDistro(server, serverDistroProperties);
     }
 
     /**
@@ -378,6 +407,14 @@ public class Deploy extends AbstractTask {
                 boolean agree = wizard.promptYesNo(message);
                 if(agree){
                     return new Artifact("openmrs-webapp", mavenProject.getVersion(), Artifact.GROUP_WEB, Artifact.TYPE_WAR);
+                }
+            }
+        } else if("platform".equals(moduleName)){
+            if(!new Version(mavenProject.getVersion()).equals(new Version(server.getPlatformVersion())) || new Version(mavenProject.getVersion()).isSnapshot()){
+                String message = String.format("The server currently has openmrs platform in version %s. Would you like to update it to %s from the current directory?", server.getPlatformVersion(), mavenProject.getVersion());
+                boolean agree = wizard.promptYesNo(message);
+                if(agree){
+                    return new Artifact("openmrs-distro-platform", mavenProject.getVersion(), Artifact.GROUP_DISTRO);
                 }
             }
         }

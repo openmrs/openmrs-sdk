@@ -230,4 +230,15 @@ public abstract class BaseSdkProperties {
     }
 
 
+    public void setArtifacts(BaseSdkProperties baseSdkProperties){
+        List<Artifact> moduleArtifacts = baseSdkProperties.getModuleArtifacts();
+        for (Artifact moduleArtifact : moduleArtifacts) {
+            this.setModuleProperties(moduleArtifact);
+        }
+        List<Artifact> warArtifacts = baseSdkProperties.getWarArtifacts();
+        for (Artifact warArtifact : warArtifacts) {
+            this.setPlatformVersion(warArtifact.getVersion());
+        }
+    }
+
 }
