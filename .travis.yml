@@ -1,4 +1,5 @@
 language: java
+jdk: oraclejdk7
 install :
   - mvn org.openmrs.maven.plugins:openmrs-sdk-maven-plugin:setup-sdk -DbatchAnswers=n
 script:
