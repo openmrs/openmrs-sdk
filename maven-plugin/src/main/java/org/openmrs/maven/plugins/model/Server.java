@@ -771,6 +771,18 @@ public class Server extends BaseSdkProperties {
         return customProperties;
     }
 
+    public HashMap<String, String> getServerProperty(String propertyName){
+        HashMap<String, String> customProperties = new LinkedHashMap<>();
+        for(Object key: properties.keySet()){
+            if(key.toString().equals(propertyName)){
+                String newKey = removePropertyStringFromKey(key.toString());
+                customProperties.put(newKey, properties.getProperty(key.toString()));
+                return customProperties;
+            }
+        }
+        return null;
+    }
+
     private String removePropertyStringFromKey(String key) {
         return key.substring(key.indexOf(".")+1);
     }

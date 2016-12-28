@@ -117,6 +117,21 @@ public class VersionsHelper {
     public String getLatestReleasedVersion(Artifact artifact){
         return getLatestReleasedVersion(getVersions(artifact));
     }
+
+    public String getLatestSnapshotVersion(Artifact artifact) {
+        return getLatestSnapshotVersion(getVersions(artifact));
+    }
+
+    public String getLatestSnapshotVersion(List<ArtifactVersion> versions) {
+        sortDescending(versions);
+        for(ArtifactVersion version : versions){
+                if (version.toString().contains("SNAPSHOT")) {
+                    return version.toString();
+                }
+        }
+        return NONE_VERSION_AVAILABLE_MSG;
+    }
+
     public String getLatestReleasedVersion(List<ArtifactVersion> versions){
         sortDescending(versions);
         ArtifactVersion lastSnapshot = null;

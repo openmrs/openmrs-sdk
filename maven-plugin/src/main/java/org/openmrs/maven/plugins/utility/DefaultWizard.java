@@ -583,7 +583,7 @@ public class DefaultWizard implements Wizard {
     public void promptForRefAppVersionIfMissing(Server server, VersionsHelper versionsHelper, String customMessage) throws MojoExecutionException {
         if(server.getVersion()==null){
             String choice = promptForRefAppVersion(versionsHelper);
-            Artifact distro = DistroHelper.parseDistroArtifact(choice);
+            Artifact distro = DistroHelper.parseDistroArtifact(choice, versionsHelper);
             if(distro != null){
                 server.setVersion(distro.getVersion());
                 server.setDistroArtifactId(distro.getArtifactId());

@@ -56,6 +56,12 @@ public class VersionsHelperTest {
         assertThat(res, is(equalTo("1.8.8")));
     }
     @Test
+    public void getLatestSnapshotVersion_shouldReturnLatestSnapshot(){
+        String res = helper.getLatestSnapshotVersion(
+                createTestVersions("1.8.8", "1.8.3", "1.8.10-SNAPSHOT", "1.8.9-alpha"));
+        assertThat(res, is(equalTo("1.8.10-SNAPSHOT")));
+    }
+    @Test
     public void getVersionAdvice_containSnapshots(){
         List<String> res = helper.getVersionAdvice(
                 createTestVersions("1.8.8", "1.8.3", "1.8.10-SNAPSHOT", "1.8.9-alpha"), 3);
