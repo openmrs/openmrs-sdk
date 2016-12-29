@@ -39,7 +39,7 @@ public class ServerUpgrader {
     }
 
 	public void upgradeToDistro(Server server, DistroProperties distroProperties) throws MojoExecutionException, MojoFailureException {
-        UpgradeDifferential upgradeDifferential = DistroHelper.calculateUpdateDifferential(server, distroProperties);
+        UpgradeDifferential upgradeDifferential = DistroHelper.calculateUpdateDifferential(parentTask.distroHelper, server, distroProperties);
         boolean confirmed = parentTask.wizard.promptForConfirmDistroUpgrade(upgradeDifferential, server, distroProperties);
 		if(confirmed){
 			server.saveBackupProperties();
@@ -194,7 +194,11 @@ public class ServerUpgrader {
 				distroProperties.saveTo(serverPath.getAbsoluteFile());
 			}
 			if(StringUtils.isNotBlank(server.getParam(Server.PROPERTY_PLATFORM))){
-				server.setValuesFromDistroProperties(server.getDistroProperties());
+				server.setValuesFromDistroPropertiesModules(
+						server.getDistroProperties().getWarArtifacts(parentTask.distroHelper, server.getServerDirectory()),
+						server.getDistroProperties().getModuleArtifacts(parentTask.distroHelper, server.getServerDirectory()),
+						server.getDistroProperties()
+				);
 				updateModulesPropertiesWithUserModules(server);
 				server.removePlatformVersionProperty();
 				server.removeUserModulesProperty();

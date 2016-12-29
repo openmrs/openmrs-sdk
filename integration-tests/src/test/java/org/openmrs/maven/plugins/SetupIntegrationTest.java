@@ -330,6 +330,26 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
         assertThat(server, serverHasDebugPort("1044"));
     }
 
+    @Test
+    public void setup_shouldInstallWithParentDistroSpecifiedInDistroProperties() throws Exception{
+        final String distroPropertiesDirectoryName = "distro-properties";
+        final String distroPropertiesFileName = "openmrs-distro.properties";
+        final String distroDirectoryParam = "distro";
+
+        addTaskParam(distroDirectoryParam, testDirectory.toString() + File.separator + distroPropertiesDirectoryName + File.separator + distroPropertiesFileName);
+        addMockDbSettings();
+
+        String serverId = UUID.randomUUID().toString();
+        addAnswer(serverId);
+        addAnswer("1044");
+
+        executeTask("setup");
+
+        assertFilePresent( serverId + File.separator + "openmrs-2.0.1.war");
+        assertModulesInstalled(serverId, "htmlformentry-3.3.1.omod");
+        assertFileNotPresent(serverId + File.separator + "modules" + File.separator + "htmlformentry-3.3.0.omod");
+    }
+
     private String readValueFromPropertyKey(File propertiesFile, String key) throws Exception {
 
         InputStream in = new FileInputStream(propertiesFile);

@@ -7,11 +7,7 @@ import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
-import org.openmrs.maven.plugins.model.Artifact;
-import org.openmrs.maven.plugins.model.DistroProperties;
-import org.openmrs.maven.plugins.model.Server;
-import org.openmrs.maven.plugins.model.UpgradeDifferential;
-import org.openmrs.maven.plugins.model.Version;
+import org.openmrs.maven.plugins.model.*;
 import org.twdata.maven.mojoexecutor.MojoExecutor;
 
 import java.io.File;
@@ -314,9 +310,9 @@ public class DistroHelper {
      * - updateMap include modules which are already on server with newer/equal SNAPSHOT version
      * - add modules which are not installed on server yet
      */
-    public static UpgradeDifferential calculateUpdateDifferential(Server server, DistroProperties distroProperties) throws MojoExecutionException {
-        List<Artifact> newList = new ArrayList<>(distroProperties.getWarArtifacts());
-        newList.addAll(distroProperties.getModuleArtifacts());
+    public static UpgradeDifferential calculateUpdateDifferential(DistroHelper distroHelper, Server server, DistroProperties distroProperties) throws MojoExecutionException {
+        List<Artifact> newList = new ArrayList<>(distroProperties.getWarArtifacts(distroHelper, server.getServerDirectory()));
+        newList.addAll(distroProperties.getModuleArtifacts(distroHelper, server.getServerDirectory()));
         return calculateUpdateDifferential(server.getServerModules(), newList);
     }
 
