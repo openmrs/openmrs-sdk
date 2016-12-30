@@ -35,6 +35,8 @@ public class BuildDistro extends AbstractTask {
 
     public static final String DOCKER_COMPOSE_PATH = "build-distro/docker-compose.yml";
 
+    public static final String README_PATH = "build-distro/README.md";
+
     public static final String DISTRIBUTION_VERSION_PROMPT = "You can build the following versions of distribution";
 
     public static final String DUMP_PREFIX = "CREATE DATABASE IF NOT EXISTS `openmrs`;\n\n USE `openmrs`;\n\n";
@@ -67,10 +69,6 @@ public class BuildDistro extends AbstractTask {
     public void executeTask() throws MojoExecutionException, MojoFailureException {
         File buildDirectory = getBuildDirectory();
 
-        Server server = getDefaultServer();
-        server.setServerDirectory(buildDirectory);
-        server.save();
-
         File userDir = new File(System.getProperty("user.dir"));
 
         Artifact distroArtifact = null;
@@ -100,6 +98,8 @@ public class BuildDistro extends AbstractTask {
         }
 
         if (distroProperties == null){
+            Server server = new Server.ServerBuilder().build();
+
             wizard.promptForRefAppVersionIfMissing(server, versionsHelper, DISTRIBUTION_VERSION_PROMPT);
             if(DistroHelper.isRefapp2_3_1orLower(server.getDistroArtifactId(), server.getVersion())){
                 distroProperties = new DistroProperties(server.getVersion());
@@ -162,13 +162,16 @@ public class BuildDistro extends AbstractTask {
         InputStream dbDumpStream;
         wizard.showMessage("Downloading modules...\n");
 
-        moduleInstaller.installModules(distroProperties.getWarArtifacts(), targetDirectory.getAbsolutePath());
-        renameWebApp(targetDirectory);
+        String distroName = adjustImageName(distroProperties.getName());
+        File dockerImageDir = new File(targetDirectory, distroName + "-docker-image");
+
+        moduleInstaller.installModules(distroProperties.getWarArtifacts(), dockerImageDir.getAbsolutePath());
+        renameWebApp(dockerImageDir);
 
         if (bundled) {
             try {
-                ZipFile warfile = new ZipFile(new File(targetDirectory, OPENMRS_WAR));
-                File tempDir = new File(targetDirectory, "WEB-INF");
+                ZipFile warfile = new ZipFile(new File(dockerImageDir, OPENMRS_WAR));
+                File tempDir = new File(dockerImageDir, "WEB-INF");
                 moduleInstaller.installModules(distroProperties.getModuleArtifacts(),
                         new File(tempDir, WAR_FILE_MODULES_DIRECTORY_NAME).getAbsolutePath());
                 ZipParameters parameters = new ZipParameters();
@@ -184,17 +187,18 @@ public class BuildDistro extends AbstractTask {
         }
         else {
             moduleInstaller.installModules(distroProperties.getModuleArtifacts(),
-                    new File(targetDirectory, "modules").getAbsolutePath());
+                    new File(dockerImageDir, "modules").getAbsolutePath());
         }
 
         wizard.showMessage("Creating Docker Compose configuration...\n");
-        String distroName = adjustImageName(distroProperties.getName());
         String distroVersion = adjustImageName(distroProperties.getVersion());
         writeDockerCompose(targetDirectory, distroName, distroVersion);
-        copyBuildDistroResource("setenv.sh", new File(targetDirectory, "setenv.sh"));
-        copyBuildDistroResource("startup.sh", new File(targetDirectory, "startup.sh"));
-        copyBuildDistroResource("wait-for-it.sh", new File(targetDirectory, "wait-for-it.sh"));
-        copyDockerfile(targetDirectory, distroProperties);
+        writeReadme(targetDirectory, distroName, distroVersion);
+        copyBuildDistroResource("setenv.sh", new File(dockerImageDir, "setenv.sh"));
+        copyBuildDistroResource("startup.sh", new File(dockerImageDir, "startup.sh"));
+        copyBuildDistroResource("wait-for-it.sh", new File(dockerImageDir, "wait-for-it.sh"));
+        copyDockerfile(dockerImageDir, distroProperties);
+        distroProperties.saveTo(dockerImageDir);
 
         dbDumpStream = getSqlDumpStream(StringUtils.isNotBlank(dbSql) ? dbSql : distroProperties.getSqlScriptPath(), targetDirectory, distroArtifact);
         if(dbDumpStream != null) {
@@ -254,17 +258,26 @@ public class BuildDistro extends AbstractTask {
     }
 
     private void writeDockerCompose(File targetDirectory, String distro, String version) {
-        URL composeUrl = getClass().getClassLoader().getResource(DOCKER_COMPOSE_PATH);
+        writeTemplatedFile(targetDirectory, distro, version, DOCKER_COMPOSE_PATH, "docker-compose.yml");
+    }
+
+    private void writeReadme(File targetDirectory, String distro, String version) {
+        writeTemplatedFile(targetDirectory, distro, version, README_PATH, "README.md");
+    }
+
+    private void writeTemplatedFile(File targetDirectory, String distro, String version,
+    String path, String filename) {
+        URL composeUrl = getClass().getClassLoader().getResource(path);
         if(composeUrl == null){
-            throw new RuntimeException("Failed to find file '"+DOCKER_COMPOSE_PATH+"' in classpath");
+            throw new RuntimeException("Failed to find file '"+ path + "' in classpath");
         }
-        File compose = new File(targetDirectory, "docker-compose.yml");
+        File compose = new File(targetDirectory, filename);
         try(InputStream inputStream = composeUrl.openStream();FileWriter composeWriter = new FileWriter(compose)){
             String content = IOUtils.toString(inputStream);
             content = content.replaceAll("<distro>", distro);
             composeWriter.write(content);
         } catch (IOException|NullPointerException e/*don't check if url is not null, because same error handling*/) {
-            throw new RuntimeException("Failed to write docker-compose.yml file", e);
+            throw new RuntimeException("Failed to write " + filename + " file", e);
         }
     }
 
@@ -331,7 +344,7 @@ public class BuildDistro extends AbstractTask {
     }
 
     private void copyBuildDistroResource(String resource, File target) {
-        URL resourceUrl = getClass().getClassLoader().getResource("build-distro/" + resource);
+        URL resourceUrl = getClass().getClassLoader().getResource("build-distro/docker-image/" + resource);
         try {
             FileUtils.copyURLToFile(resourceUrl, target);
         } catch (IOException e) {
@@ -359,23 +372,5 @@ public class BuildDistro extends AbstractTask {
         } else {
             throw new RuntimeException("Distro should contain single war file");
         }
-    }
-
-    private Server getDefaultServer(){
-        Server server = new Server.ServerBuilder().build();
-        server.setDbDriver("com.mysql.jdbc.Driver");
-        server.setDbName("openmrs");
-        server.setDbPassword("Admin123");
-        server.setDbUser("root");
-        server.setDbUri("jdbc:mysql://mysql:3306/openmrs?autoReconnect=true&sessionVariables=storage_engine=InnoDB&useUnicode=true&characterEncoding=UTF-8");
-        server.setIncludeDemoData(false);
-        server.setParam("install_method", "auto");
-        server.setParam("create_tables", "false");
-        server.setParam("create_database_user", "false");
-        server.setParam("has_current_openmrs-database", "true");
-        server.setParam("auto_update_database", "false");
-        server.setParam("module_web_admin", "true");
-        server.setParam("admin_user_password", "Admin123");
-        return server;
     }
 }

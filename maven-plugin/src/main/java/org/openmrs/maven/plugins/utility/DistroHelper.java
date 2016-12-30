@@ -183,9 +183,11 @@ public class DistroHelper {
 
     public File extractFileFromDistro(File path, Artifact artifact, String filename) throws MojoExecutionException {
         File distroFile = downloadDistro(path, artifact);
-        File resultFile = new File(path, filename);
+        File resultFile = null;
+
         ZipFile zipFile = null;
         try {
+            resultFile = File.createTempFile(filename, ".tmp");
             zipFile = new ZipFile(distroFile);
 
             Enumeration<? extends ZipEntry> entries = zipFile.entries();
@@ -198,7 +200,7 @@ public class DistroHelper {
             }
             zipFile.close();
         } catch (IOException e) {
-            throw new RuntimeException("Could not read " + distroFile.toString(), e);
+            throw new RuntimeException("Could not read " + distroFile.toString() + " to temp folder", e);
         } finally {
             IOUtils.closeQuietly(zipFile);
             distroFile.delete();
