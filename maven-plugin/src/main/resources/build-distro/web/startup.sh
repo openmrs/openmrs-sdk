@@ -3,6 +3,7 @@
 DB_CREATE_TABLES=${DB_CREATE_TABLES:-false}
 DB_ADD_DEMO_DATA=${DB_ADD_DEMO_DATA:-false}
 DB_AUTO_UPDATE=${DB_AUTO_UPDATE:-false}
+DEBUG=${DEBUG:-false}
 
 cat > /usr/local/tomcat/openmrs-server.properties << EOF
 install_method=auto
@@ -24,8 +25,13 @@ echo "-----------------------------------"
 # wait for mysql to initialise
 /usr/local/tomcat/wait-for-it.sh --timeout=3600 ${DB_HOST}:3306
 
+if [ $DEBUG ]; then
+    export JPDA_ADDRESS="1044"
+    export JPDA_TRANSPORT=dt_socket
+fi
+
 # start tomcat in background
-/usr/local/tomcat/bin/catalina.sh run &
+/usr/local/tomcat/bin/catalina.sh jpda run &
 
 # trigger first filter to start data importation
 sleep 15
