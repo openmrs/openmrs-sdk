@@ -81,7 +81,7 @@ public class BuildDistro extends AbstractTask {
                 distroProperties = new DistroProperties(distroFile);
             } else if (Project.hasProject(userDir)) {
                 Project config = Project.loadProject(userDir);
-                distroArtifact = DistroHelper.parseDistroArtifact(config.getGroupId()+":"+config.getArtifactId()+":"+config.getVersion());
+                distroArtifact = DistroHelper.parseDistroArtifact(config.getGroupId()+":"+config.getArtifactId()+":"+config.getVersion(), versionsHelper);
 
                 wizard.showMessage("Building distribution from the source at " + userDir + "...\n");
                 new Build(this).cleanInstallServerProject(userDir);
@@ -94,7 +94,7 @@ public class BuildDistro extends AbstractTask {
                 }
             }
         } else if (StringUtils.isNotBlank(distro)){
-            distroProperties = distroHelper.retrieveDistroProperties(distro);
+            distroProperties = distroHelper.retrieveDistroProperties(distro, versionsHelper);
         }
 
         if (distroProperties == null){

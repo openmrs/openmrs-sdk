@@ -445,7 +445,7 @@ public class Setup extends AbstractTask {
             server.setPlatformVersion(platform);
             createPlatform = true;
         } else {
-            distroProperties = distroHelper.retrieveDistroProperties(distro);
+            distroProperties = distroHelper.retrieveDistroProperties(distro, versionsHelper);
             if(distroProperties == null){
                 throw new IllegalArgumentException("Distro "+distro+"could not be retrieved");
             }

@@ -43,6 +43,9 @@ public class DistroHelper {
      */
     Wizard wizard;
 
+    public static final String LATEST_VERSION_BATCH_KEYWORD = "LATEST";
+    public static final String LATEST_SNAPSHOT_BATCH_KEYWORD = "LATEST-SNAPSHOT";
+
     public DistroHelper(MavenProject mavenProject, MavenSession mavenSession, BuildPluginManager pluginManager, Wizard wizard) {
         this.mavenProject = mavenProject;
         this.mavenSession = mavenSession;
@@ -115,19 +118,33 @@ public class DistroHelper {
      * parser makes user-friendly assumptions, like inferring default groupId or full artifactId for referenceapplication
      * returns null if string is invalid
      */
-    public static Artifact parseDistroArtifact(String distro) throws MojoExecutionException {
+    public static Artifact parseDistroArtifact(String distro, VersionsHelper versionsHelper) throws MojoExecutionException {
         String[] split = distro.split(":");
-        if(split.length == 2){
-            return new Artifact(inferDistroArtifactId(split[0], Artifact.GROUP_DISTRO), split[1], Artifact.GROUP_DISTRO);
-        } else if (split.length == 3){
-            Artifact artifact = new Artifact(inferDistroArtifactId(split[1], split[0]), split[2], split[0]);
-            if(artifact.getGroupId().equals(Artifact.GROUP_MODULE)){
-                artifact.setArtifactId(artifact.getArtifactId()+"-omod");
-            }
-            return artifact;
-        } else {
-            throw new MojoExecutionException("Invalid distro: "+distro);
+
+        if (split.length > 3) {
+            throw new MojoExecutionException("Invalid distro: " + distro);
         }
+
+        String groupId = split.length == 3 ? split[0] : Artifact.GROUP_DISTRO;
+        String artifactId = split[split.length - 2];
+        String version = split[split.length - 1];
+
+        if (versionsHelper != null && version.contains(LATEST_VERSION_BATCH_KEYWORD)) {
+            if (version.toLowerCase().equals(LATEST_SNAPSHOT_BATCH_KEYWORD.toLowerCase())) {
+                version = versionsHelper.getLatestSnapshotVersion(new Artifact(artifactId, version, groupId));
+            }
+            else if (version.toLowerCase().equals((LATEST_VERSION_BATCH_KEYWORD).toLowerCase())) {
+                version = versionsHelper.getLatestReleasedVersion(new Artifact(artifactId, version, groupId));
+            }
+        }
+
+        Artifact artifact =  new Artifact(inferDistroArtifactId(artifactId, groupId), version, groupId);
+
+        if(artifact.getGroupId().equals(Artifact.GROUP_MODULE)){
+            artifact.setArtifactId(artifact.getArtifactId()+"-omod");
+        }
+
+        return artifact;
     }
 
     private static String inferDistroArtifactId(String artifactId, String groupId){
@@ -255,13 +272,13 @@ public class DistroHelper {
      * @param distro
      * @return
      */
-    public DistroProperties retrieveDistroProperties(String distro) throws MojoExecutionException {
+    public DistroProperties retrieveDistroProperties(String distro, VersionsHelper versionsHelper) throws MojoExecutionException {
         DistroProperties result;
         result = getDistroPropertiesFromFile(new File(distro));
         if(result != null && mavenProject != null){
             result.resolvePlaceholders(getProjectProperties());
         } else {
-            Artifact artifact = parseDistroArtifact(distro);
+            Artifact artifact = parseDistroArtifact(distro, versionsHelper);
             if(isRefapp2_3_1orLower(artifact)){
                 result = new DistroProperties(artifact.getVersion());
             } else if (isRefappBelow2_1(artifact)) {
@@ -284,7 +301,7 @@ public class DistroHelper {
      * resolves distro based on passed artifact and saves distro.properties file in destination
      */
     public void saveDistroPropertiesTo(File destination, String distro) throws MojoExecutionException {
-        DistroProperties distroProperties = retrieveDistroProperties(distro);
+        DistroProperties distroProperties = retrieveDistroProperties(distro, null);
         if(distroProperties != null){
             distroProperties.saveTo(destination);
         }

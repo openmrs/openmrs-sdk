@@ -15,6 +15,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.openmrs.maven.plugins.SdkMatchers.hasModuleVersion;
 import static org.openmrs.maven.plugins.SdkMatchers.hasPropertyEqualTo;
+import static org.openmrs.maven.plugins.SdkMatchers.hasPropertyThatContains;
+import static org.openmrs.maven.plugins.SdkMatchers.hasPropertyThatNotContains;
 import static org.openmrs.maven.plugins.SdkMatchers.serverHasName;
 import static org.openmrs.maven.plugins.SdkMatchers.serverHasDebugPort;
 import static org.openmrs.maven.plugins.SdkMatchers.serverHasVersion;
@@ -179,6 +181,119 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
         String javaHomeServerProperty = readValueFromPropertyKey(serverPropertiesFile, "javaHome");
         assertThat(javaHomeServerProperty, is(nullValue()));
 	}
+
+	@Test
+    public void setup_shouldInstallServerWithSpecifiedLatestSnapshotDistroVersionByUsingKeywordInBatchMode() throws Exception {
+        String keyword = "LATEST-SNAPSHOT";
+
+        String serverId = UUID.randomUUID().toString();
+        addTaskParam("debug", "1044");
+        addTaskParam("distro", "org.openmrs.distro:referenceapplication:" + keyword);
+        addMockDbSettings();
+
+        addAnswer(serverId);
+        addAnswer(System.getProperty("java.home"));
+
+        executeTask("setup");
+        assertSuccess();
+        assertServerInstalled(serverId);
+
+        Server.setServersPath(testDirectory.getAbsolutePath());
+        Server server = Server.loadServer(serverId);
+
+        assertFilePresent(serverId + File.separator + "openmrs-server.properties");
+        assertThat(server, hasPropertyThatContains("version", "SNAPSHOT"));
+
+        File serverPropertiesFile = new File(testDirectory.getAbsolutePath() + File.separator + serverId, "openmrs-server.properties");
+        String javaHomeServerProperty = readValueFromPropertyKey(serverPropertiesFile, "javaHome");
+        assertThat(javaHomeServerProperty, is(nullValue()));
+    }
+
+    @Test
+    public void setup_shouldInstallServerWithSpecifiedLatestSnapshotDistroVersionByUsingKeywordInInteractiveMode() throws Exception {
+        String keyword = "LATEST-SNAPSHOT";
+
+        String serverId = UUID.randomUUID().toString();
+        addTaskParam("debug", "1044");
+
+        addMockDbSettings();
+
+        addAnswer(serverId);
+        addAnswer("Distribution");
+        addAnswer("org.openmrs.distro:referenceapplication:" + keyword);
+        addAnswer(System.getProperty("java.home"));
+
+        executeTask("setup");
+        assertSuccess();
+        assertServerInstalled(serverId);
+
+        Server.setServersPath(testDirectory.getAbsolutePath());
+        Server server = Server.loadServer(serverId);
+
+        assertFilePresent(serverId + File.separator + "openmrs-server.properties");
+        assertThat(server, hasPropertyThatContains("version", "SNAPSHOT"));
+
+        File serverPropertiesFile = new File(testDirectory.getAbsolutePath() + File.separator + serverId, "openmrs-server.properties");
+        String javaHomeServerProperty = readValueFromPropertyKey(serverPropertiesFile, "javaHome");
+        assertThat(javaHomeServerProperty, is(nullValue()));
+    }
+
+    @Test
+    public void setup_shouldInstallServerWithSpecifiedLatestReleasedDistroVersionByUsingKeywordInBatchMode() throws Exception {
+        String keyword = "LATEST";
+
+        String serverId = UUID.randomUUID().toString();
+        addTaskParam("debug", "1044");
+        addTaskParam("distro", "org.openmrs.distro:referenceapplication:" + keyword);
+        addMockDbSettings();
+
+        addAnswer(serverId);
+        addAnswer(System.getProperty("java.home"));
+
+        executeTask("setup");
+        assertSuccess();
+        assertServerInstalled(serverId);
+
+        Server.setServersPath(testDirectory.getAbsolutePath());
+        Server server = Server.loadServer(serverId);
+
+        assertFilePresent(serverId + File.separator + "openmrs-server.properties");
+        assertThat(server, hasPropertyThatNotContains("version", "SNA" +
+                "PSHOT"));
+
+        File serverPropertiesFile = new File(testDirectory.getAbsolutePath() + File.separator + serverId, "openmrs-server.properties");
+        String javaHomeServerProperty = readValueFromPropertyKey(serverPropertiesFile, "javaHome");
+        assertThat(javaHomeServerProperty, is(nullValue()));
+    }
+
+    @Test
+    public void setup_shouldInstallServerWithSpecifiedLatestReleasedDistroVersionByUsingKeywordInInteractiveMode() throws Exception {
+        String keyword = "LATEST";
+
+        String serverId = UUID.randomUUID().toString();
+        addTaskParam("debug", "1044");
+
+        addMockDbSettings();
+
+        addAnswer(serverId);
+        addAnswer("Distribution");
+        addAnswer("org.openmrs.distro:referenceapplication:" + keyword);
+        addAnswer(System.getProperty("java.home"));
+
+        executeTask("setup");
+        assertSuccess();
+        assertServerInstalled(serverId);
+
+        Server.setServersPath(testDirectory.getAbsolutePath());
+        Server server = Server.loadServer(serverId);
+
+        assertFilePresent(serverId + File.separator + "openmrs-server.properties");
+        assertThat(server, hasPropertyThatNotContains("version", "SNAPSHOT"));
+
+        File serverPropertiesFile = new File(testDirectory.getAbsolutePath() + File.separator + serverId, "openmrs-server.properties");
+        String javaHomeServerProperty = readValueFromPropertyKey(serverPropertiesFile, "javaHome");
+        assertThat(javaHomeServerProperty, is(nullValue()));
+    }
 
     @Test
     public void setup_shouldInstallServerWithGivenJavaHomeAndAddJavaHomeToSdkProperties() throws Exception{

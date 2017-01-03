@@ -24,7 +24,7 @@ public class DistroHelperTest {
     @Test
     public void parseDistroArtifactShouldInferArtifactIdForRefapp() throws Exception{
         String distro = "referenceapplication:2.3";
-        Artifact artifact = DistroHelper.parseDistroArtifact(distro);
+        Artifact artifact = DistroHelper.parseDistroArtifact(distro, null);
 
         assertThat(artifact.getGroupId(), is(Artifact.GROUP_DISTRO));
         assertThat(artifact.getArtifactId(), is(SDKConstants.REFERENCEAPPLICATION_ARTIFACT_ID));
@@ -32,19 +32,19 @@ public class DistroHelperTest {
     @Test
     public void parseDistroArtifactShouldSetDefaultGroupIdIfNotSpecified() throws Exception{
         String distro = "otherdistro:2.3";
-        Artifact artifact = DistroHelper.parseDistroArtifact(distro);
+        Artifact artifact = DistroHelper.parseDistroArtifact(distro, null);
 
         assertThat(artifact.getGroupId(), is(Artifact.GROUP_DISTRO));
     }
     @Test(expected = MojoExecutionException.class)
     public void parseDistroArtifactShouldReturnNullIfInvalidFormat() throws Exception{
         String distro = "referenceapplication:2.3:fsf:444";
-        DistroHelper.parseDistroArtifact(distro);
+        DistroHelper.parseDistroArtifact(distro, null);
     }
     @Test
     public void parseDistroArtifactShouldCreateProperArtifact() throws Exception{
         String distro = "org.openmrs.distromock:refapp:2.3";
-        Artifact artifact = DistroHelper.parseDistroArtifact(distro);
+        Artifact artifact = DistroHelper.parseDistroArtifact(distro, null);
 
         assertThat(artifact.getGroupId(), is("org.openmrs.distromock"));
         assertThat(artifact.getArtifactId(), is("refapp"));

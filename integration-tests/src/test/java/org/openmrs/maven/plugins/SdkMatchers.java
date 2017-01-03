@@ -10,8 +10,10 @@ import org.openmrs.maven.plugins.model.Server;
 import java.io.File;
 import java.util.List;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.hasItem;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.startsWith;
 
 public class SdkMatchers {
@@ -69,6 +71,22 @@ public class SdkMatchers {
             @Override
             protected String featureValueOf(final Server actual) {
                 return actual.getCustomProperties().get(propertyName);
+            }
+        };
+    }
+    public static Matcher<Server> hasPropertyThatContains(final String propertyName, final String propertyValue) {
+        return new FeatureMatcher<Server, String>(containsString(propertyValue), "property value", "property value") {
+            @Override
+            protected String featureValueOf(final Server actual) {
+                return actual.getServerProperty(propertyName).get(propertyName);
+            }
+        };
+    }
+    public static Matcher<Server> hasPropertyThatNotContains(final String propertyName, final String propertyValue) {
+        return new FeatureMatcher<Server, String>(not(containsString(propertyValue)), "property value", "property value") {
+            @Override
+            protected String featureValueOf(final Server actual) {
+                return actual.getServerProperty(propertyName).get(propertyName);
             }
         };
     }
