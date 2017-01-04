@@ -35,6 +35,10 @@ public class BuildDistro extends AbstractTask {
 
     public static final String DOCKER_COMPOSE_PATH = "build-distro/docker-compose.yml";
 
+    public static final String DOCKER_COMPOSE_OVERRIDE_PATH = "build-distro/docker-compose.override.yml";
+
+    public static final String DOCKER_COMPOSE_PROD_PATH = "build-distro/docker-compose.prod.yml";
+
     public static final String README_PATH = "build-distro/README.md";
 
     public static final String DISTRIBUTION_VERSION_PROMPT = "You can build the following versions of distribution";
@@ -163,15 +167,15 @@ public class BuildDistro extends AbstractTask {
         wizard.showMessage("Downloading modules...\n");
 
         String distroName = adjustImageName(distroProperties.getName());
-        File dockerImageDir = new File(targetDirectory, distroName + "-docker-image");
+        File web = new File(targetDirectory,"web");
 
-        moduleInstaller.installModules(distroProperties.getWarArtifacts(), dockerImageDir.getAbsolutePath());
-        renameWebApp(dockerImageDir);
+        moduleInstaller.installModules(distroProperties.getWarArtifacts(), web.getAbsolutePath());
+        renameWebApp(web);
 
         if (bundled) {
             try {
-                ZipFile warfile = new ZipFile(new File(dockerImageDir, OPENMRS_WAR));
-                File tempDir = new File(dockerImageDir, "WEB-INF");
+                ZipFile warfile = new ZipFile(new File(web, OPENMRS_WAR));
+                File tempDir = new File(web, "WEB-INF");
                 moduleInstaller.installModules(distroProperties.getModuleArtifacts(),
                         new File(tempDir, WAR_FILE_MODULES_DIRECTORY_NAME).getAbsolutePath());
                 ZipParameters parameters = new ZipParameters();
@@ -187,18 +191,19 @@ public class BuildDistro extends AbstractTask {
         }
         else {
             moduleInstaller.installModules(distroProperties.getModuleArtifacts(),
-                    new File(dockerImageDir, "modules").getAbsolutePath());
+                    new File(web, "modules").getAbsolutePath());
         }
 
         wizard.showMessage("Creating Docker Compose configuration...\n");
         String distroVersion = adjustImageName(distroProperties.getVersion());
         writeDockerCompose(targetDirectory, distroName, distroVersion);
         writeReadme(targetDirectory, distroName, distroVersion);
-        copyBuildDistroResource("setenv.sh", new File(dockerImageDir, "setenv.sh"));
-        copyBuildDistroResource("startup.sh", new File(dockerImageDir, "startup.sh"));
-        copyBuildDistroResource("wait-for-it.sh", new File(dockerImageDir, "wait-for-it.sh"));
-        copyDockerfile(dockerImageDir, distroProperties);
-        distroProperties.saveTo(dockerImageDir);
+        copyBuildDistroResource("setenv.sh", new File(web, "setenv.sh"));
+        copyBuildDistroResource("startup.sh", new File(web, "startup.sh"));
+        copyBuildDistroResource("wait-for-it.sh", new File(web, "wait-for-it.sh"));
+        copyBuildDistroResource(".env", new File(targetDirectory, ".env"));
+        copyDockerfile(web, distroProperties);
+        distroProperties.saveTo(web);
 
         dbDumpStream = getSqlDumpStream(StringUtils.isNotBlank(dbSql) ? dbSql : distroProperties.getSqlScriptPath(), targetDirectory, distroArtifact);
         if(dbDumpStream != null) {
@@ -259,6 +264,8 @@ public class BuildDistro extends AbstractTask {
 
     private void writeDockerCompose(File targetDirectory, String distro, String version) {
         writeTemplatedFile(targetDirectory, distro, version, DOCKER_COMPOSE_PATH, "docker-compose.yml");
+        writeTemplatedFile(targetDirectory, distro, version, DOCKER_COMPOSE_OVERRIDE_PATH, "docker-compose.override.yml");
+        writeTemplatedFile(targetDirectory, distro, version, DOCKER_COMPOSE_PROD_PATH, "docker-compose.prod.yml");
     }
 
     private void writeReadme(File targetDirectory, String distro, String version) {
@@ -275,6 +282,7 @@ public class BuildDistro extends AbstractTask {
         try(InputStream inputStream = composeUrl.openStream();FileWriter composeWriter = new FileWriter(compose)){
             String content = IOUtils.toString(inputStream);
             content = content.replaceAll("<distro>", distro);
+            content = content.replaceAll("<tag>", version);
             composeWriter.write(content);
         } catch (IOException|NullPointerException e/*don't check if url is not null, because same error handling*/) {
             throw new RuntimeException("Failed to write " + filename + " file", e);
@@ -344,7 +352,7 @@ public class BuildDistro extends AbstractTask {
     }
 
     private void copyBuildDistroResource(String resource, File target) {
-        URL resourceUrl = getClass().getClassLoader().getResource("build-distro/docker-image/" + resource);
+        URL resourceUrl = getClass().getClassLoader().getResource("build-distro/web/" + resource);
         try {
             FileUtils.copyURLToFile(resourceUrl, target);
         } catch (IOException e) {

@@ -2,7 +2,7 @@
 version: '2'
 
 services:
-  openmrs-<distro>-mysql:
+  db:
     image: mysql:5.6
     command: "mysqld --character-set-server=utf8 --collation-server=utf8_general_ci"
     environment:
@@ -11,18 +11,17 @@ services:
       MYSQL_USER: openmrs
       MYSQL_PASSWORD: Admin123
     volumes:
-      - ./dbdump:/docker-entrypoint-initdb.d # Remove this volume to have an empty database when starting
-      # - openmrs-<distro>-mysql-data:/var/lib/mysql  # uncomment to keep database between docker runs
+      - ./dbdump:/docker-entrypoint-initdb.d
+      - db-data:/var/lib/mysql
 
-  openmrs-<distro>:
-    build: <distro>-docker-image  # change to 'image' is using an image deployed to dockerhub
+  web:
+    build: web
+    image: <distro>:<tag>
     depends_on:
-      - openmrs-<distro>-mysql
-    ports:
-      - "8080:8080"
+      - db
     environment:
       DB_DATABASE: openmrs
-      DB_HOST: openmrs-<distro>-mysql
+      DB_HOST: db
       DB_USERNAME: openmrs
       DB_PASSWORD: Admin123
       DB_CREATE_TABLES: 'false'  # change to 'true' if using an empty database
@@ -30,4 +29,4 @@ services:
       DB_AUTO_UPDATE: 'false'    # change to 'true' if using an empty database
 
 volumes:
-  openmrs-<distro>-mysql-data:
+  db-data:

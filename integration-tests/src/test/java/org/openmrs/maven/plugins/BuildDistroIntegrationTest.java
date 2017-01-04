@@ -13,13 +13,16 @@ public class BuildDistroIntegrationTest extends AbstractSdkIntegrationTest {
         executeTask("build-distro");
 
         assertFilePresent("referenceapplication/docker-compose.yml");
-        assertFilePresent("referenceapplication/referenceapplication-docker-image/Dockerfile");
-        assertFilePresent("referenceapplication/referenceapplication-docker-image/setenv.sh");
-        assertFilePresent("referenceapplication/referenceapplication-docker-image/startup.sh");
-        assertFilePresent("referenceapplication/referenceapplication-docker-image/wait-for-it.sh");
-        assertFilePresent("referenceapplication/referenceapplication-docker-image/modules");
-        assertFilePresent("referenceapplication/referenceapplication-docker-image/openmrs.war");
-        assertFilePresent("referenceapplication/referenceapplication-docker-image/openmrs-distro.properties");
+        assertFilePresent("referenceapplication/docker-compose.override.yml");
+        assertFilePresent("referenceapplication/docker-compose.prod.yml");
+        assertFilePresent("referenceapplication/.env");
+        assertFilePresent("referenceapplication/web/Dockerfile");
+        assertFilePresent("referenceapplication/web/setenv.sh");
+        assertFilePresent("referenceapplication/web/startup.sh");
+        assertFilePresent("referenceapplication/web/wait-for-it.sh");
+        assertFilePresent("referenceapplication/web/modules");
+        assertFilePresent("referenceapplication/web/openmrs.war");
+        assertFilePresent("referenceapplication/web/openmrs-distro.properties");
         assertSuccess();
     }
 
@@ -30,18 +33,21 @@ public class BuildDistroIntegrationTest extends AbstractSdkIntegrationTest {
         addTaskParam("bundled", "true");
         executeTask("build-distro");
 
-        assertFilePresent("referenceapplication-bundled/referenceapplication-docker-image/Dockerfile");
+        assertFilePresent("referenceapplication-bundled/web/Dockerfile");
         assertFilePresent("referenceapplication-bundled/docker-compose.yml");
-        assertFilePresent("referenceapplication-bundled/referenceapplication-docker-image/setenv.sh");
-        assertFilePresent("referenceapplication-bundled/referenceapplication-docker-image/startup.sh");
-        assertFilePresent("referenceapplication-bundled/referenceapplication-docker-image/wait-for-it.sh");
-        assertFilePresent("referenceapplication-bundled/referenceapplication-docker-image/openmrs.war");
-        assertFilePresent("referenceapplication-bundled/referenceapplication-docker-image/openmrs-distro.properties");
+        assertFilePresent("referenceapplication-bundled/docker-compose.override.yml");
+        assertFilePresent("referenceapplication-bundled/docker-compose.prod.yml");
+        assertFilePresent("referenceapplication-bundled/.env");
+        assertFilePresent("referenceapplication-bundled/web/setenv.sh");
+        assertFilePresent("referenceapplication-bundled/web/startup.sh");
+        assertFilePresent("referenceapplication-bundled/web/wait-for-it.sh");
+        assertFilePresent("referenceapplication-bundled/web/openmrs.war");
+        assertFilePresent("referenceapplication-bundled/web/openmrs-distro.properties");
 
-        assertFileNotPresent("referenceapplication-bundled/referenceapplication-docker-image/modules");
-        assertFileNotPresent("referenceapplication-bundled/referenceapplication-docker-image/WEB-INF");
+        assertFileNotPresent("referenceapplication-bundled/web/modules");
+        assertFileNotPresent("referenceapplication-bundled/web/WEB-INF");
 
-        assertZipEntryPresent("referenceapplication-bundled/referenceapplication-docker-image/openmrs.war",
+        assertZipEntryPresent("referenceapplication-bundled/web/openmrs.war",
          "WEB-INF/bundledModules");
 
         assertSuccess();
