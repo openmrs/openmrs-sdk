@@ -2,14 +2,16 @@ package org.openmrs.maven.plugins.model;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.maven.plugin.MojoExecutionException;
-
+import org.openmrs.maven.plugins.utility.DistroHelper;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -129,6 +131,71 @@ public class DistroProperties extends BaseSdkProperties {
         } else {
             return key.substring(beginIndex+1);
         }
+    }
+
+    public Artifact getDistroArtifact() {
+        for (Object keyObject: getAllKeys()) {
+            String key = keyObject.toString();
+            String artifactType = getArtifactType(key);
+            if(artifactType.equals(TYPE_DISTRO)) {
+                return new Artifact(checkIfOverwritten(key, ARTIFACT_ID), getParam(key), checkIfOverwritten(key, GROUP_ID), checkIfOverwritten(key, TYPE), "jar");
+            }
+        }
+        return null;
+    }
+
+    public List<Artifact> getModuleArtifacts(DistroHelper distroHelper, File directory) throws MojoExecutionException {
+        List<Artifact> childArtifacts = getModuleArtifacts();
+        List<Artifact> parentArtifacts = new ArrayList<>();
+
+        Artifact artifact = getDistroArtifact();
+        if (artifact != null) {
+            DistroProperties distroProperties = distroHelper.downloadDistroProperties(directory, artifact);
+            parentArtifacts.addAll(distroProperties.getModuleArtifacts(distroHelper, directory));
+        }
+        return mergeArtifactLists(childArtifacts, parentArtifacts);
+    }
+
+    public List<Artifact> getWarArtifacts(DistroHelper distroHelper, File directory) throws MojoExecutionException{
+        List<Artifact> childArtifacts = getWarArtifacts();
+        List<Artifact> parentArtifacts = new ArrayList<>();
+
+        Artifact artifact = getDistroArtifact();
+        if (artifact != null) {
+            DistroProperties distroProperties = distroHelper.downloadDistroProperties(directory, artifact);
+            parentArtifacts.addAll(distroProperties.getWarArtifacts(distroHelper, directory));
+        }
+        return mergeArtifactLists(childArtifacts, parentArtifacts);
+    }
+
+    public String getPlatformVersion(DistroHelper distroHelper, File directory) throws MojoExecutionException{
+        Artifact artifact = getDistroArtifact();
+        if (artifact != null) {
+            DistroProperties distroProperties = distroHelper.downloadDistroProperties(directory, artifact);
+            return distroProperties.getPlatformVersion(distroHelper, directory);
+        }
+        return getPlatformVersion();
+    }
+
+    private List<Artifact> mergeArtifactLists(List<Artifact> childArtifacts, List<Artifact> parentArtifacts) {
+        List<Artifact> artifactList = new ArrayList<>();
+        artifactList.addAll(childArtifacts);
+        for (Artifact parentArtifact : parentArtifacts) {
+            boolean found = false;
+            for (Artifact childArtifact : childArtifacts) {
+                boolean isGroupIdMatch = childArtifact.getGroupId().equals(parentArtifact.getGroupId());
+                boolean isArtifactIdMatch = childArtifact.getArtifactId().equals(parentArtifact.getArtifactId());
+                boolean isTypeMatch = childArtifact.getType().equals(parentArtifact.getType());
+                if (isGroupIdMatch && isArtifactIdMatch && isTypeMatch) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                artifactList.add(parentArtifact);
+            }
+        }
+        return artifactList;
     }
 
     public void saveTo(File path) throws MojoExecutionException {

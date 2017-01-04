@@ -20,18 +20,42 @@ public abstract class BaseSdkProperties {
     protected static final String TYPE_JAR = "jar";
     protected static final String NAME = "name";
     protected static final String VERSION = "version";
+    protected static final String TYPE_DISTRO = "distro";
 
     protected Properties properties;
 
-    public Properties getModuleProperties(){
-        Properties moduleProperties = new Properties();
-        for(Object keyObject: getAllKeys()){
-            String key = keyObject.toString();
-            if(key.startsWith(TYPE_OMOD) || key.startsWith(TYPE_WAR)){
-                moduleProperties.put(key, getParam(key));
+    public Properties getModuleAndWarProperties(List<Artifact> warArtifacts, List<Artifact> moduleArtifacts) {
+        Properties properties = new Properties();
+        for (Artifact artifact : warArtifacts) {
+
+            artifact = getArtifactWithStrippedArtifactId(artifact);
+
+            if (!artifact.getType().equals(TYPE_WAR)) {
+                properties.setProperty(TYPE_WAR + "." + artifact.getArtifactId() + "." + TYPE, artifact.getType());
             }
+
+            if (!artifact.getGroupId().equals(Artifact.GROUP_WEB)) {
+                properties.setProperty(TYPE_WAR + "." + artifact.getArtifactId() + "." + GROUP_ID, artifact.getGroupId());
+            }
+
+            properties.setProperty(TYPE_WAR + "." + artifact.getArtifactId(), artifact.getVersion());
         }
-        return moduleProperties;
+
+        for (Artifact artifact : moduleArtifacts) {
+
+            artifact = getArtifactWithStrippedArtifactId(artifact);
+
+            if (!artifact.getType().equals(TYPE_JAR)) {
+                properties.setProperty(TYPE_OMOD + "." + artifact.getArtifactId() + "." + TYPE, artifact.getType());
+            }
+            if (!artifact.getGroupId().equals(Artifact.GROUP_MODULE)) {
+                properties.setProperty(TYPE_OMOD + "." + artifact.getArtifactId() + "." + GROUP_ID, artifact.getGroupId());
+            }
+
+            properties.setProperty(TYPE_OMOD + "." + artifact.getArtifactId(), artifact.getVersion());
+
+        }
+        return properties;
     }
 
     public String getPlatformVersion(){
@@ -99,18 +123,25 @@ public abstract class BaseSdkProperties {
         }
     }
 
-    private String checkIfOverwritten(String key, String param) {
+    protected String checkIfOverwritten(String key, String param) {
         String newKey = key + "." + param;
         if (getParam(newKey) != null) {
-            return getParam(newKey);
+            String setting = getParam(newKey);
+            if (setting.equals("referenceapplication")) {
+                setting = setting.concat("-");
+                setting = setting.concat("package");
+            }
+            return setting;
         } else {
             if (param.equals(ARTIFACT_ID)) {
                 return extractArtifactId(key);
             } else if (param.equals(GROUP_ID)) {
                 if (getArtifactType(key).equals(TYPE_WAR)) { //for openmrs.war use org.openmrs.web groupId
                     return Artifact.GROUP_WEB;
-                } else if(getArtifactType(key).equals(TYPE_OMOD)){
+                } else if (getArtifactType(key).equals(TYPE_OMOD)) {
                     return Artifact.GROUP_MODULE;
+                } else if (getArtifactType(key).equals(TYPE_DISTRO)) {
+                    return Artifact.GROUP_DISTRO;
                 }else {
                     return "";
                 }
@@ -120,7 +151,9 @@ public abstract class BaseSdkProperties {
                     return TYPE_JAR;
                 }else if(getArtifactType(key).equals(TYPE_WAR)){
                     return TYPE_WAR;
-                }else {
+                } else if(getArtifactType(key).equals(TYPE_DISTRO)) {
+                    return TYPE_JAR;
+                } else {
                     return "";
                 }
             } else {
@@ -189,10 +222,13 @@ public abstract class BaseSdkProperties {
         }
     }
 
-    private Artifact getArtifactWithStrippedArtifactId(Artifact artifact){
+    private Artifact getArtifactWithStrippedArtifactId(Artifact artifact) {
         String artifactId = artifact.getArtifactId();
-        if(artifactId.endsWith("-omod")){
-             artifact.setArtifactId(artifactId.substring(0, artifactId.indexOf("-")));
+        if (artifactId.endsWith("-omod")) {
+            artifact.setArtifactId(artifactId.substring(0, artifactId.indexOf("-")));
+            return artifact;
+        } else if (artifactId.endsWith("-webapp")) {
+            artifact.setArtifactId(artifactId.substring(0, artifactId.indexOf("-")));
             return artifact;
         }
         return artifact;
@@ -230,12 +266,10 @@ public abstract class BaseSdkProperties {
     }
 
 
-    public void setArtifacts(BaseSdkProperties baseSdkProperties){
-        List<Artifact> moduleArtifacts = baseSdkProperties.getModuleArtifacts();
+    public void setArtifacts(List<Artifact> warArtifacts, List<Artifact> moduleArtifacts){
         for (Artifact moduleArtifact : moduleArtifacts) {
             this.setModuleProperties(moduleArtifact);
         }
-        List<Artifact> warArtifacts = baseSdkProperties.getWarArtifacts();
         for (Artifact warArtifact : warArtifacts) {
             this.setPlatformVersion(warArtifact.getVersion());
         }

@@ -1,6 +1,5 @@
 package org.openmrs.maven.plugins;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.maven.it.Verifier;
 import org.apache.maven.it.util.ResourceExtractor;
 import org.junit.After;

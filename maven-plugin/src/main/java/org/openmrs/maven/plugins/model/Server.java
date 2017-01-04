@@ -8,11 +8,7 @@ import org.openmrs.maven.plugins.bintray.BintrayId;
 import org.openmrs.maven.plugins.utility.Project;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.FilenameFilter;
-import java.io.IOException;
+import java.io.*;
 import java.util.*;
 
 /**
@@ -478,9 +474,9 @@ public class Server extends BaseSdkProperties {
         }
     }
 
-    public void setValuesFromDistroProperties(DistroProperties distroProperties) {
+    public void setValuesFromDistroPropertiesModules(List<Artifact> warArtifacts, List<Artifact> moduleArtifacts, DistroProperties distroProperties) {
         if (distroProperties != null) {
-            this.properties.putAll(distroProperties.getModuleProperties());
+            this.properties.putAll(distroProperties.getModuleAndWarProperties(warArtifacts, moduleArtifacts));
             setName(distroProperties.getName());
             setVersion(distroProperties.getVersion());
         }

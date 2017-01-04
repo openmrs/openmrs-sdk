@@ -279,7 +279,11 @@ public class Deploy extends AbstractTask {
     private void deployOpenmrsPlatform(Server server, Artifact artifact) throws MojoExecutionException, MojoFailureException {
         DistroProperties platformDistroProperties = distroHelper.downloadDistroProperties(server.getServerDirectory(), artifact);
         DistroProperties serverDistroProperties = server.getDistroProperties();
-        serverDistroProperties.setArtifacts(platformDistroProperties);
+
+        List<Artifact> warArtifacts = platformDistroProperties.getWarArtifacts(distroHelper, server.getServerDirectory());
+        List<Artifact> moduleArtifacts = platformDistroProperties.getModuleArtifacts(distroHelper, server.getServerDirectory());
+
+        serverDistroProperties.setArtifacts(warArtifacts, moduleArtifacts);
         serverDistroProperties.saveTo(server.getServerDirectory());
         ServerUpgrader serverUpgrader = new ServerUpgrader(this);
         serverUpgrader.upgradeToDistro(server, serverDistroProperties);

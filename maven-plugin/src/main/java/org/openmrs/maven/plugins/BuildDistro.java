@@ -15,12 +15,7 @@ import org.openmrs.maven.plugins.model.Version;
 import org.openmrs.maven.plugins.utility.DistroHelper;
 import org.openmrs.maven.plugins.utility.Project;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileWriter;
-import java.io.FilenameFilter;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.net.URL;
 
 /**
@@ -169,14 +164,14 @@ public class BuildDistro extends AbstractTask {
         String distroName = adjustImageName(distroProperties.getName());
         File web = new File(targetDirectory,"web");
 
-        moduleInstaller.installModules(distroProperties.getWarArtifacts(), web.getAbsolutePath());
+        moduleInstaller.installModules(distroProperties.getWarArtifacts(distroHelper, targetDirectory), web.getAbsolutePath());
         renameWebApp(web);
 
         if (bundled) {
             try {
                 ZipFile warfile = new ZipFile(new File(web, OPENMRS_WAR));
                 File tempDir = new File(web, "WEB-INF");
-                moduleInstaller.installModules(distroProperties.getModuleArtifacts(),
+                moduleInstaller.installModules(distroProperties.getModuleArtifacts(distroHelper, targetDirectory),
                         new File(tempDir, WAR_FILE_MODULES_DIRECTORY_NAME).getAbsolutePath());
                 ZipParameters parameters = new ZipParameters();
                 warfile.addFolder(tempDir, parameters);
@@ -190,7 +185,7 @@ public class BuildDistro extends AbstractTask {
             }
         }
         else {
-            moduleInstaller.installModules(distroProperties.getModuleArtifacts(),
+            moduleInstaller.installModules(distroProperties.getModuleArtifacts(distroHelper, targetDirectory),
                     new File(web, "modules").getAbsolutePath());
         }
 
@@ -228,8 +223,8 @@ public class BuildDistro extends AbstractTask {
         }
     }
 
-    private void copyDockerfile(File targetDirectory, DistroProperties distroProperties) {
-        int majorVersion = new Version(distroProperties.getPlatformVersion()).getMajorVersion();
+    private void copyDockerfile(File targetDirectory, DistroProperties distroProperties) throws MojoExecutionException {
+        int majorVersion = new Version(distroProperties.getPlatformVersion(distroHelper, targetDirectory)).getMajorVersion();
         if(majorVersion == 1){
             if (bundled) {
                 copyBuildDistroResource("Dockerfile-jre7-bundled", new File(targetDirectory, "Dockerfile"));
