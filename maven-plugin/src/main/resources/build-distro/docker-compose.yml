@@ -27,6 +27,11 @@ services:
       DB_CREATE_TABLES: 'false'  # change to 'true' if using an empty database
       DB_ADD_DEMO_DATA: 'false'  # change to 'true' if using an empty database
       DB_AUTO_UPDATE: 'false'    # change to 'true' if using an empty database
+    volumes:
+      - web-data:/usr/local/tomcat/.OpenMRS
+      - /usr/local/tomcat/.OpenMRS/modules/ # used to mount persistent docker volume for modules
+      - /usr/local/tomcat/.OpenMRS/owa/     # used to mount persistent docker volume for owa
 
 volumes:
   db-data:
+  web-data:
