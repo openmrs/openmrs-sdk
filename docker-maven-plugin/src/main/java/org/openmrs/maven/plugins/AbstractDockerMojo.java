@@ -25,15 +25,15 @@ abstract class AbstractDockerMojo extends AbstractMojo {
     protected static final String API_VERSION = "1.18";
     protected static final String DEFAULT_HOST_LINUX = "unix:///var/run/docker.sock";
 
-    private static final String NOT_LINUX_UNABLE_TO_CONNECT_MESSAGE = "Could not connect to Docker at " +
-            "dockerHostUrl. Please make sure Docker is running or if you are using 'Docker Toolbox', " +
-            "please make sure you run the SDK command from the 'Docker  Toolbox' terminal. If the Docker " +
-            "host URL is not correct, please reset to the default value by passing the -DdockerHost parameter" +
-            " or set it manually -DdockerHost=\"correct/url\"";
+    private static final String NOT_LINUX_UNABLE_TO_CONNECT_MESSAGE = "\n\n\nCould not connect to Docker at " +
+            "%s\n\n Please make sure Docker is running.\n\n If you are using 'Docker Toolbox', " +
+            "please make sure you run the SDK command\n from the 'Docker  Toolbox' terminal.\n\n" +
+            "If your Docker is running, try resetting the Docker host by adding -DdockerHost parameter.\n\n" +
+            "You can also set it manually by adding -DdockerHost=\"tcp://correct/url\"";
 
-    private static final String LINUX_UNABLE_TO_CONNECT_MESSAGE = "Could not connect to Docker at dockerHostUrl." +
-            " If the Docker host URL is not correct, please reset to the default value by passing the -DdockerHost" +
-            " parameter or set it manually -DdockerHost=\"correct/url\"";
+    private static final String LINUX_UNABLE_TO_CONNECT_MESSAGE = "\n\n\nCould not connect to Docker at %s.\n\n" +
+            " If the Docker host URL is not correct, please reset it by adding the -DdockerHost" +
+            " parameter\n or set it manually by adding -DdockerHost=\"tcp://correct/url\"";
 
     /**
      * Option to include demo data
@@ -76,10 +76,10 @@ abstract class AbstractDockerMojo extends AbstractMojo {
             docker.infoCmd().exec();
         } catch (Exception e) {
             if (SystemUtils.IS_OS_LINUX) {
-                throw new RuntimeException(LINUX_UNABLE_TO_CONNECT_MESSAGE, e);
+                throw new RuntimeException(String.format(LINUX_UNABLE_TO_CONNECT_MESSAGE, dockerHost), e);
             }
             else {
-                throw new RuntimeException(NOT_LINUX_UNABLE_TO_CONNECT_MESSAGE, e);
+                throw new RuntimeException(String.format(NOT_LINUX_UNABLE_TO_CONNECT_MESSAGE, dockerHost), e);
             }
         }
     }
