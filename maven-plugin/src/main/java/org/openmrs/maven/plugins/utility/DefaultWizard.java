@@ -27,8 +27,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -627,7 +629,7 @@ public class DefaultWizard implements Wizard {
     }
 
     @Override
-    public void promptForDb(Server server, DockerHelper dockerHelper, boolean h2supported, String dbDriver) throws MojoExecutionException {
+    public void promptForDb(Server server, DockerHelper dockerHelper, boolean h2supported, String dbDriver, String dockerHost) throws MojoExecutionException {
         String db = null;
         if(StringUtils.isNotBlank(dbDriver)){
             db = DB_OPTIONS_MAP.get(dbDriver);
@@ -651,11 +653,11 @@ public class DefaultWizard implements Wizard {
                 break;
             }
             case(DB_OPTION_SDK_DOCKER_MYSQL):{
-                promptForDockerizedSdkMysql(server, dockerHelper);
+                promptForDockerizedSdkMysql(server, dockerHelper, dockerHost);
                 break;
             }
             case(DB_OPTION_DOCKER_MYSQL):{
-                promptForDockerizedDb(server, dockerHelper);
+                promptForDockerizedDb(server, dockerHelper, dockerHost);
             }
         }
     }
@@ -677,8 +679,8 @@ public class DefaultWizard implements Wizard {
         promptForDbCredentialsIfMissing(server);
     }
 
-    public void promptForDockerizedSdkMysql(Server server, DockerHelper dockerHelper) throws MojoExecutionException {
-        promptForDockerHostIfMissing(dockerHelper);
+    public void promptForDockerizedSdkMysql(Server server, DockerHelper dockerHelper, String dockerHost) throws MojoExecutionException {
+        promptForDockerHostIfMissing(dockerHelper, dockerHost);
 
         if(server.getDbDriver() == null){
             server.setDbDriver(SDKConstants.DRIVER_MYSQL);
@@ -711,48 +713,123 @@ public class DefaultWizard implements Wizard {
         return dbUri;
     }
 
-    private void promptForDockerHostIfMissing(DockerHelper dockerHelper) {
-        if (StringUtils.isBlank(dockerHelper.getDockerHost())) {
-            showMessage("Docker Host URL is needed in order to connect to your Docker instance.");
-            String dockerHost;
-            if(SystemUtils.IS_OS_LINUX){
-                dockerHost = promptForValueIfMissingWithDefault("Please specify Docker host URL (either 'tcp://' or 'unix://')",
-                        dockerHelper.getDockerHost(), "dockerHost", DockerHelper.DEFAULT_HOST_LINUX);
-            } else {
-                showMessage("Please note that neither 'Docker for Mac' nor 'Docker for Windows' are currently supported.");
-
-                String defaultDockerHost = getDefaultDockerHost();
-
-                dockerHost = promptForValueIfMissingWithDefault(
-                        "Please specify Docker host URL", dockerHelper.getDockerHost(), "dockerHost", defaultDockerHost);
+    private void promptForDockerHostIfMissing(DockerHelper dockerHelper, String dockerHost) {
+        // If user specified -DdockerHost
+        if (StringUtils.isNotEmpty(dockerHost)) {
+            // If specified without value
+            if (dockerHost.equals("true")) {
+                // Reset state of sdk.properties dockerHost property
+                showMessage("Attempting to find default docker host address...");
+                dockerHelper.saveDockerHost(getDefaultDockerHost());
             }
-            dockerHelper.saveDockerHost(dockerHost);
+            // If specified with value
+            else {
+                // Assign that value to sdk.properties
+                dockerHelper.saveDockerHost(dockerHost);
+            }
+        }
+        else if (StringUtils.isBlank(dockerHelper.getDockerHost())) {
+            showMessage("-DdockerHost is not specified in batch mode. Attempting to find default docker host address...");
+            dockerHelper.saveDockerHost(getDefaultDockerHost());
         }
     }
 
     private String getDefaultDockerHost() {
-        try {
+        String host = null;
+        if(SystemUtils.IS_OS_LINUX){
+            showMessage("Trying default UNIX socket as docker host address...");
+            host = DockerHelper.DEFAULT_DOCKER_HOST_UNIX_SOCKET;
+        }
+        else if (SystemUtils.IS_OS_WINDOWS){
+            // Check if docker-machine url returns host address
+            // or if there is response from direct HTTP request to default 'Docker for Windows' host URL
+            host = getDefaultWindowsDockerHostIfPresent();
+            if (host == null) {
+                // There is no Docker at any default address
+                host = DockerHelper.DEFAULT_HOST_DOCKER_FOR_WINDOWS;
+            }
+        }
+        else if (SystemUtils.IS_OS_MAC_OSX) {
+            // Check is docker-machine url returns host address
+            host = getDefaultMacDockerHostIfPresent();
+            if (host == null) {
+                showMessage("Trying default UNIX socket as docker host address...");
+                host = DockerHelper.DEFAULT_DOCKER_HOST_UNIX_SOCKET;
+            }
+        }
+        return host;
+    }
+
+    private String getDefaultWindowsDockerHostIfPresent() {
+        showMessage("Checking default Windows Docker host addresses:");
+        showMessage("Checking \"Docker for Windows\":");
+
+        if (isDockerForWindowsDefaultHostPresent()) {
+            return DockerHelper.DEFAULT_HOST_DOCKER_FOR_WINDOWS;
+        }
+        else {
+            showMessage("Checking \"Docker Toolbox\":");
             showMessage("Running `docker-machine url` to determine the docker host...");
+            String dockerToolboxHost = getDefaultDockerToolboxHost();
+            if (StringUtils.isNotBlank(dockerToolboxHost)) {
+                showMessage("Your docker-machine url is: " + dockerToolboxHost);
+                return dockerToolboxHost;
+            }
+            else {
+                showMessage("Failed to fetch host address from \"Docker Toolbox\"'s machine");
+                return null;
+            }
+        }
+    }
+
+    private String getDefaultMacDockerHostIfPresent() {
+        showMessage("Checking \"Docker for Mac\"");
+        String dockerMachineUrl = getDefaultDockerToolboxHost();
+        if (StringUtils.isNotBlank(dockerMachineUrl) && !getDefaultDockerToolboxHost().contains("Host is not running")) {
+            showMessage("Your docker-machine url is: " + dockerMachineUrl);
+            return dockerMachineUrl;
+        }
+        else {
+            showMessage("Failed to fetch host address from \"Docker for Mac\"");
+            return null;
+        }
+    }
+
+    // This method checks if there is HTTP response at default Docker for Windows host address
+    private boolean isDockerForWindowsDefaultHostPresent() {
+        String hostUrl = DockerHelper.DEFAULT_HOST_DOCKER_FOR_WINDOWS;
+        if (hostUrl.startsWith("tcp")) {
+            hostUrl = hostUrl.replace("tcp", "http");
+        }
+        try {
+            URL url = new URL(hostUrl);
+            HttpURLConnection connection = (HttpURLConnection)url.openConnection();
+            connection.setRequestMethod("GET");
+            connection.connect();
+            return true;
+        }
+        catch (IOException e) {
+            return false;
+        }
+    }
+
+    private String getDefaultDockerToolboxHost() {
+        try {
 			Process process = new ProcessBuilder("docker-machine", "url").redirectErrorStream(true).start();
             List<String> lines = IOUtils.readLines(process.getInputStream());
 			process.waitFor();
 			//if success
 			if (process.exitValue() == 0) {
-                showMessage("Your docker-machine url is: " + lines.get(0));
 				return lines.get(0);
-			} else {
-                throw new IllegalStateException("Process exited with error " + process.exitValue() + ", returned: " + StringUtils.join(lines.iterator(), "\n"));
-            }
-
+			}
 		} catch (Exception e) {
-			showMessage("Could not determine the docker host due to: " + e.getMessage());
-            showMessage("If you are using 'Docker Toolbox', try to find out the URL by running `docker-machine url` manually. If you have not run the SDK command from 'Docker Toolbox' exit with Ctrl+C and run again.");
-		}
+            showMessage("Failed check for DockerToolbox");
+        }
         return null;
     }
 
-    public void promptForDockerizedDb(Server server, DockerHelper dockerHelper) throws MojoExecutionException {
-        promptForDockerHostIfMissing(dockerHelper);
+    public void promptForDockerizedDb(Server server, DockerHelper dockerHelper, String dockerHost) throws MojoExecutionException {
+        promptForDockerHostIfMissing(dockerHelper, dockerHost);
 
         String containerId = prompt("Please specify your container id/name/label (you can get it using command `docker ps -a`)");
         String username = prompt("Please specify DB username");

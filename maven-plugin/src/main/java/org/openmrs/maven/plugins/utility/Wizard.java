@@ -15,7 +15,7 @@ public interface Wizard {
 
     void promptForNewServerIfMissing(Server server);
 
-    void promptForDb(Server server, DockerHelper dockerHelper, boolean h2supported, String dbDriver) throws MojoExecutionException;
+    void promptForDb(Server server, DockerHelper dockerHelper, boolean h2supported, String dbDriver, String dockerHost) throws MojoExecutionException;
 
     public void promptForMySQLDb(Server server) throws MojoExecutionException;
 

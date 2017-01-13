@@ -79,6 +79,13 @@ public class Setup extends AbstractTask {
     private String dbSql;
 
     /**
+     * Docker host address
+     *
+     * @parameter expression="${dockerHost}"
+     */
+    private String dockerHost;
+
+    /**
      * Path to JDK Version
      *
      * @parameter expression="${javaHome}"
@@ -171,7 +178,7 @@ public class Setup extends AbstractTask {
                 if(distroProperties != null) {
                     h2supported = distroProperties.isH2Supported();
                 }
-                wizard.promptForDb(server, dockerHelper, h2supported, dbDriver);
+                wizard.promptForDb(server, dockerHelper, h2supported, dbDriver, dockerHost);
             }
 
             if(server.getDbDriver() != null){
