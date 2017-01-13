@@ -28,11 +28,11 @@ abstract class AbstractDockerMojo extends AbstractMojo {
     private static final String NOT_LINUX_UNABLE_TO_CONNECT_MESSAGE = "\n\n\nCould not connect to Docker at " +
             "%s\n\n Please make sure Docker is running.\n\n If you are using 'Docker Toolbox', " +
             "please make sure you run the SDK command\n from the 'Docker  Toolbox' terminal.\n\n" +
-            "If your Docker is running, try resetting the Docker host by adding -DdockerHost parameter.\n\n" +
+            "If your Docker is running, try resetting the Docker host by running setup with -DdockerHost parameter.\n\n" +
             "You can also set it manually by adding -DdockerHost=\"tcp://correct/url\"";
 
     private static final String LINUX_UNABLE_TO_CONNECT_MESSAGE = "\n\n\nCould not connect to Docker at %s.\n\n" +
-            " If the Docker host URL is not correct, please reset it by adding the -DdockerHost" +
+            " If the Docker host URL is not correct, please reset it by running setup with the -DdockerHost" +
             " parameter\n or set it manually by adding -DdockerHost=\"tcp://correct/url\"";
 
     /**
