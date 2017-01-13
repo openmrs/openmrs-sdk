@@ -22,10 +22,15 @@ $ docker-machine url
 
 Use _CTRL + C_ to stop all containers.
 
-If you want to destroy containers and delete any left overs volumes and data when doing changes to the docker
+If you made any changes (modified modules/owas/war) to the distro run:
+```
+$ docker-compose up --build
+```
+
+If you want to destroy containers and delete any left over volumes and data when doing changes to the docker
 configuration and images run:
 ```
-$ docker-compose down
+$ docker-compose down -v
 ```
 
 In the development mode the OpenMRS server is run in a debug mode and exposed at port 1044. You can change the port by
