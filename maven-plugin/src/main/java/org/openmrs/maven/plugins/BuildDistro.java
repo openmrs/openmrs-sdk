@@ -8,6 +8,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.velocity.texen.util.FileUtil;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.Server;
@@ -24,25 +25,32 @@ import java.net.URL;
  */
 public class BuildDistro extends AbstractTask {
 
-    public static final String DEFAULT_SQL_DUMP = Server.CLASSPATH_SCRIPT_PREFIX + "openmrs-platform.sql";
+    private static final String DEFAULT_SQL_DUMP = Server.CLASSPATH_SCRIPT_PREFIX + "openmrs-platform.sql";
 
-    public static final String OPENMRS_WAR = "openmrs.war";
+    private static final String OPENMRS_WAR = "openmrs.war";
 
-    public static final String DOCKER_COMPOSE_PATH = "build-distro/docker-compose.yml";
+    private static final String OPENMRS_DISTRO_PROPERTIES = "openmrs-distro.properties";
 
-    public static final String DOCKER_COMPOSE_OVERRIDE_PATH = "build-distro/docker-compose.override.yml";
+    private static final String DOCKER_COMPOSE_PATH = "build-distro/docker-compose.yml";
 
-    public static final String DOCKER_COMPOSE_PROD_PATH = "build-distro/docker-compose.prod.yml";
+    private static final String DOCKER_COMPOSE_OVERRIDE_PATH = "build-distro/docker-compose.override.yml";
 
-    public static final String README_PATH = "build-distro/README.md";
+    private static final String DOCKER_COMPOSE_PROD_PATH = "build-distro/docker-compose.prod.yml";
 
-    public static final String DISTRIBUTION_VERSION_PROMPT = "You can build the following versions of distribution";
+    private static final String README_PATH = "build-distro/README.md";
 
-    public static final String DUMP_PREFIX = "CREATE DATABASE IF NOT EXISTS `openmrs`;\n\n USE `openmrs`;\n\n";
+    private static final String DISTRIBUTION_VERSION_PROMPT = "You can build the following versions of distribution";
 
-    public static final String DB_DUMP_PATH = "dbdump" + File.separator + "dump.sql";
+    private static final String DUMP_PREFIX = "CREATE DATABASE IF NOT EXISTS `openmrs`;\n\n USE `openmrs`;\n\n";
 
-    public static final String WAR_FILE_MODULES_DIRECTORY_NAME = "bundledModules";
+    private static final String DB_DUMP_PATH = "dbdump" + File.separator + "dump.sql";
+
+    private static final String WAR_FILE_MODULES_DIRECTORY_NAME = "bundledModules";
+
+    private static final String WEB = "web";
+    private static final String DOCKER_COMPOSE_YML = "docker-compose.yml";
+    private static final String DOCKER_COMPOSE_PROD_YML = "docker-compose.prod.yml";
+    private static final String DOCKER_COMPOSE_OVERRIDE_YML = "docker-compose.override.yml";
 
     /**
      * @parameter expression="${distro}"
@@ -63,6 +71,11 @@ public class BuildDistro extends AbstractTask {
      * @parameter expression="${bundled}" default-value="false"
      */
     private boolean bundled;
+
+    /**
+     * @parameter expression="${reset}" default-value="false"
+     */
+    private String reset;
 
     @Override
     public void executeTask() throws MojoExecutionException, MojoFailureException {
@@ -121,40 +134,58 @@ public class BuildDistro extends AbstractTask {
         final File targetDir;
         if (StringUtils.isBlank(dir)) {
             String directory = wizard.promptForValueIfMissingWithDefault("Specify build directory for generated files (-Ddir, default: 'docker')", dir, "dir", "docker");
-
             targetDir = new File(directory);
-
-            if (targetDir.exists()) {
-                if (targetDir.isDirectory()) {
-                    if (targetDir.list().length != 0) {
-                        wizard.showMessage("The directory at '" + targetDir.getAbsolutePath() + "' is not empty. All its content will be lost.");
-                        boolean chooseDifferent = wizard.promptYesNo("Would you like to choose a different directory?");
-                        if (chooseDifferent) {
-                            return getBuildDirectory();
-                        }
-                    }
-                } else {
-                    wizard.showMessage("The specified path '" + dir + "' is not a directory.");
-                    return getBuildDirectory();
-                }
-            }
-
-            dir = directory;
         } else {
             targetDir = new File(dir);
         }
 
-        if (!targetDir.exists()) {
-            targetDir.mkdirs();
-        } else {
-            try {
-                FileUtils.cleanDirectory(targetDir);
-            } catch (IOException e) {
-                throw new IllegalStateException("Could not clean up directory", e);
+        if (targetDir.exists()) {
+            if (targetDir.isDirectory()) {
+                if (!Boolean.valueOf(reset)) {
+                    if(isDockerComposeCreated(targetDir)){
+                        wizard.showMessage("The directory at '" + targetDir.getAbsolutePath() + "' contains docker config. Only modules and openmrs.war will be overriden");
+                        deleteDistroFiles(new File(targetDir, WEB));
+                    }else if (targetDir.list().length != 0) {
+                        wizard.showMessage("The directory at '" + targetDir.getAbsolutePath() + "' is not empty. All its content will be lost.");
+                        boolean chooseDifferent = wizard.promptYesNo("Would you like to choose a different directory?");
+                        if (chooseDifferent) {
+                            return getBuildDirectory();
+                        } else {
+                            deleteDirectory(targetDir);
+                        }
+                    }
+                } else {
+                    deleteDirectory(targetDir);
+                }
+            } else {
+                wizard.showMessage("The specified path '" + dir + "' is not a directory.");
+                return getBuildDirectory();
             }
+        } else {
+            targetDir.mkdirs();
         }
 
+        dir = targetDir.getAbsolutePath();
+
         return targetDir;
+    }
+
+    private void deleteDistroFiles(File targetDir){
+        try {
+            FileUtils.deleteDirectory(new File(targetDir, "modules"));
+            new File(targetDir, OPENMRS_WAR).delete();
+            new File(targetDir, OPENMRS_DISTRO_PROPERTIES).delete();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void deleteDirectory(File targetDir) {
+        try {
+            FileUtils.cleanDirectory(targetDir);
+        } catch (IOException e) {
+            throw new IllegalStateException("Could not clean up directory", e);
+        }
     }
 
     private String buildDistro(File targetDirectory, Artifact distroArtifact, DistroProperties distroProperties) throws MojoExecutionException {
@@ -162,7 +193,7 @@ public class BuildDistro extends AbstractTask {
         wizard.showMessage("Downloading modules...\n");
 
         String distroName = adjustImageName(distroProperties.getName());
-        File web = new File(targetDirectory,"web");
+        File web = new File(targetDirectory, WEB);
 
         moduleInstaller.installModules(distroProperties.getWarArtifacts(distroHelper, targetDirectory), web.getAbsolutePath());
         renameWebApp(web);
@@ -207,20 +238,17 @@ public class BuildDistro extends AbstractTask {
         //clean up extracted sql file
         cleanupSqlFiles(targetDirectory);
 
-//        createZipFile(targetDirectory, distroName+"-"+distroVersion);
         return distroName;
     }
 
-    private void createZipFile(File targetDirectory, String zipFileName) {
-        try {
-            ZipFile zipFile = new ZipFile(new File(targetDirectory.getParentFile(), zipFileName+".zip"));
-            ZipParameters parameters = new ZipParameters();
-            parameters.setIncludeRootFolder(false);
-            parameters.setRootFolderInZip(zipFileName);
-            zipFile.addFolder(targetDirectory, parameters);
-        } catch (ZipException e) {
-            throw new RuntimeException("Failed to create zip file", e);
+    private boolean isDockerComposeCreated(File targetDir){
+        File dockerComposeOverride = new File(targetDir, DOCKER_COMPOSE_OVERRIDE_YML);
+        File dockerCompose = new File(targetDir, DOCKER_COMPOSE_YML);
+        File dockerComposeProd = new File(targetDir, DOCKER_COMPOSE_PROD_YML);
+        if(dockerCompose.exists() && dockerComposeOverride.exists() && dockerComposeProd.exists()){
+            return true;
         }
+        return false;
     }
 
     private void copyDockerfile(File targetDirectory, DistroProperties distroProperties) throws MojoExecutionException {
@@ -258,9 +286,9 @@ public class BuildDistro extends AbstractTask {
     }
 
     private void writeDockerCompose(File targetDirectory, String distro, String version) {
-        writeTemplatedFile(targetDirectory, distro, version, DOCKER_COMPOSE_PATH, "docker-compose.yml");
-        writeTemplatedFile(targetDirectory, distro, version, DOCKER_COMPOSE_OVERRIDE_PATH, "docker-compose.override.yml");
-        writeTemplatedFile(targetDirectory, distro, version, DOCKER_COMPOSE_PROD_PATH, "docker-compose.prod.yml");
+        writeTemplatedFile(targetDirectory, distro, version, DOCKER_COMPOSE_PATH, DOCKER_COMPOSE_YML);
+        writeTemplatedFile(targetDirectory, distro, version, DOCKER_COMPOSE_OVERRIDE_PATH, DOCKER_COMPOSE_OVERRIDE_YML);
+        writeTemplatedFile(targetDirectory, distro, version, DOCKER_COMPOSE_PROD_PATH, DOCKER_COMPOSE_PROD_YML);
     }
 
     private void writeReadme(File targetDirectory, String distro, String version) {
@@ -274,13 +302,15 @@ public class BuildDistro extends AbstractTask {
             throw new RuntimeException("Failed to find file '"+ path + "' in classpath");
         }
         File compose = new File(targetDirectory, filename);
-        try(InputStream inputStream = composeUrl.openStream();FileWriter composeWriter = new FileWriter(compose)){
-            String content = IOUtils.toString(inputStream);
-            content = content.replaceAll("<distro>", distro);
-            content = content.replaceAll("<tag>", version);
-            composeWriter.write(content);
-        } catch (IOException|NullPointerException e/*don't check if url is not null, because same error handling*/) {
-            throw new RuntimeException("Failed to write " + filename + " file", e);
+        if (!compose.exists()) {
+            try(InputStream inputStream = composeUrl.openStream();FileWriter composeWriter = new FileWriter(compose)){
+                String content = IOUtils.toString(inputStream);
+                content = content.replaceAll("<distro>", distro);
+                content = content.replaceAll("<tag>", version);
+                composeWriter.write(content);
+            } catch (IOException|NullPointerException e/*don't check if url is not null, because same error handling*/) {
+                throw new RuntimeException("Failed to write " + filename + " file", e);
+            }
         }
     }
 
@@ -348,10 +378,12 @@ public class BuildDistro extends AbstractTask {
 
     private void copyBuildDistroResource(String resource, File target) {
         URL resourceUrl = getClass().getClassLoader().getResource("build-distro/web/" + resource);
-        try {
-            FileUtils.copyURLToFile(resourceUrl, target);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to copy file from classpath: "+resourceUrl+" to "+target.getAbsolutePath());
+        if (!target.exists()) {
+            try {
+                FileUtils.copyURLToFile(resourceUrl, target);
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to copy file from classpath: "+resourceUrl+" to "+target.getAbsolutePath());
+            }
         }
     }
 
