@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -720,7 +721,7 @@ public class DefaultWizard implements Wizard {
             if (dockerHost.equals("true")) {
                 // Reset state of sdk.properties dockerHost property
                 showMessage("Attempting to find default docker host address...");
-                dockerHelper.saveDockerHost(getDefaultDockerHost());
+                dockerHelper.saveDockerHost(determineDefaultDockerHost());
             }
             // If specified with value
             else {
@@ -730,28 +731,25 @@ public class DefaultWizard implements Wizard {
         }
         else if (StringUtils.isBlank(dockerHelper.getDockerHost())) {
             showMessage("-DdockerHost is not specified in batch mode. Attempting to find default docker host address...");
-            dockerHelper.saveDockerHost(getDefaultDockerHost());
+            dockerHelper.saveDockerHost(determineDefaultDockerHost());
         }
     }
 
-    private String getDefaultDockerHost() {
+    private String determineDefaultDockerHost() {
         String host = null;
         if(SystemUtils.IS_OS_LINUX){
             showMessage("Trying default UNIX socket as docker host address...");
             host = DockerHelper.DEFAULT_DOCKER_HOST_UNIX_SOCKET;
         }
         else if (SystemUtils.IS_OS_WINDOWS){
-            // Check if docker-machine url returns host address
-            // or if there is response from direct HTTP request to default 'Docker for Windows' host URL
-            host = getDefaultWindowsDockerHostIfPresent();
+            host = determineWindowsDockerHost();
             if (host == null) {
                 // There is no Docker at any default address
                 host = DockerHelper.DEFAULT_HOST_DOCKER_FOR_WINDOWS;
             }
         }
         else if (SystemUtils.IS_OS_MAC_OSX) {
-            // Check is docker-machine url returns host address
-            host = getDefaultMacDockerHostIfPresent();
+            host = determineDockerToolboxHost();
             if (host == null) {
                 showMessage("Trying default UNIX socket as docker host address...");
                 host = DockerHelper.DEFAULT_DOCKER_HOST_UNIX_SOCKET;
@@ -760,43 +758,19 @@ public class DefaultWizard implements Wizard {
         return host;
     }
 
-    private String getDefaultWindowsDockerHostIfPresent() {
-        showMessage("Checking default Windows Docker host addresses:");
-        showMessage("Checking \"Docker for Windows\":");
-
-        if (isDockerForWindowsDefaultHostPresent()) {
+    private String determineWindowsDockerHost() {
+        if (determineDockerForWindowsHost()) {
             return DockerHelper.DEFAULT_HOST_DOCKER_FOR_WINDOWS;
         }
         else {
-            showMessage("Checking \"Docker Toolbox\":");
-            showMessage("Running `docker-machine url` to determine the docker host...");
-            String dockerToolboxHost = getDefaultDockerToolboxHost();
-            if (StringUtils.isNotBlank(dockerToolboxHost)) {
-                showMessage("Your docker-machine url is: " + dockerToolboxHost);
-                return dockerToolboxHost;
-            }
-            else {
-                showMessage("Failed to fetch host address from \"Docker Toolbox\"'s machine");
-                return null;
-            }
-        }
-    }
-
-    private String getDefaultMacDockerHostIfPresent() {
-        showMessage("Checking \"Docker for Mac\"");
-        String dockerMachineUrl = getDefaultDockerToolboxHost();
-        if (StringUtils.isNotBlank(dockerMachineUrl) && !getDefaultDockerToolboxHost().contains("Host is not running")) {
-            showMessage("Your docker-machine url is: " + dockerMachineUrl);
-            return dockerMachineUrl;
-        }
-        else {
-            showMessage("Failed to fetch host address from \"Docker for Mac\"");
-            return null;
+            String dockerToolboxHost = determineDockerToolboxHost();
+            return dockerToolboxHost;
         }
     }
 
     // This method checks if there is HTTP response at default Docker for Windows host address
-    private boolean isDockerForWindowsDefaultHostPresent() {
+    private boolean determineDockerForWindowsHost() {
+        showMessage("Checking \"Docker for Windows\"");
         String hostUrl = DockerHelper.DEFAULT_HOST_DOCKER_FOR_WINDOWS;
         if (hostUrl.startsWith("tcp")) {
             hostUrl = hostUrl.replace("tcp", "http");
@@ -809,21 +783,32 @@ public class DefaultWizard implements Wizard {
             return true;
         }
         catch (IOException e) {
+            showMessage("\"Docker for Windows\" is not running.");
             return false;
         }
     }
 
-    private String getDefaultDockerToolboxHost() {
+    private String determineDockerToolboxHost() {
+        showMessage("Checking \"Docker Toolbox\"");
+        showMessage("Running `docker-machine url` to determine the docker host...");
         try {
 			Process process = new ProcessBuilder("docker-machine", "url").redirectErrorStream(true).start();
             List<String> lines = IOUtils.readLines(process.getInputStream());
 			process.waitFor();
 			//if success
 			if (process.exitValue() == 0) {
-				return lines.get(0);
+                String url = lines.get(0);
+                try {
+                    new URL(url);
+                } catch (MalformedURLException e) {
+                    showMessage("Failed to fetch host address from \"Docker Toolbox\"'s machine, which responded with: '" + url + "'");
+                    return null;
+                }
+                showMessage("Your docker-machine url is: " + url);
+				return url;
 			}
 		} catch (Exception e) {
-            showMessage("Failed check for DockerToolbox");
+            showMessage("Failed checking \"Docker Toolbox\"");
         }
         return null;
     }

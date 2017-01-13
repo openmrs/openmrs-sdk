@@ -9,9 +9,8 @@ public class DBConnector {
     Connection conn;
     String dbName;
 
-    public DBConnector() {}
-
     public DBConnector(String url, String user, String pass, String dbName) throws SQLException {
+        DriverManager.setLoginTimeout(60);
         this.conn = DriverManager.getConnection(url, user, pass);
         this.dbName = dbName;
     }
