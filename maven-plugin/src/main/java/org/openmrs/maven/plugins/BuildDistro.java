@@ -255,17 +255,17 @@ public class BuildDistro extends AbstractTask {
         int majorVersion = new Version(distroProperties.getPlatformVersion(distroHelper, targetDirectory)).getMajorVersion();
         if(majorVersion == 1){
             if (bundled) {
-                copyBuildDistroResource("Dockerfile-jre7-bundled", new File(targetDirectory, "Dockerfile"));
+                copyBuildDistroResource("Dockerfile-jre7-bundled", new File(targetDirectory, "Dockerfile"), true);
             }
             else {
-                copyBuildDistroResource("Dockerfile-jre7", new File(targetDirectory, "Dockerfile"));
+                copyBuildDistroResource("Dockerfile-jre7", new File(targetDirectory, "Dockerfile"), true);
             }
         } else {
             if (bundled) {
-                copyBuildDistroResource("Dockerfile-jre8-bundled", new File(targetDirectory, "Dockerfile"));
+                copyBuildDistroResource("Dockerfile-jre8-bundled", new File(targetDirectory, "Dockerfile"), true);
             }
             else {
-                copyBuildDistroResource("Dockerfile-jre8", new File(targetDirectory, "Dockerfile"));
+                copyBuildDistroResource("Dockerfile-jre8", new File(targetDirectory, "Dockerfile"), true);
             }
         }
     }
@@ -377,8 +377,12 @@ public class BuildDistro extends AbstractTask {
     }
 
     private void copyBuildDistroResource(String resource, File target) {
+        copyBuildDistroResource(resource, target, false);
+    }
+
+    private void copyBuildDistroResource(String resource, File target, boolean override) {
         URL resourceUrl = getClass().getClassLoader().getResource("build-distro/web/" + resource);
-        if (!target.exists()) {
+        if (override || !target.exists()) {
             try {
                 FileUtils.copyURLToFile(resourceUrl, target);
             } catch (IOException e) {
