@@ -85,6 +85,10 @@ public class SDKConstants {
     public static final List<String> SUPPPORTED_REFAPP_VERSIONS_2_3_1_OR_LOWER = java.util.Arrays.asList("2.3.1", "2.2", "2.1");
     private final static String[] SUPPORTED_MODULE_EXTENSIONS = new String[]{Artifact.TYPE_WAR, Artifact.TYPE_JAR, Artifact.TYPE_OMOD};
 
+    // version keywords
+    public static final String LATEST_VERSION_BATCH_KEYWORD = "LATEST";
+    public static final String LATEST_SNAPSHOT_BATCH_KEYWORD = "LATEST-SNAPSHOT";
+
     public final static String NPM_VERSION = "3.10.6";
     public final static String NODE_VERSION = "v6.4.0";
 

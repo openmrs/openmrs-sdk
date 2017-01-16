@@ -39,9 +39,6 @@ public class DistroHelper {
      */
     Wizard wizard;
 
-    public static final String LATEST_VERSION_BATCH_KEYWORD = "LATEST";
-    public static final String LATEST_SNAPSHOT_BATCH_KEYWORD = "LATEST-SNAPSHOT";
-
     public DistroHelper(MavenProject mavenProject, MavenSession mavenSession, BuildPluginManager pluginManager, Wizard wizard) {
         this.mavenProject = mavenProject;
         this.mavenSession = mavenSession;
@@ -125,11 +122,11 @@ public class DistroHelper {
         String artifactId = split[split.length - 2];
         String version = split[split.length - 1];
 
-        if (versionsHelper != null && version.contains(LATEST_VERSION_BATCH_KEYWORD)) {
-            if (version.toLowerCase().equals(LATEST_SNAPSHOT_BATCH_KEYWORD.toLowerCase())) {
+        if (versionsHelper != null && version.contains(SDKConstants.LATEST_VERSION_BATCH_KEYWORD)) {
+            if (version.toLowerCase().equals(SDKConstants.LATEST_SNAPSHOT_BATCH_KEYWORD.toLowerCase())) {
                 version = versionsHelper.getLatestSnapshotVersion(new Artifact(artifactId, version, groupId));
             }
-            else if (version.toLowerCase().equals((LATEST_VERSION_BATCH_KEYWORD).toLowerCase())) {
+            else if (version.toLowerCase().equals((SDKConstants.LATEST_VERSION_BATCH_KEYWORD).toLowerCase())) {
                 version = versionsHelper.getLatestReleasedVersion(new Artifact(artifactId, version, groupId));
             }
         }
