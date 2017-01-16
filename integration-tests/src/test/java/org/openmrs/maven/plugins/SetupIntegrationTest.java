@@ -188,7 +188,7 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
 
         String serverId = UUID.randomUUID().toString();
         addTaskParam("debug", "1044");
-        addTaskParam("distro", "org.openmrs.distro:referenceapplication:" + keyword);
+        addTaskParam("platform", keyword);
         addMockDbSettings();
 
         addAnswer(serverId);
@@ -219,8 +219,8 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
         addMockDbSettings();
 
         addAnswer(serverId);
-        addAnswer("Distribution");
-        addAnswer("org.openmrs.distro:referenceapplication:" + keyword);
+        addAnswer("Platform");
+        addAnswer(keyword);
         addAnswer(System.getProperty("java.home"));
 
         executeTask("setup");
@@ -244,7 +244,7 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
 
         String serverId = UUID.randomUUID().toString();
         addTaskParam("debug", "1044");
-        addTaskParam("distro", "org.openmrs.distro:referenceapplication:" + keyword);
+        addTaskParam("platform", keyword);
         addMockDbSettings();
 
         addAnswer(serverId);
@@ -258,8 +258,7 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
         Server server = Server.loadServer(serverId);
 
         assertFilePresent(serverId + File.separator + "openmrs-server.properties");
-        assertThat(server, hasPropertyThatNotContains("version", "SNA" +
-                "PSHOT"));
+        assertThat(server, hasPropertyThatNotContains("version", "SNAPSHOT"));
 
         File serverPropertiesFile = new File(testDirectory.getAbsolutePath() + File.separator + serverId, "openmrs-server.properties");
         String javaHomeServerProperty = readValueFromPropertyKey(serverPropertiesFile, "javaHome");
@@ -276,8 +275,8 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
         addMockDbSettings();
 
         addAnswer(serverId);
-        addAnswer("Distribution");
-        addAnswer("org.openmrs.distro:referenceapplication:" + keyword);
+        addAnswer("Platform");
+        addAnswer(keyword);
         addAnswer(System.getProperty("java.home"));
 
         executeTask("setup");

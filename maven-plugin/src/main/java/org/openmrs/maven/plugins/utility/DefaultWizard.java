@@ -352,10 +352,9 @@ public class DefaultWizard implements Wizard {
     }
 
     @Override
-    public void promptForPlatformVersionIfMissing(Server server, List<String> versions) {
-        String version = promptForMissingValueWithOptions(PLATFORM_VERSION_PROMPT,
-                server.getPlatformVersion(), "version", versions, "Please specify platform version", null);
-        server.setPlatformVersion(version);
+    public String promptForPlatformVersionIfMissing(String version, List<String> versions) {
+        return promptForMissingValueWithOptions(PLATFORM_VERSION_PROMPT,
+                version, "version", versions, "Please specify platform version", null);
     }
 
 	@Override

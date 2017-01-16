@@ -21,7 +21,7 @@ public interface Wizard {
 
     void promptForDbCredentialsIfMissing(Server server);
 
-    void promptForPlatformVersionIfMissing(Server server, List<String> versions);
+    String promptForPlatformVersionIfMissing(String version, List<String> versions);
 
     String promptForPlatformVersion(List<String> versions);
 
