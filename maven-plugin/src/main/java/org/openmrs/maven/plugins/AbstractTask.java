@@ -92,6 +92,13 @@ public abstract class AbstractTask extends AbstractMojo {
     ArrayDeque<String> batchAnswers;
 
     /**
+     * stats
+     *
+     * @parameter expression="${stats}" default-value="false"
+     */
+    boolean stats;
+
+    /**
      * wizard for resolving artifact available versions
      */
     VersionsHelper versionsHelper;
@@ -170,7 +177,7 @@ public abstract class AbstractTask extends AbstractMojo {
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
         initTask();
-        new StatsManager(wizard, mavenSession).incrementGoalStats();
+        new StatsManager(wizard, mavenSession, stats).incrementGoalStats();
         executeTask();
     }
 
