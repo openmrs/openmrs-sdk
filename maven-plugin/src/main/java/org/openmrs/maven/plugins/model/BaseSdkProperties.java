@@ -171,6 +171,10 @@ public abstract class BaseSdkProperties {
         } else if(type.equals(TYPE_WAR)){
             stringBuilder.append("-");
             stringBuilder.append("webapp");
+        } // referenceapplication exclusive parser
+        else if (key.equals("distro.referenceapplication")) {
+            stringBuilder.append("-");
+            stringBuilder.append("package");
         }
 
         return  stringBuilder.toString();
