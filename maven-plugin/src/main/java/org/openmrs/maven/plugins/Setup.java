@@ -13,10 +13,16 @@ import org.openmrs.maven.plugins.utility.DBConnector;
 import org.openmrs.maven.plugins.utility.DistroHelper;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 
-import java.io.*;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -84,6 +90,12 @@ public class Setup extends AbstractTask {
      * @parameter expression="${dockerHost}"
      */
     private String dockerHost;
+
+    /**
+     * DB reset if exists
+     * @parameter expression="${dbReset}"
+     */
+    private String dbReset;
 
     /**
      * Path to JDK Version
@@ -191,7 +203,16 @@ public class Setup extends AbstractTask {
                         throw new IllegalStateException("Failed to connect to the specified database " + server.getDbUri());
                     }
                     boolean mysqlImportEnabled = !"null".equals(dbSql);
-                    if(mysqlImportEnabled){
+                    List<String> tableList = listTables(server);
+                    if (tableList != null && !tableList.isEmpty() && dbReset == null) {
+                        dbReset = String.valueOf(
+                                !wizard.promptYesNo("Would you like to setup the server using existing data (if not, all data will be lost)?"));
+                        if (!Boolean.valueOf(dbReset)) server.setParam("create_tables", "false");
+                    }
+                    if(mysqlImportEnabled && (dbReset == null || Boolean.valueOf(dbReset))){
+                        if (Boolean.valueOf(dbReset)) {
+                            wipeDatabase(server);
+                        }
                         if(dbSql != null){
                             importMysqlDb(server, dbSql);
                         } else {
@@ -228,6 +249,29 @@ public class Setup extends AbstractTask {
         } catch (Exception e) {
             FileUtils.deleteQuietly(serverPath);
             throw new MojoExecutionException("Failed to setup server", e);
+        }
+    }
+
+    private void wipeDatabase(Server server) throws MojoExecutionException {
+
+        String uri = server.getDbUri();
+        uri = uri.substring(0, uri.lastIndexOf("/"));
+        DBConnector connector = null;
+        try {
+            connector = new DBConnector(uri, server.getDbUser(), server.getDbPassword(), server.getDbName());
+            connector.dropDatabase();
+            connectMySqlDatabase(server);
+            wizard.showMessage("Database " + server.getDbName() + " has been wiped.");
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to drop " + server.getDbName() + " database");
+        } finally {
+            if (connector != null){
+                try {
+                    connector.close();
+                } catch (SQLException e) {
+                    getLog().error(e.getMessage());
+                }
+            }
         }
     }
 
@@ -299,6 +343,33 @@ public class Setup extends AbstractTask {
             return true;
         } catch (SQLException e) {
             return false;
+        } finally {
+            if (connector != null){
+                try {
+                    connector.close();
+                } catch (SQLException e) {
+                    getLog().error(e.getMessage());
+                }
+            }
+        }
+    }
+
+    private List<String> listTables(Server server) throws MojoExecutionException {
+        String uri = server.getDbUri();
+        uri = uri.substring(0, uri.lastIndexOf("/"));
+        DBConnector connector = null;
+        final int tableNameColumnIndex = 3;
+        try {
+            connector = new DBConnector(uri, server.getDbUser(), server.getDbPassword(), server.getDbName());
+            DatabaseMetaData md = connector.getConnection().getMetaData();
+            ResultSet rs = md.getTables(server.getDbName(), null, null,new String[] {"TABLE"});
+            List<String> tableList = new ArrayList<>();
+            while (rs.next()) {
+                tableList.add(rs.getString(tableNameColumnIndex));
+            }
+            return tableList;
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to fetch table list from \"" + server.getDbName() + "\" database.");
         } finally {
             if (connector != null){
                 try {
