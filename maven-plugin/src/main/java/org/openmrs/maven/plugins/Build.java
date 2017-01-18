@@ -13,7 +13,6 @@ import org.apache.maven.shared.invoker.InvocationResult;
 import org.apache.maven.shared.invoker.Invoker;
 import org.apache.maven.shared.invoker.MavenInvocationException;
 import org.openmrs.maven.plugins.model.Server;
-import org.openmrs.maven.plugins.utility.DistroHelper;
 import org.openmrs.maven.plugins.utility.Project;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 import org.twdata.maven.mojoexecutor.MojoExecutor;
@@ -52,6 +51,11 @@ public class Build extends AbstractTask {
      */
     private String serverId;
 
+    /**
+     * @parameter expression="${buildOwa}" default-value="true"
+     */
+    private boolean buildOwa;
+
     private final static String FRONTEND_BUILDER_GROUP_ID = "com.github.eirslett";
     private final static String FRONTEND_BUILDER_ARTIFACT_ID = "frontend-maven-plugin";
     private final static String FRONTEND_BUILDER_VERSION = "1.0";
@@ -74,13 +78,10 @@ public class Build extends AbstractTask {
         if(StringUtils.isBlank(serverId)){
             //check if there's owa project in current dir
             File configFile = new File("webpack.config.js");
-            if (configFile.exists()) {
+            if (configFile.exists() && buildOwa) {
                 projectDetected = true;
-                boolean buildOwa = wizard.promptYesNo("OWA Project found in this directory, do you want to build it?");
-                if (buildOwa) {
-                    buildOwaProject();
-                    buildExecuted = true;
-                }
+                buildOwaProject();
+                buildExecuted = true;
             }
             //check if there's maven project in current dir
             File userDir = new File(System.getProperty("user.dir"));

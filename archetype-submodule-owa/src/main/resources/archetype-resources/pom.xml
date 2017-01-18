@@ -10,43 +10,16 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>com.github.eirslett</groupId>
-                <artifactId>frontend-maven-plugin</artifactId>
-                <version>1.0</version>
+                <groupId>org.openmrs.maven.plugins</groupId>
+                <artifactId>openmrs-sdk-maven-plugin</artifactId>
+                <version>3.7.1-SNAPSHOT</version>
                 <executions>
-
                     <execution>
-                        <id>install node and npm</id>
+                        <id>build owa</id>
+                        <phase>install</phase>
                         <goals>
-                            <goal>install-node-and-npm</goal>
+                            <goal>build</goal>
                         </goals>
-                        <phase>validate</phase>
-                        <configuration>
-                            <nodeVersion>v5.3.0</nodeVersion>
-                            <npmVersion>3.9.6</npmVersion>
-                        </configuration>
-                    </execution>
-
-                    <execution>
-                        <id>npm install</id>
-                        <goals>
-                            <goal>npm</goal>
-                        </goals>
-                        <phase>generate-resources</phase>
-                        <configuration>
-                            <arguments>install</arguments>
-                        </configuration>
-                    </execution>
-
-                    <execution>
-                        <id>npm build</id>
-                        <goals>
-                            <goal>npm</goal>
-                        </goals>
-                        <phase>generate-resources</phase>
-                        <configuration>
-                            <arguments>run build:prod</arguments>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>
