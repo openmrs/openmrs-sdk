@@ -1,8 +1,8 @@
 #!/bin/bash -eux
 
 DB_CREATE_TABLES=${DB_CREATE_TABLES:-false}
-DB_ADD_DEMO_DATA=${DB_ADD_DEMO_DATA:-false}
 DB_AUTO_UPDATE=${DB_AUTO_UPDATE:-false}
+MODULE_WEB_ADMIN=${MODULE_WEB_ADMIN:-true}
 DEBUG=${DEBUG:-false}
 
 cat > /usr/local/tomcat/openmrs-server.properties << EOF
@@ -12,9 +12,8 @@ connection.username=${DB_USERNAME}
 connection.password=${DB_PASSWORD}
 has_current_openmrs_database=true
 create_database_user=false
-module_web_admin=true
+module_web_admin=${MODULE_WEB_ADMIN}
 create_tables=${DB_CREATE_TABLES}
-add_demo_data=${DB_ADD_DEMO_DATA}
 auto_update_database=${DB_AUTO_UPDATE}
 EOF
 
