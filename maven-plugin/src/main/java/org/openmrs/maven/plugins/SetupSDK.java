@@ -24,13 +24,6 @@ public class SetupSDK extends AbstractTask{
     private static final String SUCCESS_TEMPLATE = "SDK installed successfully, settings file: %s";
     private static final String SDK_INFO = "Now you can use sdk: mvn openmrs-sdk:<task_name>";
 
-    /**
-     * stats
-     *
-     * @parameter expression="${stats}" default-value="false"
-     */
-    boolean stats;
-
     public void execute() throws MojoFailureException, MojoExecutionException { //execute method is overwritten to not change the workflow
         initTask();                                                             //in SetupSDK, but we need to extends AbstractTask to support batchAnswers
         executeTask();

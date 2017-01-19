@@ -105,6 +105,13 @@ public class CreateProject extends CreateProjectFromArchetypeMojo {
     private ArrayDeque<String> batchAnswers;
 
     /**
+     * stats
+     *
+     * @parameter expression="${stats}" default-value="false"
+     */
+    boolean stats;
+
+    /**
      * The manager's artifactId. This can be an ordered comma separated list.
      *
      * @parameter expression="${archetypeArtifactId}"
@@ -287,7 +294,7 @@ public class CreateProject extends CreateProjectFromArchetypeMojo {
             wizard.setInteractiveMode(false);
         }
 
-        new StatsManager(wizard, session).incrementGoalStats();
+        new StatsManager(wizard, session, stats).incrementGoalStats();
         setProjectType();
 
         if(TYPE_OWA.equals(type)){

@@ -16,16 +16,24 @@ public class StatsManager {
 
     private MavenSession mavenSession;
 
-    public StatsManager(Wizard wizard, MavenSession mavenSession){
+    private boolean stats;
+
+    public StatsManager(Wizard wizard, MavenSession mavenSession, boolean stats){
         this.wizard = wizard;
         this.mavenSession = mavenSession;
+        this.stats = stats;
     }
 
     private void loadStatistics() throws MojoExecutionException {
         try {
             sdkStatistics = SdkStatistics.loadStatistics();
         } catch (IllegalStateException e) {
-            boolean agree = wizard.promptYesNo(SDKConstants.SDK_STATS_ENABLED_QUESTION);
+            boolean agree;
+            if (!mavenSession.getRequest().isInteractiveMode()) {
+                agree = stats;
+            } else {
+                agree = wizard.promptYesNo(SDKConstants.SDK_STATS_ENABLED_QUESTION);
+            }
             sdkStatistics = new SdkStatistics().createSdkStatsFile(agree);
             sdkStatistics.sendReport(wizard);
         }
