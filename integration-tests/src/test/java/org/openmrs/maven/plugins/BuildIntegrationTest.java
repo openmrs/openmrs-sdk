@@ -55,11 +55,7 @@ public class BuildIntegrationTest extends AbstractSdkIntegrationTest{
 
         addTaskParam("openMRSPath",testDirectory.getAbsolutePath());
 
-        addAnswer("n"); // Maven Project found in this directory, do You want to build it?
-        addAnswer("n"); // OWA Project found in this directory, do You want to build it?
-        addAnswer("y"); // Do You want to build all watched projects instead?
-
-        addAnswer(serverId);
+        addTaskParam("serverId", serverId);
 
         executeTask("build");
 
@@ -90,7 +86,7 @@ public class BuildIntegrationTest extends AbstractSdkIntegrationTest{
     public void build_shouldDetectMavenProject() throws Exception{
 
         addTaskParam("openMRSPath",testDirectory.getAbsolutePath());
-        addAnswer("n"); // OWA Project found in this directory, do You want to build it?
+        addTaskParam("buildOwa", "false");
         addAnswer("y"); // Maven Project found in this directory, do You want to build it?
         addTaskParam(BATCH_ANSWERS, getAnswers());
 
