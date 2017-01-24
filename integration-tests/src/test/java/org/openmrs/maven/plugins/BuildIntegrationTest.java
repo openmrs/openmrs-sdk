@@ -7,6 +7,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.utility.Project;
+import org.openmrs.maven.plugins.utility.SDKConstants;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -69,6 +70,9 @@ public class BuildIntegrationTest extends AbstractSdkIntegrationTest{
     public void build_shouldBuildOwaProject() throws Exception{
 
         addTaskParam("openMRSPath",testDirectory.getAbsolutePath());
+
+        addTaskParam("nodeVersion", SDKConstants.NODE_VERSION);
+        addTaskParam("npmVersion", SDKConstants.NPM_VERSION);
 
         addAnswer("y"); // OWA Project found in this directory, do You want to build it?
         addAnswer("n"); // Maven Project found in this directory, do You want to build it?
