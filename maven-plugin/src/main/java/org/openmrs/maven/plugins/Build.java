@@ -1,9 +1,9 @@
 package org.openmrs.maven.plugins;
 
 
-import com.atlassian.util.concurrent.Nullable;
+import com.github.zafarkhaja.semver.UnexpectedCharacterException;
+import com.github.zafarkhaja.semver.Version;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Writer;
@@ -15,16 +15,12 @@ import org.apache.maven.shared.invoker.InvocationRequest;
 import org.apache.maven.shared.invoker.InvocationResult;
 import org.apache.maven.shared.invoker.Invoker;
 import org.apache.maven.shared.invoker.MavenInvocationException;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 import org.openmrs.maven.plugins.model.Server;
+import org.openmrs.maven.plugins.utility.OwaHelper;
 import org.openmrs.maven.plugins.utility.Project;
 import org.openmrs.maven.plugins.utility.SDKConstants;
-import org.twdata.maven.mojoexecutor.MojoExecutor;
 
 import java.io.File;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
@@ -33,21 +29,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-
-import static org.twdata.maven.mojoexecutor.MojoExecutor.artifactId;
-import static org.twdata.maven.mojoexecutor.MojoExecutor.configuration;
-import static org.twdata.maven.mojoexecutor.MojoExecutor.element;
-import static org.twdata.maven.mojoexecutor.MojoExecutor.executeMojo;
-import static org.twdata.maven.mojoexecutor.MojoExecutor.executionEnvironment;
-import static org.twdata.maven.mojoexecutor.MojoExecutor.goal;
-import static org.twdata.maven.mojoexecutor.MojoExecutor.groupId;
-import static org.twdata.maven.mojoexecutor.MojoExecutor.plugin;
-import static org.twdata.maven.mojoexecutor.MojoExecutor.version;
 
 /**
  * @goal build
@@ -68,24 +53,14 @@ public class Build extends AbstractTask {
     /**
      * @parameter expression="${npmVersion}"
      */
-    private String npmVersion;
+    protected String npmVersion;
 
     /**
      * @parameter expression="${nodeVersion}"
      */
-    private String nodeVersion;
+    protected String nodeVersion;
 
-    private final static String FRONTEND_BUILDER_GROUP_ID = "com.github.eirslett";
-    private final static String FRONTEND_BUILDER_ARTIFACT_ID = "frontend-maven-plugin";
-    private final static String FRONTEND_BUILDER_VERSION = "1.0";
-
-    private final static String MAVEN_EXEC_PLUGIN_GROUP_ID = "org.codehaus.mojo";
-    private final static String MAVEN_EXEC_PLUGIN_ARTIFACT_ID = "exec-maven-plugin";
-    private final static String MAVEN_EXEC_PLUGIN_VERSION = "1.5.0";
-
-    public static final String PACKAGE_JSON_FILENAME = "package.json";
-    public static final String NODE_VERSION_KEY = "node-version";
-    public static final String NPM_VERSION_KEY = "npm-version";
+    protected OwaHelper owaHelper;
 
     public Build(){}
 
@@ -98,6 +73,7 @@ public class Build extends AbstractTask {
 
     @Override
     public void executeTask() throws MojoExecutionException, MojoFailureException {
+        this.owaHelper = new OwaHelper(mavenSession, mavenProject, pluginManager, wizard);
         boolean projectDetected = false;
         boolean buildExecuted = false;
 
@@ -192,36 +168,73 @@ public class Build extends AbstractTask {
 
         boolean isUsingSystemNpmAndNodejs;
 
-        Map<String, String> systemNodeAndNpmVersion = getSystemNodeAndNpmVersion();
-        Map<String, String> batchNodeAndNpmVersion = getBatchNodeAndNpmVersion();
-        if (checkIfVersionsAreDefined(batchNodeAndNpmVersion)) {
+        String systemNpmVersionString = owaHelper.getSystemNpmVersion();
+        String systemNodeVersionString = owaHelper.getSystemNodeVersion();
+        Version systemNpmVersion = systemNpmVersionString != null ? Version.valueOf(systemNpmVersionString) : null;
+        Version systemNodeVersion = systemNodeVersionString != null ? Version.valueOf(systemNodeVersionString) : null;
+
+        Version batchNpmVersion = npmVersion != null ? Version.valueOf(npmVersion) : null;
+        Version batchNodeVersion = nodeVersion != null ? Version.valueOf(nodeVersion.replaceFirst("v","")) : null;
+
+        if (checkIfVersionsAreDefined(batchNpmVersion, batchNodeVersion)) {
             wizard.showMessage("Using npm and nodejs versions defined in batch mode");
-            if (!batchNodeAndNpmVersion.equals(systemNodeAndNpmVersion)) {
+            if (!(batchNpmVersion.equals(systemNpmVersion) && batchNodeVersion.equals(systemNodeVersion))) {
                 isUsingSystemNpmAndNodejs = false;
-                installLocalNodeAndNpm(batchNodeAndNpmVersion.get(NODE_VERSION_KEY), batchNodeAndNpmVersion.get(NPM_VERSION_KEY));
+                owaHelper.installLocalNodeAndNpm(batchNodeVersion.toString(), batchNpmVersion.toString());
             }
             else {
                 isUsingSystemNpmAndNodejs = true;
             }
         }
         else {
-            if (!checkIfVersionsAreDefined(systemNodeAndNpmVersion)) {
+            String projectNpmVersionString = owaHelper.getProjectNpmVersionFromPackageJson();
+            String projectNodeVersionString = owaHelper.getProjectNodeVersionFromPackageJson();
+
+            Version projectNpmVersion;
+            Version projectNodeVersion;
+
+            try {
+                projectNpmVersion = projectNpmVersionString != null ? Version.valueOf(projectNpmVersionString) : null;
+                projectNodeVersion = projectNodeVersionString != null ? Version.valueOf(projectNodeVersionString) : null;
+            }
+            catch (UnexpectedCharacterException e) {
+                Map<String, Version> mostSatisfyingVersions = owaHelper.getMostSatisfyingNodeAndNpmVersion(projectNpmVersionString, projectNodeVersionString);
+                projectNpmVersion = mostSatisfyingVersions.get("npm");
+                projectNodeVersion = mostSatisfyingVersions.get("node");
+            }
+
+            if (!checkIfVersionsAreDefined(systemNpmVersion, systemNodeVersion)) {
                 isUsingSystemNpmAndNodejs = false;
-                Map<String, String> projectNodeAndNpmVersion = getProjectNpmAndNodeVersionFromPackageJson();
-                if (checkIfVersionsAreDefined(projectNodeAndNpmVersion)) {
+
+                if (checkIfVersionsAreDefined(projectNpmVersion, projectNodeVersion)) {
                     wizard.showMessage("Using npm and nodejs versions defined in package.json");
-                    installLocalNodeAndNpm(projectNodeAndNpmVersion.get(NODE_VERSION_KEY), projectNodeAndNpmVersion.get(NPM_VERSION_KEY));
+                    owaHelper.installLocalNodeAndNpm(projectNodeVersion.toString(), projectNpmVersion.toString());
                 }
                 else {
                     wizard.showMessage("Using default npm and nodejs versions");
-                    installLocalNodeAndNpm(SDKConstants.NODE_VERSION, SDKConstants.NPM_VERSION);
+                    owaHelper.installLocalNodeAndNpm(SDKConstants.NODE_VERSION, SDKConstants.NPM_VERSION);
                 }
             }
             else {
-                isUsingSystemNpmAndNodejs = true;
-                wizard.showMessage("Using system npm and nodejs");
-                wizard.showMessage("-npm: " + systemNodeAndNpmVersion.get(NPM_VERSION_KEY)
-                       + "\n" + "-nodejs: " + systemNodeAndNpmVersion.get(NODE_VERSION_KEY) + "\n");
+                if (checkIfVersionsAreDefined(projectNpmVersion, projectNodeVersion)) {
+                    if (systemNpmVersion.satisfies(projectNpmVersionString) && systemNodeVersion.satisfies(projectNodeVersionString)) {
+                        isUsingSystemNpmAndNodejs = true;
+                        wizard.showMessage("Using system npm and nodejs");
+                        wizard.showMessage("-npm: " + systemNpmVersion
+                                + "\n" + "-nodejs: " + systemNodeVersion + "\n");
+                    }
+                    else {
+                        isUsingSystemNpmAndNodejs = false;
+                        wizard.showMessage("Using npm and nodejs versions defined in package.json");
+                        owaHelper.installLocalNodeAndNpm(projectNodeVersion.toString(), projectNpmVersion.toString());
+                    }
+                }
+                else {
+                    isUsingSystemNpmAndNodejs = true;
+                    wizard.showMessage("Using system npm and nodejs");
+                    wizard.showMessage("-npm: " + systemNpmVersion
+                            + "\n" + "-nodejs: " + systemNodeVersion + "\n");
+                }
             }
         }
 
@@ -231,79 +244,9 @@ public class Build extends AbstractTask {
         wizard.showMessage("Build done.");
     }
 
-    private boolean checkIfVersionsAreDefined(Map <String, String> versions) {
-        return StringUtils.isNotBlank(versions.get(NPM_VERSION_KEY)) && StringUtils.isNotBlank(versions.get(NODE_VERSION_KEY));
-    }
-
-    protected Map<String, String> getBatchNodeAndNpmVersion() {
-        if (nodeVersion != null && !nodeVersion.startsWith("v")) {
-            nodeVersion = "v" + nodeVersion;
-        }
-        Map<String, String> result = new HashMap<>();
-        result.put(NPM_VERSION_KEY, npmVersion);
-        result.put(NODE_VERSION_KEY, nodeVersion);
-        return result;
-    }
-
-    protected Map<String, String> getSystemNodeAndNpmVersion() {
-        Map<String, String> result = new HashMap<>();
-        result.put(NPM_VERSION_KEY, getSystemNpmVersion());
-        result.put(NODE_VERSION_KEY, getSystemNodeVersion());
-        return result;
-    }
-
-    protected Map<String, String> getProjectNpmAndNodeVersionFromPackageJson() {
-        Map<String, String> result = new HashMap<>();
-        result.put(NPM_VERSION_KEY, getProjectNpmVersionFromPackageJson());
-        result.put(NODE_VERSION_KEY, getProjectNodeVersionFromPackageJson());
-        return result;
-    }
-
-    private String getSystemNpmVersion() {
-        return runProcessAndGetFirstResponseLine("npm", "-v");
-    }
-    private String getSystemNodeVersion() {
-        return runProcessAndGetFirstResponseLine("node", "-v");
-    }
-
-    private String getProjectNpmVersionFromPackageJson() {
-        return getPropertyValueFromPropertiesJsonFile(PACKAGE_JSON_FILENAME, NPM_VERSION_KEY);
-    }
-    private String getProjectNodeVersionFromPackageJson() {
-        return getPropertyValueFromPropertiesJsonFile(PACKAGE_JSON_FILENAME, NODE_VERSION_KEY);
-    }
-
-    protected static String getPropertyValueFromPropertiesJsonFile(String jsonFilename, String key) {
-        JSONParser parser = new JSONParser();
-        Object obj;
-        try {
-            obj = parser.parse(new FileReader(jsonFilename));
-        } catch (IOException e) {
-            throw new IllegalStateException("Couldn't find " + jsonFilename + " at " + new File(jsonFilename).getAbsolutePath());
-        } catch (ParseException e) {
-            throw new IllegalStateException("Couldn't parse " + jsonFilename + ":", e);
-        }
-        JSONObject jsonObject =  (JSONObject) obj;
-
-        return (String) jsonObject.get(key);
-    }
-
-    protected void installLocalNodeAndNpm(@Nullable String nodeVersion, @Nullable String npmVersion) throws MojoExecutionException {
-        wizard.showMessage("-npm: " + npmVersion + "\n" + "-nodejs: " + nodeVersion + "\n");
-
-        List<MojoExecutor.Element> configuration = new ArrayList<>();
-        configuration.add(element("nodeVersion", nodeVersion));
-        configuration.add(element("npmVersion", npmVersion));
-        executeMojo(
-                plugin(
-                        groupId(FRONTEND_BUILDER_GROUP_ID),
-                        artifactId(FRONTEND_BUILDER_ARTIFACT_ID),
-                        version(FRONTEND_BUILDER_VERSION)
-                ),
-                goal("install-node-and-npm"),
-                configuration(configuration.toArray(new MojoExecutor.Element[0])),
-                executionEnvironment(mavenProject, mavenSession, pluginManager)
-        );
+    private boolean checkIfVersionsAreDefined(Version npmVersion, Version nodeVersion) {
+        return npmVersion != null && nodeVersion != null &&
+                StringUtils.isNotBlank(npmVersion.toString()) && StringUtils.isNotBlank(nodeVersion.toString());
     }
 
     private void runOwaBuild(boolean isUsingSystemNpmAndNodejs) throws MojoExecutionException {
@@ -315,109 +258,20 @@ public class Build extends AbstractTask {
         args.add(buildArg);
 
         if (isUsingSystemNpmAndNodejs) {
-            runSystemNpmCommandWithArgs(args);
+            owaHelper.runSystemNpmCommandWithArgs(args);
         }
         else {
-            runLocalNpmCommandWithArgs(args);
+            owaHelper.runLocalNpmCommandWithArgs(args);
         }
     }
 
     private void installNodeModules(boolean isUsingSystemNpmAndNodejs) throws MojoExecutionException {
         final String arg = "install";
         if (isUsingSystemNpmAndNodejs) {
-            runSystemNpmCommandWithArgs(arg);
+            owaHelper.runSystemNpmCommandWithArgs(arg);
         }
         else {
-            runLocalNpmCommandWithArgs(arg);
-        }
-    }
-
-    private void runLocalNpmCommandWithArgs(String arg) throws MojoExecutionException {
-        List<String> args = new ArrayList<>();
-        args.add(arg);
-        runLocalNpmCommandWithArgs(args);
-    }
-
-    protected void runLocalNpmCommandWithArgs(List<String> args) throws MojoExecutionException {
-        List<MojoExecutor.Element> configuration = new ArrayList<>();
-
-        StringBuilder argsString = new StringBuilder();
-
-        for (String argument : args) {
-            argsString.append(argument);
-            argsString.append(" ");
-        }
-
-        configuration.add(element("arguments", argsString.toString()));
-        executeMojo(
-                plugin(
-                        groupId(FRONTEND_BUILDER_GROUP_ID),
-                        artifactId(FRONTEND_BUILDER_ARTIFACT_ID),
-                        version(FRONTEND_BUILDER_VERSION)
-                ),
-                goal("npm"),
-                configuration(configuration.toArray(new MojoExecutor.Element[0])),
-                executionEnvironment(mavenProject, mavenSession, pluginManager)
-        );
-    }
-
-    private void runSystemNpmCommandWithArgs(String arg) throws MojoExecutionException {
-        List<String> args = new ArrayList<>();
-        args.add(arg);
-        runSystemNpmCommandWithArgs(args);
-    }
-
-    protected void runSystemNpmCommandWithArgs(List<String> args) throws MojoExecutionException {
-        List<MojoExecutor.Element> configuration = new ArrayList<>();
-        configuration.add(element("executable", "npm"));
-
-        MojoExecutor.Element[] argsele = new MojoExecutor.Element[args.size()];
-
-        for (int i = 0; i < args.size(); i++) {
-            argsele[i] = new MojoExecutor.Element("argument", args.get(i));
-        }
-
-        MojoExecutor.Element parentArgs = new MojoExecutor.Element("arguments", argsele);
-
-        configuration.add(parentArgs);
-        executeMojo(
-                plugin(
-                        groupId(MAVEN_EXEC_PLUGIN_GROUP_ID),
-                        artifactId(MAVEN_EXEC_PLUGIN_ARTIFACT_ID),
-                        version(MAVEN_EXEC_PLUGIN_VERSION)
-                ),
-                goal("exec"),
-                configuration(configuration.toArray(new MojoExecutor.Element[0])),
-                executionEnvironment(mavenProject, mavenSession, pluginManager)
-        );
-    }
-
-    private String runProcessAndGetFirstResponseLine(String command, @Nullable String params) {
-        Process process = null;
-        List<String> lines = null;
-        try {
-            if (params != null) {
-                process = new ProcessBuilder(command, params).redirectErrorStream(true).start();
-            }
-            else {
-                process = new ProcessBuilder(command).redirectErrorStream(true).start();
-            }
-            lines = IOUtils.readLines(process.getInputStream());
-            process.waitFor();
-        } catch (InterruptedException | IOException e) {
-            System.out.println("");
-        }
-
-        if (process != null && process.exitValue() == 0) {
-            if (lines != null) {
-                return lines.get(0);
-            }
-            else {
-                return null;
-            }
-        }
-        else {
-            return null;
+            owaHelper.runLocalNpmCommandWithArgs(arg);
         }
     }
 

@@ -80,6 +80,13 @@ public class Run extends AbstractTask {
 		}
 		serverId = wizard.promptForExistingServerIdIfMissing(serverId);
 		Server server = loadValidatedServer(serverId);
+		if (port != null && port != 8080) {
+			server.setParam("tomcat.port", String.valueOf(port));
+		}
+		else{
+			server.setParam("tomcat.port", "8080");
+		}
+		server.save();
 		File serverPath = server.getServerDirectory();
 		serverPath.mkdirs();
 		File userDir = new File(System.getProperty("user.dir"));
