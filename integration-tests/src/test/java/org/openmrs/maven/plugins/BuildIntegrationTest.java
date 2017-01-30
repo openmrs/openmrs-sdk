@@ -74,7 +74,6 @@ public class BuildIntegrationTest extends AbstractSdkIntegrationTest{
         addTaskParam("nodeVersion", SDKConstants.NODE_VERSION);
         addTaskParam("npmVersion", SDKConstants.NPM_VERSION);
 
-        addAnswer("y"); // OWA Project found in this directory, do You want to build it?
         addAnswer("n"); // Maven Project found in this directory, do You want to build it?
 
         addTaskParam(BATCH_ANSWERS, getAnswers());

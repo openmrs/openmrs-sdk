@@ -2,8 +2,6 @@
   "name": "test",
   "version": "0.1.0",
   "description": "TEST",
-  "npm-version": "3.10.8",
-  "node-version": "7.0.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/user/openmrs-owa-test"
@@ -32,6 +30,10 @@
     "yargs": "^4.3.1",
     "archiver": "^1.0.0",
     "on-build-webpack": "^0.1.0"
+  },
+  "engines": {
+    "node": "7.0.0",
+    "npm": "3.10.8"
   },
   "scripts": {
     "clean": "rimraf dist && rimraf coverage*",
