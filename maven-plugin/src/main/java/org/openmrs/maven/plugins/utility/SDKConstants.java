@@ -91,8 +91,9 @@ public class SDKConstants {
 
     public final static String NPM_VERSION = "3.10.6";
     public final static String NODE_VERSION = "v6.4.0";
+	public static final String RESET_SEARCH_INDEX_SQL = "DELETE FROM `%s`.global_property WHERE property = 'search.indexVersion'";
 
-    /**
+	/**
      * Get core modules with required versions
      * @param version - openmrs version
      * @return

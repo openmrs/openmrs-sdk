@@ -8,13 +8,13 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
-import org.apache.velocity.texen.util.FileUtil;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.model.Version;
 import org.openmrs.maven.plugins.utility.DistroHelper;
 import org.openmrs.maven.plugins.utility.Project;
+import org.openmrs.maven.plugins.utility.SDKConstants;
 
 import java.io.*;
 import java.net.URL;
@@ -333,8 +333,9 @@ public class BuildDistro extends AbstractTask {
             while((c = stream.read()) != -1){
                 writer.write(c);
             }
-            writer.flush();
 
+            writer.write("\n" + String.format(SDKConstants.RESET_SEARCH_INDEX_SQL, "openmrs") + "\n");
+            writer.flush();
         } catch (IOException e) {
             throw new RuntimeException("Failed to create dump file", e);
         } finally {

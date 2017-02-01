@@ -95,7 +95,7 @@ public class Setup extends AbstractTask {
      * DB reset if exists
      * @parameter expression="${dbReset}"
      */
-    private String dbReset;
+    private Boolean dbReset;
 
     /**
      * Path to JDK Version
@@ -203,22 +203,34 @@ public class Setup extends AbstractTask {
                     if(!mysqlDbCreated){
                         throw new IllegalStateException("Failed to connect to the specified database " + server.getDbUri());
                     }
-                    boolean mysqlImportEnabled = !"null".equals(dbSql);
-                    List<String> tableList = listTables(server);
-                    if (tableList != null && !tableList.isEmpty() && dbReset == null) {
-                        dbReset = String.valueOf(
-                                !wizard.promptYesNo("Would you like to setup the server using existing data (if not, all data will be lost)?"));
-                        if (!Boolean.valueOf(dbReset)) server.setParam("create_tables", "false");
-                    }
-                    if(mysqlImportEnabled && (dbReset == null || Boolean.valueOf(dbReset))){
-                        if (Boolean.valueOf(dbReset)) {
-                            wipeDatabase(server);
+
+                    if (hasDbTables(server)) {
+                        if (dbReset == null) {
+                            dbReset = !wizard.promptYesNo("Would you like to setup the server using existing data (if not, all data will be lost)?");
                         }
+
+                        if (dbReset) {
+                            wipeDatabase(server);
+                        } else {
+                            server.setParam("create_tables", "false");
+                        }
+                    }
+
+                    if (dbReset == null){
+                        dbReset = true;
+                    }
+
+
+                    if(!"null".equals(dbSql) && dbReset){
                         if(dbSql != null){
                             importMysqlDb(server, dbSql);
                         } else {
                             importMysqlDb(server, Server.CLASSPATH_SCRIPT_PREFIX+ "openmrs-platform.sql");
                         }
+
+                        resetSearchIndex(server);
+                    } else if (!dbReset) {
+                        resetSearchIndex(server);
                     }
                 } else {
                     moduleInstaller.installModule(SDKConstants.H2_ARTIFACT, server.getServerDirectory().getPath());
@@ -254,7 +266,6 @@ public class Setup extends AbstractTask {
     }
 
     private void wipeDatabase(Server server) throws MojoExecutionException {
-
         String uri = server.getDbUri();
         uri = uri.substring(0, uri.lastIndexOf("/"));
         DBConnector connector = null;
@@ -355,23 +366,69 @@ public class Setup extends AbstractTask {
         }
     }
 
-    private List<String> listTables(Server server) throws MojoExecutionException {
+    private boolean hasDbTables(Server server) throws MojoExecutionException {
         String uri = server.getDbUri();
         uri = uri.substring(0, uri.lastIndexOf("/"));
         DBConnector connector = null;
-        final int tableNameColumnIndex = 3;
+        ResultSet rs = null;
         try {
             connector = new DBConnector(uri, server.getDbUser(), server.getDbPassword(), server.getDbName());
             DatabaseMetaData md = connector.getConnection().getMetaData();
-            ResultSet rs = md.getTables(server.getDbName(), null, null,new String[] {"TABLE"});
-            List<String> tableList = new ArrayList<>();
-            while (rs.next()) {
-                tableList.add(rs.getString(tableNameColumnIndex));
+
+            rs = md.getTables(server.getDbName(), null, null,new String[] {"TABLE"});
+            boolean hasTables = false;
+            if (rs.next()) {
+                hasTables = true;
             }
-            return tableList;
+
+            rs.close();
+            connector.close();
+
+            return hasTables;
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to fetch table list from \"" + server.getDbName() + "\" database.");
         } finally {
+            if (rs != null) {
+                try {
+                    rs.close();
+                } catch (SQLException e) {
+                    getLog().error(e.getMessage());
+                }
+            }
+            if (connector != null){
+                try {
+                    connector.close();
+                } catch (SQLException e) {
+                    getLog().error(e.getMessage());
+                }
+            }
+        }
+    }
+
+    private void resetSearchIndex(Server server) throws MojoExecutionException {
+        String uri = server.getDbUri();
+        uri = uri.substring(0, uri.lastIndexOf("/"));
+        DBConnector connector = null;
+        PreparedStatement ps = null;
+        try {
+            connector = new DBConnector(uri, server.getDbUser(), server.getDbPassword(), server.getDbName());
+            ps = connector.getConnection().prepareStatement(String.format(SDKConstants.RESET_SEARCH_INDEX_SQL, server.getDbName()));
+            ps.execute();
+
+            ps.close();
+            connector.close();
+
+            wizard.showMessage("The search index has been reset.");
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to reset search index", e);
+        } finally {
+            if (ps != null){
+                try {
+                    ps.close();
+                } catch (SQLException e) {
+                    getLog().error(e.getMessage());
+                }
+            }
             if (connector != null){
                 try {
                     connector.close();
