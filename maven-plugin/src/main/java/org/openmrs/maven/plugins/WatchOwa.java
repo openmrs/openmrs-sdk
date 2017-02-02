@@ -1,10 +1,12 @@
 package org.openmrs.maven.plugins;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.openmrs.maven.plugins.utility.OwaHelper;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -37,7 +39,12 @@ public class WatchOwa extends AbstractTask {
             if (port != null) {
                 args.add("-- --targetPort=" + port);
             }
-            owaHelper.runLocalNpmCommandWithArgs(args);
+            String projectNodeVersion = owaHelper.getProjectNodeVersion();
+            if (projectNodeVersion != null) {
+                owaHelper.runLocalNpmCommandWithArgs(args);
+            } else {
+                owaHelper.runSystemNpmCommandWithArgs(args);
+            }
         } else {
             throw new IllegalStateException("Config file not found at" + new File(CONFIG_FILENAME).getAbsolutePath());
         }

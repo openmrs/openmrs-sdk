@@ -1,16 +1,20 @@
 package org.openmrs.maven.plugins.utility;
 
 import com.atlassian.util.concurrent.Nullable;
+import com.github.zafarkhaja.semver.Parser;
 import com.github.zafarkhaja.semver.Version;
+import com.github.zafarkhaja.semver.expr.Expression;
+import com.github.zafarkhaja.semver.expr.ExpressionParser;
 import com.google.gson.Gson;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.SystemUtils;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
-import org.openmrs.maven.plugins.model.NodeDistVersion;
+import org.openmrs.maven.plugins.model.NodeDistro;
 import org.openmrs.maven.plugins.model.PackageJson;
 import org.twdata.maven.mojoexecutor.MojoExecutor;
 
@@ -18,14 +22,14 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.Reader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static org.twdata.maven.mojoexecutor.MojoExecutor.artifactId;
 import static org.twdata.maven.mojoexecutor.MojoExecutor.configuration;
@@ -40,7 +44,7 @@ import static org.twdata.maven.mojoexecutor.MojoExecutor.version;
 public class OwaHelper {
 	private final static String FRONTEND_BUILDER_GROUP_ID = "com.github.eirslett";
 	private final static String FRONTEND_BUILDER_ARTIFACT_ID = "frontend-maven-plugin";
-	private final static String FRONTEND_BUILDER_VERSION = "1.0";
+	private final static String FRONTEND_BUILDER_VERSION = "1.3";
 
 	private final static String MAVEN_EXEC_PLUGIN_GROUP_ID = "org.codehaus.mojo";
 	private final static String MAVEN_EXEC_PLUGIN_ARTIFACT_ID = "exec-maven-plugin";
@@ -80,7 +84,7 @@ public class OwaHelper {
 
 		wizard.showMessage("Creating OWA project in " + owaDir.getAbsolutePath() + "...\n");
 
-		installLocalNodeAndNpm(SDKConstants.NODE_VERSION, SDKConstants.NPM_VERSION);
+		installLocalNodeAndNpm(SemVersion.valueOf(SDKConstants.NODE_VERSION), SemVersion.valueOf(SDKConstants.NPM_VERSION));
 		runMojoExecutor(Arrays.asList(MojoExecutor.element("arguments", "install -g yo generator-openmrs-owa"), MojoExecutor.element("installDirectory", owaDir.getAbsolutePath())), "npm");
 
 		try {
@@ -178,16 +182,45 @@ public class OwaHelper {
 	}
 
 	public String getSystemNpmVersion() {
-		return runProcessAndGetFirstResponseLine("npm", "-v");
+		String npmExecutable = getNpmSystemExecutable();
+		String npm =runProcessAndGetFirstResponseLine(npmExecutable, "-v");
+		return StringUtils.isNotBlank(npm) ? npm : null;
 	}
 
 	public String getSystemNodeVersion() {
 		String node = runProcessAndGetFirstResponseLine("node", "-v");
-		if (node != null && node.startsWith("v")) {
-			return node.replaceFirst("v","");
+		return formatNodeVersion(node);
+	}
+
+	public String getProjectNodeVersion() {
+		String node;
+		if (SystemUtils.IS_OS_WINDOWS) {
+			node = runProcessAndGetFirstResponseLine("node\\node.exe", "-v");
+		} else {
+			node = runProcessAndGetFirstResponseLine("node/node", "-v");
 		}
-		else {
+		return formatNodeVersion(node);
+	}
+
+	public String getProjectNpmVersion() {
+		String npm;
+		if (SystemUtils.IS_OS_WINDOWS) {
+			npm = runProcessAndGetFirstResponseLine("node\\npm.cmd", "-v");
+		} else {
+			npm = runProcessAndGetFirstResponseLine("node/npm", "-v");
+		}
+		return StringUtils.isNotBlank(npm) ? npm : null;
+	}
+
+	private String formatNodeVersion(String node) {
+		if (StringUtils.isNotBlank(node)) {
+			if (node.startsWith("v")) {
+				node = node.substring(1);
+			}
+
 			return node;
+		} else {
+			return null;
 		}
 	}
 
@@ -204,7 +237,7 @@ public class OwaHelper {
 			lines = IOUtils.readLines(process.getInputStream());
 			process.waitFor();
 		} catch (InterruptedException | IOException e) {
-			System.out.println("");
+			System.out.println("Cannot run '" + command + "' command due to " + e.getMessage());
 		}
 
 		if (process != null && process.exitValue() == 0) {
@@ -220,41 +253,30 @@ public class OwaHelper {
 		}
 	}
 
-	public Map<String, Version> getMostSatisfyingNodeAndNpmVersion(String semVerNpmString, String semVerNodeString) {
-		List<NodeDistVersion> versions = getNodeDistVersions();
-		List<Version> satisfyingNodeVersions = new ArrayList<>();
-		List<Version> satisfyingNpmVersions = new ArrayList<>();
-		for (NodeDistVersion distVersion : versions) {
+	public void resolveExactVersions(SemVersion node, SemVersion npm) {
+		List<NodeDistro> versions = getNodeDistros();
+
+		for (NodeDistro distVersion : versions) {
 			if (distVersion.getNpm() == null) {
-				break;
+				//stop processing for old node distros without npm
+				return;
 			}
-			Version nodeVersion = Version.valueOf(distVersion.getVersion().replaceFirst("v",""));
-			Version npmVersion = Version.valueOf(distVersion.getNpm());
-			if (nodeVersion.satisfies(semVerNodeString) && npmVersion.satisfies(semVerNpmString)) {
-				HashMap<String, Version> result = new HashMap<>();
-				result.put("npm", npmVersion);
-				result.put("node", nodeVersion);
-				return result;
+
+			if (!node.isExact() && node.satisfies(distVersion.getVersion())) {
+				node.setExactVersion(distVersion.getVersion());
 			}
-			if (nodeVersion.satisfies(semVerNodeString)) {
-				satisfyingNodeVersions.add(Version.valueOf(distVersion.getVersion().replaceFirst("v","")));
+
+			if (npm != null && !npm.isExact() && npm.satisfies(distVersion.getNpm())) {
+				npm.setExactVersion(distVersion.getNpm());
 			}
-			else if (npmVersion.satisfies(semVerNpmString)) {
-				satisfyingNpmVersions.add(Version.valueOf(distVersion.getNpm()));
+
+			if (node.isExact() && (npm == null || npm.isExact())) {
+				return;
 			}
-		}
-		if (!satisfyingNodeVersions.isEmpty() && !satisfyingNpmVersions.isEmpty()) {
-			HashMap<String, Version> result = new HashMap<>();
-			result.put("npm", satisfyingNpmVersions.get(0));
-			result.put("node", satisfyingNodeVersions.get(0));
-			return result;
-		}
-		else {
-			return null;
 		}
 	}
 
-	public List<NodeDistVersion> getNodeDistVersions() {
+	public List<NodeDistro> getNodeDistros() {
 		Gson gson = new Gson();
 		HttpURLConnection conn;
 		try {
@@ -262,43 +284,120 @@ public class OwaHelper {
 			conn = (HttpURLConnection) url.openConnection();
 			conn.setRequestMethod("GET");
 			BufferedReader rd = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-			NodeDistVersion[] result = gson.fromJson(rd, NodeDistVersion[].class);
+			NodeDistro[] result = gson.fromJson(rd, NodeDistro[].class);
 			return new ArrayList<>(Arrays.asList(result));
 		} catch (IOException e) {
-			throw new IllegalStateException("Failed to fetch node distribution versions", e);
+			throw new IllegalStateException("Failed to fetch node distributions", e);
 		}
 	}
 
+	public static class SemVersion {
+		Expression expression;
+		String rawVersion;
+		boolean exact;
 
-	public String getProjectNpmVersionFromPackageJson() {
-		PackageJson packageJson = getPackageJsonFromJsonFile(PACKAGE_JSON_FILENAME);
-		if (packageJson.getEngines() != null) {
-			return packageJson.getEngines().get(NPM_VERSION_KEY);
+		public SemVersion(String version) {
+			this.rawVersion = version;
+
+			try {
+				Version.valueOf(version);
+				exact = true;
+			} catch (Exception e) {
+				//it's an expression
+				exact = false;
+				Parser<Expression> parser = ExpressionParser.newInstance();
+				Expression exp = parser.parse(version);
+				expression = exp;
+			}
 		}
-		else {
-			return null;
+
+		public static SemVersion valueOf(String version) {
+			if (StringUtils.isBlank(version)) {
+				return null;
+			}
+
+			return new SemVersion(version);
+		}
+
+		public boolean isExact() {
+			return exact;
+		}
+
+		public String getExactVersion() {
+			return rawVersion;
+		}
+
+		public void setExactVersion(String version) {
+			this.rawVersion = version;
+			exact = true;
+		}
+
+		public boolean satisfies(String version) {
+			if (rawVersion.equals(version)) {
+				return true;
+			} else if (expression != null){
+				return Version.valueOf(version).satisfies(expression);
+			} else {
+				return false;
+			}
+		}
+
+		@Override
+		public String toString() {
+			return rawVersion;
+		}
+
+		@Override
+		public boolean equals(Object o) {
+			if (this == o) return true;
+			if (o == null || getClass() != o.getClass()) return false;
+
+			SemVersion that = (SemVersion) o;
+
+			return rawVersion.equals(that.rawVersion);
+		}
+
+		@Override
+		public int hashCode() {
+			return rawVersion.hashCode();
 		}
 	}
-	public String getProjectNodeVersionFromPackageJson() {
+
+	public SemVersion parseVersion(String version) {
+		return SemVersion.valueOf(version);
+	}
+
+	public SemVersion getProjectNpmFromPackageJson() {
 		PackageJson packageJson = getPackageJsonFromJsonFile(PACKAGE_JSON_FILENAME);
 		if (packageJson.getEngines() != null) {
-			return packageJson.getEngines().get(NODE_VERSION_KEY);
+			return SemVersion.valueOf(packageJson.getEngines().get(NPM_VERSION_KEY));
 		}
-		else {
-			return null;
+		return null;
+	}
+	public SemVersion getProjectNodeFromPackageJson() {
+		PackageJson packageJson = getPackageJsonFromJsonFile(PACKAGE_JSON_FILENAME);
+		if (packageJson.getEngines() != null) {
+			return SemVersion.valueOf(packageJson.getEngines().get(NODE_VERSION_KEY));
 		}
+		return null;
 	}
 
 	public static PackageJson getPackageJsonFromJsonFile(String jsonFilename) {
-		Gson gson = new Gson();
-		FileReader reader;
+		Reader reader = null;
 		try {
-			reader = new FileReader(jsonFilename);
-			PackageJson result = gson.fromJson(reader, PackageJson.class);
+			if (new File(jsonFilename).exists()) {
+				reader = new FileReader(jsonFilename);
+			} else {
+				InputStream in = OwaHelper.class.getResourceAsStream(jsonFilename);
+				reader = new InputStreamReader(in);
+			}
+			PackageJson result = new Gson().fromJson(reader, PackageJson.class);
 			reader.close();
 			return result;
 		} catch (IOException e) {
 			throw new IllegalStateException("Couldn't find " + jsonFilename + " at " + new File(jsonFilename).getAbsolutePath());
+		} finally {
+			IOUtils.closeQuietly(reader);
 		}
 	}
 
@@ -339,7 +438,7 @@ public class OwaHelper {
 
 	public void runSystemNpmCommandWithArgs(List<String> args) throws MojoExecutionException {
 		List<MojoExecutor.Element> configuration = new ArrayList<>();
-		configuration.add(element("executable", "npm"));
+		configuration.add(element("executable", getNpmSystemExecutable()));
 
 		MojoExecutor.Element[] argsele = new MojoExecutor.Element[args.size()];
 
@@ -362,12 +461,46 @@ public class OwaHelper {
 		);
 	}
 
-	public void installLocalNodeAndNpm(@Nullable String nodeVersion, @Nullable String npmVersion) throws MojoExecutionException {
-		wizard.showMessage("-npm: " + npmVersion + "\n" + "-nodejs: " + nodeVersion + "\n");
+	private String getNpmSystemExecutable() {
+		String npm;
+		if (SystemUtils.IS_OS_WINDOWS) {
+			npm = "npm.cmd";
+		} else {
+			npm = "npm";
+		}
+		return npm;
+	}
 
+	public void installLocalNodeAndNpm(SemVersion node, SemVersion npm) throws MojoExecutionException {
+		String nodeVersion;
+		String npmVersion;
+
+		if (!node.isExact() || (npm != null && !npm.isExact())) {
+			resolveExactVersions(node, npm);
+		}
+
+		if (node.isExact()) {
+			nodeVersion = node.getExactVersion();
+			if (npm == null) {
+				npmVersion = null;
+			} else if (npm.isExact()) {
+				npmVersion = npm.getExactVersion();
+			} else {
+				throw new MojoExecutionException("Could not find a matching npm version.");
+			}
+		} else {
+			throw new MojoExecutionException("Could not find a matching node version.");
+		}
+
+		runInstallLocalNodeAndNpm(nodeVersion, npmVersion);
+	}
+
+	public void runInstallLocalNodeAndNpm(String nodeVersion, String npmVersion) throws MojoExecutionException {
 		List<MojoExecutor.Element> configuration = new ArrayList<>();
 		configuration.add(element("nodeVersion", "v" + nodeVersion));
-		configuration.add(element("npmVersion", npmVersion));
+		if (npmVersion != null) {
+			configuration.add(element("npmVersion", npmVersion));
+		}
 		executeMojo(
 				plugin(
 						groupId(FRONTEND_BUILDER_GROUP_ID),

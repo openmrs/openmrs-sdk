@@ -1,8 +1,9 @@
 package org.openmrs.maven.plugins;
 
 
-import com.github.zafarkhaja.semver.UnexpectedCharacterException;
 import com.github.zafarkhaja.semver.Version;
+import com.github.zafarkhaja.semver.expr.CompositeExpression;
+import com.github.zafarkhaja.semver.expr.Expression;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.model.Model;
@@ -166,87 +167,59 @@ public class Build extends AbstractTask {
     protected void buildOwaProject() throws MojoExecutionException {
         wizard.showMessage("Building OWA project...");
 
-        boolean isUsingSystemNpmAndNodejs;
+        OwaHelper.SemVersion node = owaHelper.parseVersion(nodeVersion);
+        OwaHelper.SemVersion npm = owaHelper.parseVersion(npmVersion);
 
-        String systemNpmVersionString = owaHelper.getSystemNpmVersion();
-        String systemNodeVersionString = owaHelper.getSystemNodeVersion();
-        Version systemNpmVersion = systemNpmVersionString != null ? Version.valueOf(systemNpmVersionString) : null;
-        Version systemNodeVersion = systemNodeVersionString != null ? Version.valueOf(systemNodeVersionString) : null;
-
-        Version batchNpmVersion = npmVersion != null ? Version.valueOf(npmVersion) : null;
-        Version batchNodeVersion = nodeVersion != null ? Version.valueOf(nodeVersion.replaceFirst("v","")) : null;
-
-        if (checkIfVersionsAreDefined(batchNpmVersion, batchNodeVersion)) {
-            wizard.showMessage("Using npm and nodejs versions defined in batch mode");
-            if (!(batchNpmVersion.equals(systemNpmVersion) && batchNodeVersion.equals(systemNodeVersion))) {
-                isUsingSystemNpmAndNodejs = false;
-                owaHelper.installLocalNodeAndNpm(batchNodeVersion.toString(), batchNpmVersion.toString());
-            }
-            else {
-                isUsingSystemNpmAndNodejs = true;
-            }
+        if (node == null && npm != null) {
+            throw new MojoExecutionException("You must specify nodeVersion when specifying npmVersion.");
         }
-        else {
-            String projectNpmVersionString = owaHelper.getProjectNpmVersionFromPackageJson();
-            String projectNodeVersionString = owaHelper.getProjectNodeVersionFromPackageJson();
 
-            Version projectNpmVersion;
-            Version projectNodeVersion;
+        String modeMessage = "";
+        if (node == null) {
+            node = owaHelper.getProjectNodeFromPackageJson();
+            npm = owaHelper.getProjectNpmFromPackageJson();
 
-            try {
-                projectNpmVersion = projectNpmVersionString != null ? Version.valueOf(projectNpmVersionString) : null;
-                projectNodeVersion = projectNodeVersionString != null ? Version.valueOf(projectNodeVersionString) : null;
-            }
-            catch (UnexpectedCharacterException e) {
-                Map<String, Version> mostSatisfyingVersions = owaHelper.getMostSatisfyingNodeAndNpmVersion(projectNpmVersionString, projectNodeVersionString);
-                projectNpmVersion = mostSatisfyingVersions.get("npm");
-                projectNodeVersion = mostSatisfyingVersions.get("node");
-            }
-
-            if (!checkIfVersionsAreDefined(systemNpmVersion, systemNodeVersion)) {
-                isUsingSystemNpmAndNodejs = false;
-
-                if (checkIfVersionsAreDefined(projectNpmVersion, projectNodeVersion)) {
-                    wizard.showMessage("Using npm and nodejs versions defined in package.json");
-                    owaHelper.installLocalNodeAndNpm(projectNodeVersion.toString(), projectNpmVersion.toString());
-                }
-                else {
-                    wizard.showMessage("Using default npm and nodejs versions");
-                    owaHelper.installLocalNodeAndNpm(SDKConstants.NODE_VERSION, SDKConstants.NPM_VERSION);
-                }
-            }
-            else {
-                if (checkIfVersionsAreDefined(projectNpmVersion, projectNodeVersion)) {
-                    if (systemNpmVersion.satisfies(projectNpmVersionString) && systemNodeVersion.satisfies(projectNodeVersionString)) {
-                        isUsingSystemNpmAndNodejs = true;
-                        wizard.showMessage("Using system npm and nodejs");
-                        wizard.showMessage("-npm: " + systemNpmVersion
-                                + "\n" + "-nodejs: " + systemNodeVersion + "\n");
-                    }
-                    else {
-                        isUsingSystemNpmAndNodejs = false;
-                        wizard.showMessage("Using npm and nodejs versions defined in package.json");
-                        owaHelper.installLocalNodeAndNpm(projectNodeVersion.toString(), projectNpmVersion.toString());
-                    }
-                }
-                else {
-                    isUsingSystemNpmAndNodejs = true;
-                    wizard.showMessage("Using system npm and nodejs");
-                    wizard.showMessage("-npm: " + systemNpmVersion
-                            + "\n" + "-nodejs: " + systemNodeVersion + "\n");
-                }
+            if (node == null) {
+                node = owaHelper.parseVersion(SDKConstants.NODE_VERSION);
+                npm = owaHelper.parseVersion(SDKConstants.NPM_VERSION);
+                modeMessage = " (SDK default, which can be overwritten with nodeVesion and npmVersion arguments or by engines in package.json)";
+            } else {
+                modeMessage = " as defined in package.json";
             }
         }
 
-        installNodeModules(isUsingSystemNpmAndNodejs);
-        runOwaBuild(isUsingSystemNpmAndNodejs);
+        wizard.showMessage("Looking for node " + node +" and npm " + npm + modeMessage + ".");
 
-        wizard.showMessage("Build done.");
-    }
+        boolean useSystemVersions = false;
 
-    private boolean checkIfVersionsAreDefined(Version npmVersion, Version nodeVersion) {
-        return npmVersion != null && nodeVersion != null &&
-                StringUtils.isNotBlank(npmVersion.toString()) && StringUtils.isNotBlank(nodeVersion.toString());
+        String systemNode = owaHelper.getSystemNodeVersion();
+        String systemNpm = owaHelper.getSystemNpmVersion();
+
+        if (systemNode != null && systemNpm != null) {
+            if (node.satisfies(systemNode) && (npm == null || npm.satisfies(systemNpm))) {
+                wizard.showMessage("Using system node " + systemNode +" and npm " + systemNpm);
+                useSystemVersions = true;
+            }
+        }
+
+        boolean updateLocalVersions = true;
+
+        String projectNode = owaHelper.getProjectNodeVersion();
+        String projectNpm = owaHelper.getProjectNpmVersion();
+
+        if (projectNode != null && projectNpm != null) {
+            if (node.satisfies(projectNode) && (npm == null || npm.satisfies(projectNpm))) {
+                wizard.showMessage("Using project node " + projectNode + " and npm " + projectNpm);
+                updateLocalVersions = false;
+            }
+        }
+
+        if (!useSystemVersions && updateLocalVersions) {
+            owaHelper.installLocalNodeAndNpm(node, npm);
+        }
+
+        installNodeModules(useSystemVersions);
+        runOwaBuild(useSystemVersions);
     }
 
     private void runOwaBuild(boolean isUsingSystemNpmAndNodejs) throws MojoExecutionException {

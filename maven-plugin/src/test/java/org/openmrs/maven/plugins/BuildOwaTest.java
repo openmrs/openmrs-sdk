@@ -1,6 +1,8 @@
 package org.openmrs.maven.plugins;
 
 import com.google.gson.Gson;
+import org.apache.commons.io.IOUtils;
+import org.apache.maven.plugin.MojoExecutionException;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -8,19 +10,22 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.runners.MockitoJUnitRunner;
-import org.openmrs.maven.plugins.model.NodeDistVersion;
+import org.openmrs.maven.plugins.model.NodeDistro;
 import org.openmrs.maven.plugins.utility.OwaHelper;
+import org.openmrs.maven.plugins.utility.OwaHelper.SemVersion;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 import org.openmrs.maven.plugins.utility.Wizard;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyList;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doReturn;
@@ -57,7 +62,7 @@ public class BuildOwaTest {
 
     @Test
     public void buildOwa_shouldReadNpmAndNodeVersionPropertyFromPackageJson() {
-        final String packageJsonPath = "src/test/java/resources/package.json";
+        final String packageJsonPath = "/package.json";
         final String projectNpmVersion = "3.10.8";
         final String projectNodeVersion = "7.0.0";
 
@@ -82,15 +87,15 @@ public class BuildOwaTest {
         when(build.owaHelper.getSystemNpmVersion()).thenReturn(null);
 
         // Project without npm and nodejs
-        doReturn(null).when(build.owaHelper).getProjectNodeVersionFromPackageJson();
-        doReturn(null).when(build.owaHelper).getProjectNpmVersionFromPackageJson();
+        doReturn(null).when(build.owaHelper).getProjectNodeFromPackageJson();
+        doReturn(null).when(build.owaHelper).getProjectNpmFromPackageJson();
 
-        Mockito.doNothing().when(build.owaHelper).installLocalNodeAndNpm(anyString(), anyString());
+        Mockito.doNothing().when(build.owaHelper).installLocalNodeAndNpm(any(SemVersion.class), any(SemVersion.class));
         Mockito.doNothing().when(build.owaHelper).runLocalNpmCommandWithArgs(anyList());
 
         build.buildOwaProject();
 
-        verify(build.owaHelper).installLocalNodeAndNpm(batchNodeVersion, batchNpmVersion);
+        verify(build.owaHelper).installLocalNodeAndNpm(SemVersion.valueOf(batchNodeVersion), SemVersion.valueOf(batchNpmVersion));
         verify(build.owaHelper).runLocalNpmCommandWithArgs(npmInstallArgs);
         verify(build.owaHelper).runLocalNpmCommandWithArgs(npmRunBuildArgs);
     }
@@ -108,8 +113,8 @@ public class BuildOwaTest {
         when(build.owaHelper.getSystemNpmVersion()).thenReturn(batchNpmVersion);
 
         // Project without npm and nodejs
-        doReturn(null).when(build.owaHelper).getProjectNodeVersionFromPackageJson();
-        doReturn(null).when(build.owaHelper).getProjectNpmVersionFromPackageJson();
+        doReturn(null).when(build.owaHelper).getProjectNodeFromPackageJson();
+        doReturn(null).when(build.owaHelper).getProjectNpmFromPackageJson();
 
         Mockito.doNothing().when(build.owaHelper).runSystemNpmCommandWithArgs(anyList());
 
@@ -119,34 +124,12 @@ public class BuildOwaTest {
         verify(build.owaHelper).runSystemNpmCommandWithArgs(npmRunBuildArgs);
     }
 
-    @Test
-    public void buildOwa_shouldIgnoreVersionsWhenNodeOrNpmIsNotDefined() throws Exception {
-        final String batchNpmVersion = "3.10.10";
-        final String systemNodeVersion = "7.0.0";
-        final String projectNpmVersion = "3.10.8";
-
-        // Batch mode with only npmVersion defined
-
-        // npm and nodejs defined in batch mode
-        build.npmVersion = batchNpmVersion;
+    @Test(expected = MojoExecutionException.class)
+    public void buildOwa_shouldFailIfNpmIsNotDefinedButNodeIsDefined() throws Exception {
         build.nodeVersion = null;
-
-        // System with only node version defined
-        when(build.owaHelper.getSystemNodeVersion()).thenReturn(systemNodeVersion);
-        when(build.owaHelper.getSystemNpmVersion()).thenReturn(null);
-
-        // Project with only node version defined
-        doReturn(null).when(build.owaHelper).getProjectNodeVersionFromPackageJson();
-        doReturn(projectNpmVersion).when(build.owaHelper).getProjectNpmVersionFromPackageJson();
-
-        Mockito.doNothing().when(build.owaHelper).installLocalNodeAndNpm(anyString(), anyString());
-        Mockito.doNothing().when(build.owaHelper).runLocalNpmCommandWithArgs(anyList());
+        build.npmVersion = "3.10.10";
 
         build.buildOwaProject();
-
-        verify(build.owaHelper).installLocalNodeAndNpm(SDKConstants.NODE_VERSION, SDKConstants.NPM_VERSION);
-        verify(build.owaHelper).runLocalNpmCommandWithArgs(npmInstallArgs);
-        verify(build.owaHelper).runLocalNpmCommandWithArgs(npmRunBuildArgs);
     }
 
     @Test
@@ -169,16 +152,16 @@ public class BuildOwaTest {
         when(build.owaHelper.getSystemNodeVersion()).thenReturn(systemNpmVersion);
 
         // Project has both version specified
-        doReturn(projectNodeVersion).when(build.owaHelper).getProjectNodeVersionFromPackageJson();
-        doReturn(projectNpmVersion).when(build.owaHelper).getProjectNpmVersionFromPackageJson();
+        doReturn(SemVersion.valueOf(projectNodeVersion)).when(build.owaHelper).getProjectNodeFromPackageJson();
+        doReturn(SemVersion.valueOf(projectNpmVersion)).when(build.owaHelper).getProjectNpmFromPackageJson();
 
-        Mockito.doNothing().when(build.owaHelper).installLocalNodeAndNpm(anyString(), anyString());
+        Mockito.doNothing().when(build.owaHelper).installLocalNodeAndNpm(any(SemVersion.class), any(SemVersion.class));
         Mockito.doNothing().when(build.owaHelper).runLocalNpmCommandWithArgs(anyList());
 
         build.buildOwaProject();
 
         // Should use versions specified in batch mode
-        verify(build.owaHelper).installLocalNodeAndNpm(batchNodeVersion, batchNpmVersion);
+        verify(build.owaHelper).installLocalNodeAndNpm(SemVersion.valueOf(batchNodeVersion), SemVersion.valueOf(batchNpmVersion));
         verify(build.owaHelper).runLocalNpmCommandWithArgs(npmInstallArgs);
         verify(build.owaHelper).runLocalNpmCommandWithArgs(npmRunBuildArgs);
     }
@@ -203,16 +186,16 @@ public class BuildOwaTest {
         when(build.owaHelper.getSystemNpmVersion()).thenReturn(systemNpmVersion);
 
         // Project has both version specified
-        doReturn(projectNodeVersion).when(build.owaHelper).getProjectNodeVersionFromPackageJson();
-        doReturn(projectNpmVersion).when(build.owaHelper).getProjectNpmVersionFromPackageJson();
+        doReturn(SemVersion.valueOf(projectNodeVersion)).when(build.owaHelper).getProjectNodeFromPackageJson();
+        doReturn(SemVersion.valueOf(projectNpmVersion)).when(build.owaHelper).getProjectNpmFromPackageJson();
 
-        Mockito.doNothing().when(build.owaHelper).installLocalNodeAndNpm(anyString(), anyString());
+        Mockito.doNothing().when(build.owaHelper).installLocalNodeAndNpm(any(SemVersion.class), any(SemVersion.class));
         Mockito.doNothing().when(build.owaHelper).runLocalNpmCommandWithArgs(anyList());
 
         build.buildOwaProject();
 
         // Should use versions specified in batch mode
-        verify(build.owaHelper).installLocalNodeAndNpm(projectNodeVersion, projectNpmVersion);
+        verify(build.owaHelper).installLocalNodeAndNpm(SemVersion.valueOf(projectNodeVersion), SemVersion.valueOf(projectNpmVersion));
         verify(build.owaHelper).runLocalNpmCommandWithArgs(npmInstallArgs);
         verify(build.owaHelper).runLocalNpmCommandWithArgs(npmRunBuildArgs);
     }
@@ -237,8 +220,8 @@ public class BuildOwaTest {
         when(build.owaHelper.getSystemNpmVersion()).thenReturn(systemNpmVersion);
 
         // Project has both version specified
-        doReturn(projectNodeVersion).when(build.owaHelper).getProjectNodeVersionFromPackageJson();
-        doReturn(projectNpmVersion).when(build.owaHelper).getProjectNpmVersionFromPackageJson();
+        doReturn(SemVersion.valueOf(projectNodeVersion)).when(build.owaHelper).getProjectNodeFromPackageJson();
+        doReturn(SemVersion.valueOf(projectNpmVersion)).when(build.owaHelper).getProjectNpmFromPackageJson();
 
         Mockito.doNothing().when(build.owaHelper).runSystemNpmCommandWithArgs(anyList());
 
@@ -251,45 +234,36 @@ public class BuildOwaTest {
 
     @Test
     public void buildOwa_parseMostSatisfyingVersionFromSemVerExpression() throws Exception {
-        final String batchNpmVersion = null;
-        final String batchNodeVersion = null;
+        build.npmVersion = null;
+        build.nodeVersion = null;
 
-        final String systemNpmVersion = null;
-        final String systemNodeVersion = null;
+        when(build.owaHelper.getSystemNodeVersion()).thenReturn(null);
+        when(build.owaHelper.getSystemNpmVersion()).thenReturn(null);
 
-        final String projectNpmVersion = "3.*";
-        final String projectNodeVersion = "7.*";
+        doReturn(SemVersion.valueOf("7.*")).when(build.owaHelper).getProjectNodeFromPackageJson();
+        doReturn(SemVersion.valueOf("3.*")).when(build.owaHelper).getProjectNpmFromPackageJson();
 
-        final String parsedProjectNpmVersion = "3.10.10";
-        final String parsedProjectNodeVersion = "7.3.0";
+        doReturn(getNodeDistVersionsViaLocalResources()).when(build.owaHelper).getNodeDistros();
 
-        // npm and nodejs defined in batch mode
-        build.npmVersion = batchNpmVersion;
-        build.nodeVersion = batchNodeVersion;
-
-        // System has both version specified
-        when(build.owaHelper.getSystemNodeVersion()).thenReturn(systemNodeVersion);
-        when(build.owaHelper.getSystemNpmVersion()).thenReturn(systemNpmVersion);
-
-        // Project has both version specified
-        doReturn(projectNodeVersion).when(build.owaHelper).getProjectNodeVersionFromPackageJson();
-        doReturn(projectNpmVersion).when(build.owaHelper).getProjectNpmVersionFromPackageJson();
-
-        doReturn(getNodeDistVersionsViaLocalResources()).when(build.owaHelper).getNodeDistVersions();
-        doReturn(projectNpmVersion).when(build.owaHelper).getProjectNpmVersionFromPackageJson();
-
-        Mockito.doNothing().when(build.owaHelper).installLocalNodeAndNpm(parsedProjectNodeVersion, parsedProjectNpmVersion);
+        Mockito.doNothing().when(build.owaHelper).runInstallLocalNodeAndNpm(anyString(), anyString());
         Mockito.doNothing().when(build.owaHelper).runLocalNpmCommandWithArgs(anyList());
 
         build.buildOwaProject();
+
+        verify(build.owaHelper).runInstallLocalNodeAndNpm("7.4.0", "3.10.10");
     }
 
-    private List<NodeDistVersion> getNodeDistVersionsViaLocalResources() throws Exception {
-        final String nodeDistVersionsPath = "src/test/java/resources/nodeDistVersions.json";
-        Gson gson = new Gson();
-        BufferedReader rd = new BufferedReader(new FileReader(nodeDistVersionsPath));
-        NodeDistVersion[] result = gson.fromJson(rd, NodeDistVersion[].class);
-        return new ArrayList<>(Arrays.asList(result));
+    private List<NodeDistro> getNodeDistVersionsViaLocalResources() throws Exception {
+        InputStream in = null;
+        try {
+            in = getClass().getResourceAsStream("/nodeDistVersions.json");
+            Reader rd = new InputStreamReader(in);
+            NodeDistro[] result = new Gson().fromJson(rd, NodeDistro[].class);
+            in.close();
+            return new ArrayList<>(Arrays.asList(result));
+        } finally {
+            IOUtils.closeQuietly(in);
+        }
     }
 
     @Test
@@ -312,15 +286,15 @@ public class BuildOwaTest {
         when(build.owaHelper.getSystemNpmVersion()).thenReturn(systemNpmVersion);
 
         // Project has no npm and node versions defined
-        doReturn(projectNodeVersion).when(build.owaHelper).getProjectNodeVersionFromPackageJson();
-        doReturn(projectNpmVersion).when(build.owaHelper).getProjectNpmVersionFromPackageJson();
+        doReturn(SemVersion.valueOf(projectNodeVersion)).when(build.owaHelper).getProjectNodeFromPackageJson();
+        doReturn(SemVersion.valueOf(projectNpmVersion)).when(build.owaHelper).getProjectNpmFromPackageJson();
 
-        Mockito.doNothing().when(build.owaHelper).installLocalNodeAndNpm(anyString(), anyString());
+        Mockito.doNothing().when(build.owaHelper).installLocalNodeAndNpm(any(SemVersion.class), any(SemVersion.class));
         Mockito.doNothing().when(build.owaHelper).runLocalNpmCommandWithArgs(anyList());
 
         build.buildOwaProject();
 
-        verify(build.owaHelper).installLocalNodeAndNpm(SDKConstants.NODE_VERSION, SDKConstants.NPM_VERSION);
+        verify(build.owaHelper).installLocalNodeAndNpm(SemVersion.valueOf(SDKConstants.NODE_VERSION), SemVersion.valueOf(SDKConstants.NPM_VERSION));
         verify(build.owaHelper).runLocalNpmCommandWithArgs(npmInstallArgs);
         verify(build.owaHelper).runLocalNpmCommandWithArgs(npmRunBuildArgs);
     }

@@ -89,8 +89,8 @@ public class SDKConstants {
     public static final String LATEST_VERSION_BATCH_KEYWORD = "LATEST";
     public static final String LATEST_SNAPSHOT_BATCH_KEYWORD = "LATEST-SNAPSHOT";
 
-    public final static String NPM_VERSION = "3.10.6";
-    public final static String NODE_VERSION = "v6.4.0";
+    public final static String NPM_VERSION = "^3.10.3";
+    public final static String NODE_VERSION = "^6.4.0";
 	public static final String RESET_SEARCH_INDEX_SQL = "DELETE FROM `%s`.global_property WHERE property = 'search.indexVersion'";
 
 	/**
