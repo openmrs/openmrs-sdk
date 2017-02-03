@@ -6,6 +6,8 @@
 
   <requiredProperties>
     <requiredProperty key="moduleArtifactId"></requiredProperty>
+    <requiredProperty key="moduleGroupId"></requiredProperty>
+    <requiredProperty key="moduleVersion"></requiredProperty>
   </requiredProperties>
 
   <fileSets>
