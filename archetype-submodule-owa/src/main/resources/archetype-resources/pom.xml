@@ -16,7 +16,7 @@
                 <executions>
                     <execution>
                         <id>build owa</id>
-                        <phase>install</phase>
+                        <phase>compile</phase>
                         <goals>
                             <goal>build</goal>
                         </goals>
