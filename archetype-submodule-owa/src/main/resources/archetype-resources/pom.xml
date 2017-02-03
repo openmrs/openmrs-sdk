@@ -3,8 +3,8 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>${moduleArtifactId}-owa</artifactId>
-    <groupId>${groupId}</groupId>
-    <version>${version}</version>
+    <groupId>${moduleGroupId}</groupId>
+    <version>${moduleVersion}</version>
     <packaging>pom</packaging>
 
     <build>
@@ -12,7 +12,7 @@
             <plugin>
                 <groupId>org.openmrs.maven.plugins</groupId>
                 <artifactId>openmrs-sdk-maven-plugin</artifactId>
-                <version>3.7.1-SNAPSHOT</version>
+                <version>${project.parent.version}</version>
                 <executions>
                     <execution>
                         <id>build owa</id>

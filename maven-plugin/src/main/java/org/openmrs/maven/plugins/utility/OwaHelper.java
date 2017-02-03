@@ -84,9 +84,8 @@ public class OwaHelper {
 
 		wizard.showMessage("Creating OWA project in " + owaDir.getAbsolutePath() + "...\n");
 
-		installLocalNodeAndNpm(SemVersion.valueOf(SDKConstants.NODE_VERSION), SemVersion.valueOf(SDKConstants.NPM_VERSION));
+		installLocalNodeAndNpm(SemVersion.valueOf(SDKConstants.NODE_VERSION), SemVersion.valueOf(SDKConstants.NPM_VERSION), owaDir.getAbsolutePath());
 		runMojoExecutor(Arrays.asList(MojoExecutor.element("arguments", "install -g yo generator-openmrs-owa"), MojoExecutor.element("installDirectory", owaDir.getAbsolutePath())), "npm");
-
 		try {
 			runYeoman(owaDir);
 			addHelperScripts(owaDir.getAbsolutePath());
@@ -471,7 +470,7 @@ public class OwaHelper {
 		return npm;
 	}
 
-	public void installLocalNodeAndNpm(SemVersion node, SemVersion npm) throws MojoExecutionException {
+	public void installLocalNodeAndNpm(SemVersion node, SemVersion npm, String installDirectory) throws MojoExecutionException {
 		String nodeVersion;
 		String npmVersion;
 
@@ -492,14 +491,17 @@ public class OwaHelper {
 			throw new MojoExecutionException("Could not find a matching node version.");
 		}
 
-		runInstallLocalNodeAndNpm(nodeVersion, npmVersion);
+		runInstallLocalNodeAndNpm(nodeVersion, npmVersion, installDirectory);
 	}
 
-	public void runInstallLocalNodeAndNpm(String nodeVersion, String npmVersion) throws MojoExecutionException {
+	public void runInstallLocalNodeAndNpm(String nodeVersion, String npmVersion, String installDirectory) throws MojoExecutionException {
 		List<MojoExecutor.Element> configuration = new ArrayList<>();
 		configuration.add(element("nodeVersion", "v" + nodeVersion));
 		if (npmVersion != null) {
 			configuration.add(element("npmVersion", npmVersion));
+		}
+		if (installDirectory != null) {
+			configuration.add(element("installDirectory", installDirectory));
 		}
 		executeMojo(
 				plugin(

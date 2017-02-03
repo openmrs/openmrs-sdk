@@ -64,7 +64,9 @@ public class AddFeature extends AbstractTask {
         properties.setProperty("artifactId", "owa");
         properties.setProperty("moduleArtifactId", mavenProject.getArtifactId());
         properties.setProperty("groupId", mavenProject.getGroupId());
+        properties.setProperty("moduleGroupId", mavenProject.getGroupId());
         properties.setProperty("package", "owa");
+        properties.setProperty("moduleVersion", mavenProject.getVersion());
         properties.setProperty("version", mavenProject.getVersion());
         mavenSession.getExecutionProperties().putAll(properties);
 

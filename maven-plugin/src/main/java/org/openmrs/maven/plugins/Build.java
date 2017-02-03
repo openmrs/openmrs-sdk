@@ -1,9 +1,6 @@
 package org.openmrs.maven.plugins;
 
 
-import com.github.zafarkhaja.semver.Version;
-import com.github.zafarkhaja.semver.expr.CompositeExpression;
-import com.github.zafarkhaja.semver.expr.Expression;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.model.Model;
@@ -31,7 +28,6 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
@@ -215,7 +211,7 @@ public class Build extends AbstractTask {
         }
 
         if (!useSystemVersions && updateLocalVersions) {
-            owaHelper.installLocalNodeAndNpm(node, npm);
+            owaHelper.installLocalNodeAndNpm(node, npm, null);
         }
 
         installNodeModules(useSystemVersions);
