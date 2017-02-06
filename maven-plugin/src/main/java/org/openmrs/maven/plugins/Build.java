@@ -77,31 +77,33 @@ public class Build extends AbstractTask {
         //if user specified serverId, omit checking directory for projects
         if(StringUtils.isBlank(serverId)){
             //check if there's owa project in current dir
-            File configFile = new File("webpack.config.js");
+            File configFile = new File(mavenProject.getBasedir(), "webpack.config.js");
+
             if (configFile.exists() && buildOwa) {
                 projectDetected = true;
                 buildOwaProject();
                 buildExecuted = true;
-            }
-            //check if there's maven project in current dir
-            File userDir = new File(System.getProperty("user.dir"));
-            if(Project.hasProject(userDir)) {
-                Project config = Project.loadProject(userDir);
-                String artifactId = config.getArtifactId();
-                String groupId = config.getGroupId();
-                String version = config.getVersion();
-                if ((artifactId != null) && (groupId != null) && version != null) {
-                    projectDetected = true;
-                    boolean buildMavenProject = wizard.promptYesNo(String.format(
-                            "Maven artifact %s:%s:%s detected in this directory, would you like to build it?",
-                            groupId, artifactId, version)
-                    );
-                    if(buildMavenProject){
-                        try {
-                            cleanInstallServerProject(userDir);
-                            buildExecuted = true;
-                        } catch (Exception e) {
-                            throw new RuntimeException("Failed to build project");
+            } else {
+                //check if there's maven project in current dir
+                File userDir = new File(System.getProperty("user.dir"));
+                if(Project.hasProject(userDir)) {
+                    Project config = Project.loadProject(userDir);
+                    String artifactId = config.getArtifactId();
+                    String groupId = config.getGroupId();
+                    String version = config.getVersion();
+                    if ((artifactId != null) && (groupId != null) && version != null) {
+                        projectDetected = true;
+                        boolean buildMavenProject = wizard.promptYesNo(String.format(
+                                "Maven artifact %s:%s:%s detected in this directory, would you like to build it?",
+                                groupId, artifactId, version)
+                        );
+                        if(buildMavenProject){
+                            try {
+                                cleanInstallServerProject(userDir);
+                                buildExecuted = true;
+                            } catch (Exception e) {
+                                throw new RuntimeException("Failed to build project");
+                            }
                         }
                     }
                 }
@@ -163,84 +165,20 @@ public class Build extends AbstractTask {
     protected void buildOwaProject() throws MojoExecutionException {
         wizard.showMessage("Building OWA project...");
 
-        OwaHelper.SemVersion node = owaHelper.parseVersion(nodeVersion);
-        OwaHelper.SemVersion npm = owaHelper.parseVersion(npmVersion);
+        boolean useSystemNode = owaHelper.resolveNodeAndNpm(nodeVersion, npmVersion, null);
 
-        if (node == null && npm != null) {
-            throw new MojoExecutionException("You must specify nodeVersion when specifying npmVersion.");
-        }
+        owaHelper.installNodeModules(useSystemNode);
 
-        String modeMessage = "";
-        if (node == null) {
-            node = owaHelper.getProjectNodeFromPackageJson();
-            npm = owaHelper.getProjectNpmFromPackageJson();
-
-            if (node == null) {
-                node = owaHelper.parseVersion(SDKConstants.NODE_VERSION);
-                npm = owaHelper.parseVersion(SDKConstants.NPM_VERSION);
-                modeMessage = " (SDK default, which can be overwritten with nodeVesion and npmVersion arguments or by engines in package.json)";
-            } else {
-                modeMessage = " as defined in package.json";
-            }
-        }
-
-        wizard.showMessage("Looking for node " + node +" and npm " + npm + modeMessage + ".");
-
-        boolean useSystemVersions = false;
-
-        String systemNode = owaHelper.getSystemNodeVersion();
-        String systemNpm = owaHelper.getSystemNpmVersion();
-
-        if (systemNode != null && systemNpm != null) {
-            if (node.satisfies(systemNode) && (npm == null || npm.satisfies(systemNpm))) {
-                wizard.showMessage("Using system node " + systemNode +" and npm " + systemNpm);
-                useSystemVersions = true;
-            }
-        }
-
-        boolean updateLocalVersions = true;
-
-        String projectNode = owaHelper.getProjectNodeVersion();
-        String projectNpm = owaHelper.getProjectNpmVersion();
-
-        if (projectNode != null && projectNpm != null) {
-            if (node.satisfies(projectNode) && (npm == null || npm.satisfies(projectNpm))) {
-                wizard.showMessage("Using project node " + projectNode + " and npm " + projectNpm);
-                updateLocalVersions = false;
-            }
-        }
-
-        if (!useSystemVersions && updateLocalVersions) {
-            owaHelper.installLocalNodeAndNpm(node, npm, null);
-        }
-
-        installNodeModules(useSystemVersions);
-        runOwaBuild(useSystemVersions);
+        runOwaBuild(useSystemNode);
     }
 
-    private void runOwaBuild(boolean isUsingSystemNpmAndNodejs) throws MojoExecutionException {
-        final String runArg = "run";
-        final String buildArg = "build";
+    private void runOwaBuild(boolean useSystemNode) throws MojoExecutionException {
+        List<String> args = Arrays.asList("run", "build");
 
-        List<String> args = new ArrayList<>();
-        args.add(runArg);
-        args.add(buildArg);
-
-        if (isUsingSystemNpmAndNodejs) {
+        if (useSystemNode) {
             owaHelper.runSystemNpmCommandWithArgs(args);
-        }
-        else {
+        } else {
             owaHelper.runLocalNpmCommandWithArgs(args);
-        }
-    }
-
-    private void installNodeModules(boolean isUsingSystemNpmAndNodejs) throws MojoExecutionException {
-        final String arg = "install";
-        if (isUsingSystemNpmAndNodejs) {
-            owaHelper.runSystemNpmCommandWithArgs(arg);
-        }
-        else {
-            owaHelper.runLocalNpmCommandWithArgs(arg);
         }
     }
 

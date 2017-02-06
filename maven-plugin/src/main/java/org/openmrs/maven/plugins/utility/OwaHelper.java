@@ -81,18 +81,41 @@ public class OwaHelper {
 
 	public void createOwaProject() throws MojoExecutionException {
 		File owaDir = installationDir != null ? installationDir : prepareOwaDir();
+		owaDir.mkdirs();
 
 		wizard.showMessage("Creating OWA project in " + owaDir.getAbsolutePath() + "...\n");
 
-		installLocalNodeAndNpm(SemVersion.valueOf(SDKConstants.NODE_VERSION), SemVersion.valueOf(SDKConstants.NPM_VERSION), owaDir.getAbsolutePath());
-		runMojoExecutor(Arrays.asList(MojoExecutor.element("arguments", "install -g yo generator-openmrs-owa"), MojoExecutor.element("installDirectory", owaDir.getAbsolutePath())), "npm");
+		boolean useSystemNode = resolveNodeAndNpm(null, null, owaDir.getAbsolutePath());
+
+		installYeomanGenerator(useSystemNode, owaDir);
+
 		try {
-			runYeoman(owaDir);
-			addHelperScripts(owaDir.getAbsolutePath());
+			runYeomanGenerator(useSystemNode, owaDir);
+
+			if (!useSystemNode) {
+				addHelperScripts(owaDir.getAbsolutePath());
+			}
 		} catch (IOException e) {
 			throw new IllegalStateException("Failed starting yeoman", e);
 		} catch (InterruptedException e) {
 			throw new IllegalStateException("Failed running yeoman", e);
+		}
+	}
+
+	public void installNodeModules(boolean useSystemNode) throws MojoExecutionException {
+		if (useSystemNode) {
+			runSystemNpmCommandWithArgs(Arrays.asList("install"));
+		}
+		else {
+			runLocalNpmCommandWithArgs(Arrays.asList("install"));
+		}
+	}
+
+	private void installYeomanGenerator(boolean useSystemNode, File owaDir) throws MojoExecutionException {
+		if (useSystemNode) {
+			runSystemNpmCommandWithArgs(Arrays.asList("install", "-g", "yo", "generator-openmrs-owa"));
+		} else {
+			runLocalNpmCommandWithArgs(Arrays.asList("install", "-g", "yo", "generator-openmrs-owa"), owaDir.getAbsolutePath());
 		}
 	}
 
@@ -147,10 +170,10 @@ public class OwaHelper {
 
 	}
 
-	private void runYeoman(File directory) throws InterruptedException, IOException {
+	private void runYeomanGenerator(boolean useSystemNode, File directory) throws InterruptedException, IOException {
 		ProcessBuilder builder = new ProcessBuilder()
 				.directory(directory)
-				.command(getYoExecutable(directory))
+				.command(getYoExecutable(useSystemNode, directory))
 				.redirectErrorStream(true)
 				.inheritIO();
 
@@ -159,11 +182,19 @@ public class OwaHelper {
 
 	}
 
-	private String[] getYoExecutable(File directory) {
-		if (SystemUtils.IS_OS_WINDOWS) {
-			return new String[]{new File(directory, "node\\node.exe").getAbsolutePath(), "node\\node_modules\\yo\\lib\\cli.js", "openmrs-owa"};
+	private String[] getYoExecutable(boolean useSystemNode, File directory) {
+		if (useSystemNode) {
+			if (SystemUtils.IS_OS_WINDOWS) {
+				return new String[] {"yo.cmd", "openmrs-owa"};
+			} else {
+				return new String[] {"yo", "openmrs-owa"};
+			}
 		} else {
-			return new String[]{"node/node", "lib/node_modules/yo/lib/cli.js", "openmrs-owa"};
+			if (SystemUtils.IS_OS_WINDOWS) {
+				return new String[] {new File(directory, "node\\node.exe").getAbsolutePath(), "node\\node_modules\\yo\\lib\\cli.js", "openmrs-owa"};
+			} else {
+				return new String[] {"node/node", "lib/node_modules/yo/lib/cli.js", "openmrs-owa"};
+			}
 		}
 	}
 
@@ -182,7 +213,7 @@ public class OwaHelper {
 
 	public String getSystemNpmVersion() {
 		String npmExecutable = getNpmSystemExecutable();
-		String npm =runProcessAndGetFirstResponseLine(npmExecutable, "-v");
+		String npm = runProcessAndGetFirstResponseLine(npmExecutable, "-v");
 		return StringUtils.isNotBlank(npm) ? npm : null;
 	}
 
@@ -236,7 +267,7 @@ public class OwaHelper {
 			lines = IOUtils.readLines(process.getInputStream());
 			process.waitFor();
 		} catch (InterruptedException | IOException e) {
-			System.out.println("Cannot run '" + command + "' command due to " + e.getMessage());
+			System.out.println(e.getMessage());
 		}
 
 		if (process != null && process.exitValue() == 0) {
@@ -367,28 +398,33 @@ public class OwaHelper {
 	}
 
 	public SemVersion getProjectNpmFromPackageJson() {
-		PackageJson packageJson = getPackageJsonFromJsonFile(PACKAGE_JSON_FILENAME);
-		if (packageJson.getEngines() != null) {
+		PackageJson packageJson = getPackageJson(PACKAGE_JSON_FILENAME);
+		if (packageJson != null && packageJson.getEngines() != null) {
 			return SemVersion.valueOf(packageJson.getEngines().get(NPM_VERSION_KEY));
 		}
 		return null;
 	}
 	public SemVersion getProjectNodeFromPackageJson() {
-		PackageJson packageJson = getPackageJsonFromJsonFile(PACKAGE_JSON_FILENAME);
-		if (packageJson.getEngines() != null) {
+		PackageJson packageJson = getPackageJson(PACKAGE_JSON_FILENAME);
+		if (packageJson != null && packageJson.getEngines() != null) {
 			return SemVersion.valueOf(packageJson.getEngines().get(NODE_VERSION_KEY));
 		}
 		return null;
 	}
 
-	public static PackageJson getPackageJsonFromJsonFile(String jsonFilename) {
+	public static PackageJson getPackageJson(String jsonFilename) {
 		Reader reader = null;
 		try {
 			if (new File(jsonFilename).exists()) {
 				reader = new FileReader(jsonFilename);
 			} else {
+				//used only in tests
 				InputStream in = OwaHelper.class.getResourceAsStream(jsonFilename);
-				reader = new InputStreamReader(in);
+				if (in != null) {
+					reader = new InputStreamReader(in);
+				} else {
+					return null;
+				}
 			}
 			PackageJson result = new Gson().fromJson(reader, PackageJson.class);
 			reader.close();
@@ -400,23 +436,17 @@ public class OwaHelper {
 		}
 	}
 
-	public void runLocalNpmCommandWithArgs(String arg) throws MojoExecutionException {
-		List<String> args = new ArrayList<>();
-		args.add(arg);
-		runLocalNpmCommandWithArgs(args);
+	public void runLocalNpmCommandWithArgs(List<String> arguments) throws MojoExecutionException {
+		runLocalNpmCommandWithArgs(arguments, null);
 	}
 
-	public void runLocalNpmCommandWithArgs(List<String> args) throws MojoExecutionException {
+	public void runLocalNpmCommandWithArgs(List<String> arguments, String installDir) throws MojoExecutionException {
 		List<MojoExecutor.Element> configuration = new ArrayList<>();
 
-		StringBuilder argsString = new StringBuilder();
-
-		for (String argument : args) {
-			argsString.append(argument);
-			argsString.append(" ");
+		configuration.add(element("arguments", StringUtils.join(arguments.iterator(), " ")));
+		if (installDir != null) {
+			configuration.add(element("installDirectory", installDir));
 		}
-
-		configuration.add(element("arguments", argsString.toString()));
 		executeMojo(
 				plugin(
 						groupId(FRONTEND_BUILDER_GROUP_ID),
@@ -429,23 +459,17 @@ public class OwaHelper {
 		);
 	}
 
-	public void runSystemNpmCommandWithArgs(String arg) throws MojoExecutionException {
-		List<String> args = new ArrayList<>();
-		args.add(arg);
-		runSystemNpmCommandWithArgs(args);
-	}
-
-	public void runSystemNpmCommandWithArgs(List<String> args) throws MojoExecutionException {
+	public void runSystemNpmCommandWithArgs(List<String> arguments) throws MojoExecutionException {
 		List<MojoExecutor.Element> configuration = new ArrayList<>();
 		configuration.add(element("executable", getNpmSystemExecutable()));
 
-		MojoExecutor.Element[] argsele = new MojoExecutor.Element[args.size()];
+		List<MojoExecutor.Element> elements = new ArrayList<>();
 
-		for (int i = 0; i < args.size(); i++) {
-			argsele[i] = new MojoExecutor.Element("argument", args.get(i));
+		for (String argument: arguments) {
+			elements.add(element("argument", argument));
 		}
 
-		MojoExecutor.Element parentArgs = new MojoExecutor.Element("arguments", argsele);
+		MojoExecutor.Element parentArgs = new MojoExecutor.Element("arguments", elements.toArray(new MojoExecutor.Element[0]));
 
 		configuration.add(parentArgs);
 		executeMojo(
@@ -468,6 +492,60 @@ public class OwaHelper {
 			npm = "npm";
 		}
 		return npm;
+	}
+
+	public boolean resolveNodeAndNpm(String nodeVersion, String npmVersion, String projectDir) throws MojoExecutionException {
+		OwaHelper.SemVersion node = parseVersion(nodeVersion);
+		OwaHelper.SemVersion npm = parseVersion(npmVersion);
+
+		if (node == null && npm != null) {
+			throw new MojoExecutionException("You must specify nodeVersion when specifying npmVersion.");
+		}
+
+		String modeMessage = "";
+		if (node == null) {
+			node = getProjectNodeFromPackageJson();
+			npm = getProjectNpmFromPackageJson();
+
+			if (node == null) {
+				node = parseVersion(SDKConstants.NODE_VERSION);
+				npm = parseVersion(SDKConstants.NPM_VERSION);
+				modeMessage = " (SDK default, which can be overwritten with nodeVesion and npmVersion arguments or by engines in package.json)";
+			} else {
+				modeMessage = " as defined in package.json";
+			}
+		}
+
+		wizard.showMessage("Looking for node " + node +" and npm " + npm + modeMessage + ".");
+
+		boolean useSystemNode = false;
+
+		String systemNode = getSystemNodeVersion();
+		String systemNpm = getSystemNpmVersion();
+
+		if (systemNode != null && systemNpm != null) {
+			if (node.satisfies(systemNode) && (npm == null || npm.satisfies(systemNpm))) {
+				wizard.showMessage("Using system node " + systemNode +" and npm " + systemNpm);
+				useSystemNode = true;
+			}
+		}
+
+		boolean updateLocalNodeAndNpm = true;
+
+		String projectNode = getProjectNodeVersion();
+		String projectNpm = getProjectNpmVersion();
+
+		if (projectNode != null && projectNpm != null) {
+			if (node.satisfies(projectNode) && (npm == null || npm.satisfies(projectNpm))) {
+				wizard.showMessage("Using project node " + projectNode + " and npm " + projectNpm);
+				updateLocalNodeAndNpm = false;
+			}
+		}
+
+		if (!useSystemNode && updateLocalNodeAndNpm) {
+			installLocalNodeAndNpm(node, npm, projectDir);
+		}
+		return useSystemNode;
 	}
 
 	public void installLocalNodeAndNpm(SemVersion node, SemVersion npm, String installDirectory) throws MojoExecutionException {

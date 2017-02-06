@@ -54,6 +54,10 @@ public class AddFeature extends AbstractTask {
     }
 
     private void addOwaSubmodule() throws MojoExecutionException {
+        new OwaHelper(mavenSession, mavenProject, pluginManager, wizard)
+                .setInstallationDir(new File(mavenProject.getBasedir(),"owa"))
+                .createOwaProject();
+
         //apply changes to config.xml and main pom.xml
         wizard.showMessage("Modifying pom.xml files...");
         new XmlHelper().modifyXml(new File(mavenProject.getBasedir(), "omod"+File.separator+"pom.xml"), "archetype-submodule-owa/omod.pom.xml");
@@ -73,9 +77,9 @@ public class AddFeature extends AbstractTask {
         wizard.showMessage("Creating OWA submodule...");
         executeMojo(
                 plugin(
-                    groupId(SDKConstants.PLUGIN_ARCHETYPE_GROUP_ID),
-                    artifactId(SDKConstants.PLUGIN_ARCHETYPE_ARTIFACT_ID),
-                    version(SDKConstants.PLUGIN_ARCHETYPE_VERSION)
+                        groupId(SDKConstants.PLUGIN_ARCHETYPE_GROUP_ID),
+                        artifactId(SDKConstants.PLUGIN_ARCHETYPE_ARTIFACT_ID),
+                        version(SDKConstants.PLUGIN_ARCHETYPE_VERSION)
                 ),
                 goal("generate"), configuration(
                         element("interactiveMode", "false"),
@@ -84,9 +88,5 @@ public class AddFeature extends AbstractTask {
                         element("archetypeVersion", SDKConstants.getSDKInfo().getVersion())
                 ),
                 executionEnvironment(mavenProject, mavenSession, pluginManager));
-
-        new OwaHelper(mavenSession, mavenProject, pluginManager, wizard)
-                .setInstallationDir(new File(mavenProject.getBasedir(),"owa"))
-                .createOwaProject();
     }
 }
