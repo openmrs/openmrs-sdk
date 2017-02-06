@@ -58,6 +58,7 @@ public class BuildOwaTest {
 
         build.wizard = wizard;
         build.owaHelper = owaHelper;
+        owaHelper.setWizard(wizard);
     }
 
     @Test

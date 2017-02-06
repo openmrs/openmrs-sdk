@@ -79,6 +79,10 @@ public class OwaHelper {
 		this.wizard = wizard;
 	}
 
+	public void setWizard(Wizard wizard) {
+		this.wizard = wizard;
+	}
+
 	public void createOwaProject() throws MojoExecutionException {
 		File owaDir = installationDir != null ? installationDir : prepareOwaDir();
 		owaDir.mkdirs();
