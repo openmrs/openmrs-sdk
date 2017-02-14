@@ -418,8 +418,14 @@ public class OwaHelper {
 
 	public PackageJson getPackageJson(String jsonFilename) {
 		Reader reader = null;
-		File json = new File(mavenProject.getBasedir(), jsonFilename);
-		try {;
+		File json;
+		if (mavenProject == null) {
+			json = new File(jsonFilename);
+		} else {
+			json = new File(mavenProject.getBasedir(), jsonFilename);
+		}
+
+		try {
 			if (json.exists()) {
 				reader = new FileReader(json);
 			} else {
