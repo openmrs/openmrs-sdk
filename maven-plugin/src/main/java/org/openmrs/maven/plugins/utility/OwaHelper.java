@@ -416,11 +416,12 @@ public class OwaHelper {
 		return null;
 	}
 
-	public static PackageJson getPackageJson(String jsonFilename) {
+	public PackageJson getPackageJson(String jsonFilename) {
 		Reader reader = null;
-		try {
-			if (new File(jsonFilename).exists()) {
-				reader = new FileReader(jsonFilename);
+		File json = new File(mavenProject.getBasedir(), jsonFilename);
+		try {;
+			if (json.exists()) {
+				reader = new FileReader(json);
 			} else {
 				//used only in tests
 				InputStream in = OwaHelper.class.getResourceAsStream(jsonFilename);
@@ -434,7 +435,7 @@ public class OwaHelper {
 			reader.close();
 			return result;
 		} catch (IOException e) {
-			throw new IllegalStateException("Couldn't find " + jsonFilename + " at " + new File(jsonFilename).getAbsolutePath());
+			throw new IllegalStateException("Couldn't find " + jsonFilename + " at " + json.getAbsolutePath());
 		} finally {
 			IOUtils.closeQuietly(reader);
 		}

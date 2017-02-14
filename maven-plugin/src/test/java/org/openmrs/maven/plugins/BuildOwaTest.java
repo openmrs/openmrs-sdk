@@ -67,8 +67,8 @@ public class BuildOwaTest {
         final String projectNpmVersion = "3.10.8";
         final String projectNodeVersion = "7.0.0";
 
-        String npmVersion = OwaHelper.getPackageJson(packageJsonPath).getEngines().get(OwaHelper.NPM_VERSION_KEY);
-        String nodeVersion = OwaHelper.getPackageJson(packageJsonPath).getEngines().get(OwaHelper.NODE_VERSION_KEY);
+        String npmVersion = owaHelper.getPackageJson(packageJsonPath).getEngines().get(OwaHelper.NPM_VERSION_KEY);
+        String nodeVersion = owaHelper.getPackageJson(packageJsonPath).getEngines().get(OwaHelper.NODE_VERSION_KEY);
 
         assertThat(npmVersion, is(projectNpmVersion));
         assertThat(nodeVersion, is(projectNodeVersion));
