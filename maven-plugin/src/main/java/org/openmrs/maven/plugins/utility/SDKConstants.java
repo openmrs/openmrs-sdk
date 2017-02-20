@@ -115,7 +115,10 @@ public class SDKConstants {
         Artifact artifact = new Artifact("referenceapplication-package", version, Artifact.GROUP_DISTRO, Artifact.TYPE_ZIP);
         artifact.setClassifier("distro");
         return artifact;
+    }
 
+    public static Artifact getDistroModule(String groupId, String artifactId, String version) {
+        return new Artifact(artifactId, version, groupId);
     }
 
     public static Artifact getSDKInfo() {

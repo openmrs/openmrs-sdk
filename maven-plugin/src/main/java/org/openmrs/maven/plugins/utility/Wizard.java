@@ -1,5 +1,6 @@
 package org.openmrs.maven.plugins.utility;
 
+import com.atlassian.util.concurrent.Nullable;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.Server;
@@ -27,9 +28,13 @@ public interface Wizard {
 
     public void promptForRefAppVersionIfMissing(Server server, VersionsHelper versionsHelper) throws MojoExecutionException;
 
-    void promptForRefAppVersionIfMissing(Server server, VersionsHelper versionsHelper, String customMessage) throws MojoExecutionException;
+    void promptForRefAppVersionIfMissing(Server server, VersionsHelper versionsHelper, @Nullable String customMessage) throws MojoExecutionException;
 
     String promptForRefAppVersion(VersionsHelper versionsHelper);
+
+    String promptForDistroVersion(String distroGroupId, String distroArtifactId, String distroVersion, String distroName, VersionsHelper versionsHelper, @Nullable String customMessage);
+
+    String promptForDistroVersion(String distroGroupId, String distroArtifactId, String distroVersion, String distroName, VersionsHelper versionsHelper);
 
     String promptForMissingValueWithOptions(String message, String value, String parameterName, List<String> options);
 
