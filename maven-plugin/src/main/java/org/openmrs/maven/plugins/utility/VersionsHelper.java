@@ -7,6 +7,7 @@ import org.apache.maven.artifact.versioning.ArtifactVersion;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.project.MavenProject;
 import org.openmrs.maven.plugins.model.Artifact;
+import org.openmrs.maven.plugins.model.Version;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -73,41 +74,6 @@ public class VersionsHelper {
     private void sortDescending(List<ArtifactVersion> versions){
         Collections.sort(versions);
         Collections.reverse(versions);
-    }
-
-    /**
-     * @param artifact
-     * @return inferred version for given artifact
-     */
-    public String inferVersion(Artifact artifact){
-        List<ArtifactVersion> artifactVersions = getVersions(artifact);
-        if(artifactVersions.size() == 0){
-            return artifact.getVersion();
-        }
-        return inferVersion(artifact.getVersion(), artifactVersions);
-    }
-
-    /**
-     *
-     * @param currentVersion
-     * @param availableVersions
-     * @return inferred version based on available versions
-     */
-    public String inferVersion(String currentVersion, List<ArtifactVersion> availableVersions){
-        List<ArtifactVersion> inferredVersions = new ArrayList<ArtifactVersion>();
-        //if currentVersion is available
-        for(ArtifactVersion version : availableVersions){
-            if(version.toString().equals(currentVersion)){
-                return currentVersion;
-            } else if (version.toString().contains(currentVersion)&&version.toString().matches(RELEASE_VERSION_REGEX)){
-                inferredVersions.add(version);
-            }
-        }
-        if(inferredVersions.size()==0){
-            return currentVersion;
-        }
-        Collections.sort(inferredVersions);
-        return inferredVersions.get(inferredVersions.size()-1).toString();
     }
 
     /**

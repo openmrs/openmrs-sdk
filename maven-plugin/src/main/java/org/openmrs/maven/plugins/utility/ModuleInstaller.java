@@ -14,7 +14,16 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.Element;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.artifactId;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.configuration;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.element;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.executeMojo;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.executionEnvironment;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.goal;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.groupId;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.plugin;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.version;
 
 /**
  * Handles installing modules on server
@@ -94,8 +103,6 @@ public class ModuleInstaller {
     private void prepareModules(List<Artifact> artifacts, String outputDir, String goal) throws MojoExecutionException {
         MojoExecutor.Element[] artifactItems = new MojoExecutor.Element[artifacts.size()];
         for (Artifact artifact: artifacts) {
-
-            artifact.setVersion(versionsHelper.inferVersion(artifact));
             int index = artifacts.indexOf(artifact);
             artifactItems[index] = artifact.toElement(outputDir);
         }
@@ -117,7 +124,6 @@ public class ModuleInstaller {
         );
     }
     private void prepareModule(Artifact artifact, String outputDir, String goal) throws MojoExecutionException {
-        artifact.setVersion(versionsHelper.inferVersion(artifact));
         MojoExecutor.Element artifactElement = artifact.toElement(outputDir);
         List<MojoExecutor.Element> configuration = new ArrayList<MojoExecutor.Element>();
         configuration.add(element("artifactItems", artifactElement));
