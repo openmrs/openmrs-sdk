@@ -46,6 +46,7 @@ public class ServerUpgrader {
 
 			String modulesDir = server.getServerDirectory().getPath()+File.separator+SDKConstants.OPENMRS_SERVER_MODULES;
 			if(upgradeDifferential.getPlatformArtifact()!=null){
+				server.deleteServerTmpDirectory();
 				replaceWebapp(server, upgradeDifferential.getPlatformArtifact().getVersion());
 			}
 			if(!upgradeDifferential.getModulesToAdd().isEmpty()){
