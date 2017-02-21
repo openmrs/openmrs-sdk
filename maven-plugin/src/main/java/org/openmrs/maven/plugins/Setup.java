@@ -1,6 +1,7 @@
 package org.openmrs.maven.plugins;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.NullOutputStream;
 import org.apache.commons.lang.StringUtils;
 import org.apache.ibatis.jdbc.ScriptRunner;
@@ -13,6 +14,7 @@ import org.openmrs.maven.plugins.utility.DBConnector;
 import org.openmrs.maven.plugins.utility.DistroHelper;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 
+import java.io.Reader;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -445,6 +447,7 @@ public class Setup extends AbstractTask {
 
         File extractedSqlFile = null;
         InputStream sqlStream;
+        Reader sqlReader;
         if(sqlScriptPath.startsWith(Server.CLASSPATH_SCRIPT_PREFIX)){
             String sqlScript = sqlScriptPath.replace(Server.CLASSPATH_SCRIPT_PREFIX, "");
             sqlStream = (Setup.class.getClassLoader().getResourceAsStream(sqlScript));
@@ -466,6 +469,7 @@ public class Setup extends AbstractTask {
             }
         }
 
+        sqlReader = new InputStreamReader(sqlStream);
         Connection connection = null;
         try {
             connection = DriverManager.getConnection(uri, server.getDbUser(), server.getDbPassword());
@@ -473,21 +477,29 @@ public class Setup extends AbstractTask {
             //we don't want to display ~5000 lines of queries to user if there is no error
             scriptRunner.setLogWriter(new PrintWriter(new NullOutputStream()));
             scriptRunner.setStopOnError(true);
-            scriptRunner.runScript(new InputStreamReader(sqlStream));
+            scriptRunner.runScript(sqlReader);
             scriptRunner.closeConnection();
+            sqlReader.close();
             wizard.showMessage("Database imported successfully.");
             server.setParam("create_tables", "false");
-        } catch (SQLException e) {
-            //this file is extracted from distribution, clean it up
-            if(extractedSqlFile != null && extractedSqlFile.exists()){
-                extractedSqlFile.delete();
-            }
+        } catch (Exception e) {
+            getLog().error(e.getMessage());
+
+            throw new MojoExecutionException("Failed to import database", e);
+        } finally {
+            IOUtils.closeQuietly(sqlReader);
+
             try {
-                if(connection!=null){
+                if(connection != null){
                     connection.close();
                 }
             } catch (SQLException e1) {
-                getLog().error(e.getMessage());
+                //close quietly
+            }
+
+            //this file is extracted from distribution, clean it up
+            if(extractedSqlFile != null && extractedSqlFile.exists()){
+                extractedSqlFile.delete();
             }
         }
     }
