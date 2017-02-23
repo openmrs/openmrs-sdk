@@ -81,8 +81,7 @@ public class BuildIntegrationTest extends AbstractSdkIntegrationTest{
         executeTask("build");
 
         verifier.verifyTextInLog("[INFO] BUILD SUCCESS");
-        assertFilePresent("node");
-        assertFilePresent("node_modules");
+        assertFilePresent("dist");
     }
 
     @Test
