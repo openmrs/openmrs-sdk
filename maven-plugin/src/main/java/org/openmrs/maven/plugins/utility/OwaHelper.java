@@ -217,21 +217,21 @@ public class OwaHelper {
 
 	public String getSystemNpmVersion() {
 		String npmExecutable = getNpmSystemExecutable();
-		String npm = runProcessAndGetFirstResponseLine(npmExecutable, "-v");
+		String npm = runProcessAndGetFirstResponseLine(npmExecutable, "-v", true);
 		return StringUtils.isNotBlank(npm) ? npm : null;
 	}
 
 	public String getSystemNodeVersion() {
-		String node = runProcessAndGetFirstResponseLine("node", "-v");
+		String node = runProcessAndGetFirstResponseLine("node", "-v", true);
 		return formatNodeVersion(node);
 	}
 
 	public String getProjectNodeVersion() {
 		String node;
 		if (SystemUtils.IS_OS_WINDOWS) {
-			node = runProcessAndGetFirstResponseLine("node\\node.exe", "-v");
+			node = runProcessAndGetFirstResponseLine("node\\node.exe", "-v", true);
 		} else {
-			node = runProcessAndGetFirstResponseLine("node/node", "-v");
+			node = runProcessAndGetFirstResponseLine("node/node", "-v", true);
 		}
 		return formatNodeVersion(node);
 	}
@@ -239,9 +239,9 @@ public class OwaHelper {
 	public String getProjectNpmVersion() {
 		String npm;
 		if (SystemUtils.IS_OS_WINDOWS) {
-			npm = runProcessAndGetFirstResponseLine("node\\npm.cmd", "-v");
+			npm = runProcessAndGetFirstResponseLine("node\\npm.cmd", "-v", true);
 		} else {
-			npm = runProcessAndGetFirstResponseLine("node/npm", "-v");
+			npm = runProcessAndGetFirstResponseLine("node/npm", "-v", true);
 		}
 		return StringUtils.isNotBlank(npm) ? npm : null;
 	}
@@ -258,7 +258,7 @@ public class OwaHelper {
 		}
 	}
 
-	private String runProcessAndGetFirstResponseLine(String command, @Nullable String params) {
+	private String runProcessAndGetFirstResponseLine(String command, @Nullable String params, boolean quiet) {
 		Process process = null;
 		List<String> lines = null;
 		try {
@@ -541,21 +541,24 @@ public class OwaHelper {
 			}
 		}
 
-		boolean updateLocalNodeAndNpm = true;
+		if (!useSystemNode) {
+			boolean updateLocalNodeAndNpm = true;
 
-		String projectNode = getProjectNodeVersion();
-		String projectNpm = getProjectNpmVersion();
+			String projectNode = getProjectNodeVersion();
+			String projectNpm = getProjectNpmVersion();
 
-		if (projectNode != null && projectNpm != null) {
-			if (node.satisfies(projectNode) && (npm == null || npm.satisfies(projectNpm))) {
-				wizard.showMessage("Using project node " + projectNode + " and npm " + projectNpm);
-				updateLocalNodeAndNpm = false;
+			if (projectNode != null && projectNpm != null) {
+				if (node.satisfies(projectNode) && (npm == null || npm.satisfies(projectNpm))) {
+					wizard.showMessage("Using project node " + projectNode + " and npm " + projectNpm);
+					updateLocalNodeAndNpm = false;
+				}
+			}
+
+			if (updateLocalNodeAndNpm) {
+				installLocalNodeAndNpm(node, npm, projectDir);
 			}
 		}
 
-		if (!useSystemNode && updateLocalNodeAndNpm) {
-			installLocalNodeAndNpm(node, npm, projectDir);
-		}
 		return useSystemNode;
 	}
 
