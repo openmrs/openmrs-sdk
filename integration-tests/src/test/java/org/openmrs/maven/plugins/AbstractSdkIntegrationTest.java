@@ -35,6 +35,7 @@ import java.util.zip.ZipFile;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 import static org.openmrs.maven.plugins.SdkMatchers.hasModuleVersion;
 import static org.openmrs.maven.plugins.SdkMatchers.hasModuleVersionInDisstro;
 import static org.openmrs.maven.plugins.SdkMatchers.hasPlatformVersion;
@@ -189,13 +190,19 @@ public abstract class AbstractSdkIntegrationTest {
      * asserts that file with given path is present in test directory
      */
     public void assertFilePresent(String path){
-        verifier.assertFilePresent(testDirectory.getAbsolutePath() + File.separator + path);
+        File file = new File(testDirectory.getAbsolutePath(), path);
+        if (!file.exists()) {
+            fail("Expected " + file.getAbsolutePath());
+        }
     }
     /**
      * asserts that file with given path is not present in test directory
      */
     public void assertFileNotPresent(String path){
-        verifier.assertFileNotPresent(testDirectory.getAbsolutePath() + File.separator + path);
+        File file = new File(testDirectory.getAbsolutePath(), path);
+        if (file.exists()) {
+            fail("Expected not to find " + file.getAbsolutePath());
+        }
     }
 
     public void assertZipEntryPresent(String path, String zipEntryName) throws Exception {
