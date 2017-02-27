@@ -42,6 +42,8 @@ public class Server extends BaseSdkProperties {
 
     public static final String PROPERTY_DEBUG_PORT = "debug.port";
 
+    public static final String PROPERTY_SERVER_PORT = "server.port";
+
     private static String serversPath = System.getProperty("user.home")+File.separator+SDKConstants.OPENMRS_SERVER_PATH;
 
     private File propertiesFile;
@@ -638,6 +640,14 @@ public class Server extends BaseSdkProperties {
 
     public String getDebugPort(){
         return getParam(PROPERTY_DEBUG_PORT);
+    }
+
+    public void setPort(String port) {
+        setParam(PROPERTY_SERVER_PORT, port);
+    }
+
+    public String getPort() {
+        return getParam(PROPERTY_SERVER_PORT);
     }
 
     public void setDbUser(String dbUser) {
