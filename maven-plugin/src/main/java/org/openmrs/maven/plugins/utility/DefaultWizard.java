@@ -1,5 +1,6 @@
 package org.openmrs.maven.plugins.utility;
 
+import com.atlassian.util.concurrent.Nullable;
 import com.google.common.collect.Lists;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
@@ -15,10 +16,7 @@ import org.codehaus.plexus.component.annotations.Component;
 import org.codehaus.plexus.component.annotations.Requirement;
 import org.codehaus.plexus.components.interactivity.Prompter;
 import org.codehaus.plexus.components.interactivity.PrompterException;
-import org.openmrs.maven.plugins.model.Artifact;
-import org.openmrs.maven.plugins.model.DistroProperties;
-import org.openmrs.maven.plugins.model.Server;
-import org.openmrs.maven.plugins.model.UpgradeDifferential;
+import org.openmrs.maven.plugins.model.*;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -94,6 +92,7 @@ public class DefaultWizard implements Wizard {
         put("docker", DB_OPTION_SDK_DOCKER_MYSQL);
     }};
     public static final String DBNAME_URL_VARIABLE = "@DBNAME@";
+    private static final int MAX_OPTIONS_SIZE = 5;
 
     @Requirement
     Prompter prompter;
@@ -602,20 +601,30 @@ public class DefaultWizard implements Wizard {
         return promptForRefAppVersion(versionsHelper, null);
     }
 
-    public String promptForRefAppVersion(VersionsHelper versionsHelper, String customMessage) {
-        int maxOptionsSize = 5;
-        Map<String, String> optionsMap = new LinkedHashMap<>();
-        Set<String> versions = new LinkedHashSet<>(versionsHelper.getVersionAdvice(SDKConstants.getReferenceModule("2.3.1"), maxOptionsSize));
-        versions.addAll(SDKConstants.SUPPPORTED_REFAPP_VERSIONS_2_3_1_OR_LOWER);
-        List<ArtifactVersion> artifactVersions = new ArrayList<>();
-        for(String version : versions){
-            artifactVersions.add(new DefaultArtifactVersion(version));
-        }
-        for(String version : versionsHelper.getVersionAdvice(artifactVersions, 5)){
-            optionsMap.put(String.format(REFAPP_OPTION_TMPL, version), String.format(REFAPP_ARTIFACT_TMPL, version));
-            if(optionsMap.size()== maxOptionsSize) break;
-        }
+    @Override
+    public String promptForDistroVersion(String distroGroupId, String distroArtifactId, String distroVersion, String distroName, VersionsHelper versionsHelper) {
+        return promptForDistroVersion(distroGroupId, distroArtifactId, distroVersion, distroName, versionsHelper, null);
+    }
 
+    @Override
+    public String promptForDistroVersion(String distroGroupId, String distroArtifactId, String distroVersion, String distroName, VersionsHelper versionsHelper, @Nullable String customMessage) {
+        final String optionTemplate = distroName + " %s";
+        final String artifacttemplate = distroGroupId + ":" + distroArtifactId + ":" + "%s";
+
+        Set<String> versions = new LinkedHashSet<>(versionsHelper.getVersionAdvice(SDKConstants.getDistroModule(distroGroupId, distroArtifactId, distroVersion), MAX_OPTIONS_SIZE));
+        Map<String, String> optionsMap = getDistroVersionsOptionsMap(versions, versionsHelper, optionTemplate, artifacttemplate);
+
+        return promptForVersion(optionsMap, customMessage);
+    }
+
+    public String promptForRefAppVersion(VersionsHelper versionsHelper, @Nullable String customMessage) {
+        Set<String> versions = new LinkedHashSet<>(versionsHelper.getVersionAdvice(SDKConstants.getReferenceModule("2.3.1"), MAX_OPTIONS_SIZE));
+        versions.addAll(SDKConstants.SUPPPORTED_REFAPP_VERSIONS_2_3_1_OR_LOWER);
+        Map<String, String> optionsMap = getDistroVersionsOptionsMap(versions, versionsHelper, REFAPP_OPTION_TMPL, REFAPP_ARTIFACT_TMPL);
+        return promptForVersion(optionsMap, customMessage);
+    }
+
+    private String promptForVersion(Map<String, String> optionsMap, @Nullable String customMessage) {
         String message = customMessage != null ? customMessage : DISTRIBUTION_VERSION_PROMPT;
         String version = promptForMissingValueWithOptions(message,
                 null, "distribution artifact", Lists.newArrayList(optionsMap.keySet()), "Please specify %s", REFERENCEAPPLICATION_2_4);
@@ -626,6 +635,20 @@ public class DefaultWizard implements Wizard {
         } else {
             return version;
         }
+    }
+
+    private Map<String, String> getDistroVersionsOptionsMap(Set<String> versions, VersionsHelper versionsHelper, String optionTemplate, String artifactTemplate) {
+        Map<String, String> optionsMap = new LinkedHashMap<>();
+
+        List<ArtifactVersion> artifactVersions = new ArrayList<>();
+        for(String version : versions){
+            artifactVersions.add(new DefaultArtifactVersion(version));
+        }
+        for(String version : versionsHelper.getVersionAdvice(artifactVersions, MAX_OPTIONS_SIZE)){
+            optionsMap.put(String.format(optionTemplate, version), String.format(artifactTemplate, version));
+            if(optionsMap.size() == MAX_OPTIONS_SIZE) break;
+        }
+        return optionsMap;
     }
 
     @Override

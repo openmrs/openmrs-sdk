@@ -149,7 +149,13 @@ public class Deploy extends AbstractTask {
                         server.getName(),
                         server.getVersion()));
 
-                distro = wizard.promptForRefAppVersion(versionsHelper);
+                if (server.getName().equals("Platform") || server.getDistroGroupId() == null || server.getDistroArtifactId() == null) {
+                    // If its impossible to define distro, prompt refapp distro versions
+                    distro = wizard.promptForRefAppVersion(versionsHelper);
+                } else {
+                    // If its possible to define distro, prompt that distro's versions
+                    distro = wizard.promptForDistroVersion(server.getDistroGroupId(), server.getDistroArtifactId(), server.getVersion(), server.getName(), versionsHelper);
+                }
                 distroProperties = distroHelper.retrieveDistroProperties(distro, versionsHelper);
                 upgrader.upgradeToDistro(server, distroProperties);
                 break;
