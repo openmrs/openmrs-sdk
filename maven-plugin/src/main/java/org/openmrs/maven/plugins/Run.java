@@ -13,6 +13,7 @@ import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.utility.Project;
 import org.openmrs.maven.plugins.utility.SDKConstants;
+import org.openmrs.maven.plugins.utility.ServerHelper;
 
 import java.io.File;
 import java.util.Arrays;
@@ -73,6 +74,8 @@ public class Run extends AbstractTask {
 	 */
 	private Boolean watchApi;
 
+	private ServerHelper serverHelper;
+
 	public void executeTask() throws MojoExecutionException, MojoFailureException {
 		if (serverId == null) {
 			File currentProperties = Server.checkCurrentDirForServer();
@@ -80,12 +83,17 @@ public class Run extends AbstractTask {
 		}
 		serverId = wizard.promptForExistingServerIdIfMissing(serverId);
 		Server server = loadValidatedServer(serverId);
-		if (port != null && port != 8080) {
-			server.setParam("tomcat.port", String.valueOf(port));
-		}
-		else{
-			server.setParam("tomcat.port", "8080");
-		}
+
+		port = (System.getProperty("port") != null
+				? Integer.valueOf(System.getProperty("port"))
+				: Integer.valueOf(server.getPort()));
+
+		serverHelper = new ServerHelper(wizard);
+		this.validatePort();
+
+		wizard.showMessage(String.format("Using %s", port));
+		server.setParam("tomcat.port", String.valueOf(port));
+
 		server.save();
 		File serverPath = server.getServerDirectory();
 		serverPath.mkdirs();
@@ -113,6 +121,26 @@ public class Run extends AbstractTask {
 		} else {
 			runInFork(server);
 		}
+	}
+
+	private void validatePort() {
+		boolean inUse = false;
+		int tmpPort = port;
+
+		inUse = serverHelper.checkPortUsage(tmpPort);
+		if (inUse) {
+			tmpPort = serverHelper.findNearestPort(tmpPort);
+		} else {
+			return;
+		}
+
+		String message = String.format("Port %s is already in use. Would you like to use %s instead?", port, tmpPort);
+		boolean promptToChange = wizard.promptYesNo(message);
+		if (promptToChange) {
+			port = tmpPort;
+			return;
+		}
+		this.validatePort();
 	}
 
 	private void runInFork(Server server) throws MojoExecutionException, MojoFailureException {
