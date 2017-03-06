@@ -14,9 +14,6 @@ import static org.hamcrest.Matchers.*;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 
-/**
- * Created by user on 27.05.16.
- */
 public class VersionsHelperTest {
 
     VersionsHelper helper;
@@ -34,21 +31,6 @@ public class VersionsHelperTest {
         return list;
     }
 
-    @Test
-    public void inferVersions_shouldReturnCurrentVersionIfAvailable(){
-        String currentVersion = "1.8.8";
-        String res = helper.inferVersion(currentVersion,
-                createTestVersions("1.8.8", "1.8.3", "1.8.10-SNAPSHOT", "1.8.9-alpha"));
-        assertThat(res, is(equalTo(currentVersion)));
-    }
-
-    @Test
-    public void inferVersions_shouldInferVersionOmittingSnapshots(){
-        String currentVersion = "1.8";
-        String res = helper.inferVersion(currentVersion,
-                createTestVersions("1.8.8", "1.8.3", "1.8.10-SNAPSHOT", "1.8.9-alpha"));
-        assertThat(res, is(equalTo("1.8.9-alpha")));
-    }
     @Test
     public void getLatestReleasedVersion_shouldNotIncludeSnapshots(){
         String res = helper.getLatestReleasedVersion(
