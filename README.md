@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/openmrs/openmrs-sdk.svg?branch=master)](https://travis-ci.org/openmrs/openmrs-sdk)
+[![Build Status](https://travis-ci.org/openmrs/openmrs-sdk.svg?branch=master)](https://travis-ci.org/openmrs/openmrs-sdk) [ ![Download](https://api.bintray.com/packages/openmrs/maven/openmrs-sdk/images/download.svg) ](https://bintray.com/openmrs/maven/openmrs-sdk/_latestVersion)
 
 It is a repository of OpenMRS Software Development Kit (SDK).
 
