@@ -467,11 +467,10 @@ public class Deploy extends AbstractTask {
             project = Project.loadProject(userDir);
         }
         if (artifactId == null && project != null && project.isOpenmrsModule()) {
-            if (project.getParent() != null) {
+            if (project.getParent() != null && !"org.openmrs.maven.parents".equals(project.getParent().getGroupId())) {
                 moduleGroupId = project.getParent().getGroupId();
                 moduleArtifactId = project.getParent().getArtifactId() + "-omod";
                 moduleVersion = (version != null) ? version : project.getParent().getVersion();
-
             } else {
                 moduleGroupId = project.getGroupId();
                 moduleArtifactId = project.getArtifactId() + "-omod";
