@@ -25,7 +25,7 @@ public class WizardTest {
 		String correctUri = wizard.addMySQLParamsIfMissing(uri);
 
 		assertThat(correctUri, is(equalTo(
-		    "jdbc:mysql://localhost:3016/openmrs?autoReconnect=true&sessionVariables=storage_engine%3DInnoDB&useUnicode=true&characterEncoding=UTF-8")));
+		    "jdbc:mysql://localhost:3016/openmrs?autoReconnect=true&sessionVariables=default_storage_engine%3DInnoDB&useUnicode=true&characterEncoding=UTF-8")));
 	}
 
 	@Test
@@ -35,7 +35,7 @@ public class WizardTest {
 		String correctUri = wizard.addMySQLParamsIfMissing(uri);
 
 		assertThat(correctUri, is(equalTo(
-		    "jdbc:mysql://localhost:3016/openmrs?autoReconnect=true&sessionVariables=storage_engine%3DInnoDB&useUnicode=true&characterEncoding=UTF-8")));
+		    "jdbc:mysql://localhost:3016/openmrs?autoReconnect=true&sessionVariables=default_storage_engine%3DInnoDB&useUnicode=true&characterEncoding=UTF-8")));
 	}
 
 }
