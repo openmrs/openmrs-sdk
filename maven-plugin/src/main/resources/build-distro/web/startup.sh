@@ -7,7 +7,7 @@ DEBUG=${DEBUG:-false}
 
 cat > /usr/local/tomcat/openmrs-server.properties << EOF
 install_method=auto
-connection.url=jdbc\:mysql\://${DB_HOST}\:3306/${DB_DATABASE}?autoReconnect\=true&sessionVariables\=storage_engine\=InnoDB&useUnicode\=true&characterEncoding\=UTF-8
+connection.url=jdbc\:mysql\://${DB_HOST}\:3306/${DB_DATABASE}?autoReconnect\=true&sessionVariables\=default_storage_engine\=InnoDB&useUnicode\=true&characterEncoding\=UTF-8
 connection.username=${DB_USERNAME}
 connection.password=${DB_PASSWORD}
 has_current_openmrs_database=true
