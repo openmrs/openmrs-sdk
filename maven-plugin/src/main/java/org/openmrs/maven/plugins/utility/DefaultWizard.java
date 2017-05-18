@@ -915,7 +915,7 @@ public class DefaultWizard implements Wizard {
             throw new IllegalArgumentException(e);
         }
         uri.setParameter("autoReconnect", "true");
-        uri.setParameter("sessionVariables", "storage_engine=InnoDB");
+        uri.setParameter("sessionVariables", "default_storage_engine=InnoDB");
         uri.setParameter("useUnicode", "true");
         uri.setParameter("characterEncoding", "UTF-8");
 
