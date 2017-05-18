@@ -112,6 +112,7 @@ public abstract class AbstractSdkIntegrationTest {
 
         addAnswer(serverId);
         addAnswer(System.getProperty("java.home"));
+        addAnswer("8080");
         addTaskParam(setupServer, BATCH_ANSWERS, getAnswers());
         cleanAnswers();
 

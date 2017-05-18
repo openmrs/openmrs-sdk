@@ -32,6 +32,7 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
         addAnswer(serverId);
         addAnswer("1044");
         addAnswer(System.getProperty("java.home"));
+        addAnswer("8080");
 
         executeTask("setup");
 
@@ -60,6 +61,7 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
         addAnswer(serverId);
         addAnswer("1044");
         addAnswer(System.getProperty("java.home"));
+        addAnswer("8080");
 
         executeTask("setup");
 
@@ -87,6 +89,7 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
         addAnswer(serverId);
         addAnswer("1044");
         addAnswer(System.getProperty("java.home"));
+        addAnswer("8080");
 
         executeTask("setup");
 
@@ -114,7 +117,7 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
         addAnswer(serverId);
         addAnswer("nameValue");
         addAnswer(System.getProperty("java.home"));
-
+        addAnswer("8080");
 
         executeTask("setup");
 
@@ -142,6 +145,7 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
         addAnswer("OpenMRS Concepts OWA server 1.0 from current directory");
         addAnswer("nameValue");
         addAnswer(System.getProperty("java.home"));
+        addAnswer("8080");
 
         executeTask("setup");
 
@@ -170,6 +174,7 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
         addAnswer("Distribution");
         addAnswer("referenceapplication:2.2");
         addAnswer(System.getProperty("java.home"));
+        addAnswer("8080");
 
         executeTask("setup");
         assertSuccess();
@@ -193,6 +198,7 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
 
         addAnswer(serverId);
         addAnswer(System.getProperty("java.home"));
+        addAnswer("8080");
 
         executeTask("setup");
         assertSuccess();
@@ -222,6 +228,7 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
         addAnswer("Platform");
         addAnswer(keyword);
         addAnswer(System.getProperty("java.home"));
+        addAnswer("8080");
 
         executeTask("setup");
         assertSuccess();
@@ -249,6 +256,7 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
 
         addAnswer(serverId);
         addAnswer(System.getProperty("java.home"));
+        addAnswer("8080");
 
         executeTask("setup");
         assertSuccess();
@@ -278,6 +286,7 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
         addAnswer("Platform");
         addAnswer(keyword);
         addAnswer(System.getProperty("java.home"));
+        addAnswer("8080");
 
         executeTask("setup");
         assertSuccess();
@@ -306,6 +315,7 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
         addAnswer("Distribution");
         addAnswer("referenceapplication:2.2");
         addAnswer("1044");
+        addAnswer("8080");
 
         addMockDbSettings();
 
@@ -341,6 +351,7 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
         String serverId = UUID.randomUUID().toString();
         addAnswer(serverId);
         addAnswer("1044");
+        addAnswer("8080");
 
         executeTask("setup");
 
