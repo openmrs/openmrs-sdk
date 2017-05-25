@@ -264,6 +264,10 @@ public class DefaultWizard implements Wizard {
         System.out.println("\n" + textToShow);
     }
 
+    public void showMessageNoEOL(String textToShow) {
+        System.out.print(textToShow);
+    }
+
     @Override
     public void showError(String textToShow) {
         System.out.println("\n[ERROR]" + textToShow);

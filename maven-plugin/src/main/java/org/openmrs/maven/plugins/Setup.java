@@ -13,17 +13,16 @@ import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.utility.DBConnector;
 import org.openmrs.maven.plugins.utility.DistroHelper;
 import org.openmrs.maven.plugins.utility.SDKConstants;
+import org.openmrs.maven.plugins.utility.ServerHelper;
 
-import java.io.Reader;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.io.Reader;
+import java.io.FileNotFoundException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -42,7 +41,7 @@ public class Setup extends AbstractTask {
     public static final String ENABLE_DEBUGGING_DEFAULT_MESSAGE = "If you want to enable remote debugging by default when running the server, " +
             "\nspecify the %s here (e.g. 1044). Leave blank to disable debugging. \n(Do not do this on a production server)";
     private static final String NO_DEBUGGING_DEFAULT_ANSWER = "no debugging";
-
+    private static final int DEFAULT_PORT = 8080;
 
     /**
      * Server id (folder name)
@@ -140,6 +139,8 @@ public class Setup extends AbstractTask {
      */
     private boolean run;
 
+    private ServerHelper serverHelper;
+
     public Setup() {
         super();
     }
@@ -160,6 +161,7 @@ public class Setup extends AbstractTask {
         File serverPath = new File(Server.getServersPathFile(), server.getServerId());
         server.setServerDirectory(serverPath);
 
+        serverHelper = new ServerHelper(wizard);
 
         try {
             if (distroProperties == null) {
@@ -186,6 +188,8 @@ public class Setup extends AbstractTask {
                 distroProperties.saveTo(server.getServerDirectory());
             }
             distroHelper.savePropertiesToServer(distroProperties, server);
+
+            setServerPort(server);
             setDebugPort(server);
 
             if(server.getDbDriver() == null) {
@@ -298,6 +302,21 @@ public class Setup extends AbstractTask {
             distroProperties.saveTo(server.getServerDirectory());
         }
         return distroProperties;
+    }
+
+    private void setServerPort(Server server) {
+        String message = "What port would you like your server to use?";
+        String port = wizard.promptForValueIfMissingWithDefault(
+                message,
+                server.getParam("tomcat.port"),
+                "port number",
+                String.valueOf(Setup.DEFAULT_PORT));
+        if (!StringUtils.isNumeric(port) || !this.serverHelper.isPort(Integer.parseInt(port))) {
+            wizard.showMessage("Port must be numeric and less or equal 65535.");
+            this.setServerPort(server);
+            return;
+        }
+        server.setPort(port);
     }
 
     private void setDebugPort(Server server) {

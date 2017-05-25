@@ -13,6 +13,7 @@ import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.utility.Project;
 import org.openmrs.maven.plugins.utility.SDKConstants;
+import org.openmrs.maven.plugins.utility.ServerHelper;
 
 import java.io.File;
 import java.util.Arrays;
@@ -73,6 +74,8 @@ public class Run extends AbstractTask {
 	 */
 	private Boolean watchApi;
 
+	private ServerHelper serverHelper;
+
 	public void executeTask() throws MojoExecutionException, MojoFailureException {
 		if (serverId == null) {
 			File currentProperties = Server.checkCurrentDirForServer();
@@ -80,12 +83,19 @@ public class Run extends AbstractTask {
 		}
 		serverId = wizard.promptForExistingServerIdIfMissing(serverId);
 		Server server = loadValidatedServer(serverId);
-		if (port != null && port != 8080) {
-			server.setParam("tomcat.port", String.valueOf(port));
+
+		if (port == null && server.getPort() != null) {
+			port = Integer.valueOf(server.getPort());
 		}
-		else{
-			server.setParam("tomcat.port", "8080");
+		if (port == null) {
+			port = 8080;
 		}
+
+		serverHelper = new ServerHelper(wizard);
+		this.validatePort();
+
+		server.setParam("tomcat.port", String.valueOf(port));
+
 		server.save();
 		File serverPath = server.getServerDirectory();
 		serverPath.mkdirs();
@@ -112,6 +122,22 @@ public class Run extends AbstractTask {
 			new RunTomcat(serverId, port, mavenSession, mavenProject, pluginManager, wizard).execute();
 		} else {
 			runInFork(server);
+		}
+	}
+
+	private void validatePort() {
+		int tmpPort = port;
+
+		tmpPort = serverHelper.findFreePort(tmpPort);
+		if (port != tmpPort) {
+			String message = String.format("Port %s is already in use. Would you like to use %s instead?", port, tmpPort);
+			boolean promptToChange = wizard.promptYesNo(message);
+			if (promptToChange) {
+				port = tmpPort;
+				return;
+			} else {
+				this.validatePort();
+			}
 		}
 	}
 
