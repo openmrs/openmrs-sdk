@@ -30,9 +30,9 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
         addTaskParam("distro", "referenceapplication:2.3.1");
         addMockDbSettings();
         addAnswer(serverId);
+        addAnswer("8080");
         addAnswer("1044");
         addAnswer(System.getProperty("java.home"));
-        addAnswer("8080");
 
         executeTask("setup");
 
@@ -59,9 +59,9 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
         addMockDbSettings();
 
         addAnswer(serverId);
+        addAnswer("8080");
         addAnswer("1044");
         addAnswer(System.getProperty("java.home"));
-        addAnswer("8080");
 
         executeTask("setup");
 
@@ -87,9 +87,9 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
         addMockDbSettings();
 
         addAnswer(serverId);
+        addAnswer("8080");
         addAnswer("1044");
         addAnswer(System.getProperty("java.home"));
-        addAnswer("8080");
 
         executeTask("setup");
 
@@ -314,8 +314,8 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
         addAnswer(serverId);
         addAnswer("Distribution");
         addAnswer("referenceapplication:2.2");
-        addAnswer("1044");
         addAnswer("8080");
+        addAnswer("1044");
 
         addMockDbSettings();
 
