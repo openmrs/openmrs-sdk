@@ -10,6 +10,7 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.Server;
+import org.openmrs.maven.plugins.model.Version;
 import org.openmrs.maven.plugins.utility.DBConnector;
 import org.openmrs.maven.plugins.utility.DistroHelper;
 import org.openmrs.maven.plugins.utility.SDKConstants;
@@ -230,11 +231,11 @@ public class Setup extends AbstractTask {
                     if(!"null".equals(dbSql) && dbReset){
                         if(dbSql != null){
                             importMysqlDb(server, dbSql);
-                        } else {
+                            resetSearchIndex(server);
+                        } else if (new Version(server.getPlatformVersion()).higher(new Version("1.9.7"))){
                             importMysqlDb(server, Server.CLASSPATH_SCRIPT_PREFIX+ "openmrs-platform.sql");
+                            resetSearchIndex(server);
                         }
-
-                        resetSearchIndex(server);
                     } else if (!dbReset) {
                         resetSearchIndex(server);
                     }

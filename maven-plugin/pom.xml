@@ -226,6 +226,14 @@
             </resource>
             <resource>
                 <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+                <includes>
+                    <include>openmrs-sdk.bat</include>
+                </includes>
+                <targetPath>../../../</targetPath>
+            </resource>
+            <resource>
+                <directory>src/main/resources</directory>
                 <filtering>false</filtering>
                 <excludes>
                     <exclude>**/*.yaml</exclude>

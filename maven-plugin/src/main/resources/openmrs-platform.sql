@@ -1,6 +1,8 @@
 -- MySQL dump 10.13  Distrib 5.6.30, for debian-linux-gnu (x86_64)
 -- ------------------------------------------------------
 -- Server version	5.6.30-0ubuntu0.14.04.1
+--
+-- Dumped from OpenMRS Platform 1.9.8
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
