@@ -42,6 +42,8 @@ public interface Wizard {
 
     void showMessage(String message);
 
+    void showMessageNoEOL(String message);
+
     void showError(String message);
 
     String promptForValueIfMissingWithDefault(String message, String value, String parameterName, String defValue);

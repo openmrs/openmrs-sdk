@@ -84,14 +84,16 @@ public class Run extends AbstractTask {
 		serverId = wizard.promptForExistingServerIdIfMissing(serverId);
 		Server server = loadValidatedServer(serverId);
 
-		port = (System.getProperty("port") != null
-				? Integer.valueOf(System.getProperty("port"))
-				: Integer.valueOf(server.getPort()));
+		if (port == null && server.getPort() != null) {
+			port = Integer.valueOf(server.getPort());
+		}
+		if (port == null) {
+			port = 8080;
+		}
 
 		serverHelper = new ServerHelper(wizard);
 		this.validatePort();
 
-		wizard.showMessage(String.format("Using %s", port));
 		server.setParam("tomcat.port", String.valueOf(port));
 
 		server.save();
@@ -124,23 +126,19 @@ public class Run extends AbstractTask {
 	}
 
 	private void validatePort() {
-		boolean inUse = false;
 		int tmpPort = port;
 
-		inUse = serverHelper.checkPortUsage(tmpPort);
-		if (inUse) {
-			tmpPort = serverHelper.findNearestPort(tmpPort);
-		} else {
-			return;
+		tmpPort = serverHelper.findFreePort(tmpPort);
+		if (port != tmpPort) {
+			String message = String.format("Port %s is already in use. Would you like to use %s instead?", port, tmpPort);
+			boolean promptToChange = wizard.promptYesNo(message);
+			if (promptToChange) {
+				port = tmpPort;
+				return;
+			} else {
+				this.validatePort();
+			}
 		}
-
-		String message = String.format("Port %s is already in use. Would you like to use %s instead?", port, tmpPort);
-		boolean promptToChange = wizard.promptYesNo(message);
-		if (promptToChange) {
-			port = tmpPort;
-			return;
-		}
-		this.validatePort();
 	}
 
 	private void runInFork(Server server) throws MojoExecutionException, MojoFailureException {

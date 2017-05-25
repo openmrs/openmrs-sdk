@@ -17,8 +17,8 @@ public class ServerHelper {
     }
 
     public boolean isPortInUse(int port) {
-        String message = String.format("Checking if port %s is in use...", port);
-        wizard.showMessage(message);
+        String message = String.format("\nChecking if port %s is in use... ", port);
+        wizard.showMessageNoEOL(message);
         return checkPortUsage(port);
     }
 
@@ -28,8 +28,10 @@ public class ServerHelper {
             serverSocket = new ServerSocket(port);
             this.closeTestingServerSocket(serverSocket);
         } catch (IOException e) {
+            wizard.showMessageNoEOL("[in use]\n");
             return true;
         }
+        wizard.showMessageNoEOL("[free]\n");
         return false;
     }
 
@@ -40,13 +42,15 @@ public class ServerHelper {
             try {
                 Thread.sleep(500);
             } catch (InterruptedException e) {
-                log.debug(e.toString());
+                log.debug("Failed to close test socket", e);
             }
         }
     }
 
-    public int findNearestPort(int port) {
-        while(isPortInUse(port++));
+    public int findFreePort(int port) {
+        while(isPortInUse(port)) {
+            port++;
+        }
         return port;
     }
 

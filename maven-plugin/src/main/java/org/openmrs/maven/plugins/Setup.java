@@ -189,8 +189,8 @@ public class Setup extends AbstractTask {
             }
             distroHelper.savePropertiesToServer(distroProperties, server);
 
-            setDebugPort(server);
             setServerPort(server);
+            setDebugPort(server);
 
             if(server.getDbDriver() == null) {
                 boolean h2supported = true;
@@ -317,7 +317,6 @@ public class Setup extends AbstractTask {
             return;
         }
         server.setPort(port);
-        wizard.showMessage("Server port is set to: " + server.getPort());
     }
 
     private void setDebugPort(Server server) {
