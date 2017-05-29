@@ -193,6 +193,8 @@ public class Setup extends AbstractTask {
             setServerPort(server);
             setDebugPort(server);
 
+            configureVersion(server, distroProperties);
+
             if(server.getDbDriver() == null) {
                 boolean h2supported = true;
                 if(distroProperties != null) {
@@ -232,9 +234,13 @@ public class Setup extends AbstractTask {
                         if(dbSql != null){
                             importMysqlDb(server, dbSql);
                             resetSearchIndex(server);
-                        } else if (new Version(server.getPlatformVersion()).higher(new Version("1.9.7"))){
-                            importMysqlDb(server, Server.CLASSPATH_SCRIPT_PREFIX+ "openmrs-platform.sql");
-                            resetSearchIndex(server);
+                        } else {
+                            if (server.getPlatformVersion() != null) {
+                                if (new Version(server.getPlatformVersion()).higher(new Version("1.9.7"))){
+                                    importMysqlDb(server, Server.CLASSPATH_SCRIPT_PREFIX+ "openmrs-platform.sql");
+                                    resetSearchIndex(server);
+                                }
+                            }
                         }
                     } else if (!dbReset) {
                         resetSearchIndex(server);
@@ -245,7 +251,6 @@ public class Setup extends AbstractTask {
                 }
             }
 
-            configureVersion(server, distroProperties);
             distroProperties = createDistroForPlatform(distroProperties, server);
 
             String platformVersion = server.getPlatformVersion();
