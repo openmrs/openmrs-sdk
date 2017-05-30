@@ -3,12 +3,17 @@ package org.openmrs.maven.plugins.model;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.maven.model.Model;
+import org.apache.maven.model.io.xpp3.MavenXpp3Writer;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.openmrs.maven.plugins.bintray.BintrayId;
 import org.openmrs.maven.plugins.utility.Project;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 
 /**
@@ -307,6 +312,8 @@ public class Server extends BaseSdkProperties {
         }
     }
     public boolean addWatchedProject(Project project) {
+        linkProject(project);
+
         Set<Project> watchedProjects = getWatchedProjects();
         if (watchedProjects.add(project)) {
             setWatchedProjects(watchedProjects);
@@ -314,6 +321,92 @@ public class Server extends BaseSdkProperties {
         } else {
             return false;
         }
+    }
+
+    private void linkProject(Project project) {
+        File link = getWatchedProjectLink(project);
+        Path linkPath = Paths.get(link.getAbsolutePath());
+        if (link.exists()) {
+            if (Files.isSymbolicLink(linkPath)) {
+                try {
+                    if (!Files.isSameFile(Paths.get(project.getPath()), linkPath)) {
+                        System.out.println("\nDeleting a link at " + link.getAbsolutePath() + " as it points to a different location.");
+                        Files.delete(linkPath);
+                    }
+                } catch (IOException e) {
+                    System.out.println("\nCannot create a link at " + link.getAbsolutePath() + " due to: " + e.getMessage());
+                    return;
+                }
+            } else {
+                System.out.println("\nCannot create a link at " + link.getAbsolutePath() + ", \n" +
+                        "because such a file or directory already exists.\n" +
+                        "Please delete it manually and try again.\n");
+                return;
+            }
+        }
+
+        if (!link.exists()) {
+            try {
+                Files.createSymbolicLink(linkPath, Paths.get(project.getPath()));
+            } catch (IOException e) {
+                System.out.println("\nCannot create a link at " + link.getAbsolutePath() + " due to:\n"
+                        + e.getMessage() + "\n" +
+                        "The project will not be built before running the server.\n" +
+                        "Please try running the command as an administrator.\n");
+            }
+        }
+    }
+
+    public Project createWatchedProjectsReactor() throws MojoExecutionException {
+        Model model = createModel();
+        for (Project project: getWatchedProjects()) {
+            if (!getWatchedProjectLink(project).exists()) {
+                linkProject(project);
+            }
+
+            if (getWatchedProjectLink(project).exists()) {
+                model.getModules().add(project.getArtifactId());
+            }
+        }
+
+        File pomFile = new File(getWatchedProjectsDirectory(), "pom.xml");
+        try {
+            Writer writer = new FileWriter(pomFile);
+            new MavenXpp3Writer().write(writer, model);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to write pom.xml", e);
+        }
+
+        return Project.loadProject(getWatchedProjectsDirectory());
+    }
+
+    /**
+     * Creates Model to generate pom.xml for temporary project
+     *
+     * @return
+     */
+    private Model createModel(){
+        Model model = new Model();
+        model.setArtifactId("openmrs-sdk-watched-projects-" + getServerId());
+        model.setVersion("1.0.0-SNAPSHOT");
+        model.setGroupId("org.openmrs.maven.plugins");
+        model.setPackaging("pom");
+        model.setModelVersion("4.0.0");
+        return model;
+    }
+
+    private File getWatchedProjectLink(Project project) {
+        File watchedProjectsDir = getWatchedProjectsDirectory();
+        File link = new File(watchedProjectsDir, project.getArtifactId());
+        return link;
+    }
+
+    private File getWatchedProjectsDirectory() {
+        File watchedProjectsDir = new File(getServerDirectory(), "watched-projects");
+        if (!watchedProjectsDir.exists()) {
+            watchedProjectsDir.mkdir();
+        }
+        return watchedProjectsDir;
     }
 
     private void setWatchedProjects(Set<Project> watchedProjects) {
@@ -332,12 +425,17 @@ public class Server extends BaseSdkProperties {
     public Project removeWatchedProjectByExample(Project project) {
         Set<Project> watchedProjects = getWatchedProjects();
         if (watchedProjects.remove(project)) {
+            unlinkProject(project);
+
             return project;
         } else {
             for (Iterator<Project> it = watchedProjects.iterator(); it.hasNext();) {
                 Project candidate = it.next();
                 if (candidate.matches(project)) {
                     it.remove();
+
+                    unlinkProject(candidate);
+
                     setWatchedProjects(watchedProjects);
 
                     return candidate;
@@ -345,6 +443,15 @@ public class Server extends BaseSdkProperties {
             }
             return null;
         }
+    }
+
+    private void unlinkProject(Project project) {
+        File link = getWatchedProjectLink(project);
+        try {
+			Files.deleteIfExists(Paths.get(link.getAbsolutePath()));
+		} catch (IOException e) {
+			System.out.println("\nCould not delete link at " + link.getAbsolutePath());
+		}
     }
 
     public Set<Project> getWatchedProjects() {

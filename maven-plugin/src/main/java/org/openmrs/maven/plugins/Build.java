@@ -88,7 +88,7 @@ public class Build extends AbstractTask {
                         );
                         if(buildMavenProject){
                             try {
-                                buildWatchedProject(project);
+                                buildProject(project);
                                 buildExecuted = true;
                             } catch (Exception e) {
                                 throw new RuntimeException("Failed to build project");
@@ -119,15 +119,13 @@ public class Build extends AbstractTask {
         serverId = wizard.promptForExistingServerIdIfMissing(serverId);
         Server server = loadValidatedServer(serverId);
 
-        if (server.getWatchedProjects().isEmpty()) {
+        if (!server.hasWatchedProjects()) {
             wizard.showMessage("There are no watched projects for " + serverId + " server.");
             return;
         }
 
         buildCoreIfWatched(server);
-        for (Project project: server.getWatchedProjects()) {
-            buildWatchedProject(project);
-        }
+        buildProject(server.createWatchedProjectsReactor());
 
         try {
             deployWatchedProjects(server);
@@ -136,10 +134,12 @@ public class Build extends AbstractTask {
         }
     }
 
+
+
     private boolean buildCoreIfWatched(Server server) throws MojoFailureException {
         for (Project project : server.getWatchedProjects()) {
             if(project.isOpenmrsCore()){
-                buildWatchedProject(project);
+                buildProject(project);
                 return true;
             }
         }
@@ -190,7 +190,7 @@ public class Build extends AbstractTask {
      * Run "mvn clean install -DskipTests" command in the given directory
      * @throws MojoFailureException
      */
-    public void buildWatchedProject(Project project) throws MojoFailureException {
+    public void buildProject(Project project) throws MojoFailureException {
         Properties properties = new Properties();
         properties.put("skipTests", "true");
 
