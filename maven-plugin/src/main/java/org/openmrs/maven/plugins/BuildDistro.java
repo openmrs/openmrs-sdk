@@ -96,7 +96,7 @@ public class BuildDistro extends AbstractTask {
                 distroArtifact = DistroHelper.parseDistroArtifact(config.getGroupId()+":"+config.getArtifactId()+":"+config.getVersion(), versionsHelper);
 
                 wizard.showMessage("Building distribution from the source at " + userDir + "...\n");
-                new Build(this).cleanInstallServerProject(userDir);
+                new Build(this).buildWatchedProject(config);
                 distroFile = distroHelper.extractFileFromDistro(buildDirectory, distroArtifact, DistroProperties.DISTRO_FILE_NAME);
 
                 if(distroFile.exists()){

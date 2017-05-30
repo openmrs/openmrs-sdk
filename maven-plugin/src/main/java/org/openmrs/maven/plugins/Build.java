@@ -1,10 +1,7 @@
 package org.openmrs.maven.plugins;
 
 
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.maven.model.Model;
-import org.apache.maven.model.io.xpp3.MavenXpp3Writer;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.shared.invoker.DefaultInvocationRequest;
@@ -16,16 +13,8 @@ import org.apache.maven.shared.invoker.MavenInvocationException;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.utility.OwaHelper;
 import org.openmrs.maven.plugins.utility.Project;
-import org.openmrs.maven.plugins.utility.SDKConstants;
 
 import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.Writer;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
@@ -87,10 +76,10 @@ public class Build extends AbstractTask {
                 //check if there's maven project in current dir
                 File userDir = new File(System.getProperty("user.dir"));
                 if(Project.hasProject(userDir)) {
-                    Project config = Project.loadProject(userDir);
-                    String artifactId = config.getArtifactId();
-                    String groupId = config.getGroupId();
-                    String version = config.getVersion();
+                    Project project = Project.loadProject(userDir);
+                    String artifactId = project.getArtifactId();
+                    String groupId = project.getGroupId();
+                    String version = project.getVersion();
                     if ((artifactId != null) && (groupId != null) && version != null) {
                         projectDetected = true;
                         boolean buildMavenProject = wizard.promptYesNo(String.format(
@@ -99,7 +88,7 @@ public class Build extends AbstractTask {
                         );
                         if(buildMavenProject){
                             try {
-                                cleanInstallServerProject(userDir);
+                                buildWatchedProject(project);
                                 buildExecuted = true;
                             } catch (Exception e) {
                                 throw new RuntimeException("Failed to build project");
@@ -135,14 +124,9 @@ public class Build extends AbstractTask {
             return;
         }
 
-        File tempFolder = createTempReactorProject(server);
-        try {
-            buildCoreIfWatched(server);
-            cleanInstallServerProject(tempFolder);
-        } catch (Exception e) {
-            throw new IllegalStateException("Failed to build project in "+tempFolder.getAbsolutePath(), e);
-        } finally {
-            deleteTempReactorProject(tempFolder);
+        buildCoreIfWatched(server);
+        for (Project project: server.getWatchedProjects()) {
+            buildWatchedProject(project);
         }
 
         try {
@@ -155,7 +139,7 @@ public class Build extends AbstractTask {
     private boolean buildCoreIfWatched(Server server) throws MojoFailureException {
         for (Project project : server.getWatchedProjects()) {
             if(project.isOpenmrsCore()){
-                cleanInstallServerProject(new File(project.getPath()));
+                buildWatchedProject(project);
                 return true;
             }
         }
@@ -183,90 +167,6 @@ public class Build extends AbstractTask {
     }
 
     /**
-     * Creates temporary Maven reactor project to build dependencies in the correct order
-     *
-     * @param server
-     * @return
-     * @throws MojoFailureException
-     * @throws MojoExecutionException
-     */
-    private File createTempReactorProject(Server server) throws MojoFailureException, MojoExecutionException {
-        File tempFolder = new File(server.getServerDirectory(), "temp-project");
-        if (tempFolder.exists()) {
-            deleteTempReactorProject(tempFolder);
-        }
-        tempFolder.mkdir();
-
-        Model tempModel = createModel();
-        Set<Project> watchedModules = server.getWatchedProjects();
-        for(Project module: watchedModules){
-            if (!module.getModel().getPomFile().exists()) {
-                throw new IllegalStateException("Module " + module.getArtifactId() + " could not be found at " + module.getModel().getPomFile().getAbsolutePath() + ". " +
-                        "Unwatch this module by running mvn openmrs-sdk:unwatch -DartifactId="+module.getArtifactId()+" -DserverId=" + serverId);
-            }
-
-            //core is built before, its plugins fail when it is built as submodule
-            if(!module.isOpenmrsCore()){
-                Path newLink = Paths.get(new File(tempFolder, module.getArtifactId()).getAbsolutePath());
-                Path existingfile = Paths.get(module.getPath());
-                try {
-                    Files.createSymbolicLink(newLink, existingfile);
-                } catch (IOException e) {
-                    copyModuleToTempServer(module.getPath(), newLink.toString());
-                }  finally {
-                    tempModel.addModule(module.getArtifactId());
-                }
-            }
-
-        }
-
-        try {
-            Writer writer = new FileWriter(new File(tempFolder, "pom.xml"));
-            new MavenXpp3Writer().write(writer, tempModel);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to write pom.xml", e);
-        }
-
-        return tempFolder;
-    }
-
-    private void copyModuleToTempServer(String orginalPath, String newPath){
-        File module = new File(orginalPath);
-        File copiedModule = new File(newPath);
-
-        try {
-            FileUtils.copyDirectory(module, copiedModule);
-        } catch (IOException e) {
-            throw new RuntimeException("Could not copy modules", e);
-        }
-    }
-
-    /**
-     * Deletes temporary Maven reactor project
-     *
-     * @param tempFolder
-     */
-    private void deleteTempReactorProject(File tempFolder) {
-        FileUtils.deleteQuietly(tempFolder);
-    }
-
-    /**
-     * Creates Model to generate pom.xml for temporary project
-     *
-     * @return
-     */
-    private Model createModel(){
-        Model model = new Model();
-        model.setArtifactId(String.format("openmrs-sdk-server-%s", serverId));
-        model.setVersion("1.0.0-SNAPSHOT");
-        model.setGroupId("org.openmrs");
-        model.setPackaging("pom");
-        model.setModelVersion("4.0.0");
-
-        return model;
-    }
-
-    /**
      * Deploy all watched modules to server
      *
      * @param server
@@ -288,10 +188,9 @@ public class Build extends AbstractTask {
 
     /**
      * Run "mvn clean install -DskipTests" command in the given directory
-     * @param tempProject
      * @throws MojoFailureException
      */
-    public void cleanInstallServerProject(File tempProject) throws MojoFailureException {
+    public void buildWatchedProject(Project project) throws MojoFailureException {
         Properties properties = new Properties();
         properties.put("skipTests", "true");
 
@@ -303,18 +202,18 @@ public class Build extends AbstractTask {
                 .setLocalRepositoryDirectory(mavenSession.getRequest().getLocalRepositoryPath())
                 .setUpdateSnapshots(mavenSession.getRequest().isUpdateSnapshots())
                 .setShowVersion(true)
-                .setBaseDirectory(tempProject);
+                .setBaseDirectory(new File(project.getPath()));
 
 
         Invoker invoker = new DefaultInvoker();
-        InvocationResult result = null;
+        InvocationResult result;
         try {
             result = invoker.execute(request);
         } catch (MavenInvocationException e) {
-            throw new RuntimeException("Failed to build project in directory: "+tempProject);
+            throw new RuntimeException("Failed to build project in directory: " + project.getPath());
         }
         if (result.getExitCode() != 0 ) {
-            throw new IllegalStateException("Failed building project in "+tempProject.getAbsolutePath(), result.getExecutionException());
+            throw new IllegalStateException("Failed building project in " + project.getPath(), result.getExecutionException());
         }
     }
 }
