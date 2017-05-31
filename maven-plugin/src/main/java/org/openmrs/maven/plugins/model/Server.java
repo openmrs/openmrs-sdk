@@ -39,6 +39,10 @@ public class Server extends BaseSdkProperties {
     private static final String OLD_PROPERTIES_FILENAME = "backup.properties";
     public static final String OWA_DIRECTORY = "owa";
 
+    private static final String CANNOT_CREATE_LINK_MSG = "\nCannot create a link at %s due to:\n%s\n" +
+            "The project will be built in random order.\n" +
+            "Please try running the command as an administrator.\n";
+
     public static final String COMMA = ",";
 
     public static final String SLASH = "/";
@@ -323,25 +327,27 @@ public class Server extends BaseSdkProperties {
         }
     }
 
-    private void linkProject(Project project) {
+    private boolean linkProject(Project project) {
         File link = getWatchedProjectLink(project);
         Path linkPath = Paths.get(link.getAbsolutePath());
+
         if (link.exists()) {
             if (Files.isSymbolicLink(linkPath)) {
                 try {
                     if (!Files.isSameFile(Paths.get(project.getPath()), linkPath)) {
                         System.out.println("\nDeleting a link at " + link.getAbsolutePath() + " as it points to a different location.");
                         Files.delete(linkPath);
+                    } else {
+                        return true;
                     }
                 } catch (IOException e) {
-                    System.out.println("\nCannot create a link at " + link.getAbsolutePath() + " due to: " + e.getMessage());
-                    return;
+                    System.out.println(String.format(CANNOT_CREATE_LINK_MSG, link.getAbsolutePath(), e.getMessage()));
+                    return false;
                 }
             } else {
-                System.out.println("\nCannot create a link at " + link.getAbsolutePath() + ", \n" +
-                        "because such a file or directory already exists.\n" +
-                        "Please delete it manually and try again.\n");
-                return;
+                System.out.println(String.format(CANNOT_CREATE_LINK_MSG, link.getAbsolutePath(),
+                        "The file or directory already exists!\nPlease delete it manually and try again."));
+                return false;
             }
         }
 
@@ -349,35 +355,38 @@ public class Server extends BaseSdkProperties {
             try {
                 Files.createSymbolicLink(linkPath, Paths.get(project.getPath()));
             } catch (IOException e) {
-                System.out.println("\nCannot create a link at " + link.getAbsolutePath() + " due to:\n"
-                        + e.getMessage() + "\n" +
-                        "The project will not be built before running the server.\n" +
-                        "Please try running the command as an administrator.\n");
+                System.out.println(String.format(CANNOT_CREATE_LINK_MSG, link.getAbsolutePath(), e.getMessage()));
+                return false;
             }
         }
+
+        return true;
     }
 
-    public Project createWatchedProjectsReactor() throws MojoExecutionException {
-        Model model = createModel();
+    public List<Project> getWatchedProjectsToBuild() throws MojoExecutionException {
+        List<Project> projects = new ArrayList<>();
+        Model reactorProject = createModel();
         for (Project project: getWatchedProjects()) {
-            if (!getWatchedProjectLink(project).exists()) {
-                linkProject(project);
-            }
-
-            if (getWatchedProjectLink(project).exists()) {
-                model.getModules().add(project.getArtifactId());
+            if (linkProject(project)) {
+                //Add to reactor project successfully linked projects.
+                //They will be built in the order determined by maven based on dependencies between projects.
+                reactorProject.getModules().add(project.getArtifactId());
+            } else {
+                //Add to simple build list without examining dependencies between projects.
+                projects.add(project);
             }
         }
 
         File pomFile = new File(getWatchedProjectsDirectory(), "pom.xml");
         try {
             Writer writer = new FileWriter(pomFile);
-            new MavenXpp3Writer().write(writer, model);
+            new MavenXpp3Writer().write(writer, reactorProject);
         } catch (IOException e) {
             throw new RuntimeException("Failed to write pom.xml", e);
         }
 
-        return Project.loadProject(getWatchedProjectsDirectory());
+        projects.add(Project.loadProject(getWatchedProjectsDirectory()));
+        return projects;
     }
 
     /**

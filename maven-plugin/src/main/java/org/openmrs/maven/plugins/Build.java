@@ -125,7 +125,9 @@ public class Build extends AbstractTask {
         }
 
         buildCoreIfWatched(server);
-        buildProject(server.createWatchedProjectsReactor());
+        for (Project project: server.getWatchedProjectsToBuild()) {
+            buildProject(project);
+        }
 
         try {
             deployWatchedProjects(server);
