@@ -94,7 +94,7 @@ public class BuildOwaTest {
         Mockito.doNothing().when(build.owaHelper).installLocalNodeAndNpm(any(SemVersion.class), any(SemVersion.class), anyString());
         Mockito.doNothing().when(build.owaHelper).runLocalNpmCommandWithArgs(anyList());
 
-        build.buildOwaProject();
+        build.buildNpmProject();
 
         verify(build.owaHelper).installLocalNodeAndNpm(SemVersion.valueOf(batchNodeVersion), SemVersion.valueOf(batchNpmVersion), null);
         verify(build.owaHelper).runLocalNpmCommandWithArgs(npmInstallArgs);
@@ -119,7 +119,7 @@ public class BuildOwaTest {
 
         Mockito.doNothing().when(build.owaHelper).runSystemNpmCommandWithArgs(anyList());
 
-        build.buildOwaProject();
+        build.buildNpmProject();
 
         verify(build.owaHelper).runSystemNpmCommandWithArgs(npmInstallArgs);
         verify(build.owaHelper).runSystemNpmCommandWithArgs(npmRunBuildArgs);
@@ -130,7 +130,7 @@ public class BuildOwaTest {
         build.nodeVersion = null;
         build.npmVersion = "3.10.10";
 
-        build.buildOwaProject();
+        build.buildNpmProject();
     }
 
     @Test
@@ -159,7 +159,7 @@ public class BuildOwaTest {
         Mockito.doNothing().when(build.owaHelper).installLocalNodeAndNpm(any(SemVersion.class), any(SemVersion.class), anyString());
         Mockito.doNothing().when(build.owaHelper).runLocalNpmCommandWithArgs(anyList());
 
-        build.buildOwaProject();
+        build.buildNpmProject();
 
         // Should use versions specified in batch mode
         verify(build.owaHelper).installLocalNodeAndNpm(SemVersion.valueOf(batchNodeVersion), SemVersion.valueOf(batchNpmVersion), null);
@@ -193,7 +193,7 @@ public class BuildOwaTest {
         Mockito.doNothing().when(build.owaHelper).installLocalNodeAndNpm(any(SemVersion.class), any(SemVersion.class), anyString());
         Mockito.doNothing().when(build.owaHelper).runLocalNpmCommandWithArgs(anyList());
 
-        build.buildOwaProject();
+        build.buildNpmProject();
 
         // Should use versions specified in batch mode
         verify(build.owaHelper).installLocalNodeAndNpm(SemVersion.valueOf(projectNodeVersion), SemVersion.valueOf(projectNpmVersion), null);
@@ -226,7 +226,7 @@ public class BuildOwaTest {
 
         Mockito.doNothing().when(build.owaHelper).runSystemNpmCommandWithArgs(anyList());
 
-        build.buildOwaProject();
+        build.buildNpmProject();
 
         // Should use system instances of npm and nodejs
         verify(build.owaHelper).runSystemNpmCommandWithArgs(npmInstallArgs);
@@ -249,7 +249,7 @@ public class BuildOwaTest {
         Mockito.doNothing().when(build.owaHelper).runInstallLocalNodeAndNpm(anyString(), anyString(), anyString());
         Mockito.doNothing().when(build.owaHelper).runLocalNpmCommandWithArgs(anyList());
 
-        build.buildOwaProject();
+        build.buildNpmProject();
 
         verify(build.owaHelper).runInstallLocalNodeAndNpm("7.4.0", "3.10.10", null);
     }
@@ -293,7 +293,7 @@ public class BuildOwaTest {
         Mockito.doNothing().when(build.owaHelper).installLocalNodeAndNpm(any(SemVersion.class), any(SemVersion.class), anyString());
         Mockito.doNothing().when(build.owaHelper).runLocalNpmCommandWithArgs(anyList());
 
-        build.buildOwaProject();
+        build.buildNpmProject();
 
         verify(build.owaHelper).installLocalNodeAndNpm(SemVersion.valueOf(SDKConstants.NODE_VERSION), SemVersion.valueOf(SDKConstants.NPM_VERSION), null);
         verify(build.owaHelper).runLocalNpmCommandWithArgs(npmInstallArgs);

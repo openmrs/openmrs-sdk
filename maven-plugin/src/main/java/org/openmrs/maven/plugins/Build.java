@@ -70,7 +70,7 @@ public class Build extends AbstractTask {
 
             if (configFile.exists() && buildOwa) {
                 projectDetected = true;
-                buildOwaProject();
+                buildNpmProject();
                 buildExecuted = true;
             } else {
                 //check if there's maven project in current dir
@@ -148,17 +148,17 @@ public class Build extends AbstractTask {
         return false;
     }
 
-    protected void buildOwaProject() throws MojoExecutionException {
-        wizard.showMessage("Building OWA project...");
+    protected void buildNpmProject() throws MojoExecutionException {
+        wizard.showMessage("Building NPM project...");
 
         boolean useSystemNode = owaHelper.resolveNodeAndNpm(nodeVersion, npmVersion, null);
 
         owaHelper.installNodeModules(useSystemNode);
 
-        runOwaBuild(useSystemNode);
+        runNpmBuild(useSystemNode);
     }
 
-    private void runOwaBuild(boolean useSystemNode) throws MojoExecutionException {
+    private void runNpmBuild(boolean useSystemNode) throws MojoExecutionException {
         List<String> args = Arrays.asList("run", "build");
 
         if (useSystemNode) {

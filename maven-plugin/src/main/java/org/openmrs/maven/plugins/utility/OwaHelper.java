@@ -108,18 +108,18 @@ public class OwaHelper {
 
 	public void installNodeModules(boolean useSystemNode) throws MojoExecutionException {
 		if (useSystemNode) {
-			runSystemNpmCommandWithArgs(Arrays.asList("install"));
+			runSystemNpmCommandWithArgs(Arrays.asList("install", "--no-optional"));
 		}
 		else {
-			runLocalNpmCommandWithArgs(Arrays.asList("install"));
+			runLocalNpmCommandWithArgs(Arrays.asList("install", "--no-optional"));
 		}
 	}
 
 	private void installYeomanGenerator(boolean useSystemNode, File owaDir) throws MojoExecutionException {
 		if (useSystemNode) {
-			runSystemNpmCommandWithArgs(Arrays.asList("install", "-g", "yo", "generator-openmrs-owa"));
+			runSystemNpmCommandWithArgs(Arrays.asList("install", "-g", "yo", "generator-openmrs-owa", "--no-optional"));
 		} else {
-			runLocalNpmCommandWithArgs(Arrays.asList("install", "-g", "yo", "generator-openmrs-owa"), owaDir.getAbsolutePath());
+			runLocalNpmCommandWithArgs(Arrays.asList("install", "-g", "yo", "generator-openmrs-owa", "--no-optional"), owaDir.getAbsolutePath());
 		}
 	}
 
