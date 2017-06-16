@@ -51,6 +51,7 @@ public class BuildOwaTest {
     public void setUp() {
         npmInstallArgs = new ArrayList<>();
         npmInstallArgs.add("install");
+        npmInstallArgs.add("--no-optional");
 
         npmRunBuildArgs = new ArrayList<>();
         npmRunBuildArgs.add("run");
