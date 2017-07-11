@@ -74,6 +74,11 @@ public class Run extends AbstractTask {
 	 */
 	private Boolean watchApi;
 
+	/**
+	 * @parameter expression="${skipBuild}" default-value="false"
+	 */
+	private Boolean skipBuild;
+
 	private ServerHelper serverHelper;
 
 	public void executeTask() throws MojoExecutionException, MojoFailureException {
@@ -114,7 +119,7 @@ public class Run extends AbstractTask {
 			}
 		}
 
-		if (server.hasWatchedProjects()) {
+		if (server.hasWatchedProjects() && !skipBuild) {
 			new Build(this, serverId).executeTask();
 		}
 
