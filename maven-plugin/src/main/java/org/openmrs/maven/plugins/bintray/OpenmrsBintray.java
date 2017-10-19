@@ -19,7 +19,7 @@ public class OpenmrsBintray extends Bintray{
     public static final String OPENMRS_OWA_PREFIX = "openmrs-owa-";
     public static final String OPENMRS_MODULE_PREFIX = "openmrs-module-";
 
-    private static final String OWA_PACKAGE_EXTENSION = ".zip";
+    private static final String OWA_PACKAGE_EXTENSION = ".owa";
 
     public OpenmrsBintray() {}
 
@@ -34,20 +34,20 @@ public class OpenmrsBintray extends Bintray{
     public BintrayPackage getOwaMetadata(String name) throws MojoExecutionException {
         return getPackageMetadata(OPENMRS_USERNAME, BINTRAY_OWA_REPO, name);
     }
-    public void downloadOWA(File destination, String name, String version) {
+
+    public File downloadOWA(File destination, String name, String version) {
         if(!destination.exists()){
             destination.mkdir();
         }
         List<BintrayFile> bintrayFiles = getPackageFiles(OPENMRS_USERNAME, BINTRAY_OWA_REPO, name, version);
-        //Assumption: owa release is single zip file
-        String packageName = parseOwaNameFromFile(bintrayFiles.get(0).getPath())+ OWA_PACKAGE_EXTENSION;
-        File downloadedFile = downloadFile(bintrayFiles.get(0), destination, packageName);
-        extractOwa(downloadedFile);
-        downloadedFile.delete();
+        String filename = StringUtils.removeStart(name, OPENMRS_OWA_PREFIX) + OWA_PACKAGE_EXTENSION;
+        return downloadFile(bintrayFiles.get(0), destination, filename);
     }
 
-    private String parseOwaNameFromFile(String name){
-        return name.split("-")[0];
+    public void downloadAndExtractOWA(File destination, String name, String version) {
+        File downloadedFile = downloadOWA(destination, name, version);
+        extractOwa(downloadedFile);
+        downloadedFile.delete();
     }
 
     public static BintrayId parseOwa(String input){

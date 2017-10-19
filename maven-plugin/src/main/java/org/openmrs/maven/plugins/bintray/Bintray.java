@@ -117,6 +117,7 @@ public class Bintray {
             }
             String url = String.format("https://dl.bintray.com/%s/%s/%s", file.getOwner(), file.getRepository(), file.getPath());
             URL fileUrl = new URL(url);
+            System.out.println("Downloading " + url);
             FileUtils.copyURLToFile(fileUrl, destFile, 2000, 5000);
             return destFile;
         } catch (IOException e) {

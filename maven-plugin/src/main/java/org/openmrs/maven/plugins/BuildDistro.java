@@ -8,6 +8,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.openmrs.maven.plugins.bintray.OpenmrsBintray;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.Server;
@@ -18,6 +19,7 @@ import org.openmrs.maven.plugins.utility.SDKConstants;
 
 import java.io.*;
 import java.net.URL;
+import java.util.List;
 
 /**
  *  @goal build-distro
@@ -204,8 +206,11 @@ public class BuildDistro extends AbstractTask {
                 File tempDir = new File(web, "WEB-INF");
                 moduleInstaller.installModules(distroProperties.getModuleArtifacts(distroHelper, targetDirectory),
                         new File(tempDir, WAR_FILE_MODULES_DIRECTORY_NAME).getAbsolutePath());
-                ZipParameters parameters = new ZipParameters();
-                warfile.addFolder(tempDir, parameters);
+
+                File owasDir = new File(tempDir, "view" + File.separator + "module" + File.separator + "owas");
+                downloadOWAs(targetDirectory, distroProperties, owasDir);
+
+                warfile.addFolder(tempDir, new ZipParameters());
                 try {
                     FileUtils.deleteDirectory(tempDir);
                 } catch (IOException e) {
@@ -218,6 +223,9 @@ public class BuildDistro extends AbstractTask {
         else {
             moduleInstaller.installModules(distroProperties.getModuleArtifacts(distroHelper, targetDirectory),
                     new File(web, "modules").getAbsolutePath());
+
+            File owasDir = new File(web, "owa");
+            downloadOWAs(targetDirectory, distroProperties, owasDir);
         }
 
         wizard.showMessage("Creating Docker Compose configuration...\n");
@@ -239,6 +247,18 @@ public class BuildDistro extends AbstractTask {
         cleanupSqlFiles(targetDirectory);
 
         return distroName;
+    }
+
+    private void downloadOWAs(File targetDirectory, DistroProperties distroProperties, File owasDir) throws MojoExecutionException {
+        List<Artifact> owas = distroProperties.getOwaArtifacts(distroHelper, targetDirectory);
+        OpenmrsBintray openmrsBintray = new OpenmrsBintray();
+
+        if (!owas.isEmpty()) {
+            wizard.showMessage("Downloading OWAs...\n");
+            for (Artifact owa: owas) {
+                openmrsBintray.downloadOWA(owasDir, owa.getArtifactId(), owa.getVersion());
+            }
+        }
     }
 
     private boolean isDockerComposeCreated(File targetDir){

@@ -1,18 +1,13 @@
 package org.openmrs.maven.plugins;
 
-import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Test;
-import org.openmrs.maven.plugins.bintray.Bintray;
 import org.openmrs.maven.plugins.bintray.BintrayId;
 import org.openmrs.maven.plugins.bintray.BintrayPackage;
-import org.openmrs.maven.plugins.bintray.CreatePackageRequest;
 import org.openmrs.maven.plugins.bintray.OpenmrsBintray;
 
 import java.io.File;
-import java.util.Arrays;
 import java.util.List;
-import java.util.UUID;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -51,7 +46,7 @@ public class OpenmrsBintrayIntegrationTest extends AbstractSdkIntegrationTest {
     }
     @Test
     public void downloadOwaTest() throws Exception{
-        openmrsBintray.downloadOWA(
+        openmrsBintray.downloadAndExtractOWA(
                 testDirectory,
                 "openmrs-owa-conceptdictionary",
                 "1.0.0-beta.6");

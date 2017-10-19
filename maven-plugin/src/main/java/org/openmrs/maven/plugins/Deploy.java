@@ -233,7 +233,7 @@ public class Deploy extends AbstractTask {
                 owaDir = new File(path);
             }
         }
-        bintray.downloadOWA(owaDir, name, version);
+        bintray.downloadAndExtractOWA(owaDir, name, version);
         server.saveUserOWA(new BintrayId(name, version));
         server.save();
         getLog().info(String.format("OWA %s %s was successfully deployed on server %s", name, version, server.getServerId()));

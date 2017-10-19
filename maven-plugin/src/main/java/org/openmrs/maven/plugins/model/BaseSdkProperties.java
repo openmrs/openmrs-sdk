@@ -21,6 +21,7 @@ public abstract class BaseSdkProperties {
     protected static final String NAME = "name";
     protected static final String VERSION = "version";
     protected static final String TYPE_DISTRO = "distro";
+    protected static final String TYPE_OWA = "owa";
 
     protected Properties properties;
 
@@ -92,6 +93,18 @@ public abstract class BaseSdkProperties {
             }
         }
         return  artifactList;
+    }
+
+    public List<Artifact> getOwaArtifacts() {
+        List<Artifact> artifacts = new ArrayList<>();
+        for (Object keyObject: getAllKeys()) {
+            String key = keyObject.toString();
+            if (key.startsWith(TYPE_OWA + ".")) {
+                String artifactId = key.substring(TYPE_OWA.length() + 1);
+                artifacts.add(new Artifact(artifactId, getParam(key)));
+            }
+        }
+        return artifacts;
     }
 
     public List<Artifact> getWarArtifacts(){

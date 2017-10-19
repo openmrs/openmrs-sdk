@@ -2,6 +2,7 @@ package org.openmrs.maven.plugins.model;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.openmrs.maven.plugins.bintray.BintrayPackage;
 import org.openmrs.maven.plugins.utility.DistroHelper;
 
 import java.io.File;
@@ -152,6 +153,18 @@ public class DistroProperties extends BaseSdkProperties {
         if (artifact != null) {
             DistroProperties distroProperties = distroHelper.downloadDistroProperties(directory, artifact);
             parentArtifacts.addAll(distroProperties.getModuleArtifacts(distroHelper, directory));
+        }
+        return mergeArtifactLists(childArtifacts, parentArtifacts);
+    }
+
+    public List<Artifact> getOwaArtifacts(DistroHelper distroHelper, File directory) throws MojoExecutionException {
+        List<Artifact> childArtifacts = getOwaArtifacts();
+        List<Artifact> parentArtifacts = new ArrayList<>();
+
+        Artifact artifact = getDistroArtifact();
+        if (artifact != null) {
+            DistroProperties distroProperties = distroHelper.downloadDistroProperties(directory, artifact);
+            parentArtifacts.addAll(distroProperties.getOwaArtifacts(distroHelper, directory));
         }
         return mergeArtifactLists(childArtifacts, parentArtifacts);
     }
