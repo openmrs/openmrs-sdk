@@ -55,7 +55,7 @@ public class OpenmrsBintray extends Bintray{
             filename = filename.substring(0, versionPart);
         }
         if (filename.endsWith(".zip")) {
-            filename = filename.substring(0, filename.length() - 4);
+            filename = filename.substring(0, filename.length() - ".zip".length());
             filename = filename + OWA_PACKAGE_EXTENSION;
         }
 
@@ -84,7 +84,10 @@ public class OpenmrsBintray extends Bintray{
     public void extractOwa(File owaZip){
         try {
             ZipFile zipFile = new ZipFile(owaZip);
-            File outputDir = new File(owaZip.getParentFile(), StringUtils.removeEnd(owaZip.getName(), OWA_PACKAGE_EXTENSION));
+            String owaName = owaZip.getName();
+            owaName = owaName.substring(0, owaName.length() - OWA_PACKAGE_EXTENSION.length());
+            File outputDir = new File(owaZip.getParentFile(), owaName);
+            outputDir.mkdirs();
             zipFile.extractAll(outputDir.getPath());
         } catch (ZipException e) {
             throw new RuntimeException(e);
