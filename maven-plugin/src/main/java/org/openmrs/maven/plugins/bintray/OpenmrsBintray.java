@@ -53,8 +53,8 @@ public class OpenmrsBintray extends Bintray{
         int versionPart = filename.lastIndexOf("-");
         if (versionPart > 0) {
             filename = filename.substring(0, versionPart);
-        }
-        if (filename.endsWith(".zip")) {
+            filename = filename + OWA_PACKAGE_EXTENSION;
+        } else if (filename.endsWith(".zip")) {
             filename = filename.substring(0, filename.length() - ".zip".length());
             filename = filename + OWA_PACKAGE_EXTENSION;
         }
