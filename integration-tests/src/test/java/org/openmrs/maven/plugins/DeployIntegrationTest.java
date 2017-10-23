@@ -154,7 +154,7 @@ public class DeployIntegrationTest extends AbstractSdkIntegrationTest {
 
     @Test
     public void deploy_shouldInstallOwaAndOwaModule() throws Exception {
-        addTaskParam("owa", "conceptdictionary:1.0.0-beta.6");
+        addTaskParam("owa", "conceptdictionary:1.0.0");
 
         addAnswer(testServerId);
         addAnswer("y");
@@ -173,6 +173,6 @@ public class DeployIntegrationTest extends AbstractSdkIntegrationTest {
 
         Server.setServersPath(testDirectory.getAbsolutePath());
         Server server = Server.loadServer(testServerId);
-        assertThat(server, hasUserOwa(new BintrayId("openmrs-owa-conceptdictionary","1.0.0-beta.6")));
+        assertThat(server, hasUserOwa(new BintrayId("openmrs-owa-conceptdictionary","1.0.0")));
     }
 }

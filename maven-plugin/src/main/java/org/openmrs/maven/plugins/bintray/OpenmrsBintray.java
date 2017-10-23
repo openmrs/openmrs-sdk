@@ -9,6 +9,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
 import org.openmrs.maven.plugins.model.PackageJson;
+import org.openmrs.maven.plugins.model.Version;
 import org.openmrs.maven.plugins.utility.DefaultJira;
 
 import java.io.File;
