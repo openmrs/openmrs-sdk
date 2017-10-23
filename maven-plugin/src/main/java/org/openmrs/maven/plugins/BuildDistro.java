@@ -207,7 +207,8 @@ public class BuildDistro extends AbstractTask {
                 moduleInstaller.installModules(distroProperties.getModuleArtifacts(distroHelper, targetDirectory),
                         new File(tempDir, WAR_FILE_MODULES_DIRECTORY_NAME).getAbsolutePath());
 
-                File owasDir = new File(tempDir, "view" + File.separator + "module" + File.separator + "owas");
+                File owasDir = new File(tempDir, "bundledOwas");
+                owasDir.mkdirs();
                 downloadOWAs(targetDirectory, distroProperties, owasDir);
 
                 warfile.addFolder(tempDir, new ZipParameters());
@@ -221,10 +222,13 @@ public class BuildDistro extends AbstractTask {
             }
         }
         else {
+            File modulesDir = new File(web, "modules");
+            modulesDir.mkdirs();
             moduleInstaller.installModules(distroProperties.getModuleArtifacts(distroHelper, targetDirectory),
-                    new File(web, "modules").getAbsolutePath());
+                    modulesDir.getAbsolutePath());
 
             File owasDir = new File(web, "owa");
+            owasDir.mkdirs();
             downloadOWAs(targetDirectory, distroProperties, owasDir);
         }
 

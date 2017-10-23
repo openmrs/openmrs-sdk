@@ -1,15 +1,23 @@
 package org.openmrs.maven.plugins.bintray;
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import net.lingala.zip4j.core.ZipFile;
 import net.lingala.zip4j.exception.ZipException;
+import net.lingala.zip4j.model.FileHeader;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
+import org.openmrs.maven.plugins.model.PackageJson;
 import org.openmrs.maven.plugins.utility.DefaultJira;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 public class OpenmrsBintray extends Bintray{
     public static final String OPENMRS_USERNAME = "openmrs";
@@ -40,8 +48,20 @@ public class OpenmrsBintray extends Bintray{
             destination.mkdir();
         }
         List<BintrayFile> bintrayFiles = getPackageFiles(OPENMRS_USERNAME, BINTRAY_OWA_REPO, name, version);
-        String filename = StringUtils.removeStart(name, OPENMRS_OWA_PREFIX) + OWA_PACKAGE_EXTENSION;
-        return downloadFile(bintrayFiles.get(0), destination, filename);
+
+        String filename = bintrayFiles.get(0).getName();
+        int versionPart = filename.lastIndexOf("-");
+        if (versionPart > 0) {
+            filename = filename.substring(0, versionPart);
+        }
+        if (filename.endsWith(".zip")) {
+            filename = filename.substring(0, filename.length() - 4);
+            filename = filename + OWA_PACKAGE_EXTENSION;
+        }
+
+        File file = downloadFile(bintrayFiles.get(0), destination, filename);
+
+        return file;
     }
 
     public void downloadAndExtractOWA(File destination, String name, String version) {
