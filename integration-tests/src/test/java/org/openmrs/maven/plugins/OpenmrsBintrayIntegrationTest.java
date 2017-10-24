@@ -49,7 +49,7 @@ public class OpenmrsBintrayIntegrationTest extends AbstractSdkIntegrationTest {
         openmrsBintray.downloadAndExtractOWA(
                 testDirectory,
                 "openmrs-owa-conceptdictionary",
-                "1.0.0");
+                "1.0.0-beta.6");
         assertFilePresent("conceptdictionary" + File.separator + "index.html");
         assertFilePresent("conceptdictionary" + File.separator + "manifest.webapp");
     }

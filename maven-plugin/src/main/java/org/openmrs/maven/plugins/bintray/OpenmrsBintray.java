@@ -51,7 +51,7 @@ public class OpenmrsBintray extends Bintray{
         List<BintrayFile> bintrayFiles = getPackageFiles(OPENMRS_USERNAME, BINTRAY_OWA_REPO, name, version);
 
         String filename = bintrayFiles.get(0).getName();
-        int versionPart = filename.lastIndexOf("-");
+        int versionPart = filename.lastIndexOf("-" + version);
         if (versionPart > 0) {
             filename = filename.substring(0, versionPart);
             filename = filename + OWA_PACKAGE_EXTENSION;
