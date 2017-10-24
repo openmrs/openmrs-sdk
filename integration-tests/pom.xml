@@ -7,12 +7,12 @@
     <parent>
         <groupId>org.openmrs.maven</groupId>
         <artifactId>openmrs-sdk</artifactId>
-        <version>3.11.1-SNAPSHOT</version>
+        <version>3.12.0</version>
     </parent>
 
     <groupId>org.openmrs.maven</groupId>
     <artifactId>openmrs-sdk-integration-tests</artifactId>
-    <version>3.11.1-SNAPSHOT</version>
+    <version>3.12.0</version>
 
     <name>OpenMRS SDK Integration Tests</name>
     <description>Set of integration tests for OpenMRS SDK Maven Plugin</description>
