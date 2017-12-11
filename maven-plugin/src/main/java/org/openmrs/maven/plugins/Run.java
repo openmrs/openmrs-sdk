@@ -171,7 +171,13 @@ public class Run extends AbstractTask {
 
 		String mavenOpts = mavenSession.getRequest().getUserProperties().getProperty("MAVEN_OPTS");
 		if (StringUtils.isBlank(mavenOpts)) {
-			mavenOpts = mavenSession.getRequest().getSystemProperties().getProperty("MAVEN_OPTS", "");
+			mavenOpts = mavenSession.getRequest().getUserProperties().getProperty("env.MAVEN_OPTS");
+		}
+		if (StringUtils.isBlank(mavenOpts)) {
+			mavenOpts = mavenSession.getRequest().getSystemProperties().getProperty("MAVEN_OPTS");
+		}
+		if (StringUtils.isBlank(mavenOpts)) {
+			mavenOpts = mavenSession.getRequest().getSystemProperties().getProperty("env.MAVEN_OPTS");
 		}
 
 		mavenOpts = adjustXmxToAtLeast(mavenOpts, 768);
