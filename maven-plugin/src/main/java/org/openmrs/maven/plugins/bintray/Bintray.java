@@ -113,7 +113,7 @@ public class Bintray {
             }
             File destFile = new File(destDirectory, filename);
             if(destFile.exists()){
-                throw new RuntimeException("Cannot overwrite file: "+file.getPath());
+                destFile.delete();
             }
             String url = String.format("https://dl.bintray.com/%s/%s/%s", file.getOwner(), file.getRepository(), file.getPath());
             URL fileUrl = new URL(url);
