@@ -4,6 +4,7 @@ import org.apache.catalina.Context;
 import org.apache.catalina.LifecycleException;
 import org.apache.catalina.loader.WebappLoader;
 import org.apache.catalina.startup.Tomcat;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
@@ -22,6 +23,7 @@ import org.openmrs.maven.plugins.utility.SDKConstants;
 import org.openmrs.maven.plugins.utility.Wizard;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -115,6 +117,14 @@ public class RunTomcat extends AbstractMojo {
 		}
 
 		File tempDirectory = server.getServerTmpDirectory();
+        if (tempDirectory.exists()) {
+            try {
+                FileUtils.deleteDirectory(tempDirectory);
+            }
+            catch (IOException e) {
+                throw new MojoExecutionException("Unable to delete existing tmp directory at " + tempDirectory, e);
+            }
+        }
 		tempDirectory.mkdirs();
 
 		String warFile = "openmrs.war";
