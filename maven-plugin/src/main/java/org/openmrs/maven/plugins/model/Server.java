@@ -9,6 +9,7 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.openmrs.maven.plugins.bintray.BintrayId;
 import org.openmrs.maven.plugins.utility.Project;
 import org.openmrs.maven.plugins.utility.SDKConstants;
+import org.openmrs.maven.plugins.utility.SortedProperties;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -239,8 +240,9 @@ public class Server extends BaseSdkProperties {
         FileOutputStream out = null;
         try {
             out = new FileOutputStream(path);
-            properties.store(out, null);
-            out.close();
+            SortedProperties sortedProperties = new SortedProperties();
+            sortedProperties.putAll(properties);
+            sortedProperties.store(out, null);
         }
         catch (IOException e) {
             throw new MojoExecutionException(e.getMessage());

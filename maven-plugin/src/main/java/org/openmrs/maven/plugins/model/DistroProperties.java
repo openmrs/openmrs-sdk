@@ -2,8 +2,8 @@ package org.openmrs.maven.plugins.model;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.openmrs.maven.plugins.bintray.BintrayPackage;
 import org.openmrs.maven.plugins.utility.DistroHelper;
+import org.openmrs.maven.plugins.utility.SortedProperties;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -215,8 +215,9 @@ public class DistroProperties extends BaseSdkProperties {
         FileOutputStream out = null;
         try {
             out = new FileOutputStream(new File(path, DISTRO_FILE_NAME));
-            properties.store(out, null);
-            out.close();
+            SortedProperties sortedProperties = new SortedProperties();
+            sortedProperties.putAll(properties);
+            sortedProperties.store(out, null);
         }
         catch (IOException e) {
             throw new MojoExecutionException(e.getMessage());
