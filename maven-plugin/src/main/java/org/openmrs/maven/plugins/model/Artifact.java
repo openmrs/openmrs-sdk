@@ -1,8 +1,10 @@
 package org.openmrs.maven.plugins.model;
 
 import com.google.common.base.Objects;
+import org.apache.commons.lang.StringUtils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.twdata.maven.mojoexecutor.MojoExecutor.Element;
@@ -96,7 +98,14 @@ public class Artifact {
 
     public String getDestFileName() {
         if (destFileName == null) {
-            String id = artifactId.split("-")[0];
+            String[] parts = artifactId.split("-");
+
+            String id = parts[0];
+            // There is more than one dash in the artifactId
+            if (parts.length > 2) {
+                id = StringUtils.join(Arrays.copyOf(parts, parts.length-1), '-');
+            }
+
             return String.format(DEST_TEMPLATE, id, version, fileExtension);
         } else {
             return destFileName;
