@@ -163,7 +163,7 @@ public class Release extends AbstractTask {
             );
             wizard.showMessage("Release to OpenMRS Maven Bintray repository completed");
 
-            OpenmrsBintray bintray = new OpenmrsBintray(credentials.getUserName(), credentials.getPassword());
+            OpenmrsBintray bintray = new OpenmrsBintray(getProxyFromSettings(),credentials.getUserName(), credentials.getPassword());
 
 
             File omodDir = new File(mavenProject.getBasedir(), "omod");
@@ -188,7 +188,7 @@ public class Release extends AbstractTask {
         wizard.showMessage("Omod submodule detected...");
         File omodFile = new File(omodDir, "target"+File.separator+omodName);
 
-        OpenmrsBintray openmrsBintray = new OpenmrsBintray(credentials.getUserName(), credentials.getPassword());
+        OpenmrsBintray openmrsBintray = new OpenmrsBintray(getProxyFromSettings(),credentials.getUserName(), credentials.getPassword());
         BintrayPackage bintrayPackage = openmrsBintray.getPackageMetadata(OpenmrsBintray.OPENMRS_OMOD_REPO, mavenProject.getArtifactId());
         if(bintrayPackage == null){
             bintrayPackage =  openmrsBintray.createPackage(mavenProject, OpenmrsBintray.OPENMRS_OMOD_REPO);
@@ -271,7 +271,7 @@ public class Release extends AbstractTask {
     }
 
     private String createPackageBintrayUrl(UsernamePasswordCredentials creds, String repository){
-        OpenmrsBintray bintray = new OpenmrsBintray(creds.getUserName(), creds.getPassword());
+        OpenmrsBintray bintray = new OpenmrsBintray(getProxyFromSettings(),creds.getUserName(), creds.getPassword());
         BintrayPackage bintrayPackage = bintray.getPackageMetadata(repository, mavenProject.getArtifactId());
 
         if(bintrayPackage == null){
