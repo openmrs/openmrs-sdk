@@ -25,7 +25,7 @@ public class OpenmrsBintrayIntegrationTest extends AbstractSdkIntegrationTest {
     @Before
     public void setup() throws Exception {
         super.setup();
-        openmrsBintray = new OpenmrsBintray();
+        openmrsBintray = new OpenmrsBintray(null);
     }
     @Test
     public void getAvailableOwaTest() throws Exception{
