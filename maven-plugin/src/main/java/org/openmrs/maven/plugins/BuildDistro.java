@@ -255,7 +255,7 @@ public class BuildDistro extends AbstractTask {
 
     private void downloadOWAs(File targetDirectory, DistroProperties distroProperties, File owasDir) throws MojoExecutionException {
         List<Artifact> owas = distroProperties.getOwaArtifacts(distroHelper, targetDirectory);
-        OpenmrsBintray openmrsBintray = new OpenmrsBintray(getProxyFromSettings());
+        OpenmrsBintray openmrsBintray = new OpenmrsBintray();
 
         if (!owas.isEmpty()) {
             wizard.showMessage("Downloading OWAs...\n");

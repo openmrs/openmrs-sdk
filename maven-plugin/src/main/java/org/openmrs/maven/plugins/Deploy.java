@@ -182,7 +182,7 @@ public class Deploy extends AbstractTask {
     }
 
     private void deployOwa(Server server, String name, String version) throws MojoExecutionException {
-        OpenmrsBintray bintray = new OpenmrsBintray(getProxyFromSettings());
+        OpenmrsBintray bintray = new OpenmrsBintray();
         if(name == null){
             List<String> owas = new ArrayList<>();
             for(BintrayId id : bintray.getAvailableOWA()){

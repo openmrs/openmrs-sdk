@@ -79,7 +79,7 @@ public class Fetch extends AbstractTask {
     private ProjectType projectType;
 
     public void executeTask() throws MojoExecutionException, MojoFailureException {
-        openmrsBintray = new OpenmrsBintray(getProxyFromSettings());
+        openmrsBintray = new OpenmrsBintray();
         if (StringUtils.isBlank(groupId)) {
             groupId = DEFAULT_GROUP_ID;
         }

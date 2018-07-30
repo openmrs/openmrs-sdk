@@ -8,9 +8,7 @@ import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
-import org.apache.maven.settings.Proxy;
 import org.apache.maven.project.MavenProject;
-import org.apache.maven.settings.Settings;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.utility.DefaultJira;
 import org.openmrs.maven.plugins.utility.DistroHelper;
@@ -44,13 +42,6 @@ public abstract class AbstractTask extends AbstractMojo {
      * @parameter expression="${session}"
      */
     MavenSession mavenSession;
-
-    /**
-     * The Maven Settings
-     *
-     * @parameter expression="${settings}"
-     */
-    Settings settings;
 
     /**
      * The artifact metadata source to use.
@@ -152,7 +143,6 @@ public abstract class AbstractTask extends AbstractMojo {
         this.distroHelper = other.distroHelper;
         this.gitHelper = other.gitHelper;
         this.dockerHelper = other.dockerHelper;
-	this.settings = other.settings;
         initTask();
     }
 
@@ -199,20 +189,5 @@ public abstract class AbstractTask extends AbstractMojo {
         new ServerUpgrader(this).validateServerMetadata(serverPath);
         Server server = Server.loadServer(serverPath);
         return server;
-    }
-
-    public Proxy getProxyFromSettings() {
-        if (settings == null) {
-            return null;
-        }
-
-        // Get active http/https proxy
-        for (Proxy proxy : settings.getProxies()) {
-            if (proxy.isActive() && ("http".equalsIgnoreCase(proxy.getProtocol()) || "https".equalsIgnoreCase(proxy.getProtocol()))) {
-                return proxy;
-            }
-        }
-
-        return null;
     }
 }

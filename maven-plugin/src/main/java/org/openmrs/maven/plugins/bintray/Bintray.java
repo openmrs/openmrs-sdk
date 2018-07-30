@@ -5,11 +5,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.CollectionType;
 import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.httpclient.Credentials;
 import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.ProxyHost;
-import org.apache.commons.httpclient.UsernamePasswordCredentials;
-import org.apache.commons.httpclient.auth.AuthScope;
 import org.apache.commons.httpclient.methods.ByteArrayRequestEntity;
 import org.apache.commons.httpclient.methods.EntityEnclosingMethod;
 import org.apache.commons.httpclient.methods.FileRequestEntity;
@@ -18,9 +14,6 @@ import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.httpclient.methods.PutMethod;
 import org.apache.commons.httpclient.methods.StringRequestEntity;
 import org.apache.commons.io.FileUtils;
-import org.apache.maven.settings.Proxy;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -28,19 +21,12 @@ import java.net.URL;
 import java.util.List;
 
 public class Bintray {
-
-    private final Logger log = LoggerFactory.getLogger(Bintray.class);
-
     private String username;
     private String password;
-    private Proxy proxy=null;
 
-    public Bintray(Proxy proxy) {
-        this.proxy=proxy;
-    }
+    public Bintray() {}
 
-    public Bintray(Proxy proxy, String username, String password) {
-	this.proxy    = proxy;
+    public Bintray(String username, String password) {
         this.username = username;
         this.password = password;
     }
@@ -50,53 +36,11 @@ public class Bintray {
         this.password = password;
     }
 
-    private HttpClient newHttpClient() {
-	log.debug("newHttpClient");
-        HttpClient httpClient =  new HttpClient();
-
-        // if the proxy from maven settings is empty, then we rely on system properties
-	if (proxy==null) {
-	    log.debug("no proxy from maven");
-            String proxyHost = System.getProperty( "http.proxyHost" );
-            if ( proxyHost != null ) {
-               int proxyPort = 80;
-               String proxyPortStr = System.getProperty( "http.proxyPort" );
-               if (proxyPortStr != null) {
-                   try {
-                       proxyPort = Integer.parseInt( proxyPortStr );
-                   } catch (NumberFormatException e) {
-                       proxyPort = 80;
-                   }
-               }
-	       log.debug("proxy = " + proxyHost +":" + proxyPort);
-
-               ProxyHost httpProxy = new ProxyHost( proxyHost, proxyPort );
-               httpClient.getHostConfiguration().setProxyHost( httpProxy );
-           }
-       } else {
-	   log.debug("Found proxy from maven");
-	   log.debug("proxy = " + proxy.getHost() +":" + proxy.getPort());
-
-           ProxyHost httpProxy = new ProxyHost(proxy.getHost(), proxy.getPort());
-           httpClient.getHostConfiguration().setProxyHost( httpProxy );
-
-          if (proxy.getUsername() != null) {
-	      log.debug("Found credentials: " + proxy.getUsername());
-              Credentials credentials = new UsernamePasswordCredentials(proxy.getUsername(), proxy.getPassword());
-              AuthScope authScope = new AuthScope(proxy.getHost(), proxy.getPort());
-
-              httpClient.getState().setProxyCredentials(authScope, credentials);
-          }
-       }
-       return httpClient;
-
-    }
-
     public List<BintrayId> getAvailablePackages(String owner, String repo){
         String url = String.format("https://api.bintray.com/repos/%s/%s/packages", owner, repo);
         GetMethod get = new GetMethod(url);
         try {
-            newHttpClient().executeMethod(get);
+            new HttpClient().executeMethod(get);
             if (get.getStatusLine() == null || get.getStatusCode() != 200) {
                 throw new IOException(get.getStatusLine().toString());
             }
@@ -116,7 +60,7 @@ public class Bintray {
         String url = String.format("https://api.bintray.com/packages/%s/%s/%s", owner, repo, name);
         GetMethod get = new GetMethod(url);
         try {
-            newHttpClient().executeMethod(get);
+            new HttpClient().executeMethod(get);
             if (get.getStatusLine() == null || get.getStatusCode() != 200) {
                 throw new IOException(get.getStatusLine().toString());
             }
@@ -134,7 +78,7 @@ public class Bintray {
         String url = String.format("https://api.bintray.com/packages/%s/%s/%s/versions/%s/files", owner, repo, name, version);
         GetMethod get = new GetMethod(url);
         try {
-            newHttpClient().executeMethod(get);
+            new HttpClient().executeMethod(get);
             if (get.getStatusLine() == null || get.getStatusCode() != 200) {
                 throw new IOException(get.getStatusLine().toString());
             }
@@ -173,15 +117,8 @@ public class Bintray {
             }
             String url = String.format("https://dl.bintray.com/%s/%s/%s", file.getOwner(), file.getRepository(), file.getPath());
             URL fileUrl = new URL(url);
-            log.info("Downloading " + url);
-
-	    GetMethod get = new GetMethod(url);
-            newHttpClient().executeMethod(get);
-            if (get.getStatusLine() == null || get.getStatusCode() != 200) {
-                throw new IOException(url +": "+get.getStatusLine().toString());
-            }
-            FileUtils.copyInputStreamToFile(get.getResponseBodyAsStream(), destFile);
-
+            System.out.println("Downloading " + url);
+            FileUtils.copyURLToFile(fileUrl, destFile, 2000, 5000);
             return destFile;
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -211,7 +148,7 @@ public class Bintray {
         ObjectMapper mapper = new ObjectMapper();
         try{
             post.setRequestEntity(new ByteArrayRequestEntity(mapper.writeValueAsBytes(request)));
-            newHttpClient().executeMethod(post);
+            new HttpClient().executeMethod(post);
             if(post.getStatusLine() == null || post.getStatusCode()==401){
                 throw new IOException("Unauthorized, this user have no rights to publish packages as "+owner+", or API key is invalid");
             }
@@ -252,7 +189,7 @@ public class Bintray {
         put.setRequestEntity(new FileRequestEntity(file, contentType));
 
         try{
-            newHttpClient().executeMethod(put);
+            new HttpClient().executeMethod(put);
             validateAuthorizedRequestResult(bintrayPackage.getOwner(), put, 201);
         } catch (Exception e) {
             throw new RuntimeException("Failed to upload files to package: "+bintrayPackage.getName(), e);
@@ -276,7 +213,7 @@ public class Bintray {
         post.addRequestHeader("Authorization", "Basic "+ new String(Base64.encodeBase64((username+":"+password).getBytes())));
         post.setRequestEntity(new ByteArrayRequestEntity(("{\"name\":\""+versionName+"\"}").getBytes(), "application/json"));
         try{
-            newHttpClient().executeMethod(post);
+            new HttpClient().executeMethod(post);
             validateAuthorizedRequestResult(owner, post, 201);
         } catch (Exception e) {
             throw new RuntimeException("Failed to create version in package: "+packageName, e);
@@ -290,7 +227,7 @@ public class Bintray {
         post.addRequestHeader("Authorization", "Basic "+ new String(Base64.encodeBase64((username+":"+password).getBytes())));
         post.setRequestEntity(new ByteArrayRequestEntity(("{\"publish-wait-for-secs\":\"-1\"}").getBytes(), "application/json"));
         try{
-            newHttpClient().executeMethod(post);
+            new HttpClient().executeMethod(post);
             validateAuthorizedRequestResult(owner, post, 200);
         } catch (Exception e) {
             throw new RuntimeException("Failed to publish version "+versionName+" in package: "+packageName, e);
