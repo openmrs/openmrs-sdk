@@ -8,6 +8,7 @@ import net.lingala.zip4j.model.FileHeader;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
+import org.apache.maven.settings.Proxy;
 import org.openmrs.maven.plugins.model.PackageJson;
 import org.openmrs.maven.plugins.model.Version;
 import org.openmrs.maven.plugins.utility.DefaultJira;
@@ -30,10 +31,12 @@ public class OpenmrsBintray extends Bintray{
 
     private static final String OWA_PACKAGE_EXTENSION = ".owa";
 
-    public OpenmrsBintray() {}
+    public OpenmrsBintray(Proxy proxy) {
+        super(proxy);
+    }
 
-    public OpenmrsBintray(String username, String password) {
-        super(username, password);
+    public OpenmrsBintray(Proxy proxy,String username, String password) {
+        super(proxy,username, password);
     }
 
     public List<BintrayId> getAvailableOWA() throws MojoExecutionException {
