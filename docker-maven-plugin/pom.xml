@@ -56,7 +56,7 @@
             <version>2.8.0</version>
         </dependency>
 
-        <!--mysql-->
+        <!--mysql connector-->
         <dependency>
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
