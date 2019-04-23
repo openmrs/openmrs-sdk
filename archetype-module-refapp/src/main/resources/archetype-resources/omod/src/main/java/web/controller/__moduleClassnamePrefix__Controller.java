@@ -28,8 +28,8 @@ import org.springframework.web.bind.annotation.RequestMethod;
  * This class configured as controller using annotation and mapped with the URL of
  * 'module/${rootArtifactId}/${rootArtifactId}Link.form'.
  */
-@Controller("${rootrootArtifactId}.${moduleClassnamePrefix}Controller")
-@RequestMapping(value = "module/${rootArtifactId}/${rootArtifactId}.form")
+@Controller("${rootArtifactId}.${moduleClassnamePrefix}Controller")
+@RequestMapping(value = "/module/${rootArtifactId}/${rootArtifactId}.form")
 public class ${moduleClassnamePrefix}Controller {
 	
 	/** Logger for this class and subclasses */
