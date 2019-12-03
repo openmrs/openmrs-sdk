@@ -8,6 +8,11 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.project.MavenProject;
+import org.openmrs.maven.plugins.bintray.BintrayFile;
+import org.openmrs.maven.plugins.bintray.BintrayId;
+import org.openmrs.maven.plugins.bintray.BintrayPackage;
+import org.openmrs.maven.plugins.bintray.CreatePackageRequest;
 import org.openmrs.maven.plugins.bintray.OpenmrsBintray;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.DistroProperties;
@@ -16,10 +21,12 @@ import org.openmrs.maven.plugins.model.Version;
 import org.openmrs.maven.plugins.utility.DistroHelper;
 import org.openmrs.maven.plugins.utility.Project;
 import org.openmrs.maven.plugins.utility.SDKConstants;
+import org.openmrs.maven.plugins.utility.DefaultJira;
 
 import java.io.*;
 import java.net.URL;
 import java.util.List;
+import java.util.Arrays;
 
 /**
  *  @goal build-distro
@@ -53,6 +60,10 @@ public class BuildDistro extends AbstractTask {
     private static final String DOCKER_COMPOSE_YML = "docker-compose.yml";
     private static final String DOCKER_COMPOSE_PROD_YML = "docker-compose.prod.yml";
     private static final String DOCKER_COMPOSE_OVERRIDE_YML = "docker-compose.override.yml";
+
+    private static final String OPENMRS_USERNAME = "openmrs";
+
+    private static final String OPENMRS_OWA_REPO = "owa";
 
     /**
      * @parameter expression="${distro}"
@@ -265,7 +276,62 @@ public class BuildDistro extends AbstractTask {
         }
     }
 
-    private boolean isDockerComposeCreated(File targetDir){
+    public BintrayPackage getPackageMetadata(String repository, String name) {
+        return getPackageMetadata(OPENMRS_USERNAME, repository, name);
+    }
+
+    private BintrayPackage getPackageMetadata(String openmrsUsername, String repository, String name) {
+        return null;
+    }
+
+    public List<BintrayId> getOwaAvailablePackages(String repo) {
+        return getAvailablePackages(OPENMRS_USERNAME, OPENMRS_OWA_REPO);
+    }
+
+    private List<BintrayId> getAvailablePackages(String openmrsUsername, String openmrsOwaRepo) {
+        return null;
+    }
+
+    public BintrayPackage createPackage(OwaProject owaProject, String repository) {
+        CreatePackageRequest request = new CreatePackageRequest();
+        request.setName(owaProject.getArtifactId());
+        request.setDescription(owaProject.getDescription());
+
+        String githubUrl = owaProject.getScm().getUrl();
+        if(githubUrl.endsWith("/")) githubUrl = StringUtils.stripEnd(githubUrl, "/");
+        String githubRepo = githubUrl.substring(githubUrl.lastIndexOf("/")).replace(".git", "");
+        request.setVcsUrl(githubUrl + (githubUrl.endsWith(".git") ? "" : ".git"));
+        request.setGithubRepo(OPENMRS_USERNAME+githubRepo);
+        request.setWebsiteUrl("http://openmrs.org/");
+
+        request.setIssueTrackerUrl(new DefaultJira().getJiraUrl());
+        //so far all OpenMRS projects have MPL-2.0 license
+        request.setLicenses(Arrays.asList("MPL-2.0"));
+        return createPackage(OPENMRS_USERNAME, repository, request);
+    }
+
+    private BintrayPackage createPackage(String openmrsUsername, String repository, CreatePackageRequest request) {
+        return null;
+    }
+
+    /**
+     * creates new version of omod package and uploads the file
+     */
+    public void uploadOmod(BintrayPackage bintrayPackage, String targetPath, File omodFile, String version){
+        uploadFile(bintrayPackage, targetPath, version, omodFile);
+    }
+
+    private void uploadFile(BintrayPackage bintrayPackage, String targetPath, String version, File omodFile) {
+    }
+
+    public void publishOpenmrsPackageVersion(String repository, String packageName, String versionName) {
+        publishVersion(OPENMRS_USERNAME, repository, packageName, versionName);
+    }
+
+    private void publishVersion(String openmrsUsername, String repository, String packageName, String versionName) {
+    }
+
+    private boolean isDockerComposeCreated(File targetDir) {
         File dockerComposeOverride = new File(targetDir, DOCKER_COMPOSE_OVERRIDE_YML);
         File dockerCompose = new File(targetDir, DOCKER_COMPOSE_YML);
         File dockerComposeProd = new File(targetDir, DOCKER_COMPOSE_PROD_YML);
