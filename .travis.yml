@@ -3,7 +3,7 @@ jdk: openjdk8
 install :
   - mvn org.openmrs.maven.plugins:openmrs-sdk-maven-plugin:setup-sdk -DbatchAnswers=n
 script:
-  - mvn install
+  - mvn clean install -X
 deploy:
   provider: script
   script: ./deploy.sh
