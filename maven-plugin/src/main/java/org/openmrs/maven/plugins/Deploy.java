@@ -201,7 +201,7 @@ public class Deploy extends AbstractTask {
 
         boolean installOwaModule = true;
         List<Artifact> serverModules = server.getServerModules();
-        Artifact owaModule = new Artifact("owa-omod", "");
+        Artifact owaModule = new Artifact("owa-omod", "1.0.0");
         for(Artifact module : serverModules){
             if(owaModule.getArtifactId().equals(module.getArtifactId())){
                 installOwaModule = false;
