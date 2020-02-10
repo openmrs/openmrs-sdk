@@ -15,6 +15,7 @@ import org.openmrs.maven.plugins.utility.DBConnector;
 import org.openmrs.maven.plugins.utility.DistroHelper;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 import org.openmrs.maven.plugins.utility.ServerHelper;
+import org.openmrs.maven.plugins.bintray.OpenmrsBintray;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -175,9 +176,11 @@ public class Setup extends AbstractTask {
                         distroProperties = distroHelper.downloadDistroProperties(serverPath, platform);
                         distroProperties.saveTo(server.getServerDirectory());
                         moduleInstaller.installCoreModules(server, isCreatePlatform, distroProperties, distroHelper);
+                        installOWAs(server, distroProperties);
                     } catch (MojoExecutionException e) {
                         getLog().info("Fetching openmrs war file in version " + server.getPlatformVersion());
                         moduleInstaller.installCoreModules(server, isCreatePlatform, distroProperties, distroHelper);
+                        installOWAs(server, distroProperties);
                     }
                 } else {
                     wizard.promptForRefAppVersionIfMissing(server, versionsHelper);
@@ -186,6 +189,7 @@ public class Setup extends AbstractTask {
                 }
             } else {
                 moduleInstaller.installCoreModules(server, isCreatePlatform, distroProperties, distroHelper);
+                installOWAs(server, distroProperties);
                 distroProperties.saveTo(server.getServerDirectory());
             }
             distroHelper.savePropertiesToServer(distroProperties, server);
@@ -247,6 +251,7 @@ public class Setup extends AbstractTask {
                     }
                 } else {
                     moduleInstaller.installModule(SDKConstants.H2_ARTIFACT, server.getServerDirectory().getPath());
+                    installOWAs(server, distroProperties);
                     wizard.showMessage("The specified database "+server.getDbName()+" does not exist and it will be created for you.");
                 }
             }
@@ -274,6 +279,24 @@ public class Setup extends AbstractTask {
         } catch (Exception e) {
             FileUtils.deleteQuietly(serverPath);
             throw new MojoExecutionException("Failed to setup server", e);
+        }
+    }
+    
+    private void installOWAs(Server server, DistroProperties distroProperties) throws MojoExecutionException {
+    	File owasDir = new File(server.getServerDirectory(), "owa");
+        owasDir.mkdirs();
+        downloadOWAs(server.getServerDirectory(), distroProperties, owasDir);
+    }
+    
+    private void downloadOWAs(File targetDirectory, DistroProperties distroProperties, File owasDir) throws MojoExecutionException {
+        List<Artifact> owas = distroProperties.getOwaArtifacts(distroHelper, targetDirectory);
+        OpenmrsBintray openmrsBintray = new OpenmrsBintray(getProxyFromSettings());
+
+        if (!owas.isEmpty()) {
+            wizard.showMessage("Downloading OWAs...\n");
+            for (Artifact owa: owas) {
+                openmrsBintray.downloadOWA(owasDir, owa.getArtifactId(), owa.getVersion());
+            }
         }
     }
 
@@ -350,6 +373,7 @@ public class Setup extends AbstractTask {
             distroProperties = distroHelper.downloadDistroProperties(serverPath, server);
         }
         moduleInstaller.installCoreModules(server, isCreatePlatform, distroProperties, distroHelper);
+        installOWAs(server, distroProperties);
         return distroProperties;
     }
 
