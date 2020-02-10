@@ -283,9 +283,11 @@ public class Setup extends AbstractTask {
     }
     
     private void installOWAs(Server server, DistroProperties distroProperties) throws MojoExecutionException {
-    	File owasDir = new File(server.getServerDirectory(), "owa");
-        owasDir.mkdirs();
-        downloadOWAs(server.getServerDirectory(), distroProperties, owasDir);
+    	if (distroProperties != null) {
+    		File owasDir = new File(server.getServerDirectory(), "owa");
+    		owasDir.mkdirs();
+    		downloadOWAs(server.getServerDirectory(), distroProperties, owasDir);
+    	}
     }
     
     private void downloadOWAs(File targetDirectory, DistroProperties distroProperties, File owasDir) throws MojoExecutionException {
