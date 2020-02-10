@@ -5,13 +5,13 @@
     <parent>
         <groupId>org.openmrs.maven</groupId>
         <artifactId>openmrs-sdk</artifactId>
-        <version>3.13.4-SNAPSHOT</version>
+        <version>3.13.4</version>
     </parent>
 
     <groupId>org.openmrs.maven.plugins</groupId>
     <artifactId>openmrs-sdk-maven-plugin</artifactId>
     <packaging>maven-plugin</packaging>
-    <version>3.13.4-SNAPSHOT</version>
+    <version>3.13.4</version>
 
     <name>OpenMRS SDK Maven Plugin</name>
     <description>OpenMRS SDK allows for rapid development of OpenMRS modules.</description>
