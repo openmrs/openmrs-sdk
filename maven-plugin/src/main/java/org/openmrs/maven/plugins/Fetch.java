@@ -41,32 +41,32 @@ public class Fetch extends AbstractTask {
     private static final String DEFAULT_GROUP_ID = "org.openmrs.module";
 
     /**
-     * @parameter expression="${artifactId}"
+     * @parameter  property="artifactId"
      */
     private String artifactId;
 
     /**
-     * @parameter expression="${groupId}"
+     * @parameter  property="groupId"
      */
     private String groupId;
 
     /**
-     * @parameter expression="${version}"
+     * @parameter  property="version"
      */
     private String version;
 
     /**
-     * @parameter expression="${owa}"
+     * @parameter  property="owa"
      */
     private String owa;
 
     /**
-     * @parameter expression="${repository}"
+     * @parameter  property="repository"
      */
     private String repository;
 
     /**
-     * @parameter expression="${dir}"
+     * @parameter  property="dir"
      */
     private String dir;
 

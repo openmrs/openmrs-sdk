@@ -16,7 +16,7 @@ import java.io.File;
 public class Watch extends AbstractTask {
 
 	/**
-     * @parameter expression="${serverId}"
+     * @parameter  property="serverId"
      */
     private String serverId;
 

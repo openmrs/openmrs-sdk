@@ -50,32 +50,32 @@ public class Run extends AbstractTask {
 	}
 
 	/**
-	 * @parameter expression="${serverId}"
+	 * @parameter  property="serverId"
 	 */
 	private String serverId;
 
 	/**
-	 * @parameter expression="${port}"
+	 * @parameter  property="port"
 	 */
 	private Integer port;
 
 	/**
-	 * @parameter expression="${debug}"
+	 * @parameter  property="debug"
 	 */
 	private String debug;
 
 	/**
-	 * @parameter expression="${fork}"
+	 * @parameter  property="fork"
 	 */
 	private Boolean fork;
 
 	/**
-	 * @parameter expression="${watchApi}"
+	 * @parameter  property="watchApi"
 	 */
 	private Boolean watchApi;
 
 	/**
-	 * @parameter expression="${skipBuild}" default-value="false"
+	 * @parameter  property="skipBuild" default-value="false"
 	 */
 	private Boolean skipBuild;
 

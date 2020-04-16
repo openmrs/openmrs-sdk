@@ -42,36 +42,36 @@ public class Deploy extends AbstractTask {
     private static final String DEPLOY_PLATFORM_OPTION = "Platform";
 
     /**
-     * @parameter expression="${serverId}"
+     * @parameter  property="serverId"
      */
     private String serverId;
 
     /**
-     * @parameter expression="${artifactId}"
+     * @parameter  property="artifactId"
      */
     private String artifactId;
 
     /**
-     * @parameter expression="${groupId}"
+     * @parameter  property="groupId"
      */
     private String groupId;
 
     /**
-     * @parameter expression="${version}"
+     * @parameter  property="version"
      */
     private String version;
     /**
-     * @parameter expression="${distro}"
+     * @parameter  property="distro"
      */
     private String distro;
 
     /**
-     * @parameter expression="${platform}"
+     * @parameter  property="platform"
      */
     private String platform;
 
     /**
-     * @parameter expression="${owa}"
+     * @parameter  property="owa"
      */
     private String owa;
 

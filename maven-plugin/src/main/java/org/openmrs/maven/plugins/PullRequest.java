@@ -27,28 +27,28 @@ public class PullRequest extends AbstractTask {
      * Interactive mode flag, set for 'false' allows automatic testing in batch mode,
      * as it makes all 'yes/no' prompts return 'yes'
      *
-     * @parameter expression="${branch}" default-value="master"
+     * @parameter  property="branch" default-value="master"
      */
     String branch;
 
     /**
      * id of issue against which code is commited
      *
-     * @parameter expression="${issueId}"
+     * @parameter  property="issueId"
      */
     String issueId;
 
     /**
      * github username, required to push and open pull request
      *
-     * @parameter expression="${username}"
+     * @parameter  property="username"
      */
     String username;
 
     /**
      * github password, required to push and open pull request
      *
-     * @parameter expression="${password}"
+     * @parameter  property="password"
      */
     String password;
 

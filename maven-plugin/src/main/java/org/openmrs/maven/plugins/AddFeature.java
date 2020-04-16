@@ -35,7 +35,7 @@ public class AddFeature extends AbstractTask {
     /**
      * feature user wants to add
      *
-     * @parameter expression="${feature}"
+     * @parameter  property="feature"
      */
     private String feature;
 

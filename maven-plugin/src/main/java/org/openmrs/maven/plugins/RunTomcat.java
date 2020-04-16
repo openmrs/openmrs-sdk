@@ -39,14 +39,14 @@ public class RunTomcat extends AbstractMojo {
 	/**
 	 * The project currently being build.
 	 *
-	 * @parameter expression="${project}"
+	 * @parameter  property="project"
 	 */
 	MavenProject mavenProject;
 
 	/**
 	 * The current Maven session.
 	 *
-	 * @parameter expression="${session}"
+	 * @parameter  property="session"
 	 */
 	MavenSession mavenSession;
 
@@ -59,17 +59,17 @@ public class RunTomcat extends AbstractMojo {
 	BuildPluginManager pluginManager;
 
 	/**
-	 * @parameter expression="${serverId}"
+	 * @parameter  property="serverId"
 	 */
 	private String serverId;
 
 	/**
-	 * @parameter expression="${port}"
+	 * @parameter  property="port"
 	 */
 	private Integer port;
 
 	/**
-	 * @parameter expression="${watchApi}"
+	 * @parameter property="watchApi"
 	 */
 	private Boolean watchApi;
 
