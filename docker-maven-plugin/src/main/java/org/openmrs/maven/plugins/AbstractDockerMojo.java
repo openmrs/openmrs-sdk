@@ -38,7 +38,7 @@ abstract class AbstractDockerMojo extends AbstractMojo {
     /**
      * Option to include demo data
      *
-     * @parameter expression="${dockerHost}"
+     * @parameter  property="dockerHost"
      */
     protected String dockerHost;
 

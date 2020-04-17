@@ -20,7 +20,7 @@ import java.util.Map;
 public class WatchOwa extends AbstractTask {
 
     /**
-     * @parameter expression="${serverId}"
+     * @parameter  property="serverId"
      */
     private String serverId;
 

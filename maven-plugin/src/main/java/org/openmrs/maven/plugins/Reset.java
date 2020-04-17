@@ -23,7 +23,7 @@ public class Reset extends AbstractTask {
     private static final String TEMPLATE_SUCCESS_FULL = "Server '%s' has been reset";
 
     /**
-     * @parameter expression="${serverId}"
+     * @parameter  property="serverId"
      */
     private String serverId;
 

@@ -100,49 +100,49 @@ public class CreateProject extends CreateProjectFromArchetypeMojo {
     Wizard wizard;
 
     /**
-     * @parameter expression="${batchAnswers}"
+     * @parameter  property="batchAnswers"
      */
     private ArrayDeque<String> batchAnswers;
 
     /**
      * stats
      *
-     * @parameter expression="${stats}" default-value="false"
+     * @parameter  property="stats" default-value="false"
      */
     boolean stats;
 
     /**
      * The manager's artifactId. This can be an ordered comma separated list.
      *
-     * @parameter expression="${archetypeArtifactId}"
+     * @parameter  property="archetypeArtifactId"
      */
     private String archetypeArtifactId;
 
     /**
      * The manager's groupId.
      *
-     * @parameter expression="${archetypeGroupId}" default-value="org.openmrs.maven.archetypes"
+     * @parameter  property="archetypeGroupId" default-value="org.openmrs.maven.archetypes"
      */
     private String archetypeGroupId;
 
     /**
      * The manager's version.
      *
-     * @parameter expression="${archetypeVersion}"
+     * @parameter  property="archetypeVersion"
      */
     private String archetypeVersion;
 
     /**
      * The manager's repository.
      *
-     * @parameter expression="${archetypeRepository}"
+     * @parameter  property="archetypeRepository"
      */
     private String archetypeRepository;
 
     /**
      * The manager's catalogs. It is a comma separated list of catalogs.
      *
-     * @parameter expression="${archetypeCatalog}"
+     * @parameter  property="archetypeCatalog"
      * default-value="http://mavenrepo.openmrs.org/nexus/service/local/repositories/releases/content/archetype-catalog.xml"
      */
     private String archetypeCatalog;
@@ -150,7 +150,7 @@ public class CreateProject extends CreateProjectFromArchetypeMojo {
     /**
      * Local Maven repository.
      *
-     * @parameter expression="${localRepository}"
+     * @parameter  property="localRepository"
      * @required
      * @readonly
      */
@@ -159,7 +159,7 @@ public class CreateProject extends CreateProjectFromArchetypeMojo {
     /**
      * List of remote repositories used by the resolver.
      *
-     * @parameter expression="${project.remoteArtifactRepositories}"
+     * @parameter  property="project.remoteArtifactRepositories"
      * @readonly
      * @required
      */
@@ -168,15 +168,15 @@ public class CreateProject extends CreateProjectFromArchetypeMojo {
     /**
      * test mode, if true disables interactive mode and uses batchAnswers, even if there is none
      *
-     * @parameter expression="${testMode}" default-value="false"
+     * @parameter  property="testMode" default-value="false"
      */
     String testMode;
 
-    /** @parameter expression="${basedir}" */
+    /** @parameter  property="basedir" */
     private File basedir;
 
     /**
-     * @parameter expression="${session}"
+     * @parameter  property="session"
      * @readonly
      */
     private MavenSession session;
@@ -184,7 +184,7 @@ public class CreateProject extends CreateProjectFromArchetypeMojo {
     /**
      * The project currently being build.
      *
-     * @parameter expression="${project}"
+     * @parameter  property="project"
      */
     MavenProject mavenProject;
 
@@ -199,90 +199,90 @@ public class CreateProject extends CreateProjectFromArchetypeMojo {
     /**
      * Additional goals that can be specified by the user during the creation of the manager.
      *
-     * @parameter expression="${goals}"
+     * @parameter  property="goals"
      */
     private String goals;
 
     /**
      * The generated project's artifactId.
      *
-     * @parameter expression="${artifactId}"
+     * @parameter  property="artifactId"
      */
     private String artifactId;
 
     /**
      * The generated project's groupId.
      *
-     * @parameter expression="${groupId}"
+     * @parameter  property="groupId"
      */
     private String groupId;
 
     /**
      * The generated project's version.
      *
-     * @parameter expression="${version}"
+     * @parameter  property="version"
      */
     private String version;
 
     /**
      * The generated project's package name.
      *
-     * @parameter expression="${package}"
+     * @parameter  property="package"
      */
     private String packageName;
 
     /**
      * The generated project's module name (no spaces).
      *
-     * @parameter expression="${moduleClassnamePrefix}"
+     * @parameter  property="moduleClassnamePrefix"
      */
     private String moduleClassnamePrefix;
 
     /**
      * The generated project's module name.
      *
-     * @parameter expression="${moduleName}"
+     * @parameter  property="moduleName"
      */
     private String moduleName;
 
     /**
      * The generated project's module description.
      *
-     * @parameter expression="${moduleDescription}"
+     * @parameter  property="moduleDescription"
      */
     private String moduleDescription;
 
     /**
      * The generated project's module author.
      *
-     * @parameter expression="${user.name}"
+     * @parameter  property="user.name"
      */
     private String moduleAuthor;
 
     /**
      * The generated project's Openmrs Platform Version.
      *
-     * @parameter expression="${platform}"
+     * @parameter  property="platform"
      */
     private String platform;
 
     /**
      * The generated project's Openmrs Reference Application Version.
      *
-     * @parameter expression="${refapp}"
+     * @parameter  property="refapp"
      */
     private String refapp;
 
     /**
      * unique identifier module in the OpenMRS world
      *
-     * @parameter expression="${moduleId}"
+     * @parameter  property="moduleId"
      */
     private String moduleId;
     /**
      * type of generated project module, platform or refapp
      *
-     * @parameter expression="${type}"
+     * @parameter  property="type"
      */
     private String type;
 

@@ -51,12 +51,12 @@ public class Pull extends AbstractTask {
     private static final String TEMP_BRANCH = "tempBranch";
 
     /**
-     * @parameter expression="${serverId}"
+     * @parameter  property="serverId"
      */
     private String serverId;
 
     /**
-     * @parameter expression="${branch}
+     * @parameter  property="branch"
      */
     private String branch;
 

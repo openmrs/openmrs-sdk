@@ -21,7 +21,7 @@ public class Delete extends AbstractTask{
     private static final String TEMPLATE_SUCCESS = "Server '%s' removed successfully";
 
     /**
-     * @parameter expression="${serverId}"
+     * @parameter  property="serverId"
      */
     private String serverId;
 

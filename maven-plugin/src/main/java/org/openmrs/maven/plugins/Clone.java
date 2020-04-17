@@ -29,22 +29,22 @@ public class Clone extends AbstractTask {
     public static final String GITHUB_COM = "github.com";
     public static final String GITHUB_HTTP_SUFFIX = "https://github.com/";
     /**
-     * @parameter expression="${groupId}"
+     * @parameter  property="groupId"
      */
     private String groupId;
 
     /**
-     * @parameter expression="${artifactId}"
+     * @parameter  property="artifactId"
      */
     private String artifactId;
 
     /**
-     * @parameter expression="${githubUsername}"
+     * @parameter  property="githubUsername"
      */
     private String githubUsername;
 
     /**
-     * @parameter expression="${githubPassword}"
+     * @parameter  property="githubPassword"
      */
     private String githubPassword;
 

@@ -29,21 +29,21 @@ public class CreateMySql extends AbstractDockerMojo {
     /**
      * port exposed by mysql container to connect with db
      *
-     * @parameter expression="${port}"
+     * @parameter  property="port"
      */
     protected String port;
 
     /**
      * port exposed by mysql container to connect with db
      *
-     * @parameter expression="${container}"
+     * @parameter  property="container"
      */
     protected String container;
 
     /**
      * password for root user of mysql
      *
-     * @parameter expression="${rootPassword}"
+     * @parameter  property="rootPassword"
      */
     protected String rootPassword;
 

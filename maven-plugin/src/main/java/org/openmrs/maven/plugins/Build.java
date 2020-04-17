@@ -27,22 +27,22 @@ import java.util.Set;
 public class Build extends AbstractTask {
 
     /**
-     * @parameter expression="${serverId}"
+     * @parameter  property="serverId"
      */
     private String serverId;
 
     /**
-     * @parameter expression="${buildOwa}" default-value="true"
+     * @parameter  property="buildOwa" default-value="true"
      */
     private boolean buildOwa;
 
     /**
-     * @parameter expression="${npmVersion}"
+     * @parameter  property="npmVersion"
      */
     protected String npmVersion;
 
     /**
-     * @parameter expression="${nodeVersion}"
+     * @parameter  property="nodeVersion"
      */
     protected String nodeVersion;
 

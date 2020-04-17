@@ -52,46 +52,46 @@ public class Release extends AbstractTask {
     /**
      * version of next development iteration, should contain -SNAPSHOT suffix
      *
-     * @parameter expression="${developmentVersion}"
+     * @parameter  property="developmentVersion"
      */
     private String developmentVersion;
     /**
      * version of release
      *
-     * @parameter expression="${releaseVersion}"
+     * @parameter  property="releaseVersion"
      */
     private String releaseVersion;
     /**
      * github password to authorize changes
      *
-     * @parameter expression="${githubPassword}"
+     * @parameter  property="githubPassword"
      */
     private String githubPassword;
     /**
      * github username to authorize changes
      *
-     * @parameter expression="${githubUsername}"
+     * @parameter  property="githubUsername"
      */
     private String githubUsername;
     /**
      * Scm url address, if github repository, has to be https address (no support for ssh connection)
      *
-     * @parameter expression="${scmUrl}"
+     * @parameter  property="scmUrl"
      */
     private String scmUrl;
     /**
      *
-     * @parameter expression="${bintrayApiKey}"
+     * @parameter  property="bintrayApiKey"
      */
     private String bintrayApiKey;
     /**
      *
-     * @parameter expression="${bintrayUsername}"
+     * @parameter  property="bintrayUsername"
      */
     private String bintrayUsername;
     /**
      *
-     * @parameter expression="${defaultVersions}"
+     * @parameter  property="defaultVersions"
      */
     private String defaultVersions;
 

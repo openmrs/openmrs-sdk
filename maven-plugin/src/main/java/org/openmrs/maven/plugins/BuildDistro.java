@@ -55,27 +55,27 @@ public class BuildDistro extends AbstractTask {
     private static final String DOCKER_COMPOSE_OVERRIDE_YML = "docker-compose.override.yml";
 
     /**
-     * @parameter expression="${distro}"
+     * @parameter  property="distro"
      */
     private String distro;
 
 	/**
-	 * @parameter expression="${dir}"
+	 * @parameter  property="dir"
      */
     private String dir;
 
     /**
-     * @parameter expression="${dbSql}"
+     * @parameter  property="dbSql"
      */
     private String dbSql;
 
     /**
-     * @parameter expression="${bundled}" default-value="false"
+     * @parameter  property="bundled" default-value="false"
      */
     private boolean bundled;
 
     /**
-     * @parameter expression="${reset}" default-value="false"
+     * @parameter  property="reset" default-value="false"
      */
     private String reset;
 

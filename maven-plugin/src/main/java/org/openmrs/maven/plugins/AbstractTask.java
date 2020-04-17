@@ -34,21 +34,21 @@ public abstract class AbstractTask extends AbstractMojo {
     /**
      * The project currently being build.
      *
-     * @parameter expression="${project}"
+     * @parameter  property="project"
      */
     MavenProject mavenProject;
 
     /**
      * The current Maven session.
      *
-     * @parameter expression="${session}"
+     * @parameter  property="session"
      */
     MavenSession mavenSession;
 
     /**
      * The Maven Settings
      *
-     * @parameter expression="${settings}"
+     * @parameter  property="settings"
      */
     Settings settings;
 
@@ -83,27 +83,27 @@ public abstract class AbstractTask extends AbstractMojo {
     /**
      * test mode, if true disables interactive mode and uses batchAnswers, even if there is none
      *
-     * @parameter expression="${testMode}" default-value="false"
+     * @parameter  property="testMode" default-value="false"
      */
     String testMode;
 
     /**
      * path to openmrs directory
      *
-     * @parameter expression="${openMRSPath}"
+     * @parameter  property="openMRSPath"
      */
     String openMRSPath;
 
     /***
      *
-     * @parameter expression="${batchAnswers}"
+     * @parameter  property="batchAnswers"
      */
     ArrayDeque<String> batchAnswers;
 
     /**
      * stats
      *
-     * @parameter expression="${stats}" default-value="false"
+     * @parameter  property="stats" default-value="false"
      */
     boolean stats;
 
