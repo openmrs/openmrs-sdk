@@ -186,7 +186,10 @@
                 <artifactId>httpclient</artifactId>
                 <version>4.5.2</version>
             </dependency>
-
+            <dependency>
+			    <groupId>org.dom4j</groupId>
+			    <artifactId>dom4j</artifactId>
+           </dependency>
             <!-- DBs -->
             <dependency>
                 <groupId>mysql</groupId>

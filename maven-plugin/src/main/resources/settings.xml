@@ -24,10 +24,22 @@
             </properties>
             <repositories>
                 <repository>
-                    <id>openmrs-repo</id>
+                    <id>openmrs repo</id>
                     <name>OpenMRS Nexus Repository</name>
                     <url>http://mavenrepo.openmrs.org/nexus/content/repositories/public</url>
                 </repository>
+              <repository>
+                <id>archetype</id>
+                <url>http://mavenrepo.openmrs.org/nexus/content/repositories/public</url>
+               <releases>
+                 <enabled>true</enabled>
+                 <checksumPolicy>fail</checksumPolicy>
+               </releases>
+               <snapshots>
+                 <enabled>true</enabled>
+                 <checksumPolicy>warn</checksumPolicy>
+              </snapshots>
+              </repository>
                 <repository>
                     <id>openmrs-repo-thirdparty</id>
                     <name>OpenMRS Thirdparty Nexus Repository</name>
