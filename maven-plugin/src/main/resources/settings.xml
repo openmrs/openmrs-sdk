@@ -24,7 +24,7 @@
             </properties>
             <repositories>
                 <repository>
-                    <id>openmrs repo</id>
+                    <id>openmrs-repo</id>
                     <name>OpenMRS Nexus Repository</name>
                     <url>http://mavenrepo.openmrs.org/nexus/content/repositories/public</url>
                 </repository>
