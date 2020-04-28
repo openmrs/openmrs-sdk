@@ -1,7 +1,10 @@
 package org.openmrs.maven.plugins;
 
 import org.apache.catalina.Context;
+import org.apache.catalina.Lifecycle;
+import org.apache.catalina.LifecycleEvent;
 import org.apache.catalina.LifecycleException;
+import org.apache.catalina.LifecycleListener;
 import org.apache.catalina.loader.WebappLoader;
 import org.apache.catalina.startup.Tomcat;
 import org.apache.commons.io.FileUtils;
@@ -157,6 +160,7 @@ public class RunTomcat extends AbstractMojo {
 		tomcat.getHost().setDeployOnStartup(true);
 		tomcat.getConnector().setURIEncoding("UTF-8");
 		Context context = tomcat.addWebapp(tomcat.getHost(), "/openmrs", new File(serverPath, warFile).getAbsolutePath());
+		context.addLifecycleListener(new OpenmrsStartupListener(wizard, port));
 
 		System.setProperty("OPENMRS_INSTALLATION_SCRIPT",
 				new File(serverPath, SDKConstants.OPENMRS_SERVER_PROPERTIES).getAbsolutePath());
@@ -227,5 +231,24 @@ public class RunTomcat extends AbstractMojo {
 	private boolean isWatchApi() {
 		return Boolean.TRUE.equals(watchApi);
 	}
+	
+	public static final class OpenmrsStartupListener implements LifecycleListener {
 
+		private final  Wizard wizard;
+		private final int port;
+
+		OpenmrsStartupListener(Wizard wizard, int port) {
+			this.wizard = wizard;
+			this.port = port;
+		}
+
+		@Override
+		public void lifecycleEvent(LifecycleEvent event) {
+			if (!Lifecycle.AFTER_START_EVENT.equals(event.getType())) {
+				return;
+			}
+
+			wizard.showMessage(String.format("OpenMRS is ready for you at http://localhost:%s/openmrs/", port == 80 ? "" : ":" + port));
+		}
+	}
 }
