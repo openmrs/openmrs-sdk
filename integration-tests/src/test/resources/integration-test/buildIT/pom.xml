@@ -9,4 +9,13 @@
     <artifactId>owa</artifactId>
     <version>1.4</version>
     <packaging>pom</packaging>
+
+    <repositories>
+        <repository>
+            <id>openmrs-repo</id>
+            <name>OpenMRS repository</name>
+            <url>http://mavenrepo.openmrs.org/nexus/content/repositories/public</url>
+        </repository>
+    </repositories>
+
 </project>
