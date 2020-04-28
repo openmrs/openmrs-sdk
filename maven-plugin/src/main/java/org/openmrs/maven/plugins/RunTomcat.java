@@ -160,7 +160,7 @@ public class RunTomcat extends AbstractMojo {
 		tomcat.getHost().setDeployOnStartup(true);
 		tomcat.getConnector().setURIEncoding("UTF-8");
 		Context context = tomcat.addWebapp(tomcat.getHost(), "/openmrs", new File(serverPath, warFile).getAbsolutePath());
-		context.addLifecycleListener(new OpenmrsStartupListener(wizard,port));
+		context.addLifecycleListener(new OpenmrsStartupListener(wizard, port));
 
 		System.setProperty("OPENMRS_INSTALLATION_SCRIPT",
 				new File(serverPath, SDKConstants.OPENMRS_SERVER_PROPERTIES).getAbsolutePath());
@@ -231,6 +231,7 @@ public class RunTomcat extends AbstractMojo {
 	private boolean isWatchApi() {
 		return Boolean.TRUE.equals(watchApi);
 	}
+	
 	public static final class OpenmrsStartupListener implements LifecycleListener {
 
 		private final  Wizard wizard;
