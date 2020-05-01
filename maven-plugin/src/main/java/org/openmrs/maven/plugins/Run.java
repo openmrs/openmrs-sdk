@@ -131,22 +131,22 @@ public class Run extends AbstractTask {
 	}
 
 	private void validatePort() {
-	    int tmpPort = port;
+		int tmpPort = port;
 
-	    tmpPort = serverHelper.findFreePort(tmpPort);
-	    if (port != tmpPort) {
-	        String message = String.format("Port %s is already in use. What port would you like to use?", port);
+		tmpPort = serverHelper.findFreePort(tmpPort);
+		if (port != tmpPort) {
+			String message = String.format("Port %s is already in use. What port would you like to use?", port);
 
-	        port = 0;
-	        while (port < 1 || port > 65535) {
-	            String result = wizard.promptForValueIfMissingWithDefault(message, null, null, String.valueOf(tmpPort));
-	            try {
-	                port = Integer.parseInt(result);
-	            } catch (NumberFormatException ignore) {}
-	            
-	            String.format("%s is not a valid port. What port would you like to use?", result);
-	        }
-	    }
+			port = 0;
+			while (port < 1 || port > 65535) {
+				String result = wizard.promptForValueIfMissingWithDefault(message, null, null, String.valueOf(tmpPort));
+				try {
+					port = Integer.parseInt(result);
+				} catch (NumberFormatException ignore) {}
+
+				String.format("%s is not a valid port. What port would you like to use?", result);
+			}
+		}
 	}
 
 	private void runInFork(Server server) throws MojoExecutionException, MojoFailureException {
