@@ -21,6 +21,7 @@ import org.codehaus.plexus.classworlds.realm.DuplicateRealmException;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.model.Version;
 import org.openmrs.maven.plugins.utility.DockerHelper;
+import org.openmrs.maven.plugins.utility.OpenMRSSDKRedirectServlet;
 import org.openmrs.maven.plugins.utility.Project;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 import org.openmrs.maven.plugins.utility.Wizard;
@@ -153,6 +154,9 @@ public class RunTomcat extends AbstractMojo {
 		if (port == null) {
 			port = 8080;
 		}
+		Context root = tomcat.addContext("", tempDirectory.getAbsolutePath());
+		tomcat.addServlet("", "openmrsRedirectServlet", new OpenMRSSDKRedirectServlet());
+		root.addServletMapping("/*", "openmrsRedirectServlet");
 		tomcat.setPort(port);
 		tomcat.setBaseDir(tempDirectory.getAbsolutePath());
 		tomcat.getHost().setAppBase(tempDirectory.getAbsolutePath());
