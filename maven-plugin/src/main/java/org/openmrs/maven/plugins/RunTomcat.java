@@ -252,7 +252,7 @@ public class RunTomcat extends AbstractMojo {
 				return;
 			}
 
-			wizard.showMessage(String.format("OpenMRS is ready for you at http://localhost:%s/openmrs/", port == 80 ? "" : ":" + port));
+			wizard.showMessage(String.format("OpenMRS is ready for you at http://localhost%s/openmrs/", port == 80 ? "" : ":" + port));
 		}
 	}
 }
