@@ -1,5 +1,9 @@
 language: java
-jdk: openjdk8
+jdk:
+ - openjdk8
+ - openjdk11
+ - openjdk13
+ - openjdk14
 install :
   - mvn org.openmrs.maven.plugins:openmrs-sdk-maven-plugin:setup-sdk -DbatchAnswers=n
 script:
