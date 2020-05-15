@@ -144,7 +144,7 @@ public class Run extends AbstractTask {
 					port = Integer.parseInt(result);
 				} catch (NumberFormatException ignore) {}
 
-				String.format("%s is not a valid port. What port would you like to use?", result);
+				message = String.format("%s is not a valid port. What port would you like to use?", result);
 			}
 		}
 	}
