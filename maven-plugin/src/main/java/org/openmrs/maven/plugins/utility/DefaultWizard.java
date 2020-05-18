@@ -386,19 +386,27 @@ public class DefaultWizard implements Wizard {
             String selectedOption = promptForMissingValueWithOptions(SDKConstants.OPENMRS_SDK_JDK_OPTION,
                     server.getJavaHome(), "path", options, SDKConstants.OPENMRS_SDK_JDK_CUSTOM, null);
 
+            Version platformVersion = new Version(server.getPlatformVersion());
             String requiredJdkVersion;
             String notRecommendedJdkVersion = "Not recommended";
             if (server.getPlatformVersion().startsWith("1.")) {
                 requiredJdkVersion = "1.7";
                 notRecommendedJdkVersion = "1.8";
             }
+            else if (platformVersion.getMajorVersion() == 2 && platformVersion.getMinorVersion() < 4) {
+            	requiredJdkVersion = "1.8";
+            }
             else {
-                requiredJdkVersion = "1.8";
+                requiredJdkVersion = "1.8 or above";
             }
 
             // Use default JAVA_HOME
             if (selectedOption.equals(options.get(0))) {
-                if (System.getProperty("java.version").startsWith(requiredJdkVersion)) {
+            	String jdkUnderSpecifiedPathVersion = determineJavaVersionFromPath(System.getProperty("java.home"));
+            	if (isAbovePlatformTwoPointThree(platformVersion) && isJava8orAbove(jdkUnderSpecifiedPathVersion)) {
+                	server.setJavaHome(null);
+                }
+            	else if (System.getProperty("java.version").startsWith(requiredJdkVersion)) {
                     server.setJavaHome(null);
                 }
                 else if (System.getProperty("java.version").startsWith(notRecommendedJdkVersion)) {
@@ -421,7 +429,11 @@ public class DefaultWizard implements Wizard {
                 promptForJavaHomeIfMissing(server);
             } else {
                 String jdkUnderSpecifiedPathVersion = determineJavaVersionFromPath(selectedOption);
-                if (jdkUnderSpecifiedPathVersion.startsWith(requiredJdkVersion)) {
+                if (isAbovePlatformTwoPointThree(platformVersion) && isJava8orAbove(jdkUnderSpecifiedPathVersion)) {
+                	server.setJavaHome(selectedOption);
+                    addJavaHomeToSdkProperties(selectedOption);
+                }
+                else if (jdkUnderSpecifiedPathVersion.startsWith(requiredJdkVersion)) {
                     server.setJavaHome(selectedOption);
                     addJavaHomeToSdkProperties(selectedOption);
                 }
@@ -444,6 +456,20 @@ public class DefaultWizard implements Wizard {
         }
     }
 
+    private boolean isAbovePlatformTwoPointThree(Version platformVersion) {
+    	return platformVersion.getMajorVersion() > 2 
+    			|| (platformVersion.getMajorVersion() == 2 && platformVersion.getMinorVersion() > 3);
+    }
+    
+    private boolean isJava8orAbove(String javaVersion) {
+    	if (javaVersion.startsWith("1.8")) {
+    		return true;
+    	}
+    	int pos = javaVersion.indexOf('.');
+    	String version = javaVersion.substring(0, pos);
+    	return (Integer.parseInt(version) > 8);
+    }
+    
     private String determineJavaVersionFromPath(String path) {
         File javaPath = new File(path, "bin");
 
