@@ -259,11 +259,15 @@ public class Setup extends AbstractTask {
             distroProperties = createDistroForPlatform(distroProperties, server);
 
             String platformVersion = server.getPlatformVersion();
+            Version version = new Version(platformVersion);
             if (platformVersion.startsWith("1.")) {
                 wizard.showMessage("Note: JDK 1.7 is needed for platform version " + platformVersion + ".");
             }
+            else if (version.getMajorVersion() == 2 && version.getMinorVersion() < 4) {
+            	wizard.showMessage("Note: JDK 1.8 is needed for platform version " + platformVersion + ".");
+            }
             else {
-                wizard.showMessage("Note: JDK 1.8 is needed for platform version " + platformVersion + ".");
+                wizard.showMessage("Note: JDK 1.8 or above is needed for platform version " + platformVersion + ".");
             }
 
             wizard.promptForJavaHomeIfMissing(server);
