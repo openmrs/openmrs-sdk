@@ -1,5 +1,4 @@
 language: java
-dist: trusty
 jdk:
  - openjdk8
  - openjdk9
@@ -8,6 +7,12 @@ jdk:
  - openjdk12
  - openjdk13
  - openjdk14
+matrix:
+  include:
+    - jdk: openjdk11
+      before_install:
+        - rm "${JAVA_HOME}/lib/security/cacerts"
+        - ln -s /etc/ssl/certs/java/cacerts "${JAVA_HOME}/lib/security/cacerts"
 install :
   - mvn org.openmrs.maven.plugins:openmrs-sdk-maven-plugin:setup-sdk -DbatchAnswers=n
 script:
