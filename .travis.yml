@@ -10,7 +10,7 @@ jdk:
 install :
   - mvn org.openmrs.maven.plugins:openmrs-sdk-maven-plugin:setup-sdk -DbatchAnswers=n -Djdk.tls.client.protocols=TLSv1.2
 script:
-  - mvn install
+  - mvn install -Djdk.tls.client.protocols=TLSv1.2
 deploy:
   provider: script
   script: ./deploy.sh
