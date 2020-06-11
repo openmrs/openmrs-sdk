@@ -3,9 +3,14 @@ jdk:
  - openjdk8
  - openjdk9
  - openjdk10
- - openjdk11
+ - oraclejdk11
+ - openjdk12
  - openjdk13
  - openjdk14
+addons:
+  apt:
+    packages:
+      - oracle-java11-installer
 install :
   - mvn org.openmrs.maven.plugins:openmrs-sdk-maven-plugin:setup-sdk -DbatchAnswers=n
 script:
