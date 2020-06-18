@@ -151,6 +151,11 @@ public class RunTomcat extends AbstractMojo {
 		wizard.showMessage("Starting Tomcat...\n");
 
 		Tomcat tomcat = new Tomcat();
+		
+		//Tomcat needs a directory for temp files. This should be the first
+	    //method called, else it will default to $PWD/tomcat.$PORT
+		tomcat.setBaseDir(tempDirectory.getAbsolutePath());
+		
 		if (port == null) {
 			port = 8080;
 		}
@@ -158,7 +163,6 @@ public class RunTomcat extends AbstractMojo {
 		tomcat.addServlet("", "openmrsRedirectServlet", new OpenMRSSDKRedirectServlet());
 		root.addServletMapping("/*", "openmrsRedirectServlet");
 		tomcat.setPort(port);
-		tomcat.setBaseDir(tempDirectory.getAbsolutePath());
 		tomcat.getHost().setAppBase(tempDirectory.getAbsolutePath());
 		tomcat.getHost().setAutoDeploy(true);
 		tomcat.getHost().setDeployOnStartup(true);
