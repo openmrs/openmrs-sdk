@@ -72,7 +72,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <tomcat.version>7.0.100</tomcat.version>
+        <tomcat.version>7.0.104</tomcat.version>
     </properties>
 
     <repositories>
