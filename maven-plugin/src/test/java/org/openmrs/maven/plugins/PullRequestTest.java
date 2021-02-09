@@ -108,7 +108,7 @@ public class PullRequestTest {
 
         pullRequest.issueId = issueId;
         pullRequest.username = username;
-        pullRequest.password = password;
+        pullRequest.personalAccessToken = password;
         pullRequest.branch = "master";
     }
 

@@ -62,11 +62,11 @@ public class Release extends AbstractTask {
      */
     private String releaseVersion;
     /**
-     * github password to authorize changes
+     * github personal access token to authorize changes
      *
      * @parameter  property="githubPassword"
      */
-    private String githubPassword;
+    private String githubPersonalAccessToken;
     /**
      * github username to authorize changes
      *
@@ -121,7 +121,7 @@ public class Release extends AbstractTask {
         }
 
         githubUsername = wizard.promptForValueIfMissing(githubUsername, "your GitHub username");
-        githubPassword = wizard.promptForPasswordIfMissing(githubPassword, "your GitHub password");
+        githubPersonalAccessToken = wizard.promptForPasswordIfMissing(githubPersonalAccessToken, "your GitHub personal access token");
 
         String defaultReleaseVersion = StringUtils.stripEnd(mavenProject.getVersion(), "-SNAPSHOT");
         String defaultDevelopmentVersion = createNewDevelopmentVersion(mavenProject.getVersion());
@@ -145,7 +145,7 @@ public class Release extends AbstractTask {
                     goal("prepare"),
                     configuration(
                             element(name("username"), githubUsername),
-                            element(name("password"), githubPassword),
+                            element(name("password"), githubPersonalAccessToken),
                             element(name("autoVersionSubmodules"), "true")
                     ),
                     executionEnvironment(mavenProject, mavenSession, pluginManager)
@@ -156,7 +156,7 @@ public class Release extends AbstractTask {
                     goal("perform"),
                     configuration(
                             element(name("username"), githubUsername),
-                            element(name("password"), githubPassword),
+                            element(name("password"), githubPersonalAccessToken),
                             element(name("arguments"), "-DaltDeploymentRepository="+bintrayDeploymentRepository+" -Dmaven.javadoc.failOnError=false")
                     ),
                     executionEnvironment(mavenProject, mavenSession, pluginManager)
@@ -214,9 +214,9 @@ public class Release extends AbstractTask {
             if(!lastCommit.getName().equals(backup.getName())) {
                 Iterable<RevCommit> commitDifferential = gitHelper.getCommitDifferential(git, "refs/remotes/upstream/master", "refs/heads/master");
                 gitHelper.revertCommits(git, commitDifferential);
-                gitHelper.push(git, githubUsername, githubPassword, "refs/heads/master", "upstream", false);
+                gitHelper.push(git, githubUsername, githubPersonalAccessToken, "refs/heads/master", "upstream", false);
             }
-            gitHelper.deleteTag(git, releaseVersion, githubUsername, githubPassword);
+            gitHelper.deleteTag(git, releaseVersion, githubUsername, githubPersonalAccessToken);
         } catch (Exception e) {
             allExceptions.add("Failure during clean up", e);
         }

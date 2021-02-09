@@ -46,7 +46,7 @@ public class Clone extends AbstractTask {
     /**
      * @parameter  property="githubPassword"
      */
-    private String githubPassword;
+    private String githubPersonalAccessToken;
 
     @Override
     public void executeTask() throws MojoExecutionException, MojoFailureException {
@@ -63,7 +63,7 @@ public class Clone extends AbstractTask {
         }
 
         githubUsername = wizard.promptForValueIfMissing(githubUsername, "your GitHub username");
-        githubPassword = wizard.promptForPasswordIfMissing(githubPassword, "your GitHub password");
+        githubPersonalAccessToken = wizard.promptForPasswordIfMissing(githubPersonalAccessToken, "your GitHub personal access token");
 
         cloneRepo(repoUrl);
     }
@@ -122,9 +122,9 @@ public class Clone extends AbstractTask {
     private void forkRepo(String repoName, String repoOwner) {
         wizard.showMessage("Forking " + repoName + " from " + repoOwner);
         GitHubClient client = new GitHubClient();
-        client.setCredentials(githubUsername, githubPassword);
+        client.setCredentials(githubUsername, githubPersonalAccessToken);
         RepositoryService service = new RepositoryService();
-        service.getClient().setCredentials(githubUsername, githubPassword);
+        service.getClient().setCredentials(githubUsername, githubPersonalAccessToken);
         RepositoryId toBeForked = new RepositoryId(repoOwner, repoName);
         try {
             service.forkRepository(toBeForked);

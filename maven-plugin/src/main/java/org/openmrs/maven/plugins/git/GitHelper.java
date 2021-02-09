@@ -47,11 +47,11 @@ public interface GitHelper {
      * pushes changes callling 'git push'
      * @param git
      * @param username github usename
-     * @param password github password
+     * @param personalAccessToken github personal access token
      * @param remote
      *@param force  @return returns JGit resut of push
      */
-    Iterable<PushResult> push(Git git, String username, String password, String ref, String remote, boolean force);
+    Iterable<PushResult> push(Git git, String username, String personalAccessToken, String ref, String remote, boolean force);
 
     /**
      * returns commits which differ between given base and head references
@@ -98,10 +98,10 @@ public interface GitHelper {
      * @param git
      * @param tagRef name of tag
      * @param username github username
-     * @param password github password
+     * @param personalAccessToken github personal access token
      * @return
      */
-    boolean deleteTag(Git git, String tagRef, String username, String password);
+    boolean deleteTag(Git git, String tagRef, String username, String personalAccessToken);
 
     /**
      * revert passed commits on current branch

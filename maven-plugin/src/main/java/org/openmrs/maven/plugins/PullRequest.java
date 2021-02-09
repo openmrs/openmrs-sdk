@@ -46,11 +46,11 @@ public class PullRequest extends AbstractTask {
     String username;
 
     /**
-     * github password, required to push and open pull request
+     * github personal access token, required to push and open pull request
      *
-     * @parameter  property="password"
+     * @parameter  property="personalAccessToken"
      */
-    String password;
+    String personalAccessToken;
 
     /**
      * name of github repository to open PR
@@ -110,9 +110,9 @@ public class PullRequest extends AbstractTask {
         String originUrl = gitHelper.adjustRemoteOrigin(git, scmUrl, username);
         wizard.showMessage("Changes will be pushed to " + localBranch + " branch at " + originUrl);
 
-        password = wizard.promptForPasswordIfMissing(password, "your GitHub password");
+        personalAccessToken = wizard.promptForPasswordIfMissing(personalAccessToken, "your GitHub personal access token");
 
-        gitHelper.push(git, username, password, "refs/heads/"+localBranch, "origin", true);
+        gitHelper.push(git, username, personalAccessToken, "refs/heads/"+localBranch, "origin", true);
         createUpdatePullRequest(issue, localBranch, repoName);
     }
 
@@ -192,7 +192,7 @@ public class PullRequest extends AbstractTask {
                     .setBase(branch)
                     .setHead(username +":"+originBranch)
                     .setUsername(username)
-                    .setPassword(password)
+                    .setPassword(personalAccessToken)
                     .setDescription(description)
                     .setTitle(issue.getKey()+" "+issue.getSummary())
                     .setRepository(repoName)
