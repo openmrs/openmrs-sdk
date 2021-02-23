@@ -19,6 +19,8 @@ public interface Wizard {
     void promptForDb(Server server, DockerHelper dockerHelper, boolean h2supported, String dbDriver, String dockerHost) throws MojoExecutionException;
 
     public void promptForMySQLDb(Server server) throws MojoExecutionException;
+    
+    public void promptForPostgreSQLDb(Server server) throws MojoExecutionException;
 
     void promptForDbCredentialsIfMissing(Server server);
 
@@ -65,6 +67,8 @@ public interface Wizard {
     List<String> getListOfServers();
 
     String addMySQLParamsIfMissing(String dbUri);
+    
+    String addPostgreSQLParamsIfMissing(String dbUri);
 
     void showJdkErrorMessage(String jdk, String platform, String recommendedJdk, String pathToProps);
 

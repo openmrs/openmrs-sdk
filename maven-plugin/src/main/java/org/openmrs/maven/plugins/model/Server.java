@@ -731,6 +731,10 @@ public class Server extends BaseSdkProperties {
     public boolean isMySqlDb() {
         return getDbUri().startsWith("jdbc:mysql") || getDbDriver().equals(SDKConstants.DRIVER_MYSQL);
     }
+    
+    public boolean isPostgreSqlDb() {
+        return getDbUri().startsWith("jdbc:postgresql") || getDbDriver().equals(SDKConstants.DRIVER_POSTGRESQL);
+    }
 
     public String getDbUri() {
         return getParam(PROPERTY_DB_URI);

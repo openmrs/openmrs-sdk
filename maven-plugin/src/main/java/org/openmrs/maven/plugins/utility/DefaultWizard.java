@@ -86,6 +86,7 @@ public class DefaultWizard implements Wizard {
     public static final String DB_OPTION_MYSQL = "MySQL 5.6 (requires pre-installed MySQL 5.6)";
     public static final String DB_OPTION_SDK_DOCKER_MYSQL = "MySQL 5.6 in SDK docker container (requires pre-installed Docker)";
     public static final String DB_OPTION_DOCKER_MYSQL = "Existing docker container (requires pre-installed Docker)";
+    public static final String DB_OPTION_POSTGRESQL = "PostgreSQL 8.2 and above";
     public static final Map<String,String> DB_OPTIONS_MAP = new HashMap<String, String>() {{
         put("mysql", DB_OPTION_MYSQL);
         put("h2", DB_OPTION_H2);
@@ -690,6 +691,9 @@ public class DefaultWizard implements Wizard {
         List<String> options = new ArrayList<>();
         if(h2supported) options.add(DB_OPTION_H2);
         options.addAll(Lists.newArrayList(DB_OPTION_MYSQL, DB_OPTION_SDK_DOCKER_MYSQL, DB_OPTION_DOCKER_MYSQL));
+        if (isAbovePlatformTwoPointThree(new Version(server.getPlatformVersion()))) {
+        	options.add(DB_OPTION_POSTGRESQL);
+        }
         db = promptForMissingValueWithOptions("Which database would you like to use?", db, null, options);
         switch(db){
             case(DB_OPTION_H2): {
@@ -712,6 +716,10 @@ public class DefaultWizard implements Wizard {
             case(DB_OPTION_DOCKER_MYSQL):{
                 promptForDockerizedDb(server, dockerHelper, dockerHost);
             }
+            case(DB_OPTION_POSTGRESQL):{
+                promptForPostgreSQLDb(server);
+                break;
+            }
         }
     }
 
@@ -725,6 +733,23 @@ public class DefaultWizard implements Wizard {
                 server.getDbUri(), "dbUri", SDKConstants.URI_MYSQL);
         if (dbUri.startsWith("jdbc:mysql:")) {
             dbUri = addMySQLParamsIfMissing(dbUri);
+        }
+        dbUri = dbUri.replace(DBNAME_URL_VARIABLE, server.getServerId());
+
+        server.setDbUri(dbUri);
+        promptForDbCredentialsIfMissing(server);
+    }
+    
+    @Override
+    public void promptForPostgreSQLDb(Server server) throws MojoExecutionException {
+        if(server.getDbDriver() == null){
+            server.setDbDriver(SDKConstants.DRIVER_POSTGRESQL);
+        }
+        String dbUri = promptForValueIfMissingWithDefault(
+                "The distribution requires PostgreSQL database. Please specify database uri (-D%s)",
+                server.getDbUri(), "dbUri", SDKConstants.URI_POSTGRESQL);
+        if (dbUri.startsWith("jdbc:postgresql:")) {
+            dbUri = addPostgreSQLParamsIfMissing(dbUri);
         }
         dbUri = dbUri.replace(DBNAME_URL_VARIABLE, server.getServerId());
 
@@ -904,6 +929,10 @@ public class DefaultWizard implements Wizard {
     @Override
     public void promptForDbCredentialsIfMissing(Server server) {
         String defaultUser = "root";
+        if (server.isPostgreSqlDb()) {
+        	defaultUser = "postgres";
+        }
+        
         String user = promptForValueIfMissingWithDefault(
                 "Please specify database username (-D%s)",
                 server.getDbUser(), "dbUser", defaultUser);
@@ -946,6 +975,23 @@ public class DefaultWizard implements Wizard {
         }
         uri.setParameter("autoReconnect", "true");
         uri.setParameter("sessionVariables", "default_storage_engine=InnoDB");
+        uri.setParameter("useUnicode", "true");
+        uri.setParameter("characterEncoding", "UTF-8");
+
+        return "jdbc:" + uri.toString();
+    }
+    
+    @Override
+    public String addPostgreSQLParamsIfMissing(String dbUri) {
+        String noJdbc = dbUri.substring(5);
+
+        URIBuilder uri;
+        try {
+            uri = new URIBuilder(noJdbc);
+        } catch (URISyntaxException e) {
+            throw new IllegalArgumentException(e);
+        }
+        uri.setParameter("autoReconnect", "true");
         uri.setParameter("useUnicode", "true");
         uri.setParameter("characterEncoding", "UTF-8");
 

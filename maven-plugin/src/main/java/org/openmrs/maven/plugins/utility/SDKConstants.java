@@ -60,7 +60,7 @@ public class SDKConstants {
     // dbUri for different db
     public static final String URI_MYSQL = "jdbc:mysql://localhost:3306/@DBNAME@";
     public static final String URI_MYSQL_DOCKER = "jdbc:mysql://%s:3306/@DBNAME@";
-    public static final String URI_POSTGRESQL = "jdbc:postgresql://localhost:5740/@DBNAME@";
+    public static final String URI_POSTGRESQL = "jdbc:postgresql://localhost:5432/@DBNAME@";
     public static final String URI_H2 = "jdbc:h2:@APPLICATIONDATADIR@/database/@DBNAME@;AUTO_RECONNECT=TRUE;DB_CLOSE_DELAY=-1";
     // dbDriver class for different db
     public static final String DRIVER_MYSQL = "com.mysql.jdbc.Driver";
@@ -91,7 +91,7 @@ public class SDKConstants {
 
     public final static String NPM_VERSION = "^3.10.3";
     public final static String NODE_VERSION = "^6.4.0";
-	public static final String RESET_SEARCH_INDEX_SQL = "DELETE FROM `%s`.global_property WHERE property = 'search.indexVersion';";
+	public static final String RESET_SEARCH_INDEX_SQL = "DELETE FROM global_property WHERE property = 'search.indexVersion';";
 
 	/**
      * Get core modules with required versions

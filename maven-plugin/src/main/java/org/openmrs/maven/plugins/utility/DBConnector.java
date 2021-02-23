@@ -5,6 +5,8 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 
+import org.openmrs.maven.plugins.model.Server;
+
 public class DBConnector {
     Connection conn;
     String dbName;
@@ -19,9 +21,12 @@ public class DBConnector {
      * Create db if not exists
      * @throws SQLException
      */
-    public void checkAndCreate() throws SQLException {
+    public void checkAndCreate(Server server) throws SQLException {
         Statement stmt = conn.createStatement();
         String query = String.format("create database if not exists `%s` default character set utf8", dbName);
+        if (server.isPostgreSqlDb()) {
+        	query = String.format("create database %s encoding 'utf8'", dbName);
+        }
         stmt.executeUpdate(query);
     }
 
