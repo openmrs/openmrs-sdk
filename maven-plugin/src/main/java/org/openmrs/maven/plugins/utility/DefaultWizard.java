@@ -83,8 +83,8 @@ public class DefaultWizard implements Wizard {
     public static final String DISTRIBUTION_VERSION_PROMPT = "You can deploy the following versions of distribution";
 
     public static final String DB_OPTION_H2 = "H2";
-    public static final String DB_OPTION_MYSQL = "MySQL 5.6 (requires pre-installed MySQL 5.6)";
-    public static final String DB_OPTION_SDK_DOCKER_MYSQL = "MySQL 5.6 in SDK docker container (requires pre-installed Docker)";
+    public static final String DB_OPTION_MYSQL = "MySQL 5.6 and above (requires pre-installed MySQL 5.6 and above)";
+    public static final String DB_OPTION_SDK_DOCKER_MYSQL = "MySQL 5.6 and above in SDK docker container (requires pre-installed Docker)";
     public static final String DB_OPTION_DOCKER_MYSQL = "Existing docker container (requires pre-installed Docker)";
     public static final String DB_OPTION_POSTGRESQL = "PostgreSQL 8.2 and above";
     public static final Map<String,String> DB_OPTIONS_MAP = new HashMap<String, String>() {{
