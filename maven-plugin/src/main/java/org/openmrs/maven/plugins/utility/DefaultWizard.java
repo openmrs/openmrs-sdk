@@ -939,7 +939,7 @@ public class DefaultWizard implements Wizard {
         server.setDbUser(user);
         //set password
         String dbPassword = promptForPasswordIfMissingWithDefault(
-                "Note: whitespace-only passwords will be left blank and trailing/leading whitespace will be removed.\nPlease specify database password (-D%s)",
+                "Please specify database password (-D%s)",
                 server.getDbPassword(), "dbPassword", "");
         server.setDbPassword(dbPassword.trim());
     }
