@@ -7,6 +7,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.ibatis.jdbc.ScriptRunner;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.openmrs.maven.plugins.bintray.OpenmrsBintray;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.Server;
@@ -15,17 +16,21 @@ import org.openmrs.maven.plugins.utility.DBConnector;
 import org.openmrs.maven.plugins.utility.DistroHelper;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 import org.openmrs.maven.plugins.utility.ServerHelper;
-import org.openmrs.maven.plugins.bintray.OpenmrsBintray;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.InputStream;
-import java.io.Reader;
 import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
-
-import java.sql.*;
+import java.io.Reader;
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -335,12 +340,34 @@ public class Setup extends AbstractTask {
     
     private void downloadOWAs(File targetDirectory, DistroProperties distroProperties, File owasDir) throws MojoExecutionException {
         List<Artifact> owas = distroProperties.getOwaArtifacts(distroHelper, targetDirectory);
-        OpenmrsBintray openmrsBintray = new OpenmrsBintray(getProxyFromSettings());
-
         if (!owas.isEmpty()) {
             wizard.showMessage("Downloading OWAs...\n");
             for (Artifact owa: owas) {
-                openmrsBintray.downloadOWA(owasDir, owa.getArtifactId(), owa.getVersion());
+                wizard.showMessage("Downloading OWA: " + owa);
+                installOwa(owasDir, owa);
+            }
+        }
+    }
+
+    private void installOwa(File owasDir, Artifact owa) throws MojoExecutionException {
+        // Support existing Bintray artifacts
+        try {
+            OpenmrsBintray openmrsBintray = new OpenmrsBintray(getProxyFromSettings());
+            openmrsBintray.downloadOWA(owasDir, owa.getArtifactId(), owa.getVersion());
+        }
+        catch (Exception e) {
+            // If file is not found in bintray, and exception will be thrown.  Try to find it in Maven repo.
+            moduleInstaller.installModule(owa, owasDir.getAbsolutePath());
+            File downloadedFile = new File(owasDir, owa.getArtifactId() + "-" + owa.getVersion() + "." + owa.getType());
+            if (!downloadedFile.exists()) {
+                throw new MojoExecutionException("Unable to download OWA from Bintray or Maven", e);
+            }
+            File renamedFile = new File(owasDir, owa.getArtifactId() + OpenmrsBintray.OWA_PACKAGE_EXTENSION);
+            try {
+                FileUtils.moveFile(downloadedFile, renamedFile);
+            }
+            catch (IOException ioe) {
+                throw new MojoExecutionException("Unable to move OWA file to " + renamedFile, e);
             }
         }
     }
