@@ -23,6 +23,7 @@ public class Artifact {
     private String destFileName;
 
     public static final String GROUP_MODULE = "org.openmrs.module";
+    public static final String GROUP_OWA = "org.openmrs.owa";
     public static final String GROUP_WEB = "org.openmrs.web";
     public static final String GROUP_OPENMRS = "org.openmrs";
     public static final String GROUP_H2 = "com.h2database";

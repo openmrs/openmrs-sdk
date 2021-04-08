@@ -101,7 +101,7 @@ public abstract class BaseSdkProperties {
             String key = keyObject.toString();
             if (key.startsWith(TYPE_OWA + ".")) {
                 String artifactId = key.substring(TYPE_OWA.length() + 1);
-                artifacts.add(new Artifact(artifactId, getParam(key)));
+                artifacts.add(new Artifact(artifactId, getParam(key), Artifact.GROUP_OWA, Artifact.TYPE_ZIP));
             }
         }
         return artifacts;

@@ -14,10 +14,16 @@ import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.model.Version;
 import org.openmrs.maven.plugins.utility.DistroHelper;
+import org.openmrs.maven.plugins.utility.OwaHelper;
 import org.openmrs.maven.plugins.utility.Project;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileWriter;
+import java.io.FilenameFilter;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.util.List;
 
@@ -255,12 +261,13 @@ public class BuildDistro extends AbstractTask {
 
     private void downloadOWAs(File targetDirectory, DistroProperties distroProperties, File owasDir) throws MojoExecutionException {
         List<Artifact> owas = distroProperties.getOwaArtifacts(distroHelper, targetDirectory);
-        OpenmrsBintray openmrsBintray = new OpenmrsBintray(getProxyFromSettings());
-
         if (!owas.isEmpty()) {
             wizard.showMessage("Downloading OWAs...\n");
+            OwaHelper owaHelper = new OwaHelper();
+            OpenmrsBintray openmrsBintray = new OpenmrsBintray(getProxyFromSettings());
             for (Artifact owa: owas) {
-                openmrsBintray.downloadOWA(owasDir, owa.getArtifactId(), owa.getVersion());
+                wizard.showMessage("Downloading OWA: " + owa);
+                owaHelper.downloadOwa(owasDir, owa, openmrsBintray, moduleInstaller);
             }
         }
     }

@@ -7,25 +7,30 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.ibatis.jdbc.ScriptRunner;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.openmrs.maven.plugins.bintray.OpenmrsBintray;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.model.Version;
 import org.openmrs.maven.plugins.utility.DBConnector;
 import org.openmrs.maven.plugins.utility.DistroHelper;
+import org.openmrs.maven.plugins.utility.OwaHelper;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 import org.openmrs.maven.plugins.utility.ServerHelper;
-import org.openmrs.maven.plugins.bintray.OpenmrsBintray;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.InputStream;
-import java.io.Reader;
 import java.io.FileNotFoundException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
-
-import java.sql.*;
+import java.io.Reader;
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -335,12 +340,13 @@ public class Setup extends AbstractTask {
     
     private void downloadOWAs(File targetDirectory, DistroProperties distroProperties, File owasDir) throws MojoExecutionException {
         List<Artifact> owas = distroProperties.getOwaArtifacts(distroHelper, targetDirectory);
-        OpenmrsBintray openmrsBintray = new OpenmrsBintray(getProxyFromSettings());
-
         if (!owas.isEmpty()) {
             wizard.showMessage("Downloading OWAs...\n");
+            OwaHelper owaHelper = new OwaHelper();
+            OpenmrsBintray openmrsBintray = new OpenmrsBintray(getProxyFromSettings());
             for (Artifact owa: owas) {
-                openmrsBintray.downloadOWA(owasDir, owa.getArtifactId(), owa.getVersion());
+                wizard.showMessage("Downloading OWA: " + owa);
+                owaHelper.downloadOwa(owasDir, owa, openmrsBintray, moduleInstaller);
             }
         }
     }
