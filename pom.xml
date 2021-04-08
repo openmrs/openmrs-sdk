@@ -62,8 +62,8 @@
     </developers>
 
     <scm>
-        <connection>scm:git:https://github.com/openmrs/openmrs-sdk</connection>
-        <developerConnection>scm:git:https://github.com/openmrs/openmrs-sdk</developerConnection>
+        <connection>scm:git:git@github.com:openmrs/openmrs-sdk</connection>
+        <developerConnection>scm:git:git@github.com:openmrs/openmrs-sdk</developerConnection>
         <url>https://github.com/openmrs/openmrs-sdk</url>
         <tag>HEAD</tag>
     </scm>
@@ -116,9 +116,15 @@
 
     <distributionManagement>
         <repository>
-            <id>bintray-sdk</id>
-            <url>https://api.bintray.com/maven/openmrs/maven/openmrs-sdk/;publish=1</url>
+            <id>openmrs-repo-releases</id>
+            <name>OpenMRS Releases Repo</name>
+            <url>http://mavenrepo.openmrs.org/nexus/content/repositories/releases</url>
         </repository>
+        <snapshotRepository>
+            <id>openmrs-repo-snapshots</id>
+            <name>OpenMRS Snapshots Repo</name>
+            <url>http://mavenrepo.openmrs.org/nexus/content/repositories/snapshots</url>
+        </snapshotRepository>
     </distributionManagement>
 
     <dependencyManagement>
