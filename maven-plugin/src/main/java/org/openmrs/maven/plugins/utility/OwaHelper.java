@@ -14,6 +14,8 @@ import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
+import org.openmrs.maven.plugins.bintray.OpenmrsBintray;
+import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.NodeDistro;
 import org.openmrs.maven.plugins.model.PackageJson;
 import org.twdata.maven.mojoexecutor.MojoExecutor;
@@ -81,6 +83,29 @@ public class OwaHelper {
 
 	public void setWizard(Wizard wizard) {
 		this.wizard = wizard;
+	}
+
+	public void downloadOwa(File owasDir, Artifact owa, OpenmrsBintray openmrsBintray, ModuleInstaller moduleInstaller)
+			throws MojoExecutionException {
+		// Support existing Bintray artifacts
+		try {
+			openmrsBintray.downloadOWA(owasDir, owa.getArtifactId(), owa.getVersion());
+		}
+		catch (Exception e) {
+			// If file is not found in bintray, and exception will be thrown.  Try to find it in Maven repo.
+			moduleInstaller.installModule(owa, owasDir.getAbsolutePath());
+			File owaFile = new File(owasDir, owa.getArtifactId() + "-" + owa.getVersion() + "." + owa.getType());
+			if (!owaFile.exists()) {
+				throw new MojoExecutionException("Unable to download OWA from Bintray or Maven", e);
+			}
+			File renamedFile = new File(owasDir, owa.getArtifactId() + OpenmrsBintray.OWA_PACKAGE_EXTENSION);
+			try {
+				FileUtils.moveFile(owaFile, renamedFile);
+			}
+			catch (IOException ioe) {
+				throw new MojoExecutionException("Unable to move OWA file to " + renamedFile, ioe);
+			}
+		}
 	}
 
 	public void createOwaProject() throws MojoExecutionException {
