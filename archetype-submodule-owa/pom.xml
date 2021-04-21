@@ -3,13 +3,13 @@
     <parent>
         <artifactId>openmrs-sdk</artifactId>
         <groupId>org.openmrs.maven</groupId>
-        <version>3.13.8</version>
+        <version>3.13.9-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>org.openmrs.maven.archetypes</groupId>
     <artifactId>openmrs-sdk-archetype-submodule-owa</artifactId>
-    <version>3.13.8</version>
+    <version>3.13.9-SNAPSHOT</version>
     <packaging>maven-archetype</packaging>
 
     <name>OpenMRS OWA Submodule Maven Archetype</name>
