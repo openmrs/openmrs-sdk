@@ -1,6 +1,5 @@
 package org.openmrs.maven.plugins;
 
-import org.junit.Ignore;
 import org.junit.Test;
 import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.Server;
@@ -21,7 +20,7 @@ import static org.openmrs.maven.plugins.SdkMatchers.hasPropertyThatNotContains;
 import static org.openmrs.maven.plugins.SdkMatchers.serverHasName;
 import static org.openmrs.maven.plugins.SdkMatchers.serverHasDebugPort;
 import static org.openmrs.maven.plugins.SdkMatchers.serverHasVersion;
-@Ignore
+
 public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
 
     @Test

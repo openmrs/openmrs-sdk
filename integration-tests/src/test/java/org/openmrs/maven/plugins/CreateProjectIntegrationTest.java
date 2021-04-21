@@ -3,11 +3,10 @@ package org.openmrs.maven.plugins;
 import org.apache.maven.model.Model;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
-@Ignore
+
 public class CreateProjectIntegrationTest extends AbstractSdkIntegrationTest {
 
 

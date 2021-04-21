@@ -1,7 +1,6 @@
 package org.openmrs.maven.plugins;
 
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.openmrs.maven.plugins.bintray.BintrayId;
 import org.openmrs.maven.plugins.bintray.BintrayPackage;
@@ -18,7 +17,7 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.openmrs.maven.plugins.SdkMatchers.hasOwner;
 import static org.openmrs.maven.plugins.SdkMatchers.hasRepository;
-@Ignore
+
 public class OpenmrsBintrayIntegrationTest extends AbstractSdkIntegrationTest {
 
     OpenmrsBintray openmrsBintray;

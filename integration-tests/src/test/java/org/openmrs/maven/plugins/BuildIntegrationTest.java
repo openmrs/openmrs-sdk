@@ -4,7 +4,6 @@ import org.apache.maven.it.Verifier;
 import org.apache.maven.it.util.ResourceExtractor;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.utility.Project;
@@ -17,7 +16,6 @@ import java.util.Arrays;
 /**
  *
  */
-@Ignore
 public class BuildIntegrationTest extends AbstractSdkIntegrationTest{
 
     private String serverId;

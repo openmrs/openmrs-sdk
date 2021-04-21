@@ -3,7 +3,6 @@ package org.openmrs.maven.plugins;
 import org.eclipse.jgit.lib.Config;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.lib.RepositoryBuilder;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
@@ -11,7 +10,7 @@ import java.util.Set;
 
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.MatcherAssert.assertThat;
-@Ignore
+
 public class CloneIntegrationTest extends AbstractSdkIntegrationTest {
 
     @Test

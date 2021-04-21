@@ -2,7 +2,6 @@ package org.openmrs.maven.plugins;
 
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.openmrs.maven.plugins.bintray.BintrayId;
 import org.openmrs.maven.plugins.model.Artifact;
@@ -18,7 +17,7 @@ import static org.openmrs.maven.plugins.SdkMatchers.hasModuleVersion;
 import static org.openmrs.maven.plugins.SdkMatchers.hasNameStartingWith;
 import static org.openmrs.maven.plugins.SdkMatchers.hasUserOwa;
 import static org.openmrs.maven.plugins.SdkMatchers.serverHasVersion;
-@Ignore
+
 public class DeployIntegrationTest extends AbstractSdkIntegrationTest {
 
     private static String testServerId;
