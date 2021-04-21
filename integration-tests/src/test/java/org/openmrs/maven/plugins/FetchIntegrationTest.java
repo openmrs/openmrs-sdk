@@ -1,10 +1,11 @@
 package org.openmrs.maven.plugins;
 
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
-
+@Ignore
 public class FetchIntegrationTest extends AbstractSdkIntegrationTest{
 
     private final static String FETCH_DIRECTORY_NAME = "fetch";

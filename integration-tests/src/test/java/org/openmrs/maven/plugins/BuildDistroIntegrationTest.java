@@ -1,9 +1,9 @@
 package org.openmrs.maven.plugins;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
-import java.io.File;
-
+@Ignore
 public class BuildDistroIntegrationTest extends AbstractSdkIntegrationTest {
 
     @Test

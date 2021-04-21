@@ -8,6 +8,7 @@ import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.utility.Project;
@@ -17,6 +18,7 @@ import java.io.File;
 /**
  *
  */
+@Ignore
 public class PullIntegrationTest extends AbstractSdkIntegrationTest {
 
     private static final String OPENMRS_MODULE_IDGEN = "openmrs-module-idgen";
