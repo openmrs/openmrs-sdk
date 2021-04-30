@@ -7,14 +7,12 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.ibatis.jdbc.ScriptRunner;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
-import org.openmrs.maven.plugins.bintray.OpenmrsBintray;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.model.Version;
 import org.openmrs.maven.plugins.utility.DBConnector;
 import org.openmrs.maven.plugins.utility.DistroHelper;
-import org.openmrs.maven.plugins.utility.OwaHelper;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 import org.openmrs.maven.plugins.utility.ServerHelper;
 
@@ -342,11 +340,9 @@ public class Setup extends AbstractTask {
         List<Artifact> owas = distroProperties.getOwaArtifacts(distroHelper, targetDirectory);
         if (!owas.isEmpty()) {
             wizard.showMessage("Downloading OWAs...\n");
-            OwaHelper owaHelper = new OwaHelper();
-            OpenmrsBintray openmrsBintray = new OpenmrsBintray(getProxyFromSettings());
             for (Artifact owa: owas) {
                 wizard.showMessage("Downloading OWA: " + owa);
-                owaHelper.downloadOwa(owasDir, owa, openmrsBintray, moduleInstaller);
+                owaHelper.downloadOwa(owasDir, owa, moduleInstaller);
             }
         }
     }

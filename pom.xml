@@ -24,7 +24,7 @@
     <licenses>
         <license>
             <name>Mozilla Public License 2.0 with Healthcare Disclaimer</name>
-            <url>http://openmrs.org/license</url>
+            <url>https://openmrs.org/license</url>
         </license>
     </licenses>
 
@@ -79,7 +79,13 @@
         <repository>
             <id>openmrs-repo</id>
             <name>OpenMRS repository</name>
-            <url>http://mavenrepo.openmrs.org/nexus/content/repositories/public</url>
+            <url>https://mavenrepo.openmrs.org/public</url>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
         </repository>
         <repository>
             <id>atlassian-public</id>
@@ -102,6 +108,17 @@
 
     <pluginRepositories>
         <pluginRepository>
+            <id>openmrs-repo</id>
+            <name>OpenMRS repository</name>
+            <url>https://mavenrepo.openmrs.org/public</url>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+        </pluginRepository>
+        <pluginRepository>
             <id>atlassian-public</id>
             <url>https://m2proxy.atlassian.com/repository/public</url>
             <releases>
@@ -118,12 +135,12 @@
         <repository>
             <id>openmrs-repo-releases</id>
             <name>OpenMRS Releases Repo</name>
-            <url>http://mavenrepo.openmrs.org/nexus/content/repositories/releases</url>
+            <url>https://mavenrepo.openmrs.org/releases</url>
         </repository>
         <snapshotRepository>
             <id>openmrs-repo-snapshots</id>
             <name>OpenMRS Snapshots Repo</name>
-            <url>http://mavenrepo.openmrs.org/nexus/content/repositories/snapshots</url>
+            <url>https://mavenrepo.openmrs.org/snapshots</url>
         </snapshotRepository>
     </distributionManagement>
 
@@ -359,7 +376,7 @@
                     <configuration>
                         <autoVersionSubmodules>true</autoVersionSubmodules>
                         <useReleaseProfile>false</useReleaseProfile>
-                        <releaseProfiles>bintray</releaseProfiles>
+                        <releaseProfiles>release</releaseProfiles>
                         <preparationGoals>clean install</preparationGoals>
                         <goals>deploy</goals>
                     </configuration>
@@ -399,18 +416,20 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.8.1</version>
             </plugin>
         </plugins>
     </build>
 
     <profiles>
         <profile>
-            <id>bintray</id>
+            <id>release</id>
             <build>
                 <plugins>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-source-plugin</artifactId>
+                        <version>3.2.1</version>
                         <executions>
                             <execution>
                                 <id>attach-sources</id>
@@ -423,6 +442,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-javadoc-plugin</artifactId>
+                        <version>3.2.0</version>
                         <executions>
                             <execution>
                                 <id>attach-javadocs</id>

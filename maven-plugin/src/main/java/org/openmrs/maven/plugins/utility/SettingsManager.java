@@ -105,11 +105,6 @@ public class SettingsManager {
         if (settings.getProfiles() == null) {
             settings.setProfiles(new ArrayList<Profile>());
         }
-        if(settings.getServer("bintray-sdk") == null) {
-            ArrayList<Server> servers = new ArrayList<>();
-            servers.add(other.getServer("bintray-sdk"));
-            settings.setServers(servers);
-        }
         // remove already created OpenMRS profile
         List<Profile> profilesToRemove = new ArrayList<Profile>();
         for (Profile p: settings.getProfiles()) {

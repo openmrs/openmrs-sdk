@@ -8,29 +8,22 @@
     <activeProfiles>
         <activeProfile>openmrs</activeProfile>
     </activeProfiles>
-    <servers>
-        <server>
-            <id>bintray-sdk</id>
-            <username>${env.BINTRAY_USER}</username>
-            <password>${env.BINTRAY_API_KEY}</password>
-        </server>
-    </servers>
     <profiles>
         <profile>
             <id>openmrs</id>
             <properties>
-                <archetypeCatalog>http://mavenrepo.openmrs.org/nexus/content/repositories/public/archetype-catalog.xml</archetypeCatalog>
-                <archetypeRepository>http://mavenrepo.openmrs.org/nexus/content/repositories/public</archetypeRepository>
+                <archetypeCatalog>https://mavenrepo.openmrs.org/public/archetype-catalog.xml</archetypeCatalog>
+                <archetypeRepository>https://mavenrepo.openmrs.org/public</archetypeRepository>
             </properties>
             <repositories>
                 <repository>
                     <id>openmrs-repo</id>
-                    <name>OpenMRS Nexus Repository</name>
-                    <url>http://mavenrepo.openmrs.org/nexus/content/repositories/public</url>
+                    <name>OpenMRS Repository</name>
+                    <url>https://mavenrepo.openmrs.org/public</url>
                 </repository>
               <repository>
                 <id>archetype</id>
-                <url>http://mavenrepo.openmrs.org/nexus/content/repositories/public</url>
+                <url>https://mavenrepo.openmrs.org/public</url>
                <releases>
                  <enabled>true</enabled>
                  <checksumPolicy>fail</checksumPolicy>
@@ -43,27 +36,17 @@
                 <repository>
                     <id>openmrs-repo-thirdparty</id>
                     <name>OpenMRS Thirdparty Nexus Repository</name>
-                    <url>http://mavenrepo.openmrs.org/nexus/content/repositories/thirdparty</url>
-                </repository>
-                <repository>
-                    <id>openmrs-bintray-repo</id>
-                    <name>OpeMRS Maven Bintray Repository</name>
-                    <url>https://dl.bintray.com/openmrs/maven/</url>
+                    <url>https://mavenrepo.openmrs.org/thirdparty</url>
                 </repository>
             </repositories>
             <pluginRepositories>
                 <pluginRepository>
                     <id>openmrs-repo</id>
                     <name>OpenMRS Nexus Repository</name>
-                    <url>http://mavenrepo.openmrs.org/nexus/content/repositories/public</url>
+                    <url>https://mavenrepo.openmrs.org/public</url>
                     <snapshots>
                         <enabled>false</enabled>
                     </snapshots>
-                </pluginRepository>
-                <pluginRepository>
-                    <id>openmrs-bintray-repo</id>
-                    <name>OpeMRS Maven Bintray Repository</name>
-                    <url>https://dl.bintray.com/openmrs/maven/</url>
                 </pluginRepository>
             </pluginRepositories>
         </profile>

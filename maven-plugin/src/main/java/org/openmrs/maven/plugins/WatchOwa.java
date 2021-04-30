@@ -1,12 +1,9 @@
 package org.openmrs.maven.plugins;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
-import org.openmrs.maven.plugins.utility.OwaHelper;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -28,7 +25,6 @@ public class WatchOwa extends AbstractTask {
 
     @Override
     public void executeTask() throws MojoExecutionException, MojoFailureException {
-        OwaHelper owaHelper = new OwaHelper(mavenSession, mavenProject, pluginManager, wizard);
         File configFile = new File(CONFIG_FILENAME);
         if (configFile.exists()) {
             serverId = wizard.promptForExistingServerIdIfMissing(serverId);

@@ -3,17 +3,17 @@ package org.openmrs.maven.plugins;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.openmrs.maven.plugins.bintray.BintrayId;
+import org.openmrs.maven.plugins.owa.OwaId;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.Server;
 
 import java.io.File;
+import java.nio.file.Paths;
 import java.util.Arrays;
 
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.openmrs.maven.plugins.SdkMatchers.hasModuleVersion;
 import static org.openmrs.maven.plugins.SdkMatchers.hasNameStartingWith;
 import static org.openmrs.maven.plugins.SdkMatchers.hasUserOwa;
 import static org.openmrs.maven.plugins.SdkMatchers.serverHasVersion;
@@ -163,7 +163,7 @@ public class DeployIntegrationTest extends AbstractSdkIntegrationTest {
 
         assertSuccess();
         assertFilePresent(testServerId+ File.separator+"owa");
-        assertFilePresent(testServerId+ File.separator+"owa"+File.separator+"conceptdictionary");
+        assertFilePresent(Paths.get(testServerId, "owa", "conceptdictionary.owa").toString());
 
         //check if any owa module is installed
         File modulesDir = new File(testDirectory, testServerId+File.separator+"modules");
@@ -173,6 +173,6 @@ public class DeployIntegrationTest extends AbstractSdkIntegrationTest {
 
         Server.setServersPath(testDirectory.getAbsolutePath());
         Server server = Server.loadServer(testServerId);
-        assertThat(server, hasUserOwa(new BintrayId("openmrs-owa-conceptdictionary","1.0.0")));
+        assertThat(server, hasUserOwa(new OwaId("conceptdictionary","1.0.0")));
     }
 }

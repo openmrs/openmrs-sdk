@@ -1,18 +1,19 @@
-package org.openmrs.maven.plugins.bintray;
+package org.openmrs.maven.plugins.owa;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.base.Objects;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class BintrayId {
+public class OwaId {
 
     private String version;
     private String name;
 
-    public BintrayId() {
+    @SuppressWarnings("unused")
+    public OwaId() {
     }
 
-    public BintrayId(String name, String version) {
+    public OwaId(String name, String version) {
         this.version = version;
         this.name = name;
     }
@@ -42,9 +43,9 @@ public class BintrayId {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        BintrayId bintrayId = (BintrayId) o;
-        return Objects.equal(version, bintrayId.version) &&
-                Objects.equal(name, bintrayId.name);
+        OwaId owaId = (OwaId) o;
+        return Objects.equal(version, owaId.version) &&
+                Objects.equal(name, owaId.name);
     }
 
     @Override

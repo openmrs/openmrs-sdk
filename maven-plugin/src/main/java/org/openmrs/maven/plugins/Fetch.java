@@ -3,9 +3,6 @@ package org.openmrs.maven.plugins;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
-import org.openmrs.maven.plugins.bintray.BintrayId;
-import org.openmrs.maven.plugins.bintray.BintrayPackage;
-import org.openmrs.maven.plugins.bintray.OpenmrsBintray;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 import org.twdata.maven.mojoexecutor.MojoExecutor;
@@ -32,12 +29,9 @@ import static org.twdata.maven.mojoexecutor.MojoExecutor.version;
  */
 public class Fetch extends AbstractTask {
 
-    private static final String BINTRAY_URL = "https://bintray.com";
-    private static final String REPOSITORY_OWNER = "openmrs";
     private static final String FETCH_MODULE_OPTION = "Module";
     private static final String FETCH_OWA_OPTION = "Open Web App";
     private static final String ERROR_INVALID_VERSION = "Invalid version number";
-    private static final String ERROR_PACKAGE_NOT_EXIST = "There is no package with given name";
     private static final String DEFAULT_GROUP_ID = "org.openmrs.module";
 
     /**
@@ -61,25 +55,18 @@ public class Fetch extends AbstractTask {
     private String owa;
 
     /**
-     * @parameter  property="repository"
-     */
-    private String repository;
-
-    /**
      * @parameter  property="dir"
      */
     private String dir;
 
     private String projectName;
     private File downloadDirectory;
-    private OpenmrsBintray openmrsBintray;
     private enum ProjectType {
         OWA, MODULE
     }
     private ProjectType projectType;
 
     public void executeTask() throws MojoExecutionException, MojoFailureException {
-        openmrsBintray = new OpenmrsBintray(getProxyFromSettings());
         if (StringUtils.isBlank(groupId)) {
             groupId = DEFAULT_GROUP_ID;
         }
@@ -89,7 +76,7 @@ public class Fetch extends AbstractTask {
                 fetchModule(projectName, groupId, version, downloadDirectory);
                 break;
             case OWA:
-                fetchBintray(REPOSITORY_OWNER, repository, projectName, version, downloadDirectory);
+                fetchOwa(projectName, version, downloadDirectory);
                 break;
         }
     }
@@ -99,10 +86,6 @@ public class Fetch extends AbstractTask {
 
         projectType = resolveProjectType(artifactId, owa);
 
-        if (ProjectType.OWA.equals(projectType)) {
-            repository = resolveRepositoryName(repository);
-        }
-
         projectName = resolveProjectName(artifactId, owa);
 
         if (StringUtils.isBlank(version)) {
@@ -110,10 +93,10 @@ public class Fetch extends AbstractTask {
             if (StringUtils.isBlank(version)) {
                 switch (projectType) {
                     case MODULE:
-                        version = askForMavenrepoProjectVersion(projectName, groupId);
+                        version = askForMavenRepoProjectVersion(projectName, groupId);
                         break;
                     case OWA:
-                        version = askForBintrayProjectVersion(REPOSITORY_OWNER, repository, projectName);
+                        version = askForMavenRepoProjectVersion(projectName, "org.openmrs.owa");
                         break;
                 }
             }
@@ -166,32 +149,11 @@ public class Fetch extends AbstractTask {
             return artifactId;
         }
         else if (ProjectType.OWA.equals(projectType)) {
-            if (StringUtils.isNotBlank(owa)) {
-                return adjustProjectNameIfPrefixMissing(owa, OpenmrsBintray.OPENMRS_OWA_PREFIX);
-            }
-            else {
-                return askForBintrayProjectName();
-            }
+            return wizard.promptForValueIfMissing(owa, "owa");
         }
         else {
             return wizard.promptForValueIfMissing(artifactId, "artifactId");
         }
-    }
-
-    private String resolveRepositoryName(String repository) {
-        //Resolve repository name if undefined
-        if (StringUtils.isBlank(repository)) {
-            switch (projectType) {
-                case MODULE:
-                    // This one will be useful when all modules migrate from mavenrepo to bintray
-                    //repository = OpenmrsBintray.OPENMRS_OMOD_REPO;
-                    break;
-                case OWA:
-                    repository = OpenmrsBintray.BINTRAY_OWA_REPO;
-                    break;
-            }
-        }
-        return repository;
     }
 
     private String resolveVersion(String projectName) {
@@ -210,45 +172,17 @@ public class Fetch extends AbstractTask {
         return null;
     }
 
-    private String askForBintrayProjectName() {
-        //Resolve project name if undefined
-        if (StringUtils.isBlank(projectName)) {
-            List<String> projects = new ArrayList<>();
-            for(BintrayId id : openmrsBintray.getAvailablePackages(REPOSITORY_OWNER, repository)){
-                projects.add(id.getName());
-            }
-            return wizard.promptForMissingValueWithOptions("Which project would you like to fetch?%s", projectName, "", projects, "Please specify project's id", null);
-        }
-        else {
-            return projectName;
-        }
-    }
-
-    private String askForBintrayProjectVersion(String repositoryOwner, String repository, String projectName) {
-        BintrayPackage projectMetadata = openmrsBintray.getPackageMetadata(repositoryOwner, repository, projectName);
-        if(projectMetadata == null){
-            throw new RuntimeException(ERROR_PACKAGE_NOT_EXIST);
-        }
-        List<String> versions = projectMetadata.getVersions();
-        return wizard.promptForMissingValueWithOptions("Which version would you like to fetch?%s", version, "", versions, "Please specify project's version", null);
-    }
-
-    private String askForMavenrepoProjectVersion(String projectName, String groupId) {
+    private String askForMavenRepoProjectVersion(String projectName, String groupId) {
         List<String> availableVersions = versionsHelper.getVersionAdvice(new Artifact(projectName, "1.0",groupId), 5);
         return wizard.promptForMissingValueWithOptions(
                 "You can fetch the following versions of the module", version, "version", availableVersions, "Please specify module version", null);
     }
 
-    private void fetchBintray(String repositoryOwner, String repository, String projectName, String version, File downloadDirectory) {
-        wizard.showMessage("Downloading " + projectName + " from: "
-                + BINTRAY_URL + "/"
-                + repositoryOwner + "/"
-                + repository + "/"
-                + projectName + "/"
-                + version
-        );
-        openmrsBintray.downloadPackage(downloadDirectory, repositoryOwner, repository, projectName, version);
-        wizard.showMessage("Project " + projectName + ":" + version + " is downloaded to " + downloadDirectory.getAbsolutePath());
+    private void fetchOwa(String projectName, String version, File downloadDirectory) throws MojoExecutionException {
+        List<MojoExecutor.Element> owaItems = new ArrayList<>();
+        Artifact artifact = new Artifact(projectName, version, "org.openmrs.owa", Artifact.TYPE_ZIP);
+        owaItems.add(artifact.toElement(downloadDirectory.getPath()));
+        executeMojoPlugin(owaItems);
     }
 
     private void fetchModule(String artifactId, String groupId, String version, File downloadDirectory) throws MojoExecutionException {
@@ -275,14 +209,4 @@ public class Fetch extends AbstractTask {
                 executionEnvironment(mavenProject, mavenSession, pluginManager)
         );
     }
-
-    private String adjustProjectNameIfPrefixMissing(String projectName, String prefix) {
-        if (!projectName.contains(prefix)) {
-            return prefix + projectName;
-        }
-        else {
-            return projectName;
-        }
-    }
-
 }
