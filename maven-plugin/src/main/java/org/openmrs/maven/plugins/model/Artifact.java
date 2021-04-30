@@ -99,12 +99,18 @@ public class Artifact {
 
     public String getDestFileName() {
         if (destFileName == null) {
-            String[] parts = artifactId.split("-");
+            String[] parts = StringUtils.reverse(artifactId).split("-", 2);
 
-            String id = parts[0];
-            // There is more than one dash in the artifactId
-            if (parts.length > 2) {
-                id = StringUtils.join(Arrays.copyOf(parts, parts.length-1), '-');
+            String id;
+            if (parts.length == 1) {
+                id = artifactId;
+            } else {
+                id = StringUtils.reverse(parts[1]);
+
+                String remainder = StringUtils.reverse(parts[0]);
+                if (!remainder.equals("omod")) {
+                    id += "-" + remainder;
+                }
             }
 
             return String.format(DEST_TEMPLATE, id, version, fileExtension);
