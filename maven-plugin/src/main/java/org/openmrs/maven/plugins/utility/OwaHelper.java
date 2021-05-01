@@ -86,6 +86,18 @@ public class OwaHelper {
 		this.wizard = wizard;
 	}
 
+	public void setMavenProject(MavenProject mavenProject) {
+		this.mavenProject = mavenProject;
+	}
+
+	public void setPluginManager(BuildPluginManager pluginManager) {
+		this.pluginManager = pluginManager;
+	}
+
+	public void setSession(MavenSession session) {
+		this.session = session;
+	}
+
 	public void downloadOwa(File owaDir, Artifact owa, ModuleInstaller moduleInstaller)
 			throws MojoExecutionException {
 		if (owa.getArtifactId().startsWith("openmrs-owa-")) {
