@@ -20,5 +20,8 @@ public class ArtifactTest {
 
         Artifact withoutomod = new Artifact("modulename-anothername", "1.0.0");
         assertThat(withoutomod.getDestFileName(), is("modulename-anothername-1.0.0.jar"));
+
+        Artifact withwebapp = new Artifact("openmrs-webapp", "2.0.0");
+        assertThat(withwebapp.getDestFileName(), is("openmrs-2.0.0.jar"));
     }
 }

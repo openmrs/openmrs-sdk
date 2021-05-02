@@ -6,7 +6,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Writer;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.openmrs.maven.plugins.bintray.BintrayId;
+import org.openmrs.maven.plugins.owa.OwaId;
 import org.openmrs.maven.plugins.utility.Project;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 import org.openmrs.maven.plugins.utility.SortedProperties;
@@ -602,30 +602,30 @@ public class Server extends BaseSdkProperties {
         }
     }
 
-    public void saveUserOWA(BintrayId id){
-        addToValueList(PROPERTY_USER_OWAS, id.getName()+SLASH+id.getVersion());
+    public void saveUserOWA(String name, String version){
+        addToValueList(PROPERTY_USER_OWAS, name + SLASH + version);
     }
 
-    public void removeUserOWA(BintrayId id){
-        List<BintrayId> owas = getUserOWAs();
+    public void removeUserOWA(OwaId id){
+        List<OwaId> owas = getUserOWAs();
         owas.remove(id);
         setUserOWAs(owas);
     }
 
-    public void setUserOWAs(List<BintrayId> ids){
+    public void setUserOWAs(List<OwaId> ids){
         properties.remove(PROPERTY_USER_OWAS);
-        for(BintrayId id : ids){
-            saveUserOWA(id);
+        for(OwaId id : ids){
+            saveUserOWA(id.getName(), id.getVersion());
         }
     }
-    public List<BintrayId> getUserOWAs(){
+    public List<OwaId> getUserOWAs(){
         String[] items = getParam(PROPERTY_USER_OWAS).split(COMMA);
-        List<BintrayId> owas = new ArrayList<>();
+        List<OwaId> owas = new ArrayList<>();
         for(String item : items){
             String name = item.split(SLASH)[0];
             String version = item.split(SLASH)[1];
             if(name != null && version != null){
-                owas.add(new BintrayId(name, version));
+                owas.add(new OwaId(name, version));
             }
         }
         return owas;
@@ -881,8 +881,10 @@ public class Server extends BaseSdkProperties {
         } else {
             //format of webapp name is openmrs-{version}.war
             String version = files[0].getName();
-            version = StringUtils.stripStart(version, "openmrs-");
-            //StringUtils.stripEnd incorrectly stripped 2.0.0-beta.war to 2.0.0-bet
+            if (version.startsWith("openmrs-")) {
+                version = version.substring(8);
+            }
+
             version = version.substring(0, version.lastIndexOf(".war"));
             return version;
         }

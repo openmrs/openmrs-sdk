@@ -1,15 +1,15 @@
 package org.openmrs.maven.plugins;
 
 import com.google.gson.Gson;
-import org.apache.commons.io.IOUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.openmrs.maven.plugins.model.NodeDistro;
 import org.openmrs.maven.plugins.utility.OwaHelper;
 import org.openmrs.maven.plugins.utility.OwaHelper.SemVersion;
@@ -21,13 +21,14 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -48,7 +49,7 @@ public class BuildOwaTest {
     private List<String> npmRunBuildArgs;
 
     @Before
-    public void setUp() {
+    public void setUp() throws Exception {
         npmInstallArgs = new ArrayList<>();
         npmInstallArgs.add("install");
         npmInstallArgs.add("--no-optional");
@@ -88,12 +89,8 @@ public class BuildOwaTest {
         when(build.owaHelper.getSystemNodeVersion()).thenReturn(null);
         when(build.owaHelper.getSystemNpmVersion()).thenReturn(null);
 
-        // Project without npm and nodejs
-        doReturn(null).when(build.owaHelper).getProjectNodeFromPackageJson();
-        doReturn(null).when(build.owaHelper).getProjectNpmFromPackageJson();
-
-        Mockito.doNothing().when(build.owaHelper).installLocalNodeAndNpm(any(SemVersion.class), any(SemVersion.class), anyString());
-        Mockito.doNothing().when(build.owaHelper).runLocalNpmCommandWithArgs(anyList());
+        Mockito.doNothing().when(build.owaHelper).installLocalNodeAndNpm(nullable(SemVersion.class), nullable(SemVersion.class), nullable(String.class));
+        Mockito.doNothing().when(build.owaHelper).runLocalNpmCommandWithArgs(ArgumentMatchers.<String>anyList());
 
         build.buildNpmProject();
 
@@ -114,11 +111,7 @@ public class BuildOwaTest {
         when(build.owaHelper.getSystemNodeVersion()).thenReturn(batchNodeVersion);
         when(build.owaHelper.getSystemNpmVersion()).thenReturn(batchNpmVersion);
 
-        // Project without npm and nodejs
-        doReturn(null).when(build.owaHelper).getProjectNodeFromPackageJson();
-        doReturn(null).when(build.owaHelper).getProjectNpmFromPackageJson();
-
-        Mockito.doNothing().when(build.owaHelper).runSystemNpmCommandWithArgs(anyList());
+        Mockito.doNothing().when(build.owaHelper).runSystemNpmCommandWithArgs(ArgumentMatchers.<String>anyList());
 
         build.buildNpmProject();
 
@@ -153,12 +146,8 @@ public class BuildOwaTest {
         when(build.owaHelper.getSystemNodeVersion()).thenReturn(systemNodeVersion);
         when(build.owaHelper.getSystemNodeVersion()).thenReturn(systemNpmVersion);
 
-        // Project has both version specified
-        doReturn(SemVersion.valueOf(projectNodeVersion)).when(build.owaHelper).getProjectNodeFromPackageJson();
-        doReturn(SemVersion.valueOf(projectNpmVersion)).when(build.owaHelper).getProjectNpmFromPackageJson();
-
-        Mockito.doNothing().when(build.owaHelper).installLocalNodeAndNpm(any(SemVersion.class), any(SemVersion.class), anyString());
-        Mockito.doNothing().when(build.owaHelper).runLocalNpmCommandWithArgs(anyList());
+        Mockito.doNothing().when(build.owaHelper).installLocalNodeAndNpm(nullable(SemVersion.class), nullable(SemVersion.class), nullable(String.class));
+        Mockito.doNothing().when(build.owaHelper).runLocalNpmCommandWithArgs(ArgumentMatchers.<String>anyList());
 
         build.buildNpmProject();
 
@@ -191,8 +180,8 @@ public class BuildOwaTest {
         doReturn(SemVersion.valueOf(projectNodeVersion)).when(build.owaHelper).getProjectNodeFromPackageJson();
         doReturn(SemVersion.valueOf(projectNpmVersion)).when(build.owaHelper).getProjectNpmFromPackageJson();
 
-        Mockito.doNothing().when(build.owaHelper).installLocalNodeAndNpm(any(SemVersion.class), any(SemVersion.class), anyString());
-        Mockito.doNothing().when(build.owaHelper).runLocalNpmCommandWithArgs(anyList());
+        Mockito.doNothing().when(build.owaHelper).installLocalNodeAndNpm(nullable(SemVersion.class), nullable(SemVersion.class), nullable(String.class));
+        Mockito.doNothing().when(build.owaHelper).runLocalNpmCommandWithArgs(ArgumentMatchers.<String>anyList());
 
         build.buildNpmProject();
 
@@ -225,7 +214,7 @@ public class BuildOwaTest {
         doReturn(SemVersion.valueOf(projectNodeVersion)).when(build.owaHelper).getProjectNodeFromPackageJson();
         doReturn(SemVersion.valueOf(projectNpmVersion)).when(build.owaHelper).getProjectNpmFromPackageJson();
 
-        Mockito.doNothing().when(build.owaHelper).runSystemNpmCommandWithArgs(anyList());
+        Mockito.doNothing().when(build.owaHelper).runSystemNpmCommandWithArgs(ArgumentMatchers.<String>anyList());
 
         build.buildNpmProject();
 
@@ -247,8 +236,8 @@ public class BuildOwaTest {
 
         doReturn(getNodeDistVersionsViaLocalResources()).when(build.owaHelper).getNodeDistros();
 
-        Mockito.doNothing().when(build.owaHelper).runInstallLocalNodeAndNpm(anyString(), anyString(), anyString());
-        Mockito.doNothing().when(build.owaHelper).runLocalNpmCommandWithArgs(anyList());
+        Mockito.doNothing().when(build.owaHelper).runInstallLocalNodeAndNpm(nullable(String.class), nullable(String.class), nullable(String.class));
+        Mockito.doNothing().when(build.owaHelper).runLocalNpmCommandWithArgs(ArgumentMatchers.<String>anyList());
 
         build.buildNpmProject();
 
@@ -256,16 +245,15 @@ public class BuildOwaTest {
     }
 
     private List<NodeDistro> getNodeDistVersionsViaLocalResources() throws Exception {
-        InputStream in = null;
-        try {
-            in = getClass().getResourceAsStream("/nodeDistVersions.json");
-            Reader rd = new InputStreamReader(in);
-            NodeDistro[] result = new Gson().fromJson(rd, NodeDistro[].class);
-            in.close();
-            return new ArrayList<>(Arrays.asList(result));
-        } finally {
-            IOUtils.closeQuietly(in);
+        try (InputStream in = getClass().getResourceAsStream("/nodeDistVersions.json")) {
+            if (in != null) {
+                Reader rd = new InputStreamReader(in);
+                NodeDistro[] result = new Gson().fromJson(rd, NodeDistro[].class);
+                return Arrays.asList(result);
+            }
         }
+
+        return Collections.emptyList();
     }
 
     @Test
@@ -291,8 +279,8 @@ public class BuildOwaTest {
         doReturn(SemVersion.valueOf(projectNodeVersion)).when(build.owaHelper).getProjectNodeFromPackageJson();
         doReturn(SemVersion.valueOf(projectNpmVersion)).when(build.owaHelper).getProjectNpmFromPackageJson();
 
-        Mockito.doNothing().when(build.owaHelper).installLocalNodeAndNpm(any(SemVersion.class), any(SemVersion.class), anyString());
-        Mockito.doNothing().when(build.owaHelper).runLocalNpmCommandWithArgs(anyList());
+        Mockito.doNothing().when(build.owaHelper).installLocalNodeAndNpm(nullable(SemVersion.class), nullable(SemVersion.class), nullable(String.class));
+        Mockito.doNothing().when(build.owaHelper).runLocalNpmCommandWithArgs(ArgumentMatchers.<String>anyList());
 
         build.buildNpmProject();
 

@@ -11,7 +11,6 @@ import org.apache.maven.shared.invoker.InvocationResult;
 import org.apache.maven.shared.invoker.Invoker;
 import org.apache.maven.shared.invoker.MavenInvocationException;
 import org.openmrs.maven.plugins.model.Server;
-import org.openmrs.maven.plugins.utility.OwaHelper;
 import org.openmrs.maven.plugins.utility.Project;
 
 import java.io.File;
@@ -46,8 +45,6 @@ public class Build extends AbstractTask {
      */
     protected String nodeVersion;
 
-    protected OwaHelper owaHelper;
-
     public Build(){}
 
     public Build(AbstractTask other) { super(other); }
@@ -59,7 +56,6 @@ public class Build extends AbstractTask {
 
     @Override
     public void executeTask() throws MojoExecutionException, MojoFailureException {
-        this.owaHelper = new OwaHelper(mavenSession, mavenProject, pluginManager, wizard);
         boolean projectDetected = false;
         boolean buildExecuted = false;
 

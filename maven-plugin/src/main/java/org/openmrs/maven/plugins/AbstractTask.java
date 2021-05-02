@@ -19,6 +19,7 @@ import org.openmrs.maven.plugins.git.GitHelper;
 import org.openmrs.maven.plugins.utility.DockerHelper;
 import org.openmrs.maven.plugins.utility.Jira;
 import org.openmrs.maven.plugins.utility.ModuleInstaller;
+import org.openmrs.maven.plugins.utility.OwaHelper;
 import org.openmrs.maven.plugins.utility.StatsManager;
 import org.openmrs.maven.plugins.utility.VersionsHelper;
 import org.openmrs.maven.plugins.utility.Wizard;
@@ -123,6 +124,11 @@ public abstract class AbstractTask extends AbstractMojo {
     DistroHelper distroHelper;
 
     /**
+     * handles OWAs
+     */
+    OwaHelper owaHelper;
+
+    /**
      * handles github and provides basic git utilities
      */
     GitHelper gitHelper;
@@ -150,9 +156,10 @@ public abstract class AbstractTask extends AbstractMojo {
         this.moduleInstaller = other.moduleInstaller;
         this.versionsHelper = other.versionsHelper;
         this.distroHelper = other.distroHelper;
+        this.owaHelper = other.owaHelper;
         this.gitHelper = other.gitHelper;
         this.dockerHelper = other.dockerHelper;
-	this.settings = other.settings;
+	    this.settings = other.settings;
         initTask();
     }
 
@@ -171,6 +178,9 @@ public abstract class AbstractTask extends AbstractMojo {
         }
         if(distroHelper == null){
             distroHelper = new DistroHelper(mavenProject, mavenSession, pluginManager, wizard);
+        }
+        if (owaHelper == null) {
+            owaHelper = new OwaHelper(mavenSession, mavenProject, pluginManager, wizard);
         }
         if(dockerHelper == null){
             dockerHelper = new DockerHelper(mavenProject, mavenSession, pluginManager, wizard);

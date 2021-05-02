@@ -108,7 +108,7 @@ public class Artifact {
                 id = StringUtils.reverse(parts[1]);
 
                 String remainder = StringUtils.reverse(parts[0]);
-                if (!remainder.equals("omod")) {
+                if (!remainder.equals("omod") && !remainder.equals("webapp")) {
                     id += "-" + remainder;
                 }
             }

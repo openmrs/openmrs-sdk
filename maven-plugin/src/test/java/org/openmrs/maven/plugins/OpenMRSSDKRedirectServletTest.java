@@ -70,11 +70,6 @@ public class OpenMRSSDKRedirectServletTest{
     }
 
     @Test
-    public void redirectMaintainsParameters(){
-        when(request.getQueryString()).thenReturn("parameter=value&parameter=othervalue");
-    }
-
-    @Test
     public void servletShouldRemovePathInfo() throws IOException, ServletException{
         when(request.getServerPort()).thenReturn(80);
         when(request.getScheme()).thenReturn("http");
@@ -85,15 +80,6 @@ public class OpenMRSSDKRedirectServletTest{
 
         verify(response).setStatus(HttpServletResponse.SC_MOVED_PERMANENTLY);
         verify(response).setHeader("Location", "http://localhost/openmrs/login");
-    }
-
-    @Test
-    public void servletShouldRenderSomething() throws IOException, ServletException{
-        when(request.getServerPort()).thenReturn(80);
-        when(request.getScheme()).thenReturn("http");
-        when(request.getServerName()).thenReturn("localhost");
-        when(request.getQueryString()).thenReturn("param1=value&param2=value");
-
     }
 
     @Test

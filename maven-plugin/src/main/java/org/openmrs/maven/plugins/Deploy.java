@@ -6,9 +6,6 @@ import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.project.MavenProject;
-import org.openmrs.maven.plugins.bintray.BintrayId;
-import org.openmrs.maven.plugins.bintray.BintrayPackage;
-import org.openmrs.maven.plugins.bintray.OpenmrsBintray;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.Server;
@@ -115,17 +112,20 @@ public class Deploy extends AbstractTask {
             } else {
                 runInteractiveMode(server, serverUpgrader);
             }
-        } else if(distro != null) {
+        } else if (distro != null) {
             DistroProperties distroProperties = distroHelper.retrieveDistroProperties(distro, versionsHelper);
             serverUpgrader.upgradeToDistro(server, distroProperties);
-        } else if(platform != null) {
+        } else if (platform != null) {
             deployOpenmrs(server, platform);
-        } else if(owa != null){
-            BintrayId id = OpenmrsBintray.parseOwa(owa);
-            deployOwa(server, id.getName(), id.getVersion());
-        } else if(artifactId != null){
-            deployModule(serverId, groupId, artifactId, version);
-        } else throw new MojoExecutionException("Invalid installation option");
+        } else if (owa != null){
+            String[] owaComponents = owa.split(":");
+            if (owaComponents.length != 2) {
+                throw new MojoExecutionException("Could not understand owa property " + owa + ". This should be in the format owa-name:version");
+            }
+            deployOwa(server, owaComponents[0], owaComponents[1]);
+        } else {
+            deployModule(server, groupId, artifactId, version);
+        }
     }
 
     private void runInteractiveMode(Server server, ServerUpgrader upgrader) throws MojoExecutionException, MojoFailureException {
@@ -140,7 +140,7 @@ public class Deploy extends AbstractTask {
 
         switch(choice){
             case(DEPLOY_MODULE_OPTION):{
-                deployModule(serverId, groupId, artifactId, version);
+                deployModule(server, groupId, artifactId, version);
                 break;
             }
             case(DEPLOY_DISTRO_OPTION):{
@@ -182,21 +182,17 @@ public class Deploy extends AbstractTask {
     }
 
     private void deployOwa(Server server, String name, String version) throws MojoExecutionException {
-        OpenmrsBintray bintray = new OpenmrsBintray(getProxyFromSettings());
-        if(name == null){
-            List<String> owas = new ArrayList<>();
-            for(BintrayId id : bintray.getAvailableOWA()){
-                owas.add(id.getName());
-            }
-            name = wizard.promptForMissingValueWithOptions("Which OWA would you like to deploy?%s", name, "", owas, "Please specify OWA id", null);
+        if (name == null){
+            name = wizard.promptForValueIfMissingWithDefault("Which OWA would you like to deploy?%s", "", "", "");
         }
-        if(version == null){
-            BintrayPackage owaMetadata = bintray.getOwaMetadata(name);
-            if(owaMetadata == null){
-                throw new RuntimeException("there is no package with given name");
-            }
-            List<String> versions = owaMetadata.getVersions();
-            version = wizard.promptForMissingValueWithOptions("Which version would you like to deploy?%s", version, "", versions, "Please specify OWA version", null);
+
+        if (version == null){
+            Artifact artifact = new Artifact();
+            artifact.setGroupId(Artifact.GROUP_OWA);
+            artifact.setArtifactId(name);
+            artifact.setType(Artifact.TYPE_ZIP);
+            List<String> versions = versionsHelper.getVersionAdvice(artifact, 6);
+            version = wizard.promptForMissingValueWithOptions("Which version would you like to deploy?%s", null, "", versions, "Please specify OWA version", null);
         }
 
         boolean installOwaModule = true;
@@ -208,7 +204,8 @@ public class Deploy extends AbstractTask {
                 break;
             }
         }
-        if(installOwaModule){
+
+        if (installOwaModule){
             wizard.showMessage("No installation of OWA module found on this server, will install latest version");
             owaModule.setVersion(versionsHelper.getLatestReleasedVersion(owaModule));
             deployModule(
@@ -221,42 +218,39 @@ public class Deploy extends AbstractTask {
 
         File owaDir = new File(server.getServerDirectory(), "owa");
         if(!owaDir.exists()){
-            //OWA module has option to set custom app folder
+            // OWA module has option to set custom app folder
             boolean useDefaultDir = wizard.promptYesNo(String.format(
                     "\nThere is no default directory '%s' on server %s, would you like to create it? (if not, you will be asked for path to custom directory)",
                     Server.OWA_DIRECTORY,
                     server.getServerId()));
-            if(useDefaultDir){
+            if (useDefaultDir){
                 owaDir.mkdir();
             } else {
                 String path = wizard.promptForValueIfMissing(null, "owa directory path");
                 owaDir = new File(path);
             }
         }
-        bintray.downloadAndExtractOWA(owaDir, name, version);
-        server.saveUserOWA(new BintrayId(name, version));
+
+        deployOwa(owaDir, name, version);
+        server.saveUserOWA(name, version);
         server.save();
         getLog().info(String.format("OWA %s %s was successfully deployed on server %s", name, version, server.getServerId()));
     }
 
+    public void deployOwa(File owaDir, String name, String version) throws MojoExecutionException {
+        Artifact artifact = new Artifact(name, version, "org.openmrs.owa", Artifact.TYPE_ZIP);
+        owaHelper.downloadOwa(owaDir, artifact, moduleInstaller);
+    }
+
     /**
      * Install module to selected server
-     * @param serverId
+     * @param server
      * @param groupId
      * @param artifactId
      * @param version
      * @throws MojoExecutionException
-     * @throws MojoFailureException
      */
-
-    public void deployModule(String serverId, String groupId, String artifactId, String version) throws MojoExecutionException, MojoFailureException {
-        if (serverId == null) {
-            File currentProperties = Server.checkCurrentDirForServer();
-            if (currentProperties != null) serverId = currentProperties.getName();
-        }
-
-        serverId = wizard.promptForExistingServerIdIfMissing(serverId);
-        Server server = loadValidatedServer(serverId);
+    public void deployModule(Server server, String groupId, String artifactId, String version) throws MojoExecutionException {
         groupId = wizard.promptForValueIfMissingWithDefault(null, groupId, "groupId", Artifact.GROUP_MODULE);
         artifactId = wizard.promptForValueIfMissing(artifactId, "artifactId");
         deployModule(groupId, artifactId, version, server);
@@ -271,7 +265,7 @@ public class Deploy extends AbstractTask {
             serverUpgrader.upgradePlatform(server, platform);
         }
     }
-    
+
     public void deployOpenmrsFromDir(Server server, Artifact artifact) throws MojoExecutionException, MojoFailureException {
         String artifactId = artifact.getArtifactId();
         if(artifactId.equals("openmrs-webapp")){
@@ -460,7 +454,7 @@ public class Deploy extends AbstractTask {
         String moduleGroupId = null;
         String moduleArtifactId = null;
         String moduleVersion = null;
-        
+
         File userDir = new File(System.getProperty("user.dir"));
         Project project = null;
         if (Project.hasProject(userDir)) {
