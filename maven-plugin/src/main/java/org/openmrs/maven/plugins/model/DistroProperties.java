@@ -101,7 +101,7 @@ public class DistroProperties extends BaseSdkProperties {
         return getParam(DB_SQL);
     }
 
-    public String getPropertyPromt(String propertyName){
+    public String getPropertyPrompt(String propertyName){
         return getParam(String.format(PROPERTY_PROMPT_KEY, propertyName));
     }
 

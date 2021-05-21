@@ -22,6 +22,7 @@ public abstract class BaseSdkProperties {
     protected static final String VERSION = "version";
     protected static final String TYPE_DISTRO = "distro";
     protected static final String TYPE_OWA = "owa";
+    protected static final String TYPE_SPA_MICROFRONTEND = "spa.microfrontends";
 
     protected Properties properties;
 
@@ -29,7 +30,7 @@ public abstract class BaseSdkProperties {
         Properties properties = new Properties();
         for (Artifact artifact : warArtifacts) {
 
-            artifact = getArtifactWithStrippedArtifactId(artifact);
+            stripArtifactId(artifact);
 
             if (!artifact.getType().equals(TYPE_WAR)) {
                 properties.setProperty(TYPE_WAR + "." + artifact.getArtifactId() + "." + TYPE, artifact.getType());
@@ -44,7 +45,7 @@ public abstract class BaseSdkProperties {
 
         for (Artifact artifact : moduleArtifacts) {
 
-            artifact = getArtifactWithStrippedArtifactId(artifact);
+            stripArtifactId(artifact);
 
             if (!artifact.getType().equals(TYPE_JAR)) {
                 properties.setProperty(TYPE_OMOD + "." + artifact.getArtifactId() + "." + TYPE, artifact.getType());
@@ -209,7 +210,7 @@ public abstract class BaseSdkProperties {
     }
 
     public void setModuleProperties(Artifact newModule) {
-        newModule = getArtifactWithStrippedArtifactId(newModule);
+        newModule = stripArtifactId(newModule);
         if(!newModule.getGroupId().equals(Artifact.GROUP_MODULE)){
             setCustomModuleGroupId(newModule);
         }
@@ -221,7 +222,7 @@ public abstract class BaseSdkProperties {
     }
 
     public void removeModuleProperties(Artifact artifact) {
-        artifact = getArtifactWithStrippedArtifactId(artifact);
+        artifact = stripArtifactId(artifact);
         if (getModuleArtifact(artifact.getArtifactId()) != null) {
             Properties newProperties = new Properties();
             newProperties.putAll(properties);
@@ -239,14 +240,16 @@ public abstract class BaseSdkProperties {
         }
     }
 
-    private Artifact getArtifactWithStrippedArtifactId(Artifact artifact) {
+    /**
+     * Removes `-omod` or `-webapp` suffix from artifact ID.
+     *
+     * @param artifact
+     * @return The same artifact, mutated
+     */
+    private Artifact stripArtifactId(Artifact artifact) {
         String artifactId = artifact.getArtifactId();
-        if (artifactId.endsWith("-omod")) {
-            artifact.setArtifactId(artifactId.substring(0, artifactId.indexOf("-")));
-            return artifact;
-        } else if (artifactId.endsWith("-webapp")) {
-            artifact.setArtifactId(artifactId.substring(0, artifactId.indexOf("-")));
-            return artifact;
+        if (artifactId.endsWith("-omod") || artifactId.endsWith("-webapp")) {
+            artifact.setArtifactId(artifactId.substring(0, artifactId.lastIndexOf("-")));
         }
         return artifact;
     }

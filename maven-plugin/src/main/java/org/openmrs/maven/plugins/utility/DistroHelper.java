@@ -55,6 +55,20 @@ public class DistroHelper {
     }
 
     /**
+     *
+     * @param server
+     * @return default distro properties for a platform
+     * @throws MojoExecutionException
+     */
+    public DistroProperties createDistroForPlatform(Server server) throws MojoExecutionException {
+        DistroProperties distroProperties = new DistroProperties(server.getServerId(), server.getPlatformVersion());
+        if (server.getDbDriver().equals(SDKConstants.DRIVER_H2)) {
+            distroProperties.setH2Support(true);
+        }
+        return distroProperties;
+    }
+
+    /**
      * @param distroFile file which contains distro properties
      * @return distro properties loaded from specified file or null if file is not distro properties
      */
@@ -83,7 +97,7 @@ public class DistroHelper {
             for(String propertyName: propertiesNames){
                 String propertyValue = properties.getPropertyValue(propertyName);
                 String propertyValueBash = userBashProperties.getProperty(propertyName);
-                String propertyPrompt = properties.getPropertyPromt(propertyName);
+                String propertyPrompt = properties.getPropertyPrompt(propertyName);
                 String propertyDefault = properties.getPropertyDefault(propertyName);
                 if(propertyValueBash != null){
                     server.setPropertyValue(propertyName, propertyValueBash);
@@ -220,12 +234,10 @@ public class DistroHelper {
 
     public DistroProperties downloadDistroProperties(File path, Artifact artifact) throws MojoExecutionException {
         File file = downloadDistro(path, artifact);
-
         DistroProperties distroProperties = null;
         ZipFile zipFile = null;
         try {
             zipFile = new ZipFile(file);
-
             Enumeration<? extends ZipEntry> entries = zipFile.entries();
 
             while(entries.hasMoreElements()){
@@ -236,10 +248,7 @@ public class DistroHelper {
                     distroProperties = new DistroProperties(properties);
                 }
             }
-
             zipFile.close();
-
-
         } catch (IOException e) {
             throw new RuntimeException("Could not read " + file.toString(), e);
         } finally {
@@ -265,7 +274,7 @@ public class DistroHelper {
      * @param distro
      * @return
      */
-    public DistroProperties retrieveDistroProperties(String distro, VersionsHelper versionsHelper) throws MojoExecutionException {
+    public DistroProperties resolveDistroPropertiesForStringSpecifier(String distro, VersionsHelper versionsHelper) throws MojoExecutionException {
         DistroProperties result;
         result = getDistroPropertiesFromFile(new File(distro));
         if(result != null && mavenProject != null){
@@ -294,7 +303,7 @@ public class DistroHelper {
      * resolves distro based on passed artifact and saves distro.properties file in destination
      */
     public void saveDistroPropertiesTo(File destination, String distro) throws MojoExecutionException {
-        DistroProperties distroProperties = retrieveDistroProperties(distro, null);
+        DistroProperties distroProperties = resolveDistroPropertiesForStringSpecifier(distro, null);
         if(distroProperties != null){
             distroProperties.saveTo(destination);
         }

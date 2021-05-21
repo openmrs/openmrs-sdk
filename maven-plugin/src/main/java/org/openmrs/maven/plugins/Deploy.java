@@ -113,7 +113,7 @@ public class Deploy extends AbstractTask {
                 runInteractiveMode(server, serverUpgrader);
             }
         } else if (distro != null) {
-            DistroProperties distroProperties = distroHelper.retrieveDistroProperties(distro, versionsHelper);
+            DistroProperties distroProperties = distroHelper.resolveDistroPropertiesForStringSpecifier(distro, versionsHelper);
             serverUpgrader.upgradeToDistro(server, distroProperties);
         } else if (platform != null) {
             deployOpenmrs(server, platform);
@@ -156,7 +156,7 @@ public class Deploy extends AbstractTask {
                     // If its possible to define distro, prompt that distro's versions
                     distro = wizard.promptForDistroVersion(server.getDistroGroupId(), server.getDistroArtifactId(), server.getVersion(), server.getName(), versionsHelper);
                 }
-                distroProperties = distroHelper.retrieveDistroProperties(distro, versionsHelper);
+                distroProperties = distroHelper.resolveDistroPropertiesForStringSpecifier(distro, versionsHelper);
                 upgrader.upgradeToDistro(server, distroProperties);
                 break;
             }
