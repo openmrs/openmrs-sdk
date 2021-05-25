@@ -45,7 +45,7 @@ import static org.twdata.maven.mojoexecutor.MojoExecutor.version;
 public class OwaHelper {
 	private final static String FRONTEND_BUILDER_GROUP_ID = "com.github.eirslett";
 	private final static String FRONTEND_BUILDER_ARTIFACT_ID = "frontend-maven-plugin";
-	private final static String FRONTEND_BUILDER_VERSION = "1.3";
+	private final static String FRONTEND_BUILDER_VERSION = "1.12.0";
 
 	private final static String MAVEN_EXEC_PLUGIN_GROUP_ID = "org.codehaus.mojo";
 	private final static String MAVEN_EXEC_PLUGIN_ARTIFACT_ID = "exec-maven-plugin";
