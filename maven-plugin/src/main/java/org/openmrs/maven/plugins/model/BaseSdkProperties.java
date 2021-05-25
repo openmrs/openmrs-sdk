@@ -22,7 +22,6 @@ public abstract class BaseSdkProperties {
     protected static final String VERSION = "version";
     protected static final String TYPE_DISTRO = "distro";
     protected static final String TYPE_OWA = "owa";
-    protected static final String TYPE_SPA_MICROFRONTEND = "spa.microfrontends";
 
     protected Properties properties;
 
