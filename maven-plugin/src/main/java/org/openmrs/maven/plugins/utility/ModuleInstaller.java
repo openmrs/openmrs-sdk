@@ -53,24 +53,16 @@ public class ModuleInstaller {
     public void installCoreModules(Server server, DistroProperties properties, DistroHelper distroHelper) throws MojoExecutionException {
         List<Artifact> coreModules;
         // install other modules
-//        if (properties != null) {
-            coreModules = properties.getWarArtifacts(distroHelper, server.getServerDirectory());
-            if (coreModules == null) {
-                throw new MojoExecutionException(String.format("Invalid version: '%s'", server.getVersion()));
-            }
-            installModules(coreModules, server.getServerDirectory().getPath());
-            File modules = new File(server.getServerDirectory(), SDKConstants.OPENMRS_SERVER_MODULES);
-            modules.mkdirs();
-            List<Artifact> artifacts = properties.getModuleArtifacts(distroHelper, server.getServerDirectory());
-            // install modules for each version
-            installModules(artifacts, modules.getPath());
-//        } else {
-//            coreModules = SDKConstants.getCoreModules(server.getPlatformVersion(), isCreatePlatform);
-//            if (coreModules == null) {
-//                throw new MojoExecutionException(String.format("Invalid version: '%s'", server.getPlatformVersion()));
-//            }
-//            installModules(coreModules, server.getServerDirectory().getPath());
-//        }
+        coreModules = properties.getWarArtifacts(distroHelper, server.getServerDirectory());
+        if (coreModules == null) {
+            throw new MojoExecutionException(String.format("Invalid version: '%s'", server.getVersion()));
+        }
+        installModules(coreModules, server.getServerDirectory().getPath());
+        File modules = new File(server.getServerDirectory(), SDKConstants.OPENMRS_SERVER_MODULES);
+        modules.mkdirs();
+        List<Artifact> artifacts = properties.getModuleArtifacts(distroHelper, server.getServerDirectory());
+        // install modules for each version
+        installModules(artifacts, modules.getPath());
     }
 
     public void installModules(List<Artifact> artifacts, String outputDir) throws MojoExecutionException {
