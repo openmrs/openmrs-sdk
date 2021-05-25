@@ -241,42 +241,37 @@ public class Setup extends AbstractTask {
 
         serverHelper = new ServerHelper(wizard);
 
-        try {
-            setServerPort(server);
-            setDebugPort(server);
+        setServerPort(server);
+        setDebugPort(server);
 
 
-            if(server.getDbDriver() == null) {
-                wizard.promptForDb(server, dockerHelper, distroProperties.isH2Supported(), dbDriver, dockerHost);
-            }
-            if(server.getDbDriver() != null){
-                setupDatabase(server);
-            }
-
-            String platformVersion = server.getPlatformVersion();
-            Version version = new Version(platformVersion);
-            if (platformVersion.startsWith("1.")) {
-                wizard.showMessage("Note: JDK 1.7 is needed for platform version " + platformVersion + ".");
-            }
-            else if (version.getMajorVersion() == 2 && version.getMinorVersion() < 4) {
-                wizard.showMessage("Note: JDK 1.8 is needed for platform version " + platformVersion + ".");
-            }
-            else {
-                wizard.showMessage("Note: JDK 1.8 or above is needed for platform version " + platformVersion + ".");
-            }
-
-            wizard.promptForJavaHomeIfMissing(server);
-            server.setValuesFromDistroPropertiesModules(
-                    distroProperties.getWarArtifacts(distroHelper, server.getServerDirectory()),
-                    distroProperties.getModuleArtifacts(distroHelper, server.getServerDirectory()),
-                    distroProperties
-            );
-            server.setUnspecifiedToDefault();
-            server.save();
-        } catch (Exception e) {
-            FileUtils.deleteQuietly(server.getServerDirectory());
-            throw new MojoExecutionException("Failed to setup server", e);
+        if(server.getDbDriver() == null) {
+            wizard.promptForDb(server, dockerHelper, distroProperties.isH2Supported(), dbDriver, dockerHost);
         }
+        if(server.getDbDriver() != null){
+            setupDatabase(server);
+        }
+
+        String platformVersion = server.getPlatformVersion();
+        Version version = new Version(platformVersion);
+        if (platformVersion.startsWith("1.")) {
+            wizard.showMessage("Note: JDK 1.7 is needed for platform version " + platformVersion + ".");
+        }
+        else if (version.getMajorVersion() == 2 && version.getMinorVersion() < 4) {
+            wizard.showMessage("Note: JDK 1.8 is needed for platform version " + platformVersion + ".");
+        }
+        else {
+            wizard.showMessage("Note: JDK 1.8 or above is needed for platform version " + platformVersion + ".");
+        }
+
+        wizard.promptForJavaHomeIfMissing(server);
+        server.setValuesFromDistroPropertiesModules(
+                distroProperties.getWarArtifacts(distroHelper, server.getServerDirectory()),
+                distroProperties.getModuleArtifacts(distroHelper, server.getServerDirectory()),
+                distroProperties
+        );
+        server.setUnspecifiedToDefault();
+        server.save();
     }
     
     private void installOWAs(Server server, DistroProperties distroProperties) throws MojoExecutionException {
@@ -757,16 +752,21 @@ public class Setup extends AbstractTask {
         server.setServerDirectory(serverDir);
         serverDir.mkdir();
 
-        DistroProperties distroProperties = resolveDistroProperties(server);
-        distroProperties.saveTo(server.getServerDirectory());  // save the distro file in the server dir
-        distroHelper.savePropertiesToServer(distroProperties, server);  // add all the distro properties to the server properties
-        setServerVersionsFromDistroProperties(server, distroProperties);  // probably redundant with the above line
+        try {
+            DistroProperties distroProperties = resolveDistroProperties(server);
+            distroProperties.saveTo(server.getServerDirectory());  // save the distro file in the server dir
+            distroHelper.savePropertiesToServer(distroProperties, server);  // add all the distro properties to the server properties
+            setServerVersionsFromDistroProperties(server, distroProperties);  // probably redundant with the above line
 
-        setup(server, distroProperties);
+            setup(server, distroProperties);
+        } catch (Exception e) {
+            FileUtils.deleteQuietly(server.getServerDirectory());
+            throw new MojoExecutionException("Failed to setup server", e);
+        }
 
         getLog().info("Server configured successfully, path: " + serverDir);
 
-        if (run){
+        if (run) {
             new Run(this, server.getServerId()).execute();
         }
     }

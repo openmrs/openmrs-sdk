@@ -121,9 +121,9 @@ public class DistroHelper {
 
 
     /**
-     * valid formats are 'groupId:artifactId:version' and 'artifactId:version'
-     * parser makes user-friendly assumptions, like inferring default groupId or full artifactId for referenceapplication
-     * returns null if string is invalid
+     * Valid formats are 'groupId:artifactId:version' and 'artifactId:version'.
+     * Parser makes user-friendly assumptions, like inferring default groupId or full artifactId for referenceapplication.
+     * If the group ID is org.openmrs.module, the artifact ID will have '-omod' appended to it.
      */
     public static Artifact parseDistroArtifact(String distro, VersionsHelper versionsHelper) throws MojoExecutionException {
         String[] split = distro.split(":");
@@ -137,10 +137,10 @@ public class DistroHelper {
         String version = split[split.length - 1];
 
         if (versionsHelper != null && version.contains(SDKConstants.LATEST_VERSION_BATCH_KEYWORD)) {
-            if (version.toLowerCase().equals(SDKConstants.LATEST_SNAPSHOT_BATCH_KEYWORD.toLowerCase())) {
+            if (version.equalsIgnoreCase(SDKConstants.LATEST_SNAPSHOT_BATCH_KEYWORD)) {
                 version = versionsHelper.getLatestSnapshotVersion(new Artifact(artifactId, version, groupId));
             }
-            else if (version.toLowerCase().equals((SDKConstants.LATEST_VERSION_BATCH_KEYWORD).toLowerCase())) {
+            else if (version.equalsIgnoreCase((SDKConstants.LATEST_VERSION_BATCH_KEYWORD))) {
                 version = versionsHelper.getLatestReleasedVersion(new Artifact(artifactId, version, groupId));
             }
         }
