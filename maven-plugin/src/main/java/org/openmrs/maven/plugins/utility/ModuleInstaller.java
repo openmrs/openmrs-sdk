@@ -51,7 +51,8 @@ public class ModuleInstaller {
     }
 
     public void installDefaultModules(Server server) throws MojoExecutionException {
-        List<Artifact> coreModules = SDKConstants.getCoreModules(server.getPlatformVersion(), server.getVersion() == null);
+        boolean isPlatform = server.getVersion() == null;  // this might be always true, in which case `getCoreModules` can be simplified
+        List<Artifact> coreModules = SDKConstants.getCoreModules(server.getPlatformVersion(), isPlatform);
         if (coreModules == null) {
             throw new MojoExecutionException(String.format("Invalid version: '%s'", server.getPlatformVersion()));
         }
