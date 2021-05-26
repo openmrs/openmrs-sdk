@@ -50,27 +50,28 @@ public class ModuleInstaller {
         this.versionsHelper = versionsHelper;
     }
 
-    public void installCoreModules(Server server, boolean isCreatePlatform, DistroProperties properties, DistroHelper distroHelper) throws MojoExecutionException, MojoFailureException {
+    public void installDefaultModules(Server server) throws MojoExecutionException {
+        boolean isPlatform = server.getVersion() == null;  // this might be always true, in which case `getCoreModules` can be simplified
+        List<Artifact> coreModules = SDKConstants.getCoreModules(server.getPlatformVersion(), isPlatform);
+        if (coreModules == null) {
+            throw new MojoExecutionException(String.format("Invalid version: '%s'", server.getPlatformVersion()));
+        }
+        installModules(coreModules, server.getServerDirectory().getPath());
+    }
+
+    public void installModulesForDistro(Server server, DistroProperties properties, DistroHelper distroHelper) throws MojoExecutionException {
         List<Artifact> coreModules;
         // install other modules
-        if (properties != null) {
-            coreModules = properties.getWarArtifacts(distroHelper, server.getServerDirectory());
-            if (coreModules == null) {
-                throw new MojoExecutionException(String.format("Invalid version: '%s'", server.getVersion()));
-            }
-            installModules(coreModules, server.getServerDirectory().getPath());
-            File modules = new File(server.getServerDirectory(), SDKConstants.OPENMRS_SERVER_MODULES);
-            modules.mkdirs();
-            List<Artifact> artifacts = properties.getModuleArtifacts(distroHelper, server.getServerDirectory());
-            // install modules for each version
-            installModules(artifacts, modules.getPath());
-        } else {
-            coreModules = SDKConstants.getCoreModules(server.getPlatformVersion(), isCreatePlatform);
-            if (coreModules == null) {
-                throw new MojoExecutionException(String.format("Invalid version: '%s'", server.getPlatformVersion()));
-            }
-            installModules(coreModules, server.getServerDirectory().getPath());
+        coreModules = properties.getWarArtifacts(distroHelper, server.getServerDirectory());
+        if (coreModules == null) {
+            throw new MojoExecutionException(String.format("Invalid version: '%s'", server.getVersion()));
         }
+        installModules(coreModules, server.getServerDirectory().getPath());
+        File modules = new File(server.getServerDirectory(), SDKConstants.OPENMRS_SERVER_MODULES);
+        modules.mkdirs();
+        List<Artifact> artifacts = properties.getModuleArtifacts(distroHelper, server.getServerDirectory());
+        // install modules for each version
+        installModules(artifacts, modules.getPath());
     }
 
     public void installModules(List<Artifact> artifacts, String outputDir) throws MojoExecutionException {

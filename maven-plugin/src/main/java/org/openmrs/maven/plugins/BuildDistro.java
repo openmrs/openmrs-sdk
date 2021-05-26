@@ -112,7 +112,7 @@ public class BuildDistro extends AbstractTask {
                 }
             }
         } else if (StringUtils.isNotBlank(distro)){
-            distroProperties = distroHelper.retrieveDistroProperties(distro, versionsHelper);
+            distroProperties = distroHelper.resolveDistroPropertiesForStringSpecifier(distro, versionsHelper);
         }
 
         if (distroProperties == null){

@@ -55,6 +55,19 @@ public class DistroHelper {
     }
 
     /**
+     * Creates a minimal distro properties for the current server configuration, which is
+     * a platform installation. The database driver must have been configured before this is
+     * called.
+     */
+    public DistroProperties createDistroForPlatform(Server server) {
+        DistroProperties distroProperties = new DistroProperties(server.getServerId(), server.getPlatformVersion());
+        if (server.getDbDriver().equals(SDKConstants.DRIVER_H2)) {
+            distroProperties.setH2Support(true);
+        }
+        return distroProperties;
+    }
+
+    /**
      * @param distroFile file which contains distro properties
      * @return distro properties loaded from specified file or null if file is not distro properties
      */
@@ -83,7 +96,7 @@ public class DistroHelper {
             for(String propertyName: propertiesNames){
                 String propertyValue = properties.getPropertyValue(propertyName);
                 String propertyValueBash = userBashProperties.getProperty(propertyName);
-                String propertyPrompt = properties.getPropertyPromt(propertyName);
+                String propertyPrompt = properties.getPropertyPrompt(propertyName);
                 String propertyDefault = properties.getPropertyDefault(propertyName);
                 if(propertyValueBash != null){
                     server.setPropertyValue(propertyName, propertyValueBash);
@@ -107,9 +120,9 @@ public class DistroHelper {
 
 
     /**
-     * valid formats are 'groupId:artifactId:version' and 'artifactId:version'
-     * parser makes user-friendly assumptions, like inferring default groupId or full artifactId for referenceapplication
-     * returns null if string is invalid
+     * Valid formats are 'groupId:artifactId:version' and 'artifactId:version'.
+     * Parser makes user-friendly assumptions, like inferring default groupId or full artifactId for referenceapplication.
+     * If the group ID is org.openmrs.module, the artifact ID will have '-omod' appended to it.
      */
     public static Artifact parseDistroArtifact(String distro, VersionsHelper versionsHelper) throws MojoExecutionException {
         String[] split = distro.split(":");
@@ -123,10 +136,10 @@ public class DistroHelper {
         String version = split[split.length - 1];
 
         if (versionsHelper != null && version.contains(SDKConstants.LATEST_VERSION_BATCH_KEYWORD)) {
-            if (version.toLowerCase().equals(SDKConstants.LATEST_SNAPSHOT_BATCH_KEYWORD.toLowerCase())) {
+            if (version.equalsIgnoreCase(SDKConstants.LATEST_SNAPSHOT_BATCH_KEYWORD)) {
                 version = versionsHelper.getLatestSnapshotVersion(new Artifact(artifactId, version, groupId));
             }
-            else if (version.toLowerCase().equals((SDKConstants.LATEST_VERSION_BATCH_KEYWORD).toLowerCase())) {
+            else if (version.equalsIgnoreCase((SDKConstants.LATEST_VERSION_BATCH_KEYWORD))) {
                 version = versionsHelper.getLatestReleasedVersion(new Artifact(artifactId, version, groupId));
             }
         }
@@ -220,12 +233,10 @@ public class DistroHelper {
 
     public DistroProperties downloadDistroProperties(File path, Artifact artifact) throws MojoExecutionException {
         File file = downloadDistro(path, artifact);
-
         DistroProperties distroProperties = null;
         ZipFile zipFile = null;
         try {
             zipFile = new ZipFile(file);
-
             Enumeration<? extends ZipEntry> entries = zipFile.entries();
 
             while(entries.hasMoreElements()){
@@ -236,10 +247,7 @@ public class DistroHelper {
                     distroProperties = new DistroProperties(properties);
                 }
             }
-
             zipFile.close();
-
-
         } catch (IOException e) {
             throw new RuntimeException("Could not read " + file.toString(), e);
         } finally {
@@ -265,7 +273,7 @@ public class DistroHelper {
      * @param distro
      * @return
      */
-    public DistroProperties retrieveDistroProperties(String distro, VersionsHelper versionsHelper) throws MojoExecutionException {
+    public DistroProperties resolveDistroPropertiesForStringSpecifier(String distro, VersionsHelper versionsHelper) throws MojoExecutionException {
         DistroProperties result;
         result = getDistroPropertiesFromFile(new File(distro));
         if(result != null && mavenProject != null){
@@ -294,7 +302,7 @@ public class DistroHelper {
      * resolves distro based on passed artifact and saves distro.properties file in destination
      */
     public void saveDistroPropertiesTo(File destination, String distro) throws MojoExecutionException {
-        DistroProperties distroProperties = retrieveDistroProperties(distro, null);
+        DistroProperties distroProperties = resolveDistroPropertiesForStringSpecifier(distro, null);
         if(distroProperties != null){
             distroProperties.saveTo(destination);
         }

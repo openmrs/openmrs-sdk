@@ -39,11 +39,11 @@ public class DistroProperties extends BaseSdkProperties {
         }
     }
 
-    public DistroProperties(String name, String version){
+    public DistroProperties(String name, String platformVersion){
         properties = new Properties();
         setName(name);
-        setVersion("1.0");
-        setPlatformVersion(version);
+        setVersion("1.0");  // it's unclear what this means or why it is necessary, but it is tested for
+        setPlatformVersion(platformVersion);
     }
 
     public DistroProperties(Properties properties){
@@ -101,7 +101,7 @@ public class DistroProperties extends BaseSdkProperties {
         return getParam(DB_SQL);
     }
 
-    public String getPropertyPromt(String propertyName){
+    public String getPropertyPrompt(String propertyName){
         return getParam(String.format(PROPERTY_PROMPT_KEY, propertyName));
     }
 

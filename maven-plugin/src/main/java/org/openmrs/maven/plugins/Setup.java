@@ -126,11 +126,13 @@ public class Setup extends AbstractTask {
 
     /**
      * @parameter  property="distro"
+     * OpenMRS Distribution to setup in a format 'groupId:artifactId:version'. You can skip groupId, if it is 'org.openmrs.distro'.
      */
     private String distro;
 
     /**
      * @parameter  property="platform"
+     * OpenMRS Platform version to setup e.g. '1.11.5'.
      */
     private String platform;
 
@@ -155,183 +157,146 @@ public class Setup extends AbstractTask {
     }
 
     /**
-     * Create and setup server with following parameters
-     * @param server - server instance
-     * @param isCreatePlatform - flag for platform setup
-     * @param isCopyDependencies - flag for executing depencency plugin for OpenMRS 2.3 and higher
+     * Gets the distro properties. The distro properties can come from a file specified by path
+     * or in the current directory or from a maven artifact.
+     *
+     * If no distro properties file can be found, `null` is returned. In this case, the distro
+     * file will be created after the database is initialized. Setup should proceed to install
+     * modules based on the OpenMRS WAR file for the given platform version.
+     *
+     * As of this writing, this function can return null only in platform mode.
+     *
+     * @param server An initialized Server instance
+     * @return distro properties instantiated by DistroHelper
      * @throws MojoExecutionException
      */
-    public String setup(Server server, boolean isCreatePlatform, boolean isCopyDependencies, DistroProperties distroProperties) throws MojoExecutionException, MojoFailureException {
-        wizard.promptForNewServerIfMissing(server);
-        File serverPath = new File(Server.getServersPathFile(), server.getServerId());
-        server.setServerDirectory(serverPath);
+    private DistroProperties resolveDistroProperties(Server server) throws MojoExecutionException {
+        boolean platformMode;
+        DistroProperties distroProperties = null;
+        if (platform == null && distro == null){
+            List<String> options = new ArrayList<>();
+            distroProperties = DistroHelper.getDistroPropertiesFromDir();
+            if (distroProperties != null) {
+                options.add(distroProperties.getName() + " " + distroProperties.getVersion() + " from current directory");
+            }
+            options.add(DISTRIBUTION);
+            options.add(PLATFORM);
+            String choice = wizard.promptForMissingValueWithOptions(SETUP_SERVERS_PROMPT, null, null, options);
+
+            switch(choice) {
+                case PLATFORM:
+                    platformMode = true;
+                    break;
+                case DISTRIBUTION:
+                    wizard.promptForRefAppVersionIfMissing(server, versionsHelper);
+                    if(DistroHelper.isRefapp2_3_1orLower(server.getDistroArtifactId(), server.getVersion())){
+                        distroProperties = new DistroProperties(server.getVersion());
+                    } else {
+                        distroProperties = distroHelper.downloadDistroProperties(server.getServerDirectory(), server);
+                    }
+                    platformMode = false;
+                    break;
+                default:  // distro properties from current directory
+                    server.setPlatformVersion(distroProperties.getPlatformVersion(distroHelper, server.getServerTmpDirectory()));
+                    server.setVersion(distroProperties.getVersion());
+                    platformMode = false;
+            }
+        } else if (platform != null) {
+            server.setPlatformVersion(platform);
+            platformMode = true;
+        } else {  // getting distro properties from file
+            distroProperties = distroHelper.resolveDistroPropertiesForStringSpecifier(distro, versionsHelper);
+            if (distroProperties == null) {
+                throw new IllegalArgumentException("Distro "+distro+"could not be retrieved");
+            }
+            server.setPlatformVersion(distroProperties.getPlatformVersion(distroHelper, server.getServerTmpDirectory()));
+            server.setVersion(distroProperties.getVersion());
+            platformMode = false;
+        }
+
+        if (platformMode) {
+            Artifact platformArtifact = new Artifact(SDKConstants.PLATFORM_ARTIFACT_ID, SDKConstants.SETUP_DEFAULT_PLATFORM_VERSION, Artifact.GROUP_DISTRO);
+            String version = wizard.promptForPlatformVersionIfMissing(server.getPlatformVersion(), versionsHelper.getVersionAdvice(platformArtifact, 6));
+            platformArtifact = DistroHelper.parseDistroArtifact(Artifact.GROUP_DISTRO + ":" + SDKConstants.PLATFORM_ARTIFACT_ID + ":" + version, versionsHelper);
+            server.setPlatformVersion(platformArtifact.getVersion());
+            try {
+                distroProperties = distroHelper.downloadDistroProperties(server.getServerDirectory(), platformArtifact);
+                // distroProperties could still be null at this point
+            } catch (MojoExecutionException e) {
+                distroProperties = null;
+            }
+        }
+
+        return distroProperties;
+    }
+
+    /**
+     * Sets up a server based on an initialized Server instance and the provided
+     * distroProperties. Installs modules and other artifacts. Sets up the database.
+     * Writes openmrs-server.properties.
+     *
+     * @param server An initialized server instance
+     * @param distroProperties Allowed to be null, only if this is a platform install
+     * @throws MojoExecutionException
+     */
+    public void setup(Server server, DistroProperties distroProperties) throws MojoExecutionException {
+        if (distroProperties != null) {
+            // Add all the distro properties to the server properties.
+            // It might be worth looking at redundancy between `distroHelper.savePropertiesToServer`,
+            // `setServerVersionsFromDistroProperties`, and `server.setValuesFromDistroPropertiesModules`.
+            distroHelper.savePropertiesToServer(distroProperties, server);
+            setServerVersionsFromDistroProperties(server, distroProperties);
+            moduleInstaller.installModulesForDistro(server, distroProperties, distroHelper);
+            installOWAs(server, distroProperties);
+        } else {
+            moduleInstaller.installDefaultModules(server);
+        }
 
         serverHelper = new ServerHelper(wizard);
 
-        try {
-            if (distroProperties == null) {
-                if(isCreatePlatform){
-                    Artifact platform = new Artifact(SDKConstants.PLATFORM_ARTIFACT_ID, SDKConstants.SETUP_DEFAULT_PLATFORM_VERSION, Artifact.GROUP_DISTRO);
-                    String version = wizard.promptForPlatformVersionIfMissing(server.getPlatformVersion(), versionsHelper.getVersionAdvice(platform, 6));
-                    platform = DistroHelper.parseDistroArtifact(Artifact.GROUP_DISTRO + ":" + SDKConstants.PLATFORM_ARTIFACT_ID + ":" + version, versionsHelper);
-                    server.setPlatformVersion(platform.getVersion());
-                    try {
-                        distroProperties = distroHelper.downloadDistroProperties(serverPath, platform);
-                        distroProperties.saveTo(server.getServerDirectory());
-                        moduleInstaller.installCoreModules(server, isCreatePlatform, distroProperties, distroHelper);
-                        installOWAs(server, distroProperties);
-                    } catch (MojoExecutionException e) {
-                        getLog().info("Fetching openmrs war file in version " + server.getPlatformVersion());
-                        moduleInstaller.installCoreModules(server, isCreatePlatform, distroProperties, distroHelper);
-                        installOWAs(server, distroProperties);
-                    }
-                } else {
-                    wizard.promptForRefAppVersionIfMissing(server, versionsHelper);
-                    distroProperties = extractDistroToServer(server, isCreatePlatform, serverPath);
-                    distroProperties.saveTo(server.getServerDirectory());
-                }
-            } else {
-                moduleInstaller.installCoreModules(server, isCreatePlatform, distroProperties, distroHelper);
-                installOWAs(server, distroProperties);
-                distroProperties.saveTo(server.getServerDirectory());
-            }
-            distroHelper.savePropertiesToServer(distroProperties, server);
+        setServerPort(server);
+        setDebugPort(server);
 
-            setServerPort(server);
-            setDebugPort(server);
+        setupDatabase(server, distroProperties);
 
-            configureVersion(server, distroProperties);
-
-            if(server.getDbDriver() == null) {
-                boolean h2supported = true;
-                if(distroProperties != null) {
-                    h2supported = distroProperties.isH2Supported();
-                }
-                wizard.promptForDb(server, dockerHelper, h2supported, dbDriver, dockerHost);
-            }
-
-            if(server.getDbDriver() != null){
-                if(server.getDbName() == null){
-                    server.setDbName(determineDbName(server.getDbUri(), server.getServerId()));
-                }
-                if (server.isMySqlDb()){
-                    boolean mysqlDbCreated = connectMySqlDatabase(server);
-                    if(!mysqlDbCreated){
-                        throw new IllegalStateException("Failed to connect to the specified database " + server.getDbUri());
-                    }
-
-                    if (hasDbTables(server)) {
-                        if (dbReset == null) {
-                            dbReset = !wizard.promptYesNo("Would you like to setup the server using existing data (if not, all data will be lost)?");
-                        }
-
-                        if (dbReset) {
-                            wipeDatabase(server);
-                        } else {
-                            server.setParam("create_tables", "false");
-                        }
-                    }
-
-                    if (dbReset == null){
-                        dbReset = true;
-                    }
-
-
-                    if(!"null".equals(dbSql) && dbReset){
-                        if(dbSql != null){
-                            importMysqlDb(server, dbSql);
-                            resetSearchIndex(server);
-                        } else {
-                            if (server.getPlatformVersion() != null) {
-                                if (new Version(server.getPlatformVersion()).higher(new Version("1.9.7"))){
-                                    importMysqlDb(server, Server.CLASSPATH_SCRIPT_PREFIX+ "openmrs-platform.sql");
-                                    resetSearchIndex(server);
-                                }
-                            }
-                        }
-                    } else if (!dbReset) {
-                        resetSearchIndex(server);
-                    }
-                } else if (server.isPostgreSqlDb()){
-                	boolean postgresqlDbCreated = connectPostgreSqlDatabase(server);
-                    if(!postgresqlDbCreated){
-                        throw new IllegalStateException("Failed to connect to the specified database " + server.getDbUri());
-                    }
-                    
-                    if (hasDbTables(server)) {
-                        if (dbReset == null) {
-                            dbReset = !wizard.promptYesNo("Would you like to setup the server using existing data (if not, all data will be lost)?");
-                        }
-
-                        if (dbReset) {
-                            wipeDatabase(server);
-                        } else {
-                            server.setParam("create_tables", "false");
-                        }
-                    }
-
-                    if (dbReset == null){
-                        dbReset = true;
-                    }
-
-
-                    if(!"null".equals(dbSql) && dbReset){
-                        if(dbSql != null){
-                            importPostgreSqlDb(server, dbSql);
-                            resetSearchIndex(server);
-                        } else {
-                            if (server.getPlatformVersion() != null) {
-                                if (new Version(server.getPlatformVersion()).higher(new Version("1.9.7"))){
-                                	importPostgreSqlDb(server, Server.CLASSPATH_SCRIPT_PREFIX+ "openmrs-platform-postgres.sql");
-                                    resetSearchIndex(server);
-                                }
-                            }
-                        }
-                    } else if (!dbReset) {
-                        resetSearchIndex(server);
-                    }
-
-                } else {
-                    moduleInstaller.installModule(SDKConstants.H2_ARTIFACT, server.getServerDirectory().getPath());
-                    installOWAs(server, distroProperties);
-                    wizard.showMessage("The specified database "+server.getDbName()+" does not exist and it will be created for you.");
-                }
-            }
-
-            distroProperties = createDistroForPlatform(distroProperties, server);
-
-            String platformVersion = server.getPlatformVersion();
-            Version version = new Version(platformVersion);
-            if (platformVersion.startsWith("1.")) {
-                wizard.showMessage("Note: JDK 1.7 is needed for platform version " + platformVersion + ".");
-            }
-            else if (version.getMajorVersion() == 2 && version.getMinorVersion() < 4) {
-            	wizard.showMessage("Note: JDK 1.8 is needed for platform version " + platformVersion + ".");
-            }
-            else {
-                wizard.showMessage("Note: JDK 1.8 or above is needed for platform version " + platformVersion + ".");
-            }
-
-            wizard.promptForJavaHomeIfMissing(server);
-            server.setValuesFromDistroPropertiesModules(
-                    distroProperties.getWarArtifacts(distroHelper, server.getServerDirectory()),
-                    distroProperties.getModuleArtifacts(distroHelper, server.getServerDirectory()),
-                    distroProperties
-            );
-            server.setUnspecifiedToDefault();
-            server.save();
-
-            return serverPath.getPath();
-        } catch (Exception e) {
-            FileUtils.deleteQuietly(serverPath);
-            throw new MojoExecutionException("Failed to setup server", e);
+        // If there's no distro at this point, we create a minimal one here,
+        // *after* having initialized server.isH2Supported in `setupDatabase` above.
+        if (distroProperties == null) {
+            distroProperties = distroHelper.createDistroForPlatform(server);
         }
+        distroProperties.saveTo(server.getServerDirectory());
+
+        setJdk(server);
+
+        server.setValuesFromDistroPropertiesModules(
+                distroProperties.getWarArtifacts(distroHelper, server.getServerDirectory()),
+                distroProperties.getModuleArtifacts(distroHelper, server.getServerDirectory()),
+                distroProperties
+        );
+        server.setUnspecifiedToDefault();
+        server.save();
+    }
+
+    private void setJdk(Server server) {
+        String platformVersion = server.getPlatformVersion();
+        Version version = new Version(platformVersion);
+        if (platformVersion.startsWith("1.")) {
+            wizard.showMessage("Note: JDK 1.7 is needed for platform version " + platformVersion + ".");
+        }
+        else if (version.getMajorVersion() == 2 && version.getMinorVersion() < 4) {
+            wizard.showMessage("Note: JDK 1.8 is needed for platform version " + platformVersion + ".");
+        }
+        else {
+            wizard.showMessage("Note: JDK 1.8 or above is needed for platform version " + platformVersion + ".");
+        }
+
+        wizard.promptForJavaHomeIfMissing(server);
     }
     
     private void installOWAs(Server server, DistroProperties distroProperties) throws MojoExecutionException {
     	if (distroProperties != null) {
     		File owasDir = new File(server.getServerDirectory(), "owa");
-    		owasDir.mkdirs();
+    		owasDir.mkdir();
     		downloadOWAs(server.getServerDirectory(), distroProperties, owasDir);
     	}
     }
@@ -374,17 +339,6 @@ public class Setup extends AbstractTask {
         }
     }
 
-    private DistroProperties createDistroForPlatform(DistroProperties distroProperties, Server server) throws MojoExecutionException {
-        if (distroProperties == null) {
-            distroProperties = new DistroProperties(server.getServerId(), server.getPlatformVersion());
-            if (server.getDbDriver().equals(SDKConstants.DRIVER_H2)) {
-                distroProperties.setH2Support(true);
-            }
-            distroProperties.saveTo(server.getServerDirectory());
-        }
-        return distroProperties;
-    }
-
     private void setServerPort(Server server) {
         String message = "What port would you like your server to use?";
         String port = wizard.promptForValueIfMissingWithDefault(
@@ -417,26 +371,112 @@ public class Setup extends AbstractTask {
         }
     }
 
-    private DistroProperties extractDistroToServer(Server server, boolean isCreatePlatform, File serverPath) throws MojoExecutionException, MojoFailureException {
-        DistroProperties distroProperties;
-        if(DistroHelper.isRefapp2_3_1orLower(server.getDistroArtifactId(), server.getVersion())){
-            distroProperties = new DistroProperties(server.getVersion());
-        } else {
-            distroProperties = distroHelper.downloadDistroProperties(serverPath, server);
+    private void setServerVersionsFromDistroProperties(Server server, DistroProperties distroProperties) throws MojoExecutionException {
+        if(server.getPlatformVersion() == null){
+            server.setPlatformVersion(distroProperties.getPlatformVersion(distroHelper, server.getServerDirectory()));
         }
-        moduleInstaller.installCoreModules(server, isCreatePlatform, distroProperties, distroHelper);
-        installOWAs(server, distroProperties);
-        return distroProperties;
+        if(server.getVersion() == null){
+            server.setVersion(distroProperties.getVersion());
+        }
     }
 
-    private void configureVersion(Server server, DistroProperties distroProperties) throws MojoExecutionException {
-        if (distroProperties != null) {
-            if(server.getPlatformVersion() == null){
-                server.setPlatformVersion(distroProperties.getPlatformVersion(distroHelper, server.getServerDirectory()));
+    private void setupDatabase(Server server, DistroProperties distroProperties) throws MojoExecutionException {
+        if (server.getDbDriver() == null) {
+            boolean isH2Supported = true;
+            if (distroProperties != null) {
+                isH2Supported = distroProperties.isH2Supported();
             }
-            if(server.getVersion() == null){
-                server.setVersion(distroProperties.getVersion());
+            wizard.promptForDb(server, dockerHelper, isH2Supported, dbDriver, dockerHost);
+        }
+        if (server.getDbDriver() != null) {
+            setupDatabaseForServer(server);
+        }
+    }
+
+    private void setupDatabaseForServer(Server server) throws MojoExecutionException {
+        if(server.getDbName() == null){
+            server.setDbName(determineDbName(server.getDbUri(), server.getServerId()));
+        }
+        if (server.isMySqlDb()){
+            boolean mysqlDbCreated = connectMySqlDatabase(server);
+            if(!mysqlDbCreated){
+                throw new IllegalStateException("Failed to connect to the specified database " + server.getDbUri());
             }
+
+            if (hasDbTables(server)) {
+                if (dbReset == null) {
+                    dbReset = !wizard.promptYesNo("Would you like to setup the server using existing data (if not, all data will be lost)?");
+                }
+
+                if (dbReset) {
+                    wipeDatabase(server);
+                } else {
+                    server.setParam("create_tables", "false");
+                }
+            }
+
+            if (dbReset == null){
+                dbReset = true;
+            }
+
+
+            if(!"null".equals(dbSql) && dbReset){
+                if(dbSql != null){
+                    importMysqlDb(server, dbSql);
+                    resetSearchIndex(server);
+                } else {
+                    if (server.getPlatformVersion() != null) {
+                        if (new Version(server.getPlatformVersion()).higher(new Version("1.9.7"))){
+                            importMysqlDb(server, Server.CLASSPATH_SCRIPT_PREFIX+ "openmrs-platform.sql");
+                            resetSearchIndex(server);
+                        }
+                    }
+                }
+            } else if (!dbReset) {
+                resetSearchIndex(server);
+            }
+        } else if (server.isPostgreSqlDb()){
+            boolean postgresqlDbCreated = connectPostgreSqlDatabase(server);
+            if(!postgresqlDbCreated){
+                throw new IllegalStateException("Failed to connect to the specified database " + server.getDbUri());
+            }
+
+            if (hasDbTables(server)) {
+                if (dbReset == null) {
+                    dbReset = !wizard.promptYesNo("Would you like to setup the server using existing data (if not, all data will be lost)?");
+                }
+
+                if (dbReset) {
+                    wipeDatabase(server);
+                } else {
+                    server.setParam("create_tables", "false");
+                }
+            }
+
+            if (dbReset == null){
+                dbReset = true;
+            }
+
+
+            if(!"null".equals(dbSql) && dbReset){
+                if(dbSql != null){
+                    importPostgreSqlDb(server, dbSql);
+                    resetSearchIndex(server);
+                } else {
+                    if (server.getPlatformVersion() != null) {
+                        if (new Version(server.getPlatformVersion()).higher(new Version("1.9.7"))){
+                            importPostgreSqlDb(server, Server.CLASSPATH_SCRIPT_PREFIX+ "openmrs-platform-postgres.sql");
+                            resetSearchIndex(server);
+                        }
+                    }
+                }
+            } else if (!dbReset) {
+                resetSearchIndex(server);
+            }
+
+        } else {
+            moduleInstaller.installModule(SDKConstants.H2_ARTIFACT, server.getServerDirectory().getPath());
+            wizard.showMessage("The specified database "+server.getDbName()+" does not exist and it will be created for you.");
         }
     }
 
@@ -715,24 +755,13 @@ public class Setup extends AbstractTask {
         return dbName;
     }
 
-    private boolean checkIfDistroIsPath(String distro){
-        File file = new File(distro);
-        if(file.exists()){
-            return true;
-        }else {
-            return false;
-        }
-    }
-
-
     public void executeTask() throws MojoExecutionException, MojoFailureException {
         wizard.showMessage(SETTING_UP_A_NEW_SERVER);
 
         Server.ServerBuilder serverBuilder;
         if(file != null){
             File serverPath = new File(file);
-            Server server = Server.loadServer(serverPath);
-            serverBuilder = new Server.ServerBuilder(server);
+            serverBuilder = new Server.ServerBuilder(Server.loadServer(serverPath));
         } else {
             serverBuilder = new Server.ServerBuilder();
         }
@@ -749,56 +778,23 @@ public class Setup extends AbstractTask {
         wizard.promptForNewServerIfMissing(server);
 
         File serverDir = new File(Server.getServersPath(), server.getServerId());
-        if (serverDir.isDirectory() && serverDir.exists()) {
+        if (serverDir.isDirectory()) {
             throw new MojoExecutionException("Cannot create server: directory with name "+serverDir.getName()+" already exists");
         }
+        server.setServerDirectory(serverDir);
+        serverDir.mkdir();
 
-        boolean createPlatform = false;
-        DistroProperties distroProperties = null;
-        if(platform == null && distro == null){
-            List<String> options = new ArrayList<>();
-            distroProperties = DistroHelper.getDistroPropertiesFromDir();
-
-            if(distroProperties!=null){
-                options.add(distroProperties.getName() + " " + distroProperties.getVersion() + " from current directory");
-            }
-            options.add(DISTRIBUTION);
-            options.add(PLATFORM);
-
-            String choice = wizard.promptForMissingValueWithOptions(SETUP_SERVERS_PROMPT, null, null, options);
-
-            switch(choice) {
-                case PLATFORM:
-                    createPlatform = true;
-                    distroProperties = null;
-                    break;
-                case DISTRIBUTION:
-                    createPlatform = false;
-                    distroProperties = null;
-                    break;
-                default:
-                    createPlatform = false;
-                    server.setPlatformVersion(distroProperties.getPlatformVersion(distroHelper, server.getServerTmpDirectory()));
-                    server.setVersion(distroProperties.getVersion());
-            }
-        } else if (platform != null) {
-            server.setPlatformVersion(platform);
-            createPlatform = true;
-        } else {
-            distroProperties = distroHelper.retrieveDistroProperties(distro, versionsHelper);
-            if(distroProperties == null){
-                throw new IllegalArgumentException("Distro "+distro+"could not be retrieved");
-            }
-            server.setVersion(distroProperties.getVersion());
-            server.setPlatformVersion(distroProperties.getPlatformVersion(distroHelper, server.getServerTmpDirectory()));
-            createPlatform = false;
+        try {
+            DistroProperties distroProperties = resolveDistroProperties(server);
+            setup(server, distroProperties);
+        } catch (Exception e) {
+            FileUtils.deleteQuietly(server.getServerDirectory());
+            throw new MojoExecutionException("Failed to setup server", e);
         }
 
-        // setup non-platform server
-        String serverPath = setup(server, createPlatform, true, distroProperties);
-        getLog().info("Server configured successfully, path: " + serverPath);
+        getLog().info("Server configured successfully, path: " + serverDir);
 
-        if(run){
+        if (run) {
             new Run(this, server.getServerId()).execute();
         }
     }

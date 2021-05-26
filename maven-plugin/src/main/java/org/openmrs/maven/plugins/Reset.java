@@ -63,7 +63,6 @@ public class Reset extends AbstractTask {
                 }
             }
         }
-        boolean isPlatform = StringUtils.isBlank(server.getVersion());
         try {
             Server newServer = new Server.ServerBuilder()
                     .setServerId(server.getServerId())
@@ -81,7 +80,7 @@ public class Reset extends AbstractTask {
             Setup setup = new Setup(this);
             DistroProperties distroProperties = server.getDistroProperties();
             FileUtils.deleteDirectory(server.getServerDirectory());
-            setup.setup(newServer, isPlatform, true, distroProperties);
+            setup.setup(newServer, distroProperties);
             getLog().info(String.format(TEMPLATE_SUCCESS_FULL, newServer.getServerId()));
         } catch (IOException e) {
             throw new MojoExecutionException(e.getMessage());
