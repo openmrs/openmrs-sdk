@@ -174,7 +174,7 @@ public class Setup extends AbstractTask {
         if (platform == null && distro == null){
             List<String> options = new ArrayList<>();
             distroProperties = DistroHelper.getDistroPropertiesFromDir();
-            if (distroProperties!=null) {
+            if (distroProperties != null) {
                 options.add(distroProperties.getName() + " " + distroProperties.getVersion() + " from current directory");
             }
             options.add(DISTRIBUTION);
@@ -217,9 +217,15 @@ public class Setup extends AbstractTask {
             String version = wizard.promptForPlatformVersionIfMissing(server.getPlatformVersion(), versionsHelper.getVersionAdvice(platformArtifact, 6));
             platformArtifact = DistroHelper.parseDistroArtifact(Artifact.GROUP_DISTRO + ":" + SDKConstants.PLATFORM_ARTIFACT_ID + ":" + version, versionsHelper);
             server.setPlatformVersion(platformArtifact.getVersion());
-            distroProperties = distroHelper.downloadDistroProperties(server.getServerDirectory(), platformArtifact);
-            if (distroProperties == null) {
-                distroProperties = distroHelper.createDistroForPlatform(server);
+            try {
+                distroProperties = distroHelper.downloadDistroProperties(server.getServerDirectory(), platformArtifact);
+                if (distroProperties == null) {
+                    distroProperties = distroHelper.createDistroForPlatform(server);
+                }
+            } catch (MojoExecutionException e) {
+                // In this case, there is no distro file. Setup should proceed to install modules
+                // based on the OpenMRS WAR file for the given platform version.
+                return null;
             }
         }
 
@@ -232,23 +238,40 @@ public class Setup extends AbstractTask {
      * Writes openmrs-server.properties.
      *
      * @param server An initialized server instance
-     * @param distroProperties non-null
+     * @param distroProperties Allowed to be null
      * @throws MojoExecutionException
      */
     public void setup(Server server, DistroProperties distroProperties) throws MojoExecutionException {
-        moduleInstaller.installCoreModules(server, distroProperties, distroHelper);
-        installOWAs(server, distroProperties);
+        if (distroProperties != null) {
+            distroProperties.saveTo(server.getServerDirectory());
+            // add all the distro properties to the server properties
+            // these three calls can probably be refactored; they're probably mostly redundant
+            distroHelper.savePropertiesToServer(distroProperties, server);
+            setServerVersionsFromDistroProperties(server, distroProperties);
+            server.setValuesFromDistroPropertiesModules(
+                    distroProperties.getWarArtifacts(distroHelper, server.getServerDirectory()),
+                    distroProperties.getModuleArtifacts(distroHelper, server.getServerDirectory()),
+                    distroProperties
+            );
+            moduleInstaller.installModulesForDistro(server, distroProperties, distroHelper);
+            installOWAs(server, distroProperties);
+        } else {
+            moduleInstaller.installDefaultModules(server);
+        }
 
         serverHelper = new ServerHelper(wizard);
 
         setServerPort(server);
         setDebugPort(server);
 
-
-        if(server.getDbDriver() == null) {
-            wizard.promptForDb(server, dockerHelper, distroProperties.isH2Supported(), dbDriver, dockerHost);
+        if (server.getDbDriver() == null) {
+            boolean isH2Supported = true;
+            if (distroProperties != null) {
+                isH2Supported = distroProperties.isH2Supported();
+            }
+            wizard.promptForDb(server, dockerHelper, isH2Supported, dbDriver, dockerHost);
         }
-        if(server.getDbDriver() != null){
+        if (server.getDbDriver() != null){
             setupDatabase(server);
         }
 
@@ -265,11 +288,6 @@ public class Setup extends AbstractTask {
         }
 
         wizard.promptForJavaHomeIfMissing(server);
-        server.setValuesFromDistroPropertiesModules(
-                distroProperties.getWarArtifacts(distroHelper, server.getServerDirectory()),
-                distroProperties.getModuleArtifacts(distroHelper, server.getServerDirectory()),
-                distroProperties
-        );
         server.setUnspecifiedToDefault();
         server.save();
     }
@@ -277,7 +295,7 @@ public class Setup extends AbstractTask {
     private void installOWAs(Server server, DistroProperties distroProperties) throws MojoExecutionException {
     	if (distroProperties != null) {
     		File owasDir = new File(server.getServerDirectory(), "owa");
-    		owasDir.mkdirs();
+    		owasDir.mkdir();
     		downloadOWAs(server.getServerDirectory(), distroProperties, owasDir);
     	}
     }
@@ -754,10 +772,6 @@ public class Setup extends AbstractTask {
 
         try {
             DistroProperties distroProperties = resolveDistroProperties(server);
-            distroProperties.saveTo(server.getServerDirectory());  // save the distro file in the server dir
-            distroHelper.savePropertiesToServer(distroProperties, server);  // add all the distro properties to the server properties
-            setServerVersionsFromDistroProperties(server, distroProperties);  // probably redundant with the above line
-
             setup(server, distroProperties);
         } catch (Exception e) {
             FileUtils.deleteQuietly(server.getServerDirectory());

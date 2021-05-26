@@ -50,7 +50,15 @@ public class ModuleInstaller {
         this.versionsHelper = versionsHelper;
     }
 
-    public void installCoreModules(Server server, DistroProperties properties, DistroHelper distroHelper) throws MojoExecutionException {
+    public void installDefaultModules(Server server) throws MojoExecutionException {
+        List<Artifact> coreModules = SDKConstants.getCoreModules(server.getPlatformVersion(), server.getVersion() == null);
+        if (coreModules == null) {
+            throw new MojoExecutionException(String.format("Invalid version: '%s'", server.getPlatformVersion()));
+        }
+        installModules(coreModules, server.getServerDirectory().getPath());
+    }
+
+    public void installModulesForDistro(Server server, DistroProperties properties, DistroHelper distroHelper) throws MojoExecutionException {
         List<Artifact> coreModules;
         // install other modules
         coreModules = properties.getWarArtifacts(distroHelper, server.getServerDirectory());
