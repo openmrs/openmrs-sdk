@@ -55,12 +55,11 @@ public class DistroHelper {
     }
 
     /**
-     *
-     * @param server
-     * @return default distro properties for a platform
-     * @throws MojoExecutionException
+     * Creates a minimal distro properties for the current server configuration, which is
+     * a platform installation. The database driver must have been configured before this is
+     * called.
      */
-    public DistroProperties createDistroForPlatform(Server server) throws MojoExecutionException {
+    public DistroProperties createDistroForPlatform(Server server) {
         DistroProperties distroProperties = new DistroProperties(server.getServerId(), server.getPlatformVersion());
         if (server.getDbDriver().equals(SDKConstants.DRIVER_H2)) {
             distroProperties.setH2Support(true);

@@ -158,11 +158,13 @@ public class Setup extends AbstractTask {
 
     /**
      * Gets the distro properties. The distro properties can come from a file specified by path
-     * or in the current directory, from a maven artifact, or from defaults.
+     * or in the current directory or from a maven artifact.
      *
-     * This function is an effort to consolidate a huge amount of spaghetti code relating to
-     * distro properties. It may contain impossible execution paths or things that don't
-     * make sense.
+     * If no distro properties file can be found, `null` is returned. In this case, the distro
+     * file will be created after the database is initialized. Setup should proceed to install
+     * modules based on the OpenMRS WAR file for the given platform version.
+     *
+     * As of this writing, this function can return null only in platform mode.
      *
      * @param server An initialized Server instance
      * @return distro properties instantiated by DistroHelper
@@ -219,29 +221,12 @@ public class Setup extends AbstractTask {
             server.setPlatformVersion(platformArtifact.getVersion());
             try {
                 distroProperties = distroHelper.downloadDistroProperties(server.getServerDirectory(), platformArtifact);
-                if (distroProperties == null) {
-                    distroProperties = distroHelper.createDistroForPlatform(server);
-                }
+                // distroProperties could still be null at this point
             } catch (MojoExecutionException e) {
-                // In this case, the distro file will be created after the database is initialized.
-                // Setup should proceed to install modules based on the OpenMRS WAR file for the given platform version.
-                return null;
+                distroProperties = null;
             }
         }
 
-        return distroProperties;
-    }
-
-    /**
-     * Creates a minimal distro properties for the current server configuration, which is
-     * a platform installation. The database driver must have been configured before this is
-     * called.
-     */
-    private DistroProperties createDistroForPlatform(Server server) {
-        DistroProperties distroProperties = new DistroProperties(server.getServerId(), server.getPlatformVersion());
-        if (server.getDbDriver().equals(SDKConstants.DRIVER_H2)) {
-            distroProperties.setH2Support(true);
-        }
         return distroProperties;
     }
 
@@ -277,7 +262,7 @@ public class Setup extends AbstractTask {
         // If there's no distro at this point, we create a minimal one here,
         // *after* having initialized server.isH2Supported in `setupDatabase` above.
         if (distroProperties == null) {
-            distroProperties = createDistroForPlatform(server);
+            distroProperties = distroHelper.createDistroForPlatform(server);
         }
         distroProperties.saveTo(server.getServerDirectory());
 

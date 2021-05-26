@@ -39,11 +39,11 @@ public class DistroProperties extends BaseSdkProperties {
         }
     }
 
-    public DistroProperties(String name, String version){
+    public DistroProperties(String name, String platformVersion){
         properties = new Properties();
         setName(name);
-        setVersion("1.0");
-        setPlatformVersion(version);
+        setVersion("1.0");  // it's unclear what this means or why it is necessary, but it is tested for
+        setPlatformVersion(platformVersion);
     }
 
     public DistroProperties(Properties properties){
