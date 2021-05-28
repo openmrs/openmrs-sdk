@@ -1,12 +1,12 @@
 package org.openmrs.maven.plugins.utility;
 
-import org.apache.commons.io.IOUtils;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
-import org.json.simple.JSONObject;
 import org.openmrs.maven.plugins.model.DistroProperties;
 
 import java.io.File;
@@ -53,7 +53,7 @@ public class SpaInstaller {
         // and then run the interactive installer.
         Map<String, String> spaProperties = distroProperties.getSpaProperties(distroHelper, serverDir);
         if (!spaProperties.isEmpty()) {
-            JSONObject spaConfigJson = convertPropertiesToJSON(spaProperties);
+            JsonObject spaConfigJson = convertPropertiesToJSON(spaProperties);
             File spaConfigFile = new File(serverDir, "microfrontends.json");
             writeJSONObject(spaConfigFile, spaConfigJson);
             nodeHelper.installNodeAndNpm(NODE_VERSION, NPM_VERSION);
@@ -63,9 +63,9 @@ public class SpaInstaller {
         }
     }
 
-    private JSONObject convertPropertiesToJSON(Map<String, String> properties) throws RuntimeException {
+    private JsonObject convertPropertiesToJSON(Map<String, String> properties) throws RuntimeException {
         Set<String> foundPropertySetKeys = new HashSet<>();
-        JSONObject result = new JSONObject();
+        JsonObject result = new JsonObject();
         for (String dotDelimitedKeys : properties.keySet()) {
             String[] keys = dotDelimitedKeys.split("\\.");
             for (int i = 0; i < keys.length - 1; i++) {
@@ -83,31 +83,32 @@ public class SpaInstaller {
         return result;
     }
 
-    private void addPropertyToJSONObject(JSONObject jsonObject, String propertyKey, String value) {
+    private void addPropertyToJSONObject(JsonObject jsonObject, String propertyKey, String value) {
         String[] keys = propertyKey.split("\\.");
         if (keys.length == 1) {
-            if (jsonObject.containsKey(keys[0])) {
+            if (jsonObject.has(keys[0])) {
                 throw new RuntimeException(BAD_SPA_PROPERTIES_MESSAGE +
                         " Encountered this error processing a property containing the key '" + keys[0] + "' and with value " + value);
             }
-            jsonObject.put(keys[0], value);
+            jsonObject.addProperty(keys[0], value);
         } else {
-            if (!jsonObject.containsKey(keys[0])) {
-                jsonObject.put(keys[0], new JSONObject());
+            if (!jsonObject.has(keys[0])) {
+                jsonObject.add(keys[0], new JsonObject());
             }
             Object childObject = jsonObject.get(keys[0]);
-            if (!(childObject instanceof JSONObject)) {
+            if (!(childObject instanceof JsonObject)) {
                 throw new RuntimeException(BAD_SPA_PROPERTIES_MESSAGE +
                         " Also please post to OpenMRS Talk and include this full message. If you are seeing this, there has been a programming error.");
             }
             String childKeys = StringUtils.join(Arrays.copyOfRange(keys, 1, keys.length), ".");
-            addPropertyToJSONObject((JSONObject) childObject, childKeys, value);
+            addPropertyToJSONObject((JsonObject) childObject, childKeys, value);
         }
     }
 
-    private static void writeJSONObject(File file, JSONObject jsonObject) throws MojoExecutionException {
+    private static void writeJSONObject(File file, JsonObject jsonObject) throws MojoExecutionException {
+        Gson gson = new Gson();
         try (FileWriter out = new FileWriter(file)) {
-        	jsonObject.writeJSONString(out);
+        	gson.toJson(jsonObject, out);
         }
         catch (IOException e) {
         	throw new MojoExecutionException(e.getMessage(), e);
