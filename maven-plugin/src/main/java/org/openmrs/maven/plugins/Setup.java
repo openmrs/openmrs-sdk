@@ -246,8 +246,8 @@ public class Setup extends AbstractTask {
             // `setServerVersionsFromDistroProperties`, and `server.setValuesFromDistroPropertiesModules`.
             distroHelper.savePropertiesToServer(distroProperties, server);
             setServerVersionsFromDistroProperties(server, distroProperties);
-            spaInstaller.installFromDistroProperties(server.getServerDirectory(), distroProperties);
             moduleInstaller.installModulesForDistro(server, distroProperties, distroHelper);
+            spaInstaller.installFromDistroProperties(server.getServerDirectory(), distroProperties);
             installOWAs(server, distroProperties);
         } else {
             moduleInstaller.installDefaultModules(server);
