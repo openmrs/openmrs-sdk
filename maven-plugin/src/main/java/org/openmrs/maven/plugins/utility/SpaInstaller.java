@@ -106,16 +106,11 @@ public class SpaInstaller {
     }
 
     private static void writeJSONObject(File file, JSONObject jsonObject) throws MojoExecutionException {
-        FileWriter out = null;
-        try {
-            out = new FileWriter(file);
-            jsonObject.writeJSONString(out);
+        try (FileWriter out = new FileWriter(file)) {
+        	jsonObject.writeJSONString(out);
         }
         catch (IOException e) {
-            throw new MojoExecutionException(e.getMessage());
-        }
-        finally {
-            IOUtils.closeQuietly(out);
+        	throw new MojoExecutionException(e.getMessage(), e);
         }
     }
 
