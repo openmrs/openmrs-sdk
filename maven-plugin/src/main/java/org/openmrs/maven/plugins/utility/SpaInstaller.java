@@ -100,7 +100,7 @@ public class SpaInstaller {
                 throw new RuntimeException(BAD_SPA_PROPERTIES_MESSAGE +
                         " Also please post to OpenMRS Talk and include this full message. If you are seeing this, there has been a programming error.");
             }
-            String childKeys = propertyKey.substring(propertyKey.indexOf(".") + 1)
+            String childKeys = StringUtils.join(Arrays.copyOfRange(keys, 1, keys.length), ".");
             addPropertyToJSONObject((JSONObject) childObject, childKeys, value);
         }
     }
