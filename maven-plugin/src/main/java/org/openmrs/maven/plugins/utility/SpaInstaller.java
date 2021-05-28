@@ -31,15 +31,11 @@ public class SpaInstaller {
 
     private DistroHelper distroHelper;
 
-    private Wizard wizard;
-
     public SpaInstaller(MavenProject mavenProject,
                         MavenSession mavenSession,
                         BuildPluginManager pluginManager,
-                        DistroHelper distroHelper,
-                        Wizard wizard) {
+                        DistroHelper distroHelper) {
         this.distroHelper = distroHelper;
-        this.wizard = wizard;
         this.nodeHelper = new NodeHelper(mavenProject, mavenSession, pluginManager);
     }
 
@@ -64,20 +60,6 @@ public class SpaInstaller {
             File buildTargetDir = new File(serverDir, BUILD_TARGET_DIR);
             nodeHelper.runNpx(String.format("openmrs@latest build --target %s", buildTargetDir));
             nodeHelper.runNpx(String.format("openmrs@latest assemble --target %s --mode config --config %s", buildTargetDir, spaConfigFile));
-        }
-    }
-
-    /**
-     * Asks the user if they want to install Microfrontends and then runs the interactive installer.
-     * @param serverDir
-     */
-    public void installInteractively(File serverDir) throws MojoExecutionException {
-        boolean installSpa = wizard.promptYesNo("Do you want to install Microfrontends?", false);
-        if (installSpa) {
-            nodeHelper.installNodeAndNpm(NODE_VERSION, NPM_VERSION);
-            File buildTargetDir = new File(serverDir, BUILD_TARGET_DIR);
-            nodeHelper.runNpx(String.format("openmrs@latest build --target %s", buildTargetDir));
-            nodeHelper.runNpx(String.format("openmrs@latest assemble --target %s", buildTargetDir));
         }
     }
 

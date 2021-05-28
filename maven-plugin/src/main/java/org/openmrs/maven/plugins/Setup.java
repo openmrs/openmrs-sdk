@@ -250,7 +250,6 @@ public class Setup extends AbstractTask {
             moduleInstaller.installModulesForDistro(server, distroProperties, distroHelper);
             installOWAs(server, distroProperties);
         } else {
-            spaInstaller.installInteractively(server.getServerDirectory());
             moduleInstaller.installDefaultModules(server);
         }
 
