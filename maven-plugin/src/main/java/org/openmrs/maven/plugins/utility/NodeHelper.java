@@ -26,7 +26,7 @@ import static org.twdata.maven.mojoexecutor.MojoExecutor.version;
 public class NodeHelper {
     private static final String FRONTEND_MAVEN_GROUP_ID = "com.github.eirslett";
     private static final String FRONTEND_MAVEN_ARTIFACT_ID = "frontend-maven-plugin";
-    private static final String FRONTEND_MAVEN_VERSION = "1.12.0";
+    private static final String FRONTEND_MAVEN_VERSION = "1.11.3";
 
     private MavenSession mavenSession;
 

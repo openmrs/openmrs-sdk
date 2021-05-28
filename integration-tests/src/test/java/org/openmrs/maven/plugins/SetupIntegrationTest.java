@@ -154,6 +154,11 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
         assertFilePresent(serverId + File.separator + "openmrs-1.11.5.war");
         assertFilePresent(serverId + File.separator + "modules");
         assertModulesInstalled(serverId, "owa-1.4.omod", "uicommons-1.7.omod", "uiframework-3.6.omod");
+        assertFilePresent(serverId + File.separator + "frontend");
+        assertFilePresent(serverId + File.separator + "frontend" + File.separator + "index.html");
+        assertFilePresent(serverId + File.separator + "frontend" + File.separator + "importmap.json");
+        assertFilePresent(serverId + File.separator + "frontend" + File.separator + "openmrs-esm-login-app-3.1.0");
+        assertFilePresent(serverId + File.separator + "frontend" + File.separator + "openmrs-esm-patient-chart-app-3.0.0");
 
         Server.setServersPath(testDirectory.getAbsolutePath());
         Server server = Server.loadServer(serverId);
@@ -341,11 +346,7 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
 
     @Test
     public void setup_shouldInstallWithParentDistroSpecifiedInDistroProperties() throws Exception{
-        final String distroPropertiesDirectoryName = "distro-properties";
-        final String distroPropertiesFileName = "openmrs-distro.properties";
-        final String distroDirectoryParam = "distro";
-
-        addTaskParam(distroDirectoryParam, testDirectory.toString() + File.separator + distroPropertiesDirectoryName + File.separator + distroPropertiesFileName);
+        addTaskParam("distro", testDirectory.toString() + File.separator + "parent-distro-properties" + File.separator + "openmrs-distro.properties");
         addMockDbSettings();
 
         String serverId = UUID.randomUUID().toString();
