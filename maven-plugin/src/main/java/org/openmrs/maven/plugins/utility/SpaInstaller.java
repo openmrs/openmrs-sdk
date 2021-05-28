@@ -100,22 +100,17 @@ public class SpaInstaller {
                 throw new RuntimeException(BAD_SPA_PROPERTIES_MESSAGE +
                         " Also please post to OpenMRS Talk and include this full message. If you are seeing this, there has been a programming error.");
             }
-            String childKeys = StringUtils.join(Arrays.copyOfRange(keys, 1, keys.length), ".");
+            String childKeys = propertyKey.substring(propertyKey.indexOf(".") + 1)
             addPropertyToJSONObject((JSONObject) childObject, childKeys, value);
         }
     }
 
     private static void writeJSONObject(File file, JSONObject jsonObject) throws MojoExecutionException {
-        FileWriter out = null;
-        try {
-            out = new FileWriter(file);
-            jsonObject.writeJSONString(out);
+        try (FileWriter out = new FileWriter(file)) {
+        	jsonObject.writeJSONString(out);
         }
         catch (IOException e) {
-            throw new MojoExecutionException(e.getMessage());
-        }
-        finally {
-            IOUtils.closeQuietly(out);
+        	throw new MojoExecutionException(e.getMessage(), e);
         }
     }
 
