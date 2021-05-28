@@ -12,12 +12,10 @@ import org.apache.maven.settings.Proxy;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.settings.Settings;
 import org.openmrs.maven.plugins.model.Server;
-import org.openmrs.maven.plugins.utility.DefaultJira;
+import org.openmrs.maven.plugins.utility.Jira;
 import org.openmrs.maven.plugins.utility.DistroHelper;
-import org.openmrs.maven.plugins.git.DefaultGitHelper;
 import org.openmrs.maven.plugins.git.GitHelper;
 import org.openmrs.maven.plugins.utility.DockerHelper;
-import org.openmrs.maven.plugins.utility.Jira;
 import org.openmrs.maven.plugins.utility.ModuleInstaller;
 import org.openmrs.maven.plugins.utility.OwaHelper;
 import org.openmrs.maven.plugins.utility.StatsManager;
@@ -103,7 +101,7 @@ public abstract class AbstractTask extends AbstractMojo {
     boolean stats;
 
     /**
-     * the wonderful wiz, if ever a wiz there was
+     * Give prompts, processes answers, casts spells
      */
     Wizard wizard;
 
@@ -167,10 +165,10 @@ public abstract class AbstractTask extends AbstractMojo {
             wizard = new Wizard();
         }
         if(jira == null){
-            jira = new DefaultJira();
+            jira = new Jira();
         }
         if(gitHelper == null){
-            gitHelper = new DefaultGitHelper();
+            gitHelper = new GitHelper();
         }
         if(versionsHelper == null){
             versionsHelper = new VersionsHelper(artifactFactory, mavenProject, mavenSession, artifactMetadataSource);
