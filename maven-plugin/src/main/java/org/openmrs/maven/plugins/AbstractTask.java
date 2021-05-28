@@ -190,7 +190,7 @@ public abstract class AbstractTask extends AbstractMojo {
             owaHelper = new OwaHelper(mavenSession, mavenProject, pluginManager, wizard);
         }
         if (spaInstaller == null) {
-            spaInstaller = new SpaInstaller(mavenProject, mavenSession, pluginManager);
+            spaInstaller = new SpaInstaller(mavenProject, mavenSession, pluginManager, distroHelper, wizard);
         }
         if(dockerHelper == null){
             dockerHelper = new DockerHelper(mavenProject, mavenSession, pluginManager, wizard);

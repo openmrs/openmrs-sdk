@@ -3,7 +3,9 @@ package org.openmrs.maven.plugins.model;
 import org.apache.commons.lang.StringUtils;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
@@ -22,6 +24,8 @@ public abstract class BaseSdkProperties {
     protected static final String VERSION = "version";
     protected static final String TYPE_DISTRO = "distro";
     protected static final String TYPE_OWA = "owa";
+    protected static final String TYPE_SPA = "spa";
+
 
     protected Properties properties;
 
@@ -105,6 +109,17 @@ public abstract class BaseSdkProperties {
             }
         }
         return artifacts;
+    }
+
+    public Map<String, String> getSpaProperties() {
+        Map<String, String> spaProperties = new HashMap<>();
+        for (Object keyObject: getAllKeys()) {
+            String key = keyObject.toString();
+            if (key.startsWith(TYPE_SPA + ".")) {
+                spaProperties.put(key.substring(TYPE_SPA.length() + 1), getParam(key));
+            }
+        }
+        return spaProperties;
     }
 
     public List<Artifact> getWarArtifacts(){

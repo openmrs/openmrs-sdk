@@ -169,6 +169,17 @@ public class DistroProperties extends BaseSdkProperties {
         return mergeArtifactLists(childArtifacts, parentArtifacts);
     }
 
+    public Map<String, String> getSpaProperties(DistroHelper distroHelper, File directory) throws MojoExecutionException {
+        Map<String, String> spaProperties = getSpaProperties();
+
+        Artifact artifact = getDistroArtifact();
+        if (artifact != null) {
+            DistroProperties distroProperties = distroHelper.downloadDistroProperties(directory, artifact);
+            spaProperties.putAll(distroProperties.getSpaProperties(distroHelper, directory));
+        }
+        return spaProperties;
+    }
+
     public List<Artifact> getWarArtifacts(DistroHelper distroHelper, File directory) throws MojoExecutionException{
         List<Artifact> childArtifacts = getWarArtifacts();
         List<Artifact> parentArtifacts = new ArrayList<>();

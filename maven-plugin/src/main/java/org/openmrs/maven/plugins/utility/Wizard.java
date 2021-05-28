@@ -60,6 +60,8 @@ public interface Wizard {
 
     boolean promptYesNo(String text);
 
+    boolean promptYesNo(String text, boolean defaultValue);
+
     boolean checkYes(String value);
 
     String promptForExistingServerIdIfMissing(String serverId);
