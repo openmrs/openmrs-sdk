@@ -24,7 +24,7 @@ public class SpaInstaller {
             "Parent properties cannot have their own values (i.e., if 'spa.foo.bar' exists, 'spa.foo' cannot be assigned a value). " +
             "Duplicate properties are not allowed.";
     static final String NODE_VERSION = "16.2.0";
-    static final String NPM_VERSION = "7.6.2";
+    static final String NPM_VERSION = "7.13.0";
     static final String BUILD_TARGET_DIR = "frontend";
 
     private NodeHelper nodeHelper;
