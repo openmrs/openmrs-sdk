@@ -94,12 +94,6 @@ public class CreateProject extends CreateProjectFromArchetypeMojo {
     private Invoker invoker;
 
     /**
-     * @component
-     * @required
-     */
-    Wizard wizard;
-
-    /**
      * @parameter  property="batchAnswers"
      */
     private ArrayDeque<String> batchAnswers;
@@ -285,6 +279,11 @@ public class CreateProject extends CreateProjectFromArchetypeMojo {
      * @parameter  property="type"
      */
     private String type;
+
+    /**
+     * Give prompts, processes answers, casts spells
+     */
+    private final Wizard wizard = new Wizard();
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
