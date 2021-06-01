@@ -12,12 +12,10 @@ import org.apache.maven.settings.Proxy;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.settings.Settings;
 import org.openmrs.maven.plugins.model.Server;
-import org.openmrs.maven.plugins.utility.DefaultJira;
+import org.openmrs.maven.plugins.utility.Jira;
 import org.openmrs.maven.plugins.utility.DistroHelper;
-import org.openmrs.maven.plugins.git.DefaultGitHelper;
 import org.openmrs.maven.plugins.git.GitHelper;
 import org.openmrs.maven.plugins.utility.DockerHelper;
-import org.openmrs.maven.plugins.utility.Jira;
 import org.openmrs.maven.plugins.utility.ModuleInstaller;
 import org.openmrs.maven.plugins.utility.OwaHelper;
 import org.openmrs.maven.plugins.utility.StatsManager;
@@ -76,12 +74,6 @@ public abstract class AbstractTask extends AbstractMojo {
     BuildPluginManager pluginManager;
 
     /**
-     * @component
-     * @required
-     */
-    Wizard wizard;
-
-    /**
      * test mode, if true disables interactive mode and uses batchAnswers, even if there is none
      *
      * @parameter  property="testMode" default-value="false"
@@ -107,6 +99,11 @@ public abstract class AbstractTask extends AbstractMojo {
      * @parameter  property="stats" default-value="false"
      */
     boolean stats;
+
+    /**
+     * Give prompts, processes answers, casts spells
+     */
+    Wizard wizard;
 
     /**
      * wizard for resolving artifact available versions
@@ -164,11 +161,14 @@ public abstract class AbstractTask extends AbstractMojo {
     }
 
     public void initTask() {
+        if (wizard == null) {
+            wizard = new Wizard();
+        }
         if(jira == null){
-            jira = new DefaultJira();
+            jira = new Jira();
         }
         if(gitHelper == null){
-            gitHelper = new DefaultGitHelper();
+            gitHelper = new GitHelper();
         }
         if(versionsHelper == null){
             versionsHelper = new VersionsHelper(artifactFactory, mavenProject, mavenSession, artifactMetadataSource);

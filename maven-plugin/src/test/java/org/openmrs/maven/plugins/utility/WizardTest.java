@@ -6,8 +6,6 @@ import static org.junit.Assert.*;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.openmrs.maven.plugins.utility.Wizard;
-import org.openmrs.maven.plugins.utility.DefaultWizard;
 
 public class WizardTest {
 
@@ -15,7 +13,7 @@ public class WizardTest {
 
 	@Before
 	public void before() {
-		wizard = new DefaultWizard(null);
+		wizard = new Wizard(null);
 	}
 
 	@Test
