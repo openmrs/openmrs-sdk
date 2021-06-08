@@ -18,6 +18,7 @@ import org.openmrs.maven.plugins.git.GitHelper;
 import org.openmrs.maven.plugins.utility.DockerHelper;
 import org.openmrs.maven.plugins.utility.ModuleInstaller;
 import org.openmrs.maven.plugins.utility.OwaHelper;
+import org.openmrs.maven.plugins.utility.SpaInstaller;
 import org.openmrs.maven.plugins.utility.StatsManager;
 import org.openmrs.maven.plugins.utility.VersionsHelper;
 import org.openmrs.maven.plugins.utility.Wizard;
@@ -126,6 +127,11 @@ public abstract class AbstractTask extends AbstractMojo {
     OwaHelper owaHelper;
 
     /**
+     * installs SPAs
+     */
+    SpaInstaller spaInstaller;
+
+    /**
      * handles github and provides basic git utilities
      */
     GitHelper gitHelper;
@@ -154,6 +160,7 @@ public abstract class AbstractTask extends AbstractMojo {
         this.versionsHelper = other.versionsHelper;
         this.distroHelper = other.distroHelper;
         this.owaHelper = other.owaHelper;
+        this.spaInstaller = other.spaInstaller;
         this.gitHelper = other.gitHelper;
         this.dockerHelper = other.dockerHelper;
 	    this.settings = other.settings;
@@ -181,6 +188,9 @@ public abstract class AbstractTask extends AbstractMojo {
         }
         if (owaHelper == null) {
             owaHelper = new OwaHelper(mavenSession, mavenProject, pluginManager, wizard);
+        }
+        if (spaInstaller == null) {
+            spaInstaller = new SpaInstaller(mavenProject, mavenSession, pluginManager, distroHelper);
         }
         if(dockerHelper == null){
             dockerHelper = new DockerHelper(mavenProject, mavenSession, pluginManager, wizard);

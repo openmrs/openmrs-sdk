@@ -3,6 +3,7 @@ target/
 .idea/
 *~
 /openmrs-sdk.bat
+node/
 
 *.class
 

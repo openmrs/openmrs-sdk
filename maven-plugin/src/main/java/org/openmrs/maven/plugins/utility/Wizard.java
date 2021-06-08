@@ -62,6 +62,7 @@ public class Wizard {
     private static final String DEFAULT_FAIL_MESSAGE = "Server with such serverId is not exists";
     private static final String INVALID_SERVER = "Invalid server Id";
     private static final String YESNO = " [Y/n]";
+    private static final String NOYES = " [N/y]";
     private static final String REFERENCEAPPLICATION_2_4 = "org.openmrs.distro:referenceapplication-package:2.4";
     private static final String DEFAULT_CUSTOM_DIST_ARTIFACT = "Please specify custom distribution artifact%s (default: '%s')";
     private static final String CUSTOM_JDK_PATH = "Please specify a path to JDK used for running this server (-Djdk)";
@@ -299,14 +300,27 @@ public class Wizard {
      * @return
      */
     public boolean promptYesNo(String text) {
+        return promptYesNo(text, true);
+    }
+
+    /**
+     *
+     * @param text Text to display
+     * @param defaultValue Value to use if response is empty
+     * @return
+     */
+    public boolean promptYesNo(String text, boolean defaultValue) {
         String yesNo = null;
         if(interactiveMode){
-            yesNo = prompt(text.concat(YESNO));
+            yesNo = prompt(text.concat(defaultValue ? YESNO : NOYES));
         } else {
             yesNo = getAnswer(text);
         }
-        return yesNo.equals("") || yesNo.toLowerCase().equals("y");
-
+        if (yesNo.equals("")) {
+            return defaultValue;
+        } else {
+            return yesNo.equalsIgnoreCase("y");
+        }
     }
 
     /**
