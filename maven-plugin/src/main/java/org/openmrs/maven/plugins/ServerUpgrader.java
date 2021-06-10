@@ -72,6 +72,7 @@ public class ServerUpgrader {
 					updateModule(server, modulesDir, downgradeEntry);
 				}
 			}
+			parentTask.spaInstaller.installFromDistroProperties(server.getServerDirectory(), distroProperties);
 
 			server.setVersion(distroProperties.getVersion());
 			server.setName(distroProperties.getName());
