@@ -140,6 +140,7 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
         String serverId = UUID.randomUUID().toString();
         addTaskParam("serverId", serverId);
         addTaskParam("debug", "1044");
+        addTaskParam("enable.spa", "true");
         addMockDbSettings();
 
         addAnswer("OpenMRS Concepts OWA server 1.0 from current directory");

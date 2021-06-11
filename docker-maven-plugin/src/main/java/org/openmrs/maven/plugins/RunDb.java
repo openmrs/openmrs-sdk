@@ -17,7 +17,7 @@ public class RunDb extends AbstractDockerMojo {
     /**
      * port exposed by mysql container to connect with db
      *
-     * @parameter propert="container"
+     * @parameter property="container"
      */
     protected String container;
 
