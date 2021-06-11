@@ -134,7 +134,7 @@ public class DefaultWizard implements Wizard {
         int indx = 0;
         while (new File(Server.getServersPath(), defaultServerId).exists()) {
             indx++;
-            defaultServerId = DEFAULT_SERVER_NAME + String.valueOf(indx);
+            defaultServerId = DEFAULT_SERVER_NAME + indx;
         }
         String serverId =  promptForValueIfMissingWithDefault("Specify server id (-D%s)", server.getServerId(), "serverId", defaultServerId);
         server.setServerId(serverId);
