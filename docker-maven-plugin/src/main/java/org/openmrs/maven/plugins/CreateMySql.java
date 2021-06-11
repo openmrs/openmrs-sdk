@@ -2,11 +2,16 @@ package org.openmrs.maven.plugins;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.async.ResultCallback;
+import com.github.dockerjava.api.command.CreateContainerCmd;
+import com.github.dockerjava.api.model.Bind;
 import com.github.dockerjava.api.model.ExposedPort;
+import com.github.dockerjava.api.model.HostConfig;
 import com.github.dockerjava.api.model.Image;
+import com.github.dockerjava.api.model.PortBinding;
 import com.github.dockerjava.api.model.Ports;
 import com.github.dockerjava.api.model.PullResponseItem;
 import com.github.dockerjava.api.model.Volume;
+import com.github.dockerjava.api.model.VolumesFrom;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -49,7 +54,6 @@ public class CreateMySql extends AbstractDockerMojo {
 
     @Override
     public void executeTask() throws MojoExecutionException, MojoFailureException {
-
         if (StringUtils.isBlank(port)) port = DEFAULT_MYSQL_EXPOSED_PORT;
         //root password may be blank but not null, if user wants to have empty password
         if (rootPassword == null) rootPassword = DEFAULT_MYSQL_PASSWORD;
@@ -61,7 +65,6 @@ public class CreateMySql extends AbstractDockerMojo {
         if (findContainer(DEFAULT_MYSQL_CONTAINER) == null) {
             createMysqlContainer(docker);
         }
-
     }
 
     private boolean noMySqlImage(DockerClient docker) {
@@ -72,25 +75,24 @@ public class CreateMySql extends AbstractDockerMojo {
     private void createMysqlContainer(DockerClient docker) {
         if (container == null) container = DEFAULT_MYSQL_CONTAINER;
 
-        docker.createVolumeCmd().withName(container + "-data").exec();
-
-        ExposedPort tcp3306 = ExposedPort.tcp(3306);
-        Ports portBindings = new Ports();
-        portBindings.bind(tcp3306, new Ports.Binding("localhost", port));
+        PortBinding portBinding = new PortBinding(new Ports.Binding("localhost", port), ExposedPort.tcp(3306));
 
         Map<String, String> labels = new HashMap<>();
         labels.put(container, "true");
 
-        Volume volume = new Volume(container + "-data:/var/lib/mysql");
+        Volume volume = new Volume("/var/lib/mysql");
+        Bind boundVolume = new Bind(container + "-data", volume);
+
+        HostConfig hostConfig = new HostConfig()
+                .withPortBindings(portBinding)
+                .withBinds(boundVolume);
 
         docker.createContainerCmd(MYSQL_5_6)
-                .withExposedPorts(tcp3306)
-                .withPortBindings(portBindings)
+                .withHostConfig(hostConfig)
                 .withName(container)
                 .withEnv("MYSQL_ROOT_PASSWORD="+rootPassword)
                 .withAttachStdout(true)
                 .withLabels(labels)
-                .withVolumes(volume)
                 .exec();
     }
 

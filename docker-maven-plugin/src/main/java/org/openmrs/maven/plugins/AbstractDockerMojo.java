@@ -5,6 +5,7 @@ import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.core.DefaultDockerClientConfig;
 import com.github.dockerjava.core.DockerClientBuilder;
 import com.github.dockerjava.core.DockerClientConfig;
+import com.github.dockerjava.httpclient5.ApacheDockerHttpClient;
 import org.apache.commons.lang.SystemUtils;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -12,6 +13,8 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.codehaus.plexus.components.interactivity.Prompter;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.List;
 
@@ -21,7 +24,7 @@ abstract class AbstractDockerMojo extends AbstractMojo {
     protected static final String DEFAULT_MYSQL_EXPOSED_PORT = "3308";
     protected static final String DEFAULT_MYSQL_PASSWORD = "Admin123";
     protected static final String MYSQL_5_6 = "mysql:5.6";
-    protected static final String DEFAULT_MYSQL_DBURI = "jdbc:mysql://localhost:3307/";
+    protected static final String DEFAULT_MYSQL_DBURI = "jdbc:mysql://localhost:3308/";
     protected static final String API_VERSION = "1.18";
     protected static final String DEFAULT_HOST_LINUX = "unix:///var/run/docker.sock";
 
@@ -63,14 +66,19 @@ abstract class AbstractDockerMojo extends AbstractMojo {
 
     public abstract void executeTask() throws MojoExecutionException, MojoFailureException;
 
-    protected void resolveDocker() {
-
+    protected void resolveDocker() throws MojoExecutionException {
         DockerClientConfig config = DefaultDockerClientConfig.createDefaultConfigBuilder()
-                .withDockerHost(dockerHost)
                 .withApiVersion(API_VERSION)
                 .build();
 
-        docker = DockerClientBuilder.getInstance(config).build();
+        try {
+            docker = DockerClientBuilder.getInstance(config).withDockerHttpClient(
+                    new ApacheDockerHttpClient.Builder().dockerHost(new URI(dockerHost)).build()
+            ).build();
+        }
+        catch (URISyntaxException e) {
+            throw new MojoExecutionException("Docker host \"" + dockerHost + "\" is not a valid URI.", e);
+        }
 
         try {
             docker.infoCmd().exec();
@@ -90,28 +98,17 @@ abstract class AbstractDockerMojo extends AbstractMojo {
         for (Container container : containers) {
             if (container.getId().equals(id)) {
                 return container;
+            } else {
+                List<String> containerNames = Arrays.asList(container.getNames());
+                // on Linux name is prepended with '/'
+                if (containerNames.contains(id) || containerNames.contains("/" + id)) {
+                    return container;
+                } else if (container.getLabels().containsKey(id)) {
+                    return container;
+                }
             }
         }
 
-        for (Container container: containers) {
-            if (Arrays.asList(container.getNames()).contains(id)) {
-                return container;
-            }
-        }
-
-        //on Linux name is prepended with '/'
-        String idWithSlash = "/" + id;
-        for (Container container: containers) {
-            if (Arrays.asList(container.getNames()).contains(idWithSlash)) {
-                return container;
-            }
-        }
-
-        for (Container container: containers) {
-            if (container.getLabels().containsKey(id)) {
-                return container;
-            }
-        }
         return null;
     }
 
