@@ -1,7 +1,6 @@
 package org.openmrs.maven.plugins;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.NullOutputStream;
 import org.apache.commons.lang.StringUtils;
 import org.apache.ibatis.jdbc.ScriptRunner;
@@ -24,7 +23,8 @@ import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
-import java.io.Reader;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
@@ -312,29 +312,17 @@ public class Setup extends AbstractServerTask {
 	private void wipeDatabase(Server server) throws MojoExecutionException {
 		String uri = server.getDbUri();
 		uri = uri.substring(0, uri.lastIndexOf("/") + 1);
-		DBConnector connector = null;
-		try {
-			connector = new DBConnector(uri, server.getDbUser(), server.getDbPassword(), server.getDbName());
+		try (DBConnector connector = new DBConnector(uri, server.getDbUser(), server.getDbPassword(), server.getDbName())) {
 			connector.dropDatabase();
 			if (server.isMySqlDb()) {
-				connectMySqlDatabase(server);
+				connectToDatabase(server);
 			} else if (server.isPostgreSqlDb()) {
-				connectPostgreSqlDatabase(server);
+				connectToDatabase(server);
 			}
 			wizard.showMessage("Database " + server.getDbName() + " has been wiped.");
 		}
 		catch (SQLException e) {
-			throw new IllegalStateException("Failed to drop " + server.getDbName() + " database");
-		}
-		finally {
-			if (connector != null) {
-				try {
-					connector.close();
-				}
-				catch (SQLException e) {
-					getLog().error(e.getMessage());
-				}
-			}
+			throw new MojoExecutionException("Failed to drop " + server.getDbName() + " database");
 		}
 	}
 
@@ -388,6 +376,7 @@ public class Setup extends AbstractServerTask {
 			}
 			wizard.promptForDb(server, dockerHelper, isH2Supported, dbDriver, dockerHost);
 		}
+
 		if (server.getDbDriver() != null) {
 			setupDatabaseForServer(server);
 		}
@@ -397,10 +386,13 @@ public class Setup extends AbstractServerTask {
 		if (server.getDbName() == null) {
 			server.setDbName(determineDbName(server.getDbUri(), server.getServerId()));
 		}
-		if (server.isMySqlDb()) {
-			boolean mysqlDbCreated = connectMySqlDatabase(server);
-			if (!mysqlDbCreated) {
-				throw new IllegalStateException("Failed to connect to the specified database " + server.getDbUri());
+
+		if (server.isMySqlDb() || server.isPostgreSqlDb()) {
+			try {
+				connectToDatabase(server);
+			}
+			catch (SQLException e) {
+				throw new MojoExecutionException("Failed to connect to the specified database " + server.getDbUri(), e);
 			}
 
 			if (hasDbTables(server)) {
@@ -422,12 +414,24 @@ public class Setup extends AbstractServerTask {
 
 			if (!"null".equals(dbSql) && dbReset) {
 				if (dbSql != null) {
-					importMysqlDb(server, dbSql);
+					importDb(server, dbSql);
 					resetSearchIndex(server);
 				} else {
-					if (server.getPlatformVersion() != null) {
+					String initialSql = null;
+
+					if (server.isMySqlDb()) {
+						initialSql = Server.CLASSPATH_SCRIPT_PREFIX + "openmrs-platform.sql";
+					} else if (server.isPostgreSqlDb()) {
+						initialSql = Server.CLASSPATH_SCRIPT_PREFIX + "openmrs-platform-postgres.sql";
+					} else {
+						moduleInstaller.installModule(SDKConstants.H2_ARTIFACT, server.getServerDirectory().getPath());
+						wizard.showMessage("The specified database " + server.getDbName()
+								+ " does not exist and it will be created when OpenMRS starts.");
+					}
+
+					if (initialSql != null && server.getPlatformVersion() != null) {
 						if (new Version(server.getPlatformVersion()).higher(new Version("1.9.7"))) {
-							importMysqlDb(server, Server.CLASSPATH_SCRIPT_PREFIX + "openmrs-platform.sql");
+							importDb(server, initialSql);
 							resetSearchIndex(server);
 						}
 					}
@@ -435,45 +439,6 @@ public class Setup extends AbstractServerTask {
 			} else if (!dbReset) {
 				resetSearchIndex(server);
 			}
-		} else if (server.isPostgreSqlDb()) {
-			boolean postgresqlDbCreated = connectPostgreSqlDatabase(server);
-			if (!postgresqlDbCreated) {
-				throw new IllegalStateException("Failed to connect to the specified database " + server.getDbUri());
-			}
-
-			if (hasDbTables(server)) {
-				if (dbReset == null) {
-					dbReset = !wizard.promptYesNo(
-							"Would you like to setup the server using existing data (if not, all data will be lost)?");
-				}
-
-				if (dbReset) {
-					wipeDatabase(server);
-				} else {
-					server.setParam("create_tables", "false");
-				}
-			}
-
-			if (dbReset == null) {
-				dbReset = true;
-			}
-
-			if (!"null".equals(dbSql) && dbReset) {
-				if (dbSql != null) {
-					importPostgreSqlDb(server, dbSql);
-					resetSearchIndex(server);
-				} else {
-					if (server.getPlatformVersion() != null) {
-						if (new Version(server.getPlatformVersion()).higher(new Version("1.9.7"))) {
-							importPostgreSqlDb(server, Server.CLASSPATH_SCRIPT_PREFIX + "openmrs-platform-postgres.sql");
-							resetSearchIndex(server);
-						}
-					}
-				}
-			} else if (!dbReset) {
-				resetSearchIndex(server);
-			}
-
 		} else {
 			moduleInstaller.installModule(SDKConstants.H2_ARTIFACT, server.getServerDirectory().getPath());
 			wizard.showMessage(
@@ -481,112 +446,30 @@ public class Setup extends AbstractServerTask {
 		}
 	}
 
-	private boolean connectMySqlDatabase(Server server) throws MojoExecutionException {
-		String uri = server.getDbUri();
-		uri = uri.substring(0, uri.lastIndexOf("/") + 1);
-		DBConnector connector = null;
-		try {
-			try {
-				//ensure driver is registered
-				Class.forName("com.mysql.jdbc.Driver");
-			}
-			catch (ClassNotFoundException e) {
-				throw new RuntimeException("Failed to load MySQL driver");
-			}
-			connector = new DBConnector(uri, server.getDbUser(), server.getDbPassword(), server.getDbName());
+	private void connectToDatabase(Server server) throws SQLException {
+		try (DBConnector connector = new DBConnector(server.getDbUri(), server.getDbUser(), server.getDbPassword(),
+				server.getDbName())) {
 			connector.checkAndCreate(server);
-			connector.close();
 			wizard.showMessage("Connected to the database.");
-			return true;
-		}
-		catch (SQLException e) {
-			return false;
-		}
-		finally {
-			if (connector != null) {
-				try {
-					connector.close();
-				}
-				catch (SQLException e) {
-					getLog().error(e.getMessage());
-				}
-			}
 		}
 	}
 
-	private boolean connectPostgreSqlDatabase(Server server) throws MojoExecutionException {
+	private boolean hasDbTables(Server server) {
 		String uri = server.getDbUri();
 		uri = uri.substring(0, uri.lastIndexOf("/") + 1);
-		DBConnector connector = null;
-		try {
-			try {
-				//ensure driver is registered
-				Class.forName("org.postgresql.Driver");
-			}
-			catch (ClassNotFoundException e) {
-				throw new RuntimeException("Failed to load PostgreSQL driver", e);
-			}
-			connector = new DBConnector(uri, server.getDbUser(), server.getDbPassword(), server.getDbName());
-			connector.checkAndCreate(server);
-			connector.close();
-			wizard.showMessage("Connected to the database.");
-			return true;
-		}
-		catch (Exception e) {
-			return false;
-		}
-		finally {
-			if (connector != null) {
-				try {
-					connector.close();
-				}
-				catch (SQLException e) {
-					getLog().error(e.getMessage());
-				}
-			}
-		}
-	}
-
-	private boolean hasDbTables(Server server) throws MojoExecutionException {
-		String uri = server.getDbUri();
-		uri = uri.substring(0, uri.lastIndexOf("/") + 1);
-		DBConnector connector = null;
-		ResultSet rs = null;
-		try {
-			connector = new DBConnector(uri, server.getDbUser(), server.getDbPassword(), server.getDbName());
+		try (DBConnector connector = new DBConnector(uri, server.getDbUser(), server.getDbPassword(), server.getDbName())) {
 			DatabaseMetaData md = connector.getConnection().getMetaData();
 
-			rs = md.getTables(server.getDbName(), null, null, new String[] { "TABLE" });
-			boolean hasTables = false;
-			if (rs.next()) {
-				hasTables = true;
+			try (ResultSet rs = md.getTables(server.getDbName(), null, null, new String[] { "TABLE" })) {
+				if (rs.next()) {
+					return true;
+				}
+
+				return false;
 			}
-
-			rs.close();
-			connector.close();
-
-			return hasTables;
 		}
 		catch (SQLException e) {
 			throw new IllegalStateException("Failed to fetch table list from \"" + server.getDbName() + "\" database.", e);
-		}
-		finally {
-			if (rs != null) {
-				try {
-					rs.close();
-				}
-				catch (SQLException e) {
-					getLog().error(e.getMessage());
-				}
-			}
-			if (connector != null) {
-				try {
-					connector.close();
-				}
-				catch (SQLException e) {
-					getLog().error(e.getMessage());
-				}
-			}
 		}
 	}
 
@@ -598,8 +481,7 @@ public class Setup extends AbstractServerTask {
 		try {
 			connector = new DBConnector(uri + server.getDbName(), server.getDbUser(), server.getDbPassword(),
 					server.getDbName());
-			ps = connector.getConnection()
-					.prepareStatement(String.format(SDKConstants.RESET_SEARCH_INDEX_SQL, server.getDbName()));
+			ps = connector.getConnection().prepareStatement(SDKConstants.RESET_SEARCH_INDEX_SQL);
 			ps.execute();
 
 			ps.close();
@@ -630,21 +512,20 @@ public class Setup extends AbstractServerTask {
 		}
 	}
 
-	private void importMysqlDb(Server server, String sqlScriptPath) throws MojoExecutionException {
+	private void importDb(Server server, String sqlScriptPath) throws MojoExecutionException {
 		wizard.showMessage("Importing an initial database from " + sqlScriptPath + "...");
 		String uri = server.getDbUri().replace("@DBNAME@", server.getDbName());
 
-		File extractedSqlFile = null;
 		InputStream sqlStream;
-		Reader sqlReader;
 		if (sqlScriptPath.startsWith(Server.CLASSPATH_SCRIPT_PREFIX)) {
 			String sqlScript = sqlScriptPath.replace(Server.CLASSPATH_SCRIPT_PREFIX, "");
 			sqlStream = (Setup.class.getClassLoader().getResourceAsStream(sqlScript));
 			if (sqlStream == null) {
 				Artifact distroArtifact = new Artifact(server.getDistroArtifactId(), server.getVersion(),
 						server.getDistroGroupId(), "jar");
-				extractedSqlFile = distroHelper
+				File extractedSqlFile = distroHelper
 						.extractFileFromDistro(server.getServerDirectory(), distroArtifact, sqlScript);
+				extractedSqlFile.deleteOnExit();
 				try {
 					sqlStream = new FileInputStream(extractedSqlFile);
 				}
@@ -662,130 +543,56 @@ public class Setup extends AbstractServerTask {
 			}
 		}
 
-		sqlReader = new InputStreamReader(sqlStream);
-		Connection connection = null;
-		try {
-			connection = DriverManager.getConnection(uri, server.getDbUser(), server.getDbPassword());
+		try (InputStreamReader sqlReader = new InputStreamReader(sqlStream);
+		     Connection connection = DriverManager.getConnection(uri, server.getDbUser(), server.getDbPassword())) {
 			ScriptRunner scriptRunner = new ScriptRunner(connection);
 			//we don't want to display ~5000 lines of queries to user if there is no error
 			scriptRunner.setLogWriter(new PrintWriter(new NullOutputStream()));
 			scriptRunner.setStopOnError(true);
 			scriptRunner.runScript(sqlReader);
-			scriptRunner.closeConnection();
-			sqlReader.close();
+
 			wizard.showMessage("Database imported successfully.");
 			server.setParam("create_tables", "false");
 		}
 		catch (Exception e) {
 			getLog().error(e.getMessage());
-
 			throw new MojoExecutionException("Failed to import database", e);
-		}
-		finally {
-			IOUtils.closeQuietly(sqlReader);
-
-			try {
-				if (connection != null) {
-					connection.close();
-				}
-			}
-			catch (SQLException e1) {
-				//close quietly
-			}
-
-			//this file is extracted from distribution, clean it up
-			if (extractedSqlFile != null && extractedSqlFile.exists()) {
-				extractedSqlFile.delete();
-			}
-		}
-	}
-
-	private void importPostgreSqlDb(Server server, String sqlScriptPath) throws MojoExecutionException {
-		wizard.showMessage("Importing an initial database from " + sqlScriptPath + "...");
-		String uri = server.getDbUri().replace("@DBNAME@", server.getDbName());
-
-		File extractedSqlFile = null;
-		InputStream sqlStream;
-		Reader sqlReader;
-		if (sqlScriptPath.startsWith(Server.CLASSPATH_SCRIPT_PREFIX)) {
-			String sqlScript = sqlScriptPath.replace(Server.CLASSPATH_SCRIPT_PREFIX, "");
-			sqlStream = (Setup.class.getClassLoader().getResourceAsStream(sqlScript));
-			if (sqlStream == null) {
-				Artifact distroArtifact = new Artifact(server.getDistroArtifactId(), server.getVersion(),
-						server.getDistroGroupId(), "jar");
-				extractedSqlFile = distroHelper
-						.extractFileFromDistro(server.getServerDirectory(), distroArtifact, sqlScript);
-				try {
-					sqlStream = new FileInputStream(extractedSqlFile);
-				}
-				catch (FileNotFoundException e) {
-					throw new MojoExecutionException("Error during opening sql dump script file", e);
-				}
-			}
-		} else {
-			File scriptFile = new File(sqlScriptPath);
-			try {
-				sqlStream = new FileInputStream(scriptFile);
-			}
-			catch (FileNotFoundException e) {
-				throw new RuntimeException("Invalid path to SQL import script", e);
-			}
-		}
-
-		sqlReader = new InputStreamReader(sqlStream);
-		Connection connection = null;
-		try {
-			connection = DriverManager.getConnection(uri, server.getDbUser(), server.getDbPassword());
-			ScriptRunner scriptRunner = new ScriptRunner(connection);
-			//we don't want to display ~5000 lines of queries to user if there is no error
-			scriptRunner.setLogWriter(new PrintWriter(new NullOutputStream()));
-			scriptRunner.setStopOnError(true);
-			scriptRunner.runScript(sqlReader);
-			scriptRunner.closeConnection();
-			sqlReader.close();
-			wizard.showMessage("Database imported successfully.");
-			server.setParam("create_tables", "false");
-		}
-		catch (Exception e) {
-			getLog().error(e.getMessage());
-
-			throw new MojoExecutionException("Failed to import database", e);
-		}
-		finally {
-			IOUtils.closeQuietly(sqlReader);
-
-			try {
-				if (connection != null) {
-					connection.close();
-				}
-			}
-			catch (SQLException e1) {
-				//close quietly
-			}
-
-			//this file is extracted from distribution, clean it up
-			if (extractedSqlFile != null && extractedSqlFile.exists()) {
-				extractedSqlFile.delete();
-			}
 		}
 	}
 
 	public String determineDbName(String uri, String serverId) throws MojoExecutionException {
 		String dbName = String.format(SDKConstants.DB_NAME_TEMPLATE, serverId);
+
 		if (!uri.contains("@DBNAME@")) {
 			//determine db name from uri
-			int dbNameStart = uri.lastIndexOf("/");
-			if (dbNameStart < 0) {
-				throw new MojoExecutionException("The uri is in a wrong format: " + uri);
-			}
-			int dbNameEnd = uri.indexOf("?");
-			dbName = dbNameEnd < 0 ? uri.substring(dbNameStart + 1) : uri.substring(dbNameStart + 1, dbNameEnd);
+			try {
+				URI parsedUri;
+				if (uri.startsWith("jdbc:")) {
+					parsedUri = new URI(uri.substring(5));
+				} else {
+					parsedUri = new URI(uri);
+				}
 
-			if (!dbName.matches("^[A-Za-z0-9_\\-]+$")) {
-				throw new MojoExecutionException(
-						"The db name is in a wrong format (allowed alphanumeric, dash and underscore signs): " + dbName);
+				dbName = parsedUri.getPath();
+
+				if (dbName == null || dbName.isEmpty() || dbName.equals("/")) {
+					throw new MojoExecutionException("No database name is given in the URI: " + dbName);
+				}
+
+				dbName = dbName.substring(1);
+
+				if (!dbName.substring(1).matches("^[A-Za-z0-9_\\-]+$")) {
+					throw new MojoExecutionException(
+							"The database name is not in the correct format (it should only have alphanumeric, dash and underscore signs): "
+									+
+									dbName);
+				}
+			}
+			catch (URISyntaxException e) {
+				throw new MojoExecutionException("Could not parse uri: " + uri, e);
 			}
 		}
+
 		return dbName;
 	}
 
@@ -799,6 +606,7 @@ public class Setup extends AbstractServerTask {
 		} else {
 			serverBuilder = new Server.ServerBuilder();
 		}
+
 		Server server = serverBuilder
 				.setServerId(serverId)
 				.setDbDriver(dbDriver)
@@ -809,6 +617,7 @@ public class Setup extends AbstractServerTask {
 				.setJavaHome(javaHome)
 				.setDebugPort(debug)
 				.build();
+
 		wizard.promptForNewServerIfMissing(server);
 
 		File serverDir = new File(Server.getServersPath(), server.getServerId());
@@ -816,6 +625,7 @@ public class Setup extends AbstractServerTask {
 			throw new MojoExecutionException(
 					"Cannot create server: directory with name " + serverDir.getName() + " already exists");
 		}
+
 		server.setServerDirectory(serverDir);
 		serverDir.mkdir();
 

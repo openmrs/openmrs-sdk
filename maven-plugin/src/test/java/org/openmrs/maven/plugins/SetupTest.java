@@ -32,7 +32,9 @@ public class SetupTest {
 	@Test
 	public void determineDbName_shouldReturnNameFromUriWithoutParams() throws MojoExecutionException {
 		Setup setupPlatform = new Setup();
+
 		String dbName = setupPlatform.determineDbName("jdbc:mysql://localhost:3016/open", "my_server");
+
 		assertThat(dbName, is(equalTo("open")));
 	}
 
@@ -40,9 +42,17 @@ public class SetupTest {
 	public void determineDbName_shouldFailIfNoNameInUri() throws MojoExecutionException {
 		Setup setupPlatform = new Setup();
 
-		expectedException.expectMessage("The db name is in a wrong format (allowed ");
+		expectedException.expectMessage("No database name is given in the URI:");
 
 		setupPlatform.determineDbName("jdbc:mysql://localhost:3016/", "my_server");
+	}
 
+	@Test
+	public void determineDbName_shouldFailIfBadNameInUri() throws MojoExecutionException {
+		Setup setupPlatform = new Setup();
+
+		expectedException.expectMessage("The database name is not in the correct format (");
+
+		setupPlatform.determineDbName("jdbc:mysql://localhost:3016/This%20Should%20Not%20Work", "my_server");
 	}
 }

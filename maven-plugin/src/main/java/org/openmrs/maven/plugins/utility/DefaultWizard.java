@@ -16,7 +16,11 @@ import org.codehaus.plexus.component.annotations.Component;
 import org.codehaus.plexus.component.annotations.Requirement;
 import org.codehaus.plexus.components.interactivity.Prompter;
 import org.codehaus.plexus.components.interactivity.PrompterException;
-import org.openmrs.maven.plugins.model.*;
+import org.openmrs.maven.plugins.model.Artifact;
+import org.openmrs.maven.plugins.model.DistroProperties;
+import org.openmrs.maven.plugins.model.Server;
+import org.openmrs.maven.plugins.model.UpgradeDifferential;
+import org.openmrs.maven.plugins.model.Version;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -276,24 +280,6 @@ public class DefaultWizard implements Wizard {
     }
 
     /**
-     * Prompt for a value with list of proposed values
-     * @param value
-     * @param parameterName
-     * @param values
-     * @return value
-     * @throws PrompterException
-     */
-    @Override
-    public String promptForValueWithDefaultList(String value, String parameterName, List<String> values) {
-        if (value != null) return value;
-        String defaultValue = values.size() > 0 ? values.get(0) : NONE;
-        final String text = DEFAULT_PROMPT_TMPL + DEFAULT_VALUE_TMPL + " (possible: %s)";
-        String val = prompt(String.format(text, parameterName, defaultValue, StringUtils.join(values.toArray(), ", ")));
-        if (val.equals(EMPTY_STRING)) val = defaultValue;
-        return val;
-    }
-
-    /**
      * Prompt for a value if it not set, and default value is NOT set
      * @param value
      * @param parameterName
@@ -473,10 +459,10 @@ public class DefaultWizard implements Wizard {
     }
 
     private boolean isAbovePlatformTwoPointThree(Version platformVersion) {
-    	return platformVersion.getMajorVersion() > 2 
+    	return platformVersion.getMajorVersion() > 2
     			|| (platformVersion.getMajorVersion() == 2 && platformVersion.getMinorVersion() > 3);
     }
-    
+
     private boolean isJava8orAbove(String javaVersion) {
     	if (javaVersion.startsWith("1.8")) {
     		return true;
@@ -485,7 +471,7 @@ public class DefaultWizard implements Wizard {
     	String version = javaVersion.substring(0, pos);
     	return (Integer.parseInt(version) > 8);
     }
-    
+
     private String determineJavaVersionFromPath(String path) {
         File javaPath = new File(path, "bin");
 
@@ -700,72 +686,72 @@ public class DefaultWizard implements Wizard {
     @Override
     public void promptForDb(Server server, DockerHelper dockerHelper, boolean h2supported, String dbDriver, String dockerHost) throws MojoExecutionException {
         String db = null;
-        if(StringUtils.isNotBlank(dbDriver)){
+
+        if (StringUtils.isNotBlank(dbDriver)) {
             db = DB_OPTIONS_MAP.get(dbDriver);
         }
-        List<String> options = new ArrayList<>();
-        if(h2supported) options.add(DB_OPTION_H2);
+
+        List<String> options = new ArrayList<>(4);
+        if (h2supported) {
+            options.add(DB_OPTION_H2);
+        }
+
         options.addAll(Lists.newArrayList(DB_OPTION_MYSQL, DB_OPTION_SDK_DOCKER_MYSQL, DB_OPTION_DOCKER_MYSQL));
         if (isAbovePlatformTwoPointThree(new Version(server.getPlatformVersion()))) {
         	options.add(DB_OPTION_POSTGRESQL);
         }
+
         db = promptForMissingValueWithOptions("Which database would you like to use?", db, null, options);
-        switch(db){
-            case(DB_OPTION_H2): {
+        switch (db){
+            case DB_OPTION_H2:
                 server.setDbDriver(SDKConstants.DRIVER_H2);
                 if (server.getDbUri() == null) {
                     server.setDbUri(SDKConstants.URI_H2);
                 }
+
                 server.setDbUser("root");
                 server.setDbPassword("root");
                 break;
-            }
-            case(DB_OPTION_MYSQL):{
-                promptForMySQLDb(server);
+            case DB_OPTION_MYSQL:
+                promptForDbUri(server, SDKConstants.DRIVER_MYSQL);
                 break;
-            }
-            case(DB_OPTION_SDK_DOCKER_MYSQL):{
+            case DB_OPTION_SDK_DOCKER_MYSQL:
                 promptForDockerizedSdkMysql(server, dockerHelper, dockerHost);
                 break;
-            }
-            case(DB_OPTION_DOCKER_MYSQL):{
+            case DB_OPTION_DOCKER_MYSQL:
                 promptForDockerizedDb(server, dockerHelper, dockerHost);
-            }
-            case(DB_OPTION_POSTGRESQL):{
-                promptForPostgreSQLDb(server);
                 break;
-            }
+            case DB_OPTION_POSTGRESQL:
+                promptForDbUri(server, SDKConstants.DRIVER_POSTGRESQL);
+                break;
         }
     }
 
-    @Override
-    public void promptForMySQLDb(Server server) throws MojoExecutionException {
-        if(server.getDbDriver() == null){
-            server.setDbDriver(SDKConstants.DRIVER_MYSQL);
+    private void promptForDbUri(Server server, String driver) {
+        if (server.getDbDriver() == null) {
+            server.setDbDriver(driver);
         }
+
+        String uriTemplate;
+        if (server.isMySqlDb()) {
+            uriTemplate = SDKConstants.URI_MYSQL;
+        } else if (server.isPostgreSqlDb()) {
+            uriTemplate = SDKConstants.URI_POSTGRESQL;
+        } else {
+            return;
+        }
+
         String dbUri = promptForValueIfMissingWithDefault(
-                "The distribution requires MySQL database. Please specify database uri (-D%s)",
-                server.getDbUri(), "dbUri", SDKConstants.URI_MYSQL);
+                "The distribution requires a " +
+		                (server.isMySqlDb() ? "MySQL" : "PostgreSQL") +
+		                " database. Please specify database uri (-D%s)",
+                server.getDbUri(), "dbUri", uriTemplate);
         if (dbUri.startsWith("jdbc:mysql:")) {
             dbUri = addMySQLParamsIfMissing(dbUri);
-        }
-        dbUri = dbUri.replace(DBNAME_URL_VARIABLE, server.getServerId());
-
-        server.setDbUri(dbUri);
-        promptForDbCredentialsIfMissing(server);
-    }
-    
-    @Override
-    public void promptForPostgreSQLDb(Server server) throws MojoExecutionException {
-        if(server.getDbDriver() == null){
-            server.setDbDriver(SDKConstants.DRIVER_POSTGRESQL);
-        }
-        String dbUri = promptForValueIfMissingWithDefault(
-                "The distribution requires PostgreSQL database. Please specify database uri (-D%s)",
-                server.getDbUri(), "dbUri", SDKConstants.URI_POSTGRESQL);
-        if (dbUri.startsWith("jdbc:postgresql:")) {
+        } else if (dbUri.startsWith("jdbc:postgresql:")) {
             dbUri = addPostgreSQLParamsIfMissing(dbUri);
         }
+
         dbUri = dbUri.replace(DBNAME_URL_VARIABLE, server.getServerId());
 
         server.setDbUri(dbUri);
@@ -947,7 +933,7 @@ public class DefaultWizard implements Wizard {
         if (server.isPostgreSqlDb()) {
         	defaultUser = "postgres";
         }
-        
+
         String user = promptForValueIfMissingWithDefault(
                 "Please specify database username (-D%s)",
                 server.getDbUser(), "dbUser", defaultUser);
@@ -978,26 +964,18 @@ public class DefaultWizard implements Wizard {
         return new ArrayList<String>(sortedMap.values());
     }
 
-    @Override
     public String addMySQLParamsIfMissing(String dbUri) {
-        String noJdbc = dbUri.substring(5);
-
-        URIBuilder uri;
-        try {
-            uri = new URIBuilder(noJdbc);
-        } catch (URISyntaxException e) {
-            throw new IllegalArgumentException(e);
-        }
-        uri.setParameter("autoReconnect", "true");
+        URIBuilder uri = addDefaultParamsIfMissing(dbUri);
         uri.setParameter("sessionVariables", "default_storage_engine=InnoDB");
-        uri.setParameter("useUnicode", "true");
-        uri.setParameter("characterEncoding", "UTF-8");
 
-        return "jdbc:" + uri.toString();
+        return "jdbc:" + uri;
     }
-    
-    @Override
+
     public String addPostgreSQLParamsIfMissing(String dbUri) {
+        return "jdbc:" + addDefaultParamsIfMissing(dbUri);
+    }
+
+    private URIBuilder addDefaultParamsIfMissing(String dbUri) {
         String noJdbc = dbUri.substring(5);
 
         URIBuilder uri;
@@ -1010,7 +988,7 @@ public class DefaultWizard implements Wizard {
         uri.setParameter("useUnicode", "true");
         uri.setParameter("characterEncoding", "UTF-8");
 
-        return "jdbc:" + uri.toString();
+        return uri;
     }
 
     public Log getLog() {

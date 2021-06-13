@@ -7,7 +7,7 @@ import java.sql.Statement;
 
 import org.openmrs.maven.plugins.model.Server;
 
-public class DBConnector {
+public class DBConnector implements AutoCloseable {
     Connection conn;
     String dbName;
 

@@ -18,17 +18,13 @@ public interface Wizard {
 
     void promptForDb(Server server, DockerHelper dockerHelper, boolean h2supported, String dbDriver, String dockerHost) throws MojoExecutionException;
 
-    public void promptForMySQLDb(Server server) throws MojoExecutionException;
-    
-    public void promptForPostgreSQLDb(Server server) throws MojoExecutionException;
-
     void promptForDbCredentialsIfMissing(Server server);
 
     String promptForPlatformVersionIfMissing(String version, List<String> versions);
 
     String promptForPlatformVersion(List<String> versions);
 
-    public void promptForRefAppVersionIfMissing(Server server, VersionsHelper versionsHelper) throws MojoExecutionException;
+    void promptForRefAppVersionIfMissing(Server server, VersionsHelper versionsHelper) throws MojoExecutionException;
 
     void promptForRefAppVersionIfMissing(Server server, VersionsHelper versionsHelper, @Nullable String customMessage) throws MojoExecutionException;
 
@@ -50,8 +46,6 @@ public interface Wizard {
 
     String promptForValueIfMissingWithDefault(String message, String value, String parameterName, String defValue);
 
-    String promptForValueWithDefaultList(String value, String parameterName, List<String> values);
-
     String promptForValueIfMissing(String value, String parameterName);
 
     String promptForPasswordIfMissing(String value, String parameter);
@@ -65,10 +59,6 @@ public interface Wizard {
     String promptForExistingServerIdIfMissing(String serverId);
 
     List<String> getListOfServers();
-
-    String addMySQLParamsIfMissing(String dbUri);
-    
-    String addPostgreSQLParamsIfMissing(String dbUri);
 
     void showJdkErrorMessage(String jdk, String platform, String recommendedJdk, String pathToProps);
 
