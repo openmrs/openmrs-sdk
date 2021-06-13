@@ -4,6 +4,7 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
+import org.openmrs.maven.plugins.model.Server;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -11,10 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 @Mojo(name = "watch-owa", requiresProject = false)
-public class WatchOwa extends AbstractTask {
-
-    @Parameter(property = "serverId")
-    private String serverId;
+public class WatchOwa extends AbstractServerTask {
 
     private final String CONFIG_FILENAME = "webpack.config.js";
 
@@ -22,7 +20,6 @@ public class WatchOwa extends AbstractTask {
     public void executeTask() throws MojoExecutionException, MojoFailureException {
         File configFile = new File(CONFIG_FILENAME);
         if (configFile.exists()) {
-            serverId = wizard.promptForExistingServerIdIfMissing(serverId);
             String port = getChosenServerPort();
             List<String> args = new ArrayList<>();
             args.add("run");
@@ -43,7 +40,7 @@ public class WatchOwa extends AbstractTask {
 
     private String getChosenServerPort() throws MojoExecutionException {
         final String defaultTomcatPort = "8080";
-        Map<String,String> port = loadValidatedServer(serverId).getServerProperty("tomcat.port");
+        Map<String,String> port = getServer().getServerProperty("tomcat.port");
         if (port == null) {
             return defaultTomcatPort;
         }
@@ -52,4 +49,8 @@ public class WatchOwa extends AbstractTask {
         }
     }
 
+    @Override
+    public Server loadServer() throws MojoExecutionException {
+        return loadValidatedServer(serverId);
+    }
 }

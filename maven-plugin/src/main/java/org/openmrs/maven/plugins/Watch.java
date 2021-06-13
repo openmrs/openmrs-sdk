@@ -10,20 +10,18 @@ import org.openmrs.maven.plugins.utility.Project;
 import java.io.File;
 
 @Mojo(name = "watch", requiresProject = false)
-public class Watch extends AbstractTask {
+public class Watch extends AbstractServerTask {
 
 	@Parameter(property = "serverId")
     private String serverId;
 
 	@Override
     public void executeTask() throws MojoExecutionException, MojoFailureException {
-	    serverId = wizard.promptForExistingServerIdIfMissing(serverId);
-
 	    File userDir = new File(System.getProperty("user.dir"));
 	    if (Project.hasProject(userDir)) {
             Project config = Project.loadProject(userDir);
 
-            Server serverConfig = loadValidatedServer(serverId);
+            Server serverConfig = getServer();
             serverConfig.addWatchedProject(config);
             serverConfig.save();
 
@@ -32,5 +30,4 @@ public class Watch extends AbstractTask {
         	throw new MojoFailureException("Command must be run from openmrs-core or module's main directory");
         }
     }
-
 }

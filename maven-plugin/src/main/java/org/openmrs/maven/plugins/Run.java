@@ -35,7 +35,7 @@ import static org.twdata.maven.mojoexecutor.MojoExecutor.plugin;
 import static org.twdata.maven.mojoexecutor.MojoExecutor.version;
 
 @Mojo(name = "run", requiresProject = false)
-public class Run extends AbstractTask {
+public class Run extends AbstractServerTask {
 
 	public Run() {
 	}
@@ -48,9 +48,6 @@ public class Run extends AbstractTask {
 		this(other);
 		this.serverId = serverId;
 	}
-
-	@Parameter(property = "serverId")
-	private String serverId;
 
 	@Parameter(property = "port")
 	private Integer port;
@@ -70,13 +67,7 @@ public class Run extends AbstractTask {
 	private ServerHelper serverHelper;
 
 	public void executeTask() throws MojoExecutionException, MojoFailureException {
-		if (serverId == null) {
-			File currentProperties = Server.checkCurrentDirForServer();
-			if (currentProperties != null)
-				serverId = currentProperties.getName();
-		}
-		serverId = wizard.promptForExistingServerIdIfMissing(serverId);
-		Server server = loadValidatedServer(serverId);
+		Server server = getServer();
 
 		if (port == null && server.getPort() != null) {
 			port = Integer.valueOf(server.getPort());
@@ -302,6 +293,11 @@ public class Run extends AbstractTask {
 		}
 
 		return input;
+	}
+
+	@Override
+	protected Server loadServer() throws MojoExecutionException {
+		return loadValidatedServer(serverId);
 	}
 
 	private boolean isWatchApi() {

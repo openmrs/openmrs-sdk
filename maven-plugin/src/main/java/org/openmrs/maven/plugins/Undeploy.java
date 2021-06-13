@@ -12,10 +12,7 @@ import org.openmrs.maven.plugins.utility.SDKConstants;
 import java.io.File;
 
 @Mojo(name = "undeploy", requiresProject = false)
-public class Undeploy extends AbstractTask {
-
-    @Parameter(property = "serverId")
-    private String serverId;
+public class Undeploy extends AbstractServerTask {
 
     @Parameter(property = "artifactId")
     private String artifactId;
@@ -24,13 +21,9 @@ public class Undeploy extends AbstractTask {
     private String groupId;
 
     public void executeTask() throws MojoExecutionException, MojoFailureException {
+        Server server = getServer();
+
         Deploy deployer = new Deploy(this);
-        if (serverId == null) {
-            File currentProperties = Server.checkCurrentDirForServer();
-            if (currentProperties != null) serverId = currentProperties.getName();
-        }
-        serverId = wizard.promptForExistingServerIdIfMissing(serverId);
-        Server server = loadValidatedServer(serverId);
         Artifact artifact = deployer.getModuleArtifactForSelectedParameters(groupId, artifactId, "default");
         artifact.setArtifactId(StringUtils.stripEnd(artifact.getArtifactId(), "-omod"));
         File modules = new File(server.getServerDirectory(), SDKConstants.OPENMRS_SERVER_MODULES);
@@ -53,5 +46,10 @@ public class Undeploy extends AbstractTask {
             }
         }
         throw new MojoExecutionException(String.format("There no module with groupId: '%s', artifactId: '%s' on server.", artifact.getGroupId(), artifact.getArtifactId()));
+    }
+
+    @Override
+    protected Server loadServer() throws MojoExecutionException {
+        return loadValidatedServer(serverId);
     }
 }

@@ -10,16 +10,11 @@ import org.openmrs.maven.plugins.utility.Project;
 import java.util.Set;
 
 @Mojo(name = "info", requiresProject = false)
-public class Info extends AbstractTask {
-	
-	@Parameter(property = "serverId")
-    private String serverId;
+public class Info extends AbstractServerTask {
 
 	@Override
-    public void executeTask() throws MojoExecutionException, MojoFailureException {
-	    serverId = wizard.promptForExistingServerIdIfMissing(serverId);
-           
-        Server serverConfig = Server.loadServer(serverId);
+	public void executeTask() throws MojoExecutionException, MojoFailureException {
+		Server serverConfig = getServer();
         Set<Project> watchedProjects = serverConfig.getWatchedProjects();
         
         getLog().info(" ");
@@ -35,5 +30,4 @@ public class Info extends AbstractTask {
         }
         getLog().info(" ");
     }
-	
 }

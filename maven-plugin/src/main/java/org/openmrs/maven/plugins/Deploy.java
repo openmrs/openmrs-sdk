@@ -28,7 +28,7 @@ import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
  * to deploy the project.
  */
 @Mojo(name = "deploy", requiresProject = false)
-public class Deploy extends AbstractTask {
+public class Deploy extends AbstractServerTask {
 
 	private static final String DEFAULT_ABORT_MESSAGE = "Deploying module '%s' aborted";
 
@@ -47,9 +47,6 @@ public class Deploy extends AbstractTask {
 	private static final String DEPLOY_DISTRO_OPTION = "Distribution";
 
 	private static final String DEPLOY_PLATFORM_OPTION = "Platform";
-
-	@Parameter(property = "serverId")
-	private String serverId;
 
 	@Parameter(property = "artifactId")
 	private String artifactId;
@@ -83,14 +80,7 @@ public class Deploy extends AbstractTask {
 	}
 
 	public void executeTask() throws MojoExecutionException, MojoFailureException {
-		if (serverId == null) {
-			File currentProperties = Server.checkCurrentDirForServer();
-			if (currentProperties != null)
-				serverId = currentProperties.getName();
-		}
-
-		serverId = wizard.promptForExistingServerIdIfMissing(serverId);
-		Server server = loadValidatedServer(serverId);
+		Server server = getServer();
 		/*
 		 * workflow:
 		 * -if user specified both distro and platform, ignore them and enter interactive mode
@@ -534,4 +524,9 @@ public class Deploy extends AbstractTask {
 		}
 		return hasProject;
 	}
+
+    @Override
+    protected Server loadServer() throws MojoExecutionException {
+        return loadValidatedServer(serverId);
+    }
 }

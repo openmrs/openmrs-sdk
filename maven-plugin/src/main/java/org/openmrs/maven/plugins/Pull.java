@@ -28,7 +28,7 @@ import java.util.List;
 import java.util.Set;
 
 @Mojo(name = "pull", requiresProject = false)
-public class Pull extends AbstractTask {
+public class Pull extends AbstractServerTask {
 
 	private static final String ENTER_BRANCH_NAME_MESSAGE = "Enter name of the upstream branch you want to pull";
 
@@ -65,9 +65,6 @@ public class Pull extends AbstractTask {
 
 	private static final String TEMP_BRANCH = "tempBranch";
 
-	@Parameter(property = "serverId")
-	private String serverId;
-
 	@Parameter(property = "branch")
 	private String branch;
 
@@ -93,7 +90,6 @@ public class Pull extends AbstractTask {
 
 	@Override
 	public void executeTask() throws MojoExecutionException, MojoFailureException {
-
 		if (isGitProjectPresent() && StringUtils.isBlank(serverId)) {
 			pullProjectFromUserDir();
 		} else {
@@ -144,8 +140,7 @@ public class Pull extends AbstractTask {
 	 * @throws MojoExecutionException
 	 */
 	private void pullWatchedProjects() throws MojoExecutionException {
-		serverId = wizard.promptForExistingServerIdIfMissing(serverId);
-		Server server = loadValidatedServer(serverId);
+		Server server = getServer();
 
 		if (server.hasWatchedProjects()) {
 			Set<Project> watchedProjects = server.getWatchedProjects();

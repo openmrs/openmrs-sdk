@@ -10,7 +10,6 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Parameter;
-import org.apache.maven.settings.Proxy;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.settings.Settings;
 import org.openmrs.maven.plugins.model.Server;
@@ -55,24 +54,6 @@ public abstract class AbstractTask extends AbstractMojo {
 	Settings settings;
 
 	/**
-	 * The artifact metadata source to use.
-	 */
-	@Component
-	ArtifactMetadataSource artifactMetadataSource;
-
-	@Component
-	ArtifactFactory artifactFactory;
-
-	/**
-	 * The Maven BuildPluginManager component.
-	 */
-	@Component
-	BuildPluginManager pluginManager;
-
-	@Component
-	Wizard wizard;
-
-	/**
 	 * test mode, if true disables interactive mode and uses batchAnswers, even if there is none
 	 */
 	@Parameter(defaultValue = "false", property = "testMode")
@@ -95,6 +76,24 @@ public abstract class AbstractTask extends AbstractMojo {
 	 */
 	@Parameter(defaultValue = "false", property = "stats")
 	boolean stats;
+
+        /**
+     * The artifact metadata source to use.
+     */
+    @Component
+    ArtifactMetadataSource artifactMetadataSource;
+
+    @Component
+    ArtifactFactory artifactFactory;
+
+    /**
+     * The Maven BuildPluginManager component.
+     */
+    @Component
+    BuildPluginManager pluginManager;
+
+    @Component
+    Wizard wizard;
 
 	/**
 	 * wizard for resolving artifact available versions
@@ -198,28 +197,5 @@ public abstract class AbstractTask extends AbstractMojo {
 		executeTask();
 	}
 
-	abstract public void executeTask() throws MojoExecutionException, MojoFailureException;
-
-	public Server loadValidatedServer(String serverId) throws MojoExecutionException {
-		File serversPath = Server.getServersPathFile();
-		File serverPath = new File(serversPath, serverId);
-		new ServerUpgrader(this).validateServerMetadata(serverPath);
-		return Server.loadServer(serverPath);
-	}
-
-	public Proxy getProxyFromSettings() {
-		if (settings == null) {
-			return null;
-		}
-
-		// Get active http/https proxy
-		for (Proxy proxy : settings.getProxies()) {
-			if (proxy.isActive() && ("http".equalsIgnoreCase(proxy.getProtocol()) || "https"
-					.equalsIgnoreCase(proxy.getProtocol()))) {
-				return proxy;
-			}
-		}
-
-		return null;
-	}
+    abstract public void executeTask() throws MojoExecutionException, MojoFailureException;
 }

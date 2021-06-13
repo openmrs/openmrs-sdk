@@ -3,6 +3,7 @@ package org.openmrs.maven.plugins;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugin.MojoFailureException;
 import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.Server;
@@ -14,27 +15,13 @@ import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 
-/**
- * @goal reset
- * @requiresProject false
- */
-public class Reset extends AbstractTask {
+@Mojo(name = "reset", requiresProject = false)
+public class Reset extends AbstractServerTask {
 
     private static final String TEMPLATE_SUCCESS_FULL = "Server '%s' has been reset";
 
-    /**
-     * @parameter  property="serverId"
-     */
-    private String serverId;
-
-
     public void executeTask() throws MojoExecutionException, MojoFailureException {
-        if (serverId == null) {
-            File currentProperties = Server.checkCurrentDirForServer();
-            if (currentProperties != null) serverId = currentProperties.getName();
-        }
-        serverId = wizard.promptForExistingServerIdIfMissing(serverId);
-        Server server = loadValidatedServer(serverId);
+        Server server = getServer();
         if(StringUtils.isNotBlank(server.getContainerId())){
             new DockerHelper(mavenProject, mavenSession, pluginManager, wizard).runDbContainer(
                     server.getContainerId(),
@@ -85,5 +72,10 @@ public class Reset extends AbstractTask {
         } catch (IOException e) {
             throw new MojoExecutionException(e.getMessage());
         }
+    }
+
+    @Override
+    protected Server loadServer() throws MojoExecutionException {
+        return loadValidatedServer(serverId);
     }
 }

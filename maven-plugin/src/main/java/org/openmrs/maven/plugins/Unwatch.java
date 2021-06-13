@@ -11,10 +11,7 @@ import org.openmrs.maven.plugins.utility.Project;
 import java.io.File;
 
 @Mojo(name = "unwatch", requiresProject = false)
-public class Unwatch extends AbstractTask {
-
-	@Parameter(property = "serverId")
-    private String serverId;
+public class Unwatch extends AbstractServerTask {
 
     @Parameter(property = "artifactId")
     private String artifactId;
@@ -24,8 +21,7 @@ public class Unwatch extends AbstractTask {
 
 	@Override
     public void executeTask() throws MojoExecutionException, MojoFailureException {
-	    serverId = wizard.promptForExistingServerIdIfMissing(serverId);
-	    Server serverConfig = loadValidatedServer(serverId);
+	    Server serverConfig = getServer();
 	    
 	    File userDir = new File(System.getProperty("user.dir"));
 	    if (StringUtils.isBlank(artifactId) && Project.hasProject(userDir)) {
@@ -56,5 +52,9 @@ public class Unwatch extends AbstractTask {
         }
 	   
     }
-	
+
+	@Override
+	protected Server loadServer() throws MojoExecutionException {
+		return loadValidatedServer(serverId);
+	}
 }

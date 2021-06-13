@@ -17,16 +17,12 @@ import java.sql.SQLException;
  * Used to delete an SDK server and the server database
  */
 @Mojo(name = "delete", requiresProject = false)
-public class Delete extends AbstractTask {
+public class Delete extends AbstractServerTask {
 
 	private static final String TEMPLATE_SUCCESS = "Server '%s' removed successfully";
 
-	@Parameter(property = "serverId")
-	private String serverId;
-
 	public void executeTask() throws MojoExecutionException, MojoFailureException {
-		serverId = wizard.promptForExistingServerIdIfMissing(serverId);
-		Server server = loadValidatedServer(serverId);
+		Server server = getServer();
 		try {
 			FileUtils.deleteDirectory(server.getServerDirectory());
 
@@ -56,4 +52,9 @@ public class Delete extends AbstractTask {
 			throw new MojoExecutionException("Failed to drop database", e);
 		}
 	}
+
+    @Override
+    protected Server loadServer() throws MojoExecutionException {
+        return loadValidatedServer(serverId);
+    }
 }

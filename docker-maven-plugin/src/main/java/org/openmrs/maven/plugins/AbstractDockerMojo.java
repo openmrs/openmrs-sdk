@@ -10,7 +10,6 @@ import org.apache.commons.lang.SystemUtils;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
-import org.codehaus.plexus.components.interactivity.Prompter;
 
 import java.io.IOException;
 import java.net.URI;
@@ -44,12 +43,6 @@ abstract class AbstractDockerMojo extends AbstractMojo {
      * @parameter  property="dockerHost"
      */
     protected String dockerHost;
-
-    /**
-     * @component
-     * @required
-     */
-    protected Prompter prompter;
 
     protected DockerClient docker;
 

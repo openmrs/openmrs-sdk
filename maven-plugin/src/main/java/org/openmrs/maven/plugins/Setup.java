@@ -35,7 +35,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Mojo(name = "setup", requiresProject = false)
-public class Setup extends AbstractTask {
+public class Setup extends AbstractServerTask {
 
 	private static final String DISTRIBUTION = "Distribution";
 
@@ -54,12 +54,6 @@ public class Setup extends AbstractTask {
 	private static final String NO_DEBUGGING_DEFAULT_ANSWER = "no debugging";
 
 	private static final int DEFAULT_PORT = 8080;
-
-	/**
-	 * Server id (folder name)
-	 */
-	@Parameter(property = "serverId")
-	private String serverId;
 
 	/**
 	 * DB Driver type
@@ -143,6 +137,10 @@ public class Setup extends AbstractTask {
 
 	public Setup() {
 		super();
+	}
+
+	public Setup(AbstractServerTask other) {
+		super(other);
 	}
 
 	public Setup(AbstractTask other) {

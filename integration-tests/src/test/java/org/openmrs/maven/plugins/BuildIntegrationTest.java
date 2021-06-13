@@ -12,89 +12,82 @@ import org.openmrs.maven.plugins.utility.SDKConstants;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Objects;
 
-/**
- *
- */
-public class BuildIntegrationTest extends AbstractSdkIntegrationTest{
+public class BuildIntegrationTest extends AbstractSdkIntegrationTest {
 
-    private String serverId;
+	private String serverId;
 
+	@Before
+	public void setup() throws Exception {
+		testDirectory = ResourceExtractor.simpleExtractResources(getClass(), TEST_DIRECTORY + File.separator + "buildIT");
+		verifier = new Verifier(testDirectory.getAbsolutePath());
 
-    @Before
-    public void setup() throws Exception{
-        testDirectory = ResourceExtractor.simpleExtractResources(getClass(), TEST_DIRECTORY+File.separator+"buildIT");
-        verifier = new Verifier(testDirectory.getAbsolutePath());
+		testFilesToPersist = Arrays.asList(Objects.requireNonNull(testDirectory.listFiles()));
 
-        testFilesToPersist = new ArrayList<File>(Arrays.asList(testDirectory.listFiles()));
+		addTaskParam("openMRSPath", testDirectory.getAbsolutePath());
 
+		serverId = setupTestServer();
 
-        addTaskParam("openMRSPath",testDirectory.getAbsolutePath());
+		Server server = Server.loadServer(new File(testDirectory, serverId));
+		File firstDir = new File(testDirectory, "module1");
+		File secondDir = new File(testDirectory, "module2");
+		server.addWatchedProject(Project.loadProject(firstDir));
+		server.addWatchedProject(Project.loadProject(secondDir));
+		server.save();
 
-        serverId = setupTestServer();
+		clearParams();
+	}
 
-        Server server = Server.loadServer(new File(testDirectory, serverId));
-        File firstDir = new File(testDirectory, "module1");
-        File secondDir = new File(testDirectory, "module2");
-        server.addWatchedProject(Project.loadProject(firstDir));
-        server.addWatchedProject(Project.loadProject(secondDir));
-        server.save();
+	@After
+	public void deleteServer() throws Exception {
+		deleteTestServer(serverId);
+	}
 
-        clearParams();
-    }
+	@Test
+	public void build_shouldBuildAllWatchedProjects() throws Exception {
+		assertFileNotPresent(serverId + File.separator + "module2-1.0-SNAPSHOT.omod");
+		assertFileNotPresent(serverId + File.separator + "module1-1.0-SNAPSHOT.omod");
 
-    @After
-    public void deleteServer() throws Exception {
-        deleteTestServer(serverId);
-    }
+		addTaskParam("openMRSPath", testDirectory.getAbsolutePath());
+		addTaskParam("serverId", serverId);
 
-    @Test
-    public void build_shouldBuildAllWatchedProjects() throws Exception{
+		executeTask("build");
 
-        assertFileNotPresent(serverId+ File.separator+"module2-1.0-SNAPSHOT.omod");
-        assertFileNotPresent(serverId+ File.separator+"module1-1.0-SNAPSHOT.omod");
+		assertSuccess();
+		assertModulesInstalled(serverId, "module2-1.0-SNAPSHOT.omod");
+		assertModulesInstalled(serverId, "module1-1.0-SNAPSHOT.omod");
+	}
 
-        addTaskParam("openMRSPath",testDirectory.getAbsolutePath());
+	@Test
+	public void build_shouldBuildOwaProject() throws Exception {
 
-        addTaskParam("serverId", serverId);
+		addTaskParam("openMRSPath", testDirectory.getAbsolutePath());
 
-        executeTask("build");
+		addTaskParam("nodeVersion", SDKConstants.NODE_VERSION);
+		addTaskParam("npmVersion", SDKConstants.NPM_VERSION);
 
-        assertSuccess();
-        assertModulesInstalled(serverId, "module2-1.0-SNAPSHOT.omod");
-        assertModulesInstalled(serverId, "module1-1.0-SNAPSHOT.omod");
+		addAnswer("n"); // Maven Project found in this directory, do You want to build it?
 
-    }
+		addTaskParam(BATCH_ANSWERS, getAnswers());
 
-    @Test
-    public void build_shouldBuildOwaProject() throws Exception{
+		executeTask("build");
 
-        addTaskParam("openMRSPath",testDirectory.getAbsolutePath());
+		verifier.verifyTextInLog("[INFO] BUILD SUCCESS");
+		assertFilePresent("dist");
+	}
 
-        addTaskParam("nodeVersion", SDKConstants.NODE_VERSION);
-        addTaskParam("npmVersion", SDKConstants.NPM_VERSION);
+	@Test
+	public void build_shouldDetectMavenProject() throws Exception {
 
-        addAnswer("n"); // Maven Project found in this directory, do You want to build it?
+		addTaskParam("openMRSPath", testDirectory.getAbsolutePath());
+		addTaskParam("buildOwa", "false");
+		addAnswer("y"); // Maven Project found in this directory, do You want to build it?
+		addTaskParam(BATCH_ANSWERS, getAnswers());
 
-        addTaskParam(BATCH_ANSWERS, getAnswers());
+		executeTask("build");
 
-        executeTask("build");
-
-        verifier.verifyTextInLog("[INFO] BUILD SUCCESS");
-        assertFilePresent("dist");
-    }
-
-    @Test
-    public void build_shouldDetectMavenProject() throws Exception{
-
-        addTaskParam("openMRSPath",testDirectory.getAbsolutePath());
-        addTaskParam("buildOwa", "false");
-        addAnswer("y"); // Maven Project found in this directory, do You want to build it?
-        addTaskParam(BATCH_ANSWERS, getAnswers());
-
-        executeTask("build");
-
-        //just check logs, because purpose of this test is to determine if sdk detects projects, not if build is ok
-        assertSuccess();
-    }
+		//just check logs, because purpose of this test is to determine if sdk detects projects, not if build is ok
+		assertSuccess();
+	}
 }

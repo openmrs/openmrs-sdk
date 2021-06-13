@@ -22,10 +22,7 @@ import java.util.Properties;
 import java.util.Set;
 
 @Mojo(name = "build", requiresProject = false)
-public class Build extends AbstractTask {
-
-	@Parameter(property = "serverId")
-	private String serverId;
+public class Build extends AbstractServerTask {
 
 	@Parameter(property = "buildOwa", defaultValue = "true")
 	private boolean buildOwa;
@@ -39,11 +36,15 @@ public class Build extends AbstractTask {
 	public Build() {
 	}
 
-	public Build(AbstractTask other) {
+	public Build(AbstractServerTask other) {
 		super(other);
 	}
 
-	public Build(AbstractTask other, String serverId) {
+	public Build(AbstractTask other) {
+        super(other);
+    }
+
+	public Build(AbstractServerTask other, String serverId) {
 		super(other);
 		this.serverId = serverId;
 	}
@@ -107,8 +108,7 @@ public class Build extends AbstractTask {
 	}
 
 	private void buildWatchedProjects() throws MojoExecutionException, MojoFailureException {
-		serverId = wizard.promptForExistingServerIdIfMissing(serverId);
-		Server server = loadValidatedServer(serverId);
+		Server server = getServer();
 
 		if (!server.hasWatchedProjects()) {
 			wizard.showMessage("There are no watched projects for " + serverId + " server.");
