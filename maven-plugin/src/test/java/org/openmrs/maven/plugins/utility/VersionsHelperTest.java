@@ -4,7 +4,6 @@ import org.apache.maven.artifact.versioning.ArtifactVersion;
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 import org.junit.Before;
 import org.junit.Test;
-import org.openmrs.maven.plugins.utility.VersionsHelper;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,7 +23,7 @@ public class VersionsHelperTest {
     }
 
     private List<ArtifactVersion> createTestVersions(String... versions){
-        List<ArtifactVersion> list = new ArrayList<ArtifactVersion>();
+        List<ArtifactVersion> list = new ArrayList<>();
         for(String version: versions) {
             list.add(new DefaultArtifactVersion(version));
         }
@@ -44,39 +43,39 @@ public class VersionsHelperTest {
         assertThat(res, is(equalTo("1.8.10-SNAPSHOT")));
     }
     @Test
-    public void getVersionAdvice_containSnapshots(){
-        List<String> res = helper.getVersionAdvice(
+    public void getSuggestedVersions_containSnapshots(){
+        List<String> res = helper.getSuggestedVersions(
                 createTestVersions("1.8.8", "1.8.3", "1.8.10-SNAPSHOT", "1.8.9-alpha"), 3);
         assertThat(res, hasItem("1.8.10-SNAPSHOT"));
     }
     @Test
-    public void getVersionAdvice_containGivenNumberOfReleases(){
-        List<String> res = helper.getVersionAdvice(
+    public void getSuggestedVersions_containGivenNumberOfReleases(){
+        List<String> res = helper.getSuggestedVersions(
                 createTestVersions("1.8.8", "1.8.3", "1.8.10-SNAPSHOT", "1.8.9-alpha"), 1);
         assertThat(res, hasItem("1.8.9-alpha"));
         assertThat(res, allOf(not(hasItem("1.8.3")), not(hasItem("1.8.9"))));
     }
     @Test
-    public void getVersionAdvice_shouldReturnSortedList(){
-        List<String> res = helper.getVersionAdvice(
+    public void getSuggestedVersions_shouldReturnSortedList(){
+        List<String> res = helper.getSuggestedVersions(
                 createTestVersions("1.1.2", "1.5.6", "1.5.7-SNAPSHOT" , "1.1.2-alpha", "1.1.0-SNAPSHOT", "1.3.0-SNAPSHOT", "1.3.0", "1.1.0"), 6);
         assertThat(res, contains("1.5.7-SNAPSHOT", "1.5.6", "1.3.0", "1.1.2"));
     }
     @Test
-    public void getVersionAdvice_shouldContainOnlyLatestSnapshot(){
-        List<String> res = helper.getVersionAdvice(
+    public void getSuggestedVersions_shouldContainOnlyLatestSnapshot(){
+        List<String> res = helper.getSuggestedVersions(
                 createTestVersions("1.1.2", "1.5.6", "1.5.7-SNAPSHOT","1.4.5-SNAPSHOT", "1.1.0-SNAPSHOT", "1.3.0-SNAPSHOT"), 6);
         assertThat(res, contains("1.5.7-SNAPSHOT", "1.5.6", "1.1.2"));
     }
     @Test
-    public void getVersionAdvice_shouldContainNoMoreThanRequestedQuantity(){
-        List<String> res = helper.getVersionAdvice(
+    public void getSuggestedVersions_shouldContainNoMoreThanRequestedQuantity(){
+        List<String> res = helper.getSuggestedVersions(
                 createTestVersions("1.4.0", "1.5.0", "1.8.0"), 2);
         assertThat(res, contains("1.8.0", "1.5.0"));
     }
     @Test
-    public void getVersionAdvice_shouldContainOnlyOneReleaseFromMajorAndMinor(){
-        List<String> res = helper.getVersionAdvice(
+    public void getSuggestedVersions_shouldContainOnlyOneReleaseFromMajorAndMinor(){
+        List<String> res = helper.getSuggestedVersions(
                 createTestVersions("1.5.2", "1.5.6", "1.5.7-SNAPSHOT"), 6);
         assertThat(res, contains("1.5.7-SNAPSHOT", "1.5.6"));
     }

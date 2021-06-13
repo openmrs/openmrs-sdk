@@ -164,7 +164,7 @@ public class Deploy extends AbstractServerTask {
 						server.getPlatformVersion()));
 				Artifact webapp = new Artifact(SDKConstants.PLATFORM_ARTIFACT_ID,
 						SDKConstants.SETUP_DEFAULT_PLATFORM_VERSION, Artifact.GROUP_DISTRO);
-				platform = wizard.promptForPlatformVersion(versionsHelper.getVersionAdvice(webapp, 3));
+				platform = wizard.promptForPlatformVersion(versionsHelper.getSuggestedVersions(webapp, 3));
 				deployOpenmrs(server, platform);
 				break;
 			}
@@ -190,7 +190,7 @@ public class Deploy extends AbstractServerTask {
 			artifact.setGroupId(Artifact.GROUP_OWA);
 			artifact.setArtifactId(name);
 			artifact.setType(Artifact.TYPE_ZIP);
-			List<String> versions = versionsHelper.getVersionAdvice(artifact, 6);
+			List<String> versions = versionsHelper.getSuggestedVersions(artifact, 6);
 			version = wizard
 					.promptForMissingValueWithOptions("Which version would you like to deploy?%s", null, "", versions,
 							"Please specify OWA version", null);
@@ -503,7 +503,7 @@ public class Deploy extends AbstractServerTask {
 				moduleArtifactId += "-omod";
 			}
 			List<String> availableVersions = versionsHelper
-					.getVersionAdvice(new Artifact(moduleArtifactId, "1.0", moduleGroupId), 5);
+					.getSuggestedVersions(new Artifact(moduleArtifactId, "1.0", moduleGroupId), 5);
 			moduleVersion = wizard.promptForMissingValueWithOptions(
 					"You can deploy the following versions of the module", version, "version", availableVersions,
 					"Please specify module version", null);

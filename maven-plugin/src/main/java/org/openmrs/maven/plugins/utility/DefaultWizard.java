@@ -643,14 +643,14 @@ public class DefaultWizard implements Wizard {
         final String optionTemplate = distroName + " %s";
         final String artifacttemplate = distroGroupId + ":" + distroArtifactId + ":" + "%s";
 
-        Set<String> versions = new LinkedHashSet<>(versionsHelper.getVersionAdvice(SDKConstants.getDistroModule(distroGroupId, distroArtifactId, distroVersion), MAX_OPTIONS_SIZE));
+        Set<String> versions = new LinkedHashSet<>(versionsHelper.getSuggestedVersions(SDKConstants.getDistroModule(distroGroupId, distroArtifactId, distroVersion), MAX_OPTIONS_SIZE));
         Map<String, String> optionsMap = getDistroVersionsOptionsMap(versions, versionsHelper, optionTemplate, artifacttemplate);
 
         return promptForVersion(optionsMap, customMessage);
     }
 
     public String promptForRefAppVersion(VersionsHelper versionsHelper, @Nullable String customMessage) {
-        Set<String> versions = new LinkedHashSet<>(versionsHelper.getVersionAdvice(SDKConstants.getReferenceModule("2.3.1"), MAX_OPTIONS_SIZE));
+        Set<String> versions = new LinkedHashSet<>(versionsHelper.getSuggestedVersions(SDKConstants.getReferenceModule("2.3.1"), MAX_OPTIONS_SIZE));
         versions.addAll(SDKConstants.SUPPPORTED_REFAPP_VERSIONS_2_3_1_OR_LOWER);
         Map<String, String> optionsMap = getDistroVersionsOptionsMap(versions, versionsHelper, REFAPP_OPTION_TMPL, REFAPP_ARTIFACT_TMPL);
         return promptForVersion(optionsMap, customMessage);
@@ -676,7 +676,7 @@ public class DefaultWizard implements Wizard {
         for(String version : versions){
             artifactVersions.add(new DefaultArtifactVersion(version));
         }
-        for(String version : versionsHelper.getVersionAdvice(artifactVersions, MAX_OPTIONS_SIZE)){
+        for(String version : versionsHelper.getSuggestedVersions(artifactVersions, MAX_OPTIONS_SIZE)){
             optionsMap.put(String.format(optionTemplate, version), String.format(artifactTemplate, version));
             if(optionsMap.size() == MAX_OPTIONS_SIZE) break;
         }

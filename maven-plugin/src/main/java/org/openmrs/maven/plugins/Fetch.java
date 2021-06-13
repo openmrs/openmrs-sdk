@@ -164,7 +164,7 @@ public class Fetch extends AbstractTask {
 	}
 
 	private String askForMavenRepoProjectVersion(String projectName, String groupId) {
-		List<String> availableVersions = versionsHelper.getVersionAdvice(new Artifact(projectName, "1.0", groupId), 5);
+		List<String> availableVersions = versionsHelper.getSuggestedVersions(new Artifact(projectName, "1.0", groupId), 5);
 		return wizard.promptForMissingValueWithOptions(
 				"You can fetch the following versions of the module", version, "version", availableVersions,
 				"Please specify module version", null);

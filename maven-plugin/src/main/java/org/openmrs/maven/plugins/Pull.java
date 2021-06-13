@@ -390,7 +390,7 @@ public class Pull extends AbstractServerTask {
 	private void mergeWithNewBranch(Git git, String newBranchFull) throws Exception {
 		MergeCommand mergeCommand = git.merge();
 		try {
-			mergeCommand.include(git.getRepository().getRef(newBranchFull));
+			mergeCommand.include(git.getRepository().findRef(newBranchFull));
 			mergeCommand.setFastForward(MergeCommand.FastForwardMode.FF_ONLY);
 			mergeCommand.call();
 		}

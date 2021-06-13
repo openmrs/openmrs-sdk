@@ -1,13 +1,12 @@
 package org.openmrs.maven.plugins.utility;
 
 import org.apache.maven.artifact.factory.ArtifactFactory;
-import org.apache.maven.artifact.metadata.ArtifactMetadataRetrievalException;
-import org.apache.maven.artifact.metadata.ArtifactMetadataSource;
 import org.apache.maven.artifact.versioning.ArtifactVersion;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.project.MavenProject;
+import org.apache.maven.repository.legacy.metadata.ArtifactMetadataRetrievalException;
+import org.apache.maven.repository.legacy.metadata.ArtifactMetadataSource;
 import org.openmrs.maven.plugins.model.Artifact;
-import org.openmrs.maven.plugins.model.Version;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -18,30 +17,30 @@ import java.util.List;
  */
 public class VersionsHelper {
 
-    private static final String RELEASE_VERSION_REGEX = "[0-9\\.]+(-alpha)?(-beta)?";
-    private static final String NONE_VERSION_AVAILABLE_MSG = "None version is available in remote repositories!";
+    private static final String RELEASE_VERSION_REGEX = "[0-9.]+(-alpha)?(-beta)?";
+    private static final String NO_VERSION_AVAILABLE_MSG = "No version is available in remote repositories!";
 
     /**
      * The project currently being build.
      */
-    private MavenProject mavenProject;
+    private final MavenProject mavenProject;
 
     /**
      * The current Maven session.
 
      */
-    private MavenSession mavenSession;
+    private final MavenSession mavenSession;
 
     /**
      * The artifact metadata source to use.
 
      */
-    private ArtifactMetadataSource artifactMetadataSource;
+    private final ArtifactMetadataSource artifactMetadataSource;
 
     /**
      * utility to create maven artifacts
      */
-    private ArtifactFactory artifactFactory;
+    private final ArtifactFactory artifactFactory;
 
     public VersionsHelper(ArtifactFactory artifactFactory, MavenProject mavenProject, MavenSession mavenSession, ArtifactMetadataSource artifactMetadataSource) {
         this.artifactFactory = artifactFactory;
@@ -50,10 +49,6 @@ public class VersionsHelper {
         this.artifactMetadataSource = artifactMetadataSource;
     }
 
-    /**
-     * @param artifact
-     * @return available versions from remote repositories for given artifact
-     */
     private List<ArtifactVersion> getVersions(Artifact artifact){
         try {
             return artifactMetadataSource.retrieveAvailableVersions(
@@ -77,13 +72,17 @@ public class VersionsHelper {
     }
 
     /**
-     * @param artifact
-     * @return latest released version. if none is available, return snapshot. If list is empty, returns message
+     * @param artifact the Maven artifact to get the latest released version of
+     * @return latest released version. if none is available, return snapshot. If list is empty, returns error message
      */
     public String getLatestReleasedVersion(Artifact artifact){
         return getLatestReleasedVersion(getVersions(artifact));
     }
 
+    /**
+     * @param artifact the Maven artifact to get the latest snapshot version of
+     * @return latest snapshot. If list is empty, returns error message
+     */
     public String getLatestSnapshotVersion(Artifact artifact) {
         return getLatestSnapshotVersion(getVersions(artifact));
     }
@@ -91,42 +90,43 @@ public class VersionsHelper {
     public String getLatestSnapshotVersion(List<ArtifactVersion> versions) {
         sortDescending(versions);
         for(ArtifactVersion version : versions){
-                if (version.toString().contains("SNAPSHOT")) {
-                    return version.toString();
-                }
+            if (version.toString().contains("SNAPSHOT")) {
+                return version.toString();
+            }
         }
-        return NONE_VERSION_AVAILABLE_MSG;
+        return NO_VERSION_AVAILABLE_MSG;
     }
 
     public String getLatestReleasedVersion(List<ArtifactVersion> versions){
         sortDescending(versions);
         ArtifactVersion lastSnapshot = null;
-        for(ArtifactVersion version : versions){
-            if(version.getQualifier()==null)
+        for (ArtifactVersion version : versions) {
+            if(version.getQualifier() == null)
                 return version.toString();
-            else if(lastSnapshot==null){
+            else if (lastSnapshot == null){
                 lastSnapshot = version;
             }
         }
-        //no releases, return snapshot
-        if(lastSnapshot != null) return lastSnapshot.toString();
-        //no releases nor snapshots, return any last version
-        if(versions.size() > 0){
-            return versions.get(0).toString();
+
+        // no releases, return snapshot
+        if (lastSnapshot != null) {
+            return lastSnapshot.toString();
         }
-        else return NONE_VERSION_AVAILABLE_MSG;
+
+        // no releases nor snapshots, return any last version
+        return NO_VERSION_AVAILABLE_MSG;
     }
 
     /**
-     * @param artifact
+     * @param artifact the artifact to get the suggested versions for
      * @param maxReleases upper limit of number of releases
      * @return list of suggested versions
      */
-    public List<String> getVersionAdvice(Artifact artifact, int maxReleases){
-        return getVersionAdvice(getVersions(artifact), maxReleases);
+    public List<String> getSuggestedVersions(Artifact artifact, int maxReleases){
+        return getSuggestedVersions(getVersions(artifact), maxReleases);
     }
 
-    public List<String> getVersionAdvice(List<ArtifactVersion> allVersions, int maxSize){
+    public List<String> getSuggestedVersions(List<ArtifactVersion> allVersions, int maxSize){
         if(allVersions.size() == 0){
             return Collections.emptyList();
         }

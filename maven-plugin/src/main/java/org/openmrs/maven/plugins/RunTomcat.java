@@ -171,7 +171,8 @@ public class RunTomcat extends AbstractMojo {
 		ClassLoader originalClassLoader = Thread.currentThread().getContextClassLoader();
 		try {
 			Thread.currentThread().setContextClassLoader(newTomcatClassLoader());
-			WebappLoader tomcatLoader = new WebappLoader(Thread.currentThread().getContextClassLoader());
+			WebappLoader tomcatLoader = new WebappLoader();
+			context.setParentClassLoader(Thread.currentThread().getContextClassLoader());
 			context.setLoader(tomcatLoader);
 
 			tomcat.start();

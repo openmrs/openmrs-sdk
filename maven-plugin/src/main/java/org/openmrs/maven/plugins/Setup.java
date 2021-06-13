@@ -208,7 +208,7 @@ public class Setup extends AbstractServerTask {
 			Artifact platformArtifact = new Artifact(SDKConstants.PLATFORM_ARTIFACT_ID,
 					SDKConstants.SETUP_DEFAULT_PLATFORM_VERSION, Artifact.GROUP_DISTRO);
 			String version = wizard.promptForPlatformVersionIfMissing(server.getPlatformVersion(),
-					versionsHelper.getVersionAdvice(platformArtifact, 6));
+					versionsHelper.getSuggestedVersions(platformArtifact, 6));
 			platformArtifact = DistroHelper
 					.parseDistroArtifact(Artifact.GROUP_DISTRO + ":" + SDKConstants.PLATFORM_ARTIFACT_ID + ":" + version,
 							versionsHelper);
