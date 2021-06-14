@@ -50,7 +50,7 @@ public interface Wizard {
 
     String promptForPasswordIfMissing(String value, String parameter);
 
-    void promptForJavaHomeIfMissing(Server server);
+    void promptForJavaHomeIfMissing(Server server) throws MojoExecutionException;
 
     boolean promptYesNo(String text);
 

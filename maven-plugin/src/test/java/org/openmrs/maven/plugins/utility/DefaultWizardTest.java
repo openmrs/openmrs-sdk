@@ -5,6 +5,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.in;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
@@ -20,8 +21,8 @@ public class DefaultWizardTest {
 	DefaultWizard wizard;
 
 	@Before
-	public void before() {
-		wizard = new DefaultWizard(null);
+	public void before() throws IOException {
+		wizard = new DefaultWizard();
 	}
 
 	@Test

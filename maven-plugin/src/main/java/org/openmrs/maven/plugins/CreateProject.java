@@ -17,6 +17,7 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.shared.invoker.Invoker;
+import org.codehaus.plexus.component.annotations.Requirement;
 import org.openmrs.maven.plugins.utility.OwaHelper;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 import org.openmrs.maven.plugins.utility.StatsManager;
@@ -416,6 +417,10 @@ public class CreateProject extends CreateProjectFromArchetypeMojo {
 	}
 
 	protected void setPrivateField(String fieldName, Object value) throws MojoExecutionException {
+		if (value == null) {
+			return;
+		}
+
 		try {
 			Class<?> superClass = this.getClass().getSuperclass();
 			Field field = superClass.getDeclaredField(fieldName);

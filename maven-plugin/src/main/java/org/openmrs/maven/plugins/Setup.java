@@ -275,7 +275,7 @@ public class Setup extends AbstractServerTask {
 		server.save();
 	}
 
-	private void setJdk(Server server) {
+	private void setJdk(Server server) throws MojoExecutionException {
 		String platformVersion = server.getPlatformVersion();
 		Version version = new Version(platformVersion);
 		if (platformVersion.startsWith("1.")) {
