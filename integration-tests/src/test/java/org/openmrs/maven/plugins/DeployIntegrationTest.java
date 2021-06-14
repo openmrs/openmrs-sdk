@@ -114,6 +114,8 @@ public class DeployIntegrationTest extends AbstractSdkIntegrationTest {
 
         assertFilePresent(testServerId + File.separator + "modules" + File.separator + "appui-1.3.omod");
 
+        assertFileNotPresent(testServerId + File.separator + "frontend");
+
         executeTask("deploy");
 
         assertSuccess();
@@ -121,6 +123,8 @@ public class DeployIntegrationTest extends AbstractSdkIntegrationTest {
         assertFileNotPresent(testServerId + File.separator + "modules" + File.separator + "appui-1.3.omod");
         assertModulesInstalled(testServerId, "owa-1.4.omod", "uicommons-1.7.omod", "uiframework-3.6.omod");
         assertModuleUpdated(testServerId, "owa", "1.4");
+        assertFilePresent(testServerId + File.separator + "frontend" + File.separator + "index.html");
+        assertFilePresent(testServerId + File.separator + "frontend" + File.separator + "openmrs-esm-login-app-3.1.0");
     }
 
     @Test
