@@ -130,15 +130,6 @@ public abstract class AbstractTask extends AbstractMojo {
     OwaHelper owaHelper;
 
     /**
-     * Temporary feature flag for SPA support. Will be removed in 4.1.0
-     *
-     * @since 4.0.1
-     * @deprecated
-     * @parameter property="enable.spa" default-value="false"
-     */
-    boolean enableSpa;
-
-    /**
      * installs SPAs
      */
     SpaInstaller spaInstaller;
@@ -198,7 +189,7 @@ public abstract class AbstractTask extends AbstractMojo {
         if (owaHelper == null) {
             owaHelper = new OwaHelper(mavenSession, mavenProject, pluginManager, wizard);
         }
-        if (spaInstaller == null && enableSpa) {
+        if (spaInstaller == null) {
             spaInstaller = new SpaInstaller(mavenProject, mavenSession, pluginManager, distroHelper);
         }
         if(dockerHelper == null){
