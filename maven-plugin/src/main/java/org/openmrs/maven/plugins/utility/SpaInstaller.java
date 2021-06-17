@@ -54,12 +54,12 @@ public class SpaInstaller {
         Map<String, String> spaProperties = distroProperties.getSpaProperties(distroHelper, serverDir);
         if (!spaProperties.isEmpty()) {
             JsonObject spaConfigJson = convertPropertiesToJSON(spaProperties);
-            File spaConfigFile = new File(serverDir, "microfrontends.json");
+            File spaConfigFile = new File(serverDir, "spa-build-config.json");
             writeJSONObject(spaConfigFile, spaConfigJson);
             nodeHelper.installNodeAndNpm(NODE_VERSION, NPM_VERSION);
             File buildTargetDir = new File(serverDir, BUILD_TARGET_DIR);
-            nodeHelper.runNpx(String.format("openmrs@latest build --target %s", buildTargetDir));
-            nodeHelper.runNpx(String.format("openmrs@latest assemble --target %s --mode config --config %s", buildTargetDir, spaConfigFile));
+            nodeHelper.runNpx(String.format("openmrs@next build --target %s --build-config %s", buildTargetDir, spaConfigFile));
+            nodeHelper.runNpx(String.format("openmrs@next assemble --target %s --mode config --config %s", buildTargetDir, spaConfigFile));
         }
     }
 
