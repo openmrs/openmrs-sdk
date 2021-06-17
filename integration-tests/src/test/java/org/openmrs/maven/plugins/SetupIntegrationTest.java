@@ -1,5 +1,6 @@
 package org.openmrs.maven.plugins;
 
+import org.apache.commons.io.FileUtils;
 import org.junit.Test;
 import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.Server;
@@ -10,6 +11,7 @@ import java.io.InputStream;
 import java.util.Properties;
 import java.util.UUID;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -140,7 +142,6 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
         String serverId = UUID.randomUUID().toString();
         addTaskParam("serverId", serverId);
         addTaskParam("debug", "1044");
-        addTaskParam("enable.spa", "true");
         addMockDbSettings();
 
         addAnswer("OpenMRS Concepts OWA server 1.0 from current directory");
@@ -156,10 +157,13 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
         assertFilePresent(serverId + File.separator + "modules");
         assertModulesInstalled(serverId, "owa-1.4.omod", "uicommons-1.7.omod", "uiframework-3.6.omod");
         assertFilePresent(serverId + File.separator + "frontend");
-        assertFilePresent(serverId + File.separator + "frontend" + File.separator + "index.html");
+        String indexFilePath = serverId + File.separator + "frontend" + File.separator + "index.html";
+        assertFilePresent(indexFilePath);
         assertFilePresent(serverId + File.separator + "frontend" + File.separator + "importmap.json");
         assertFilePresent(serverId + File.separator + "frontend" + File.separator + "openmrs-esm-login-app-3.1.0");
         assertFilePresent(serverId + File.separator + "frontend" + File.separator + "openmrs-esm-patient-chart-app-3.0.0");
+        String indexContents = FileUtils.readFileToString(new File(testDirectory.getAbsolutePath(), indexFilePath));
+        assertThat(indexContents, containsString("apiUrl: \"notopenmrs\""));
 
         Server.setServersPath(testDirectory.getAbsolutePath());
         Server server = Server.loadServer(serverId);
