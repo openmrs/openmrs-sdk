@@ -8,7 +8,7 @@ import java.util.UUID;
 public class BuildDistroIntegrationTest extends AbstractSdkIntegrationTest {
 
     @Test
-    public void testBuildDistroFile() throws Exception {
+    public void testBuildDistroFromDistroFile() throws Exception {
         addTaskParam("dir", "target");
         executeTask("build-distro");
 
