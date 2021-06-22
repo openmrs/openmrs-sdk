@@ -75,6 +75,9 @@ public class BuildDistro extends AbstractTask {
 
     /**
      * @parameter  property="bundled" default-value="false"
+     *
+     * Instead of creating a `modules` folder in the distro directory, will put modules inside
+     * the war file in `/webapp/src/main/webapp/WEB-INF/bundledModules`
      */
     private boolean bundled;
 
@@ -200,6 +203,7 @@ public class BuildDistro extends AbstractTask {
 
         String distroName = adjustImageName(distroProperties.getName());
         File web = new File(targetDirectory, WEB);
+        web.mkdirs();
 
         moduleInstaller.installModules(distroProperties.getWarArtifacts(distroHelper, targetDirectory), web.getAbsolutePath());
         renameWebApp(web);
@@ -208,11 +212,12 @@ public class BuildDistro extends AbstractTask {
             try {
                 ZipFile warfile = new ZipFile(new File(web, OPENMRS_WAR));
                 File tempDir = new File(web, "WEB-INF");
+                tempDir.mkdir();
                 moduleInstaller.installModules(distroProperties.getModuleArtifacts(distroHelper, targetDirectory),
                         new File(tempDir, WAR_FILE_MODULES_DIRECTORY_NAME).getAbsolutePath());
 
                 File owasDir = new File(tempDir, "bundledOwas");
-                owasDir.mkdirs();
+                owasDir.mkdir();
                 downloadOWAs(targetDirectory, distroProperties, owasDir);
 
                 warfile.addFolder(tempDir, new ZipParameters());
@@ -227,12 +232,14 @@ public class BuildDistro extends AbstractTask {
         }
         else {
             File modulesDir = new File(web, "modules");
-            modulesDir.mkdirs();
+            modulesDir.mkdir();
             moduleInstaller.installModules(distroProperties.getModuleArtifacts(distroHelper, targetDirectory),
                     modulesDir.getAbsolutePath());
 
+            spaInstaller.installFromDistroProperties(web, distroProperties);
+
             File owasDir = new File(web, "owa");
-            owasDir.mkdirs();
+            owasDir.mkdir();
             downloadOWAs(targetDirectory, distroProperties, owasDir);
         }
 

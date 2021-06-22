@@ -3,11 +3,33 @@ package org.openmrs.maven.plugins;
 import org.junit.Test;
 
 import java.io.File;
+import java.util.UUID;
 
 public class BuildDistroIntegrationTest extends AbstractSdkIntegrationTest {
 
     @Test
-    public void testBuildDistro() throws Exception {
+    public void testBuildDistroFile() throws Exception {
+        addTaskParam("dir", "target");
+        executeTask("build-distro");
+
+        assertFilePresent("target/docker-compose.yml");
+        assertFilePresent("target/docker-compose.override.yml");
+        assertFilePresent("target/docker-compose.prod.yml");
+        assertFilePresent("target/.env");
+        assertFilePresent("target/web/Dockerfile");
+        assertFilePresent("target/web/setenv.sh");
+        assertFilePresent("target/web/startup.sh");
+        assertFilePresent("target/web/wait-for-it.sh");
+        assertFilePresent("target/web/modules");
+        assertFilePresent("target/web/frontend/index.html");
+        assertFilePresent("target/web/owa");
+        assertFilePresent("target/web/openmrs.war");
+        assertFilePresent("target/web/openmrs-distro.properties");
+        assertSuccess();
+    }
+
+    @Test
+    public void testBuildDistroRefApp23() throws Exception {
         addTaskParam("distro", "referenceapplication:2.3.1");
         addTaskParam("dir", "referenceapplication");
         executeTask("build-distro");

@@ -42,22 +42,22 @@ public class SpaInstaller {
     /**
      * Installs the SPA Microfrontend application based on entries in the distro properties.
      *
-     * @param serverDir The application data directory
+     * @param appDataDir The application data directory
      * @param distroProperties Non-null
      * @throws MojoExecutionException
      */
-    public void installFromDistroProperties(File serverDir, DistroProperties distroProperties) throws MojoExecutionException {
+    public void installFromDistroProperties(File appDataDir, DistroProperties distroProperties) throws MojoExecutionException {
         // We find all the lines in distro properties beginning with `spa` and convert these
         // into a JSON structure. This is passed to the microfrontend build tools.
         // If no SPA elements are present in the distro properties, we ask the user,
         // and then run the interactive installer.
-        Map<String, String> spaProperties = distroProperties.getSpaProperties(distroHelper, serverDir);
+        Map<String, String> spaProperties = distroProperties.getSpaProperties(distroHelper, appDataDir);
         if (!spaProperties.isEmpty()) {
             JsonObject spaConfigJson = convertPropertiesToJSON(spaProperties);
-            File spaConfigFile = new File(serverDir, "spa-build-config.json");
+            File spaConfigFile = new File(appDataDir, "spa-build-config.json");
             writeJSONObject(spaConfigFile, spaConfigJson);
             nodeHelper.installNodeAndNpm(NODE_VERSION, NPM_VERSION);
-            File buildTargetDir = new File(serverDir, BUILD_TARGET_DIR);
+            File buildTargetDir = new File(appDataDir, BUILD_TARGET_DIR);
             nodeHelper.runNpx(String.format("openmrs@next build --target %s --build-config %s", buildTargetDir, spaConfigFile));
             nodeHelper.runNpx(String.format("openmrs@next assemble --target %s --mode config --config %s", buildTargetDir, spaConfigFile));
         }
