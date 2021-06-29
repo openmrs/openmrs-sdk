@@ -8,6 +8,8 @@ import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugins.annotations.Component;
+import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.settings.Proxy;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.settings.Settings;
@@ -30,210 +32,194 @@ import java.io.File;
 import java.util.ArrayDeque;
 
 /**
- *
+ * Base class for all OpenMRS SDK Maven Mojos
  */
 public abstract class AbstractTask extends AbstractMojo {
 
-    /**
-     * The project currently being build.
-     *
-     * @parameter  property="project"
-     */
-    MavenProject mavenProject;
+	/**
+	 * The project currently being build
+	 */
+	@Parameter(defaultValue = "${project}", readonly = true)
+	MavenProject mavenProject;
 
-    /**
-     * The current Maven session.
-     *
-     * @parameter  property="session"
-     */
-    MavenSession mavenSession;
+	/**
+	 * The current Maven session.
+	 */
+	@Parameter(defaultValue = "${session}", readonly = true, required = true)
+	MavenSession mavenSession;
 
-    /**
-     * The Maven Settings
-     *
-     * @parameter  property="settings"
-     */
-    Settings settings;
+	/**
+	 * The Maven Settings
+	 */
+	@Parameter(defaultValue = "${settings}", readonly = true)
+	Settings settings;
 
-    /**
-     * The artifact metadata source to use.
-     *
-     * @component
-     * @required
-     */
-    ArtifactMetadataSource artifactMetadataSource;
+	/**
+	 * The artifact metadata source to use.
+	 */
+	@Component
+	ArtifactMetadataSource artifactMetadataSource;
 
-    /**
-     * @component
-     * @required
-     */
-    ArtifactFactory artifactFactory;
+	@Component
+	ArtifactFactory artifactFactory;
 
-    /**
-     * The Maven BuildPluginManager component.
-     *
-     * @component
-     * @required
-     */
-    BuildPluginManager pluginManager;
+	/**
+	 * The Maven BuildPluginManager component.
+	 */
+	@Component
+	BuildPluginManager pluginManager;
 
-    /**
-     * @component
-     * @required
-     */
-    Wizard wizard;
+	@Component
+	Wizard wizard;
 
-    /**
-     * test mode, if true disables interactive mode and uses batchAnswers, even if there is none
-     *
-     * @parameter  property="testMode" default-value="false"
-     */
-    String testMode;
+	/**
+	 * test mode, if true disables interactive mode and uses batchAnswers, even if there is none
+	 */
+	@Parameter(defaultValue = "false", property = "testMode")
+	boolean testMode;
 
-    /**
-     * path to openmrs directory
-     *
-     * @parameter  property="openMRSPath"
-     */
-    String openMRSPath;
+	/**
+	 * path to openmrs directory
+	 */
+	@Parameter(property = "openMRSPath")
+	String openMRSPath;
 
-    /***
-     *
-     * @parameter  property="batchAnswers"
-     */
-    ArrayDeque<String> batchAnswers;
+	/***
+	 * answers to use if not running in interactive mode
+	 */
+	@Parameter(property = "batchAnswers")
+	ArrayDeque<String> batchAnswers;
 
-    /**
-     * stats
-     *
-     * @parameter  property="stats" default-value="false"
-     */
-    boolean stats;
+	/**
+	 * stats
+	 */
+	@Parameter(defaultValue = "false", property = "stats")
+	boolean stats;
 
-    /**
-     * wizard for resolving artifact available versions
-     */
-    VersionsHelper versionsHelper;
+	/**
+	 * wizard for resolving artifact available versions
+	 */
+	VersionsHelper versionsHelper;
 
-    /**
-     * handles installing modules on server
-     */
-    ModuleInstaller moduleInstaller;
+	/**
+	 * handles installing modules on server
+	 */
+	ModuleInstaller moduleInstaller;
 
-    /**
-     * handles distro-properties
-     */
-    DistroHelper distroHelper;
+	/**
+	 * handles distro-properties
+	 */
+	DistroHelper distroHelper;
 
-    /**
-     * handles OWAs
-     */
-    OwaHelper owaHelper;
+	/**
+	 * handles OWAs
+	 */
+	OwaHelper owaHelper;
 
-    /**
-     * installs SPAs
-     */
-    SpaInstaller spaInstaller;
+	/**
+	 * installs SPAs
+	 */
+	SpaInstaller spaInstaller;
 
-    /**
-     * handles github and provides basic git utilities
-     */
-    GitHelper gitHelper;
+	/**
+	 * handles github and provides basic git utilities
+	 */
+	GitHelper gitHelper;
 
-    /**
-     * handles jira
-     */
-    Jira jira;
+	/**
+	 * handles jira
+	 */
+	Jira jira;
 
-    /**
-     * handles docker
-     */
-    DockerHelper dockerHelper;
+	/**
+	 * handles docker
+	 */
+	DockerHelper dockerHelper;
 
+	public AbstractTask() {
+	}
 
-    public AbstractTask(){}
+	public AbstractTask(AbstractTask other) {
+		this.mavenProject = other.mavenProject;
+		this.mavenSession = other.mavenSession;
+		this.wizard = other.wizard;
+		this.pluginManager = other.pluginManager;
+		this.artifactFactory = other.artifactFactory;
+		this.artifactMetadataSource = other.artifactMetadataSource;
+		this.moduleInstaller = other.moduleInstaller;
+		this.versionsHelper = other.versionsHelper;
+		this.distroHelper = other.distroHelper;
+		this.owaHelper = other.owaHelper;
+		this.spaInstaller = other.spaInstaller;
+		this.gitHelper = other.gitHelper;
+		this.dockerHelper = other.dockerHelper;
+		this.settings = other.settings;
+		initTask();
+	}
 
-    public AbstractTask(AbstractTask other) {
-        this.mavenProject = other.mavenProject;
-        this.mavenSession = other.mavenSession;
-        this.wizard = other.wizard;
-        this.pluginManager = other.pluginManager;
-        this.artifactFactory = other.artifactFactory;
-        this.artifactMetadataSource = other.artifactMetadataSource;
-        this.moduleInstaller = other.moduleInstaller;
-        this.versionsHelper = other.versionsHelper;
-        this.distroHelper = other.distroHelper;
-        this.owaHelper = other.owaHelper;
-        this.spaInstaller = other.spaInstaller;
-        this.gitHelper = other.gitHelper;
-        this.dockerHelper = other.dockerHelper;
-	    this.settings = other.settings;
-        initTask();
-    }
+	public void initTask() {
+		if (jira == null) {
+			jira = new DefaultJira();
+		}
+		if (gitHelper == null) {
+			gitHelper = new DefaultGitHelper();
+		}
+		if (versionsHelper == null) {
+			versionsHelper = new VersionsHelper(artifactFactory, mavenProject, mavenSession, artifactMetadataSource);
+		}
+		if (moduleInstaller == null) {
+			moduleInstaller = new ModuleInstaller(mavenProject, mavenSession, pluginManager, versionsHelper);
+		}
+		if (distroHelper == null) {
+			distroHelper = new DistroHelper(mavenProject, mavenSession, pluginManager, wizard);
+		}
+		if (owaHelper == null) {
+			owaHelper = new OwaHelper(mavenSession, mavenProject, pluginManager, wizard);
+		}
+		if (spaInstaller == null) {
+			spaInstaller = new SpaInstaller(distroHelper, new NodeHelper(mavenProject, mavenSession, pluginManager));
+		}
+		if (dockerHelper == null) {
+			dockerHelper = new DockerHelper(mavenProject, mavenSession, pluginManager, wizard);
+		}
+		if (StringUtils.isNotBlank(openMRSPath)) {
+			Server.setServersPath(openMRSPath);
+		}
+		if ((batchAnswers != null && !batchAnswers.isEmpty()) || testMode) {
+			wizard.setAnswers(batchAnswers);
+			wizard.setInteractiveMode(false);
+		}
+	}
 
-    public void initTask() {
-        if(jira == null){
-            jira = new DefaultJira();
-        }
-        if(gitHelper == null){
-            gitHelper = new DefaultGitHelper();
-        }
-        if(versionsHelper == null){
-            versionsHelper = new VersionsHelper(artifactFactory, mavenProject, mavenSession, artifactMetadataSource);
-        }
-        if(moduleInstaller==null){
-            moduleInstaller = new ModuleInstaller(mavenProject, mavenSession, pluginManager, versionsHelper);
-        }
-        if(distroHelper == null){
-            distroHelper = new DistroHelper(mavenProject, mavenSession, pluginManager, wizard);
-        }
-        if (owaHelper == null) {
-            owaHelper = new OwaHelper(mavenSession, mavenProject, pluginManager, wizard);
-        }
-        if (spaInstaller == null) {
-            spaInstaller = new SpaInstaller(distroHelper, new NodeHelper(mavenProject, mavenSession, pluginManager));
-        }
-        if(dockerHelper == null){
-            dockerHelper = new DockerHelper(mavenProject, mavenSession, pluginManager, wizard);
-        }
-        if(StringUtils.isNotBlank(openMRSPath)){
-            Server.setServersPath(openMRSPath);
-        }
-        if((batchAnswers != null && !batchAnswers.isEmpty())||"true".equals(testMode)){
-            wizard.setAnswers(batchAnswers);
-            wizard.setInteractiveMode(false);
-        }
-    }
+	@Override
+	public void execute() throws MojoExecutionException, MojoFailureException {
+		initTask();
+		new StatsManager(wizard, mavenSession, stats).incrementGoalStats();
+		executeTask();
+	}
 
-    @Override
-    public void execute() throws MojoExecutionException, MojoFailureException {
-        initTask();
-        new StatsManager(wizard, mavenSession, stats).incrementGoalStats();
-        executeTask();
-    }
+	abstract public void executeTask() throws MojoExecutionException, MojoFailureException;
 
-    abstract public void executeTask() throws MojoExecutionException, MojoFailureException;
+	public Server loadValidatedServer(String serverId) throws MojoExecutionException {
+		File serversPath = Server.getServersPathFile();
+		File serverPath = new File(serversPath, serverId);
+		new ServerUpgrader(this).validateServerMetadata(serverPath);
+		return Server.loadServer(serverPath);
+	}
 
-    public Server loadValidatedServer(String serverId) throws MojoExecutionException {
-        File serversPath = Server.getServersPathFile();
-        File serverPath = new File(serversPath, serverId);
-        new ServerUpgrader(this).validateServerMetadata(serverPath);
-        Server server = Server.loadServer(serverPath);
-        return server;
-    }
+	public Proxy getProxyFromSettings() {
+		if (settings == null) {
+			return null;
+		}
 
-    public Proxy getProxyFromSettings() {
-        if (settings == null) {
-            return null;
-        }
+		// Get active http/https proxy
+		for (Proxy proxy : settings.getProxies()) {
+			if (proxy.isActive() && ("http".equalsIgnoreCase(proxy.getProtocol()) || "https"
+					.equalsIgnoreCase(proxy.getProtocol()))) {
+				return proxy;
+			}
+		}
 
-        // Get active http/https proxy
-        for (Proxy proxy : settings.getProxies()) {
-            if (proxy.isActive() && ("http".equalsIgnoreCase(proxy.getProtocol()) || "https".equalsIgnoreCase(proxy.getProtocol()))) {
-                return proxy;
-            }
-        }
-
-        return null;
-    }
+		return null;
+	}
 }

@@ -60,7 +60,7 @@ public class Server extends BaseSdkProperties {
 
     private File serverDirectory;
 
-    private String interactiveMode;
+    private boolean interactiveMode;
 
     public static class ServerBuilder {
         private Server server = new Server();
@@ -69,7 +69,7 @@ public class Server extends BaseSdkProperties {
         }
         public ServerBuilder(){}
 
-        public ServerBuilder setInteractiveMode(String nestedInteractiveMode) {
+        public ServerBuilder setInteractiveMode(boolean nestedInteractiveMode) {
             server.interactiveMode = nestedInteractiveMode;
             return this;
         }
@@ -784,13 +784,12 @@ public class Server extends BaseSdkProperties {
         setParam(PROPERTY_DB_PASS, dbPassword);
     }
 
-    public String getInteractiveMode() { return interactiveMode; }
+    public boolean getInteractiveMode() { return interactiveMode; }
 
-    public void setInteractiveMode(String interactiveMode) { this.interactiveMode = interactiveMode; }
+    public void setInteractiveMode(boolean interactiveMode) { this.interactiveMode = interactiveMode; }
 
     public String getJavaHome() {
-        String javaHome = getParam(PROPERTY_JAVA_HOME);
-        return javaHome;
+        return getParam(PROPERTY_JAVA_HOME);
     }
 
     public boolean isIncludeDemoData() {

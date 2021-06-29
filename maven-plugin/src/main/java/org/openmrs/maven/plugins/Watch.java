@@ -2,22 +2,17 @@ package org.openmrs.maven.plugins;
 
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.utility.Project;
 
 import java.io.File;
 
-/**
-*
-* @goal watch
-* @requiresProject false
-*
-*/
+@Mojo(name = "watch", requiresProject = false)
 public class Watch extends AbstractTask {
 
-	/**
-     * @parameter  property="serverId"
-     */
+	@Parameter(property = "serverId")
     private String serverId;
 
 	@Override

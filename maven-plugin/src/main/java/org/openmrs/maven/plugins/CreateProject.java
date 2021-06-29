@@ -12,6 +12,9 @@ import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugins.annotations.Component;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.shared.invoker.Invoker;
 import org.openmrs.maven.plugins.utility.OwaHelper;
@@ -34,409 +37,393 @@ import static org.twdata.maven.mojoexecutor.MojoExecutor.element;
 import static org.twdata.maven.mojoexecutor.MojoExecutor.plugin;
 
 /**
- *
- * @goal create-project
- * @requiresProject false
- *
- * Most of the logic is from https://github.com/openmrs/openmrs-contrib-maven-plugin-module-wizard/blob/master/src/main/java/org/openmrs/maven/plugins/WizardMojo.java
- *
+ * Creates a new OpenMRS project from an archetype
  */
+// Most of the logic is from https://github.com/openmrs/openmrs-contrib-maven-plugin-module-wizard/blob/master/src/main/java/org/openmrs/maven/plugins/WizardMojo.java
+@Mojo(name = "create-project", requiresProject = false)
 public class CreateProject extends CreateProjectFromArchetypeMojo {
 
-    private static final String TYPE_PLATFORM = "platform-module";
+	private static final String TYPE_PLATFORM = "platform-module";
 
-    private static final String TYPE_REFAPP = "referenceapplication-module";
+	private static final String TYPE_REFAPP = "referenceapplication-module";
 
-    private static final String TYPE_OWA = "owa-project";
+	private static final String TYPE_OWA = "owa-project";
 
-    private static final String OPTION_PLATFORM = "Platform module";
+	private static final String OPTION_PLATFORM = "Platform module";
 
-    public static final String OPTION_REFAPP = "Reference Application module";
+	public static final String OPTION_REFAPP = "Reference Application module";
 
-    private static final String OPTION_OWA = "Open Web App";
+	private static final String OPTION_OWA = "Open Web App";
 
-    private static final String MODULE_ID_INFO =
-            "Module id uniquely identifies your module in the OpenMRS world.\n\n" +
-                    "It is advised to consult your module id on https://talk.openmrs.org \n" +
-                    "to eliminate possible collisions. \n\n" +
-                    "Module id must consists of lowercase letters, must start from \n" +
-                    "a letter, can contain alphanumerics and dots, e.g. webservices.rest, \n" +
-                    "metadatasharing, reporting, htmlformentry.";
-    private static final String MODULE_NAME_INFO =
-            "Module name is a user friendly name displayed to the user " +
-                    "\ninstead of the module id. \n\n" +
-                    "By convention it is a module id with spaces between words.";
-    private static final String MAVEN_INFO =
-            "GroupId, artifactId and version combined together identify \nyour module in the maven repository. \n\n" +
-                    "By convention OpenMRS modules use 'org.openmrs.module' as a groupId \n" +
-                    "(must follow convention for naming java packages) and the module id \n" +
-                    "as an artifactId. The version should follow maven versioning convention, \n" +
-                    "which in short is: major.minor.maintenance(-SNAPSHOT).";
+	private static final String MODULE_ID_INFO =
+			"Module id uniquely identifies your module in the OpenMRS world.\n\n" +
+					"It is advised to consult your module id on https://talk.openmrs.org \n" +
+					"to eliminate possible collisions. \n\n" +
+					"Module id must consists of lowercase letters, must start from \n" +
+					"a letter, can contain alphanumerics and dots, e.g. webservices.rest, \n" +
+					"metadatasharing, reporting, htmlformentry.";
 
-    private static final String DESCRIPTION_PROMPT_TMPL = "Describe your module in a few sentences";
-    private static final String GROUP_ID_PROMPT_TMPL = "Please specify %s";
-    private static final String AUTHOR_PROMPT_TMPL = "Who is the author of the module?";
-    private static final String MODULE_TYPE_PROMPT = "What kind of project would you like to create?";
+	private static final String MODULE_NAME_INFO =
+			"Module name is a user friendly name displayed to the user " +
+					"\ninstead of the module id. \n\n" +
+					"By convention it is a module id with spaces between words.";
 
-    /** @component */
-    private ArchetypeManager manager;
+	private static final String MAVEN_INFO =
+			"GroupId, artifactId and version combined together identify \nyour module in the maven repository. \n\n" +
+					"By convention OpenMRS modules use 'org.openmrs.module' as a groupId \n" +
+					"(must follow convention for naming java packages) and the module id \n" +
+					"as an artifactId. The version should follow maven versioning convention, \n" +
+					"which in short is: major.minor.maintenance(-SNAPSHOT).";
 
-    /** @component */
-    private ArchetypeSelector selector;
+	private static final String DESCRIPTION_PROMPT_TMPL = "Describe your module in a few sentences";
 
-    /** @component */
-    private ArchetypeGenerationConfigurator configurator;
+	private static final String GROUP_ID_PROMPT_TMPL = "Please specify %s";
 
-    /** @component */
-    private ArchetypeGenerator generator;
+	private static final String AUTHOR_PROMPT_TMPL = "Who is the author of the module?";
 
-    /** @component */
-    private Invoker invoker;
+	private static final String MODULE_TYPE_PROMPT = "What kind of project would you like to create?";
 
-    /**
-     * @component
-     * @required
-     */
-    Wizard wizard;
+	@Component
+	private ArchetypeManager manager;
 
-    /**
-     * @parameter  property="batchAnswers"
-     */
-    private ArrayDeque<String> batchAnswers;
+	@Component
+	private ArchetypeSelector selector;
 
-    /**
-     * stats
-     *
-     * @parameter  property="stats" default-value="false"
-     */
-    boolean stats;
+	@Component
+	private ArchetypeGenerationConfigurator configurator;
 
-    /**
-     * The manager's artifactId. This can be an ordered comma separated list.
-     *
-     * @parameter  property="archetypeArtifactId"
-     */
-    private String archetypeArtifactId;
+	@Component
+	private ArchetypeGenerator generator;
 
-    /**
-     * The manager's groupId.
-     *
-     * @parameter  property="archetypeGroupId" default-value="org.openmrs.maven.archetypes"
-     */
-    private String archetypeGroupId;
+	@Component
+	private Invoker invoker;
 
-    /**
-     * The manager's version.
-     *
-     * @parameter  property="archetypeVersion"
-     */
-    private String archetypeVersion;
+	@Component
+	Wizard wizard;
 
-    /**
-     * The manager's repository.
-     *
-     * @parameter  property="archetypeRepository"
-     */
-    private String archetypeRepository;
+	/**
+	 * answers to use if not running in interactive mode
+	 */
+	@Parameter(property = "batchAnswers")
+	private ArrayDeque<String> batchAnswers;
 
-    /**
-     * The manager's catalogs. It is a comma separated list of catalogs.
-     *
-     * @parameter  property="archetypeCatalog"
-     * default-value="http://mavenrepo.openmrs.org/nexus/service/local/repositories/releases/content/archetype-catalog.xml"
-     */
-    private String archetypeCatalog;
+	/**
+	 * stats
+	 */
+	@Parameter(defaultValue = "false", property = "stats")
+	boolean stats;
 
-    /**
-     * Local Maven repository.
-     *
-     * @parameter  property="localRepository"
-     * @required
-     * @readonly
-     */
-    private ArtifactRepository localRepository;
+	/**
+	 * The manager's artifactId. This can be an ordered comma separated list.
+	 */
+	@Parameter(property = "archetypeArtifactId")
+	private String archetypeArtifactId;
 
-    /**
-     * List of remote repositories used by the resolver.
-     *
-     * @parameter  property="project.remoteArtifactRepositories"
-     * @readonly
-     * @required
-     */
-    private List<ArtifactRepository> remoteArtifactRepositories;
+	/**
+	 * The manager's groupId.
+	 */
+	@Parameter(defaultValue = "org.openmrs.maven.archetypes", property = "archetypeGroupId")
+	private String archetypeGroupId;
 
-    /**
-     * test mode, if true disables interactive mode and uses batchAnswers, even if there is none
-     *
-     * @parameter  property="testMode" default-value="false"
-     */
-    String testMode;
+	/**
+	 * The manager's version.
+	 */
+	@Parameter(property = "archetypeVersion")
+	private String archetypeVersion;
 
-    /** @parameter  property="basedir" */
-    private File basedir;
+	/**
+	 * The manager's repository.
+	 */
+	@Parameter(property = "archetypeRepository")
+	private String archetypeRepository;
 
-    /**
-     * @parameter  property="session"
-     * @readonly
-     */
-    private MavenSession session;
+	/**
+	 * The manager's catalogs. It is a comma separated list of catalogs.
+	 */
+	@Parameter(defaultValue = "https://mavenrepo.openmrs.org/releases/content/archetype-catalog.xml", property = "archetypeCatalog")
+	private String archetypeCatalog;
 
-    /**
-     * The project currently being build.
-     *
-     * @parameter  property="project"
-     */
-    MavenProject mavenProject;
+	/**
+	 * Local Maven repository.
+	 */
+	@Parameter(defaultValue = "${localRepository}", readonly = true, required = true)
+	private ArtifactRepository localRepository;
 
-    /**
-     * The Maven BuildPluginManager component.
-     *
-     * @component
-     * @required
-     */
-    BuildPluginManager pluginManager;
+	/**
+	 * List of remote repositories used by the resolver.
+	 */
+	@Parameter(defaultValue = "${project.remoteArtifactRepositories}", readonly = true, required = true)
+	private List<ArtifactRepository> remoteArtifactRepositories;
 
-    /**
-     * Additional goals that can be specified by the user during the creation of the manager.
-     *
-     * @parameter  property="goals"
-     */
-    private String goals;
+	/**
+	 * test mode, if true disables interactive mode and uses batchAnswers, even if there is none
+	 *
+	 * @parameter property="testMode" default-value="false"
+	 */
+	@Parameter(defaultValue = "false", property = "testMode")
+	boolean testMode;
 
-    /**
-     * The generated project's artifactId.
-     *
-     * @parameter  property="artifactId"
-     */
-    private String artifactId;
+	@Parameter(defaultValue = "${project.basedir}")
+	private File basedir;
 
-    /**
-     * The generated project's groupId.
-     *
-     * @parameter  property="groupId"
-     */
-    private String groupId;
+	@Parameter(defaultValue = "${session}", readonly = true, required = true)
+	private MavenSession session;
 
-    /**
-     * The generated project's version.
-     *
-     * @parameter  property="version"
-     */
-    private String version;
+	/**
+	 * The project currently being build.
+	 */
+	@Parameter(defaultValue = "${project}", readonly = true)
+	MavenProject mavenProject;
 
-    /**
-     * The generated project's package name.
-     *
-     * @parameter  property="package"
-     */
-    private String packageName;
+	/**
+	 * The Maven BuildPluginManager component.
+	 */
+	@Component
+	BuildPluginManager pluginManager;
 
-    /**
-     * The generated project's module name (no spaces).
-     *
-     * @parameter  property="moduleClassnamePrefix"
-     */
-    private String moduleClassnamePrefix;
+	/**
+	 * Additional goals that can be specified by the user during the creation of the manager.
+	 */
+	@Parameter(property = "goals")
+	private String goals;
 
-    /**
-     * The generated project's module name.
-     *
-     * @parameter  property="moduleName"
-     */
-    private String moduleName;
+	/**
+	 * The generated project's artifactId.
+	 */
+	@Parameter(property = "artifactId")
+	private String artifactId;
 
-    /**
-     * The generated project's module description.
-     *
-     * @parameter  property="moduleDescription"
-     */
-    private String moduleDescription;
+	/**
+	 * The generated project's groupId.
+	 */
+	@Parameter(property = "groupId")
+	private String groupId;
 
-    /**
-     * The generated project's module author.
-     *
-     * @parameter  property="user.name"
-     */
-    private String moduleAuthor;
+	/**
+	 * The generated project's version.
+	 */
+	@Parameter(property = "version")
+	private String version;
 
-    /**
-     * The generated project's Openmrs Platform Version.
-     *
-     * @parameter  property="platform"
-     */
-    private String platform;
+	/**
+	 * The generated project's package name.
+	 */
+	@Parameter(property = "package")
+	private String packageName;
 
-    /**
-     * The generated project's Openmrs Reference Application Version.
-     *
-     * @parameter  property="refapp"
-     */
-    private String refapp;
+	/**
+	 * The generated project's module name (no spaces).
+	 */
+	@Parameter(property = "moduleClassnamePrefix")
+	private String moduleClassnamePrefix;
 
-    /**
-     * unique identifier module in the OpenMRS world
-     *
-     * @parameter  property="moduleId"
-     */
-    private String moduleId;
-    /**
-     * type of generated project module, platform or refapp
-     *
-     * @parameter  property="type"
-     */
-    private String type;
+	/**
+	 * The generated project's module name.
+	 */
+	@Parameter(property = "moduleName")
+	private String moduleName;
 
-    @Override
-    public void execute() throws MojoExecutionException, MojoFailureException {
+	/**
+	 * The generated project's module description.
+	 */
+	@Parameter(property = "moduleDescription")
+	private String moduleDescription;
 
-        if((batchAnswers != null && !batchAnswers.isEmpty())||"true".equals(testMode)){
-            wizard.setAnswers(batchAnswers);
-            wizard.setInteractiveMode(false);
-        }
+	/**
+	 * The generated project's module author.
+	 */
+	@Parameter(defaultValue = "${user.name}")
+	private String moduleAuthor;
 
-        new StatsManager(wizard, session, stats).incrementGoalStats();
-        setProjectType();
+	/**
+	 * The generated project's Openmrs Platform Version.
+	 */
+	@Parameter(property = "platform")
+	private String platform;
 
-        if(TYPE_OWA.equals(type)){
-            new OwaHelper(session, mavenProject, pluginManager, wizard).createOwaProject();
-        } else {
-            createModule();
-        }
+	/**
+	 * The generated project's Openmrs Reference Application Version.
+	 */
+	@Parameter(property = "refapp")
+	private String refapp;
 
-    }
+	/**
+	 * unique identifier module in the OpenMRS world
+	 */
+	@Parameter(property = "moduleId")
+	private String moduleId;
 
-    private void setProjectType() {
-        String choice = wizard.promptForMissingValueWithOptions(MODULE_TYPE_PROMPT, type, null, Arrays.asList(OPTION_PLATFORM, OPTION_REFAPP, OPTION_OWA));
+	/**
+	 * type of generated project module, platform or refapp
+	 */
+	@Parameter(property = "type")
+	private String type;
 
-        if(OPTION_PLATFORM.equals(choice)){
-            type = TYPE_PLATFORM;
-        } else if(OPTION_REFAPP.equals(choice)) {
-            type = TYPE_REFAPP;
-        } else if(OPTION_OWA.equals(choice)){
-            type = TYPE_OWA;
-        }
-    }
+	@Override
+	public void execute() throws MojoExecutionException, MojoFailureException {
 
-    private void createModule() throws MojoExecutionException, MojoFailureException {
-        wizard.showMessage(MODULE_ID_INFO);
-        moduleId = wizard.promptForValueIfMissingWithDefault(null, moduleId, "module id", "basicexample");
-        moduleId = moduleId.toLowerCase();
-        while (!moduleId.matches("[a-z][a-z0-9\\.]*")) {
-            wizard.showError("The specified moduleId " + moduleId + " is not valid. It must start from a letter and can contain only alphanumerics and dots.");
-            moduleId = null;
-            moduleId = wizard.promptForValueIfMissingWithDefault(null, moduleId, "module id", "basicexample");
-            moduleId = moduleId.toLowerCase();
-        }
+		if ((batchAnswers != null && !batchAnswers.isEmpty()) || testMode) {
+			wizard.setAnswers(batchAnswers);
+			wizard.setInteractiveMode(false);
+		}
 
-        wizard.showMessage(MODULE_NAME_INFO);
-        moduleName = wizard.promptForValueIfMissingWithDefault(null, moduleName, "module name", StringUtils.capitalize(moduleId));
-        while (!moduleName.matches("[a-zA-Z][a-zA-Z0-9\\.\\s]*")) {
-            wizard.showError("The specified module name " + moduleName + " is not valid. It must start from a letter and can contain only alphanumerics and dots.");
-            moduleName = null;
-            moduleName = wizard.promptForValueIfMissingWithDefault(null, moduleName, "module name", StringUtils.capitalize(moduleId));
-        }
-        moduleName = StringUtils.capitalize(moduleName);
-        moduleClassnamePrefix = StringUtils.deleteWhitespace(moduleName).replace(".", "");
+		new StatsManager(wizard, session, stats).incrementGoalStats();
+		setProjectType();
 
-        moduleDescription = wizard.promptForValueIfMissingWithDefault(DESCRIPTION_PROMPT_TMPL, moduleDescription, "", "no description");
+		if (TYPE_OWA.equals(type)) {
+			new OwaHelper(session, mavenProject, pluginManager, wizard).createOwaProject();
+		} else {
+			createModule();
+		}
 
-        wizard.showMessage(MAVEN_INFO);
-        groupId = wizard.promptForValueIfMissingWithDefault(GROUP_ID_PROMPT_TMPL, groupId, "groupId", "org.openmrs.module");
-        while (!groupId.matches("[a-z][a-z0-9.]*")) {
-            wizard.showError("The specified groupId " + groupId + " is not valid. It must start from a letter and can contain only alphanumerics and dots.");
-            groupId = null;
-            groupId = wizard.promptForValueIfMissingWithDefault(GROUP_ID_PROMPT_TMPL, groupId, "groupId", "org.openmrs.module");
-        }
+	}
 
-        artifactId = moduleId;
+	private void setProjectType() {
+		String choice = wizard.promptForMissingValueWithOptions(MODULE_TYPE_PROMPT, type, null,
+				Arrays.asList(OPTION_PLATFORM, OPTION_REFAPP, OPTION_OWA));
 
-        version = wizard.promptForValueIfMissingWithDefault(null, version, "initial version", "1.0.0-SNAPSHOT");
+		if (OPTION_PLATFORM.equals(choice)) {
+			type = TYPE_PLATFORM;
+		} else if (OPTION_REFAPP.equals(choice)) {
+			type = TYPE_REFAPP;
+		} else if (OPTION_OWA.equals(choice)) {
+			type = TYPE_OWA;
+		}
+	}
 
-        moduleAuthor = wizard.promptForValueIfMissingWithDefault(AUTHOR_PROMPT_TMPL, moduleAuthor, "", "anonymous");
+	private void createModule() throws MojoExecutionException, MojoFailureException {
+		wizard.showMessage(MODULE_ID_INFO);
+		moduleId = wizard.promptForValueIfMissingWithDefault(null, moduleId, "module id", "basicexample");
+		moduleId = moduleId.toLowerCase();
+		while (!moduleId.matches("[a-z][a-z0-9\\.]*")) {
+			wizard.showError("The specified moduleId " + moduleId
+					+ " is not valid. It must start from a letter and can contain only alphanumerics and dots.");
+			moduleId = null;
+			moduleId = wizard.promptForValueIfMissingWithDefault(null, moduleId, "module id", "basicexample");
+			moduleId = moduleId.toLowerCase();
+		}
 
-        if(TYPE_PLATFORM.equals(type)){
-            platform = wizard.promptForValueIfMissingWithDefault("What is the lowest version of the platform (-D%s) you want to support?", platform, "platform", "1.11.6");
-            archetypeArtifactId = SDKConstants.PLATFORM_ARCH_ARTIFACT_ID;
-        } else if(TYPE_REFAPP.equals(type)) {
-            refapp = wizard.promptForValueIfMissingWithDefault("What is the lowest version of the Reference Application (-D%s) you want to support?", refapp, "refapp", "2.4");
-            archetypeArtifactId = SDKConstants.REFAPP_ARCH_ARTIFACT_ID;
-        } else {
-            throw new MojoExecutionException("Invalid project type");
-        }
+		wizard.showMessage(MODULE_NAME_INFO);
+		moduleName = wizard
+				.promptForValueIfMissingWithDefault(null, moduleName, "module name", StringUtils.capitalize(moduleId));
+		while (!moduleName.matches("[a-zA-Z][a-zA-Z0-9\\.\\s]*")) {
+			wizard.showError("The specified module name " + moduleName
+					+ " is not valid. It must start from a letter and can contain only alphanumerics and dots.");
+			moduleName = null;
+			moduleName = wizard
+					.promptForValueIfMissingWithDefault(null, moduleName, "module name", StringUtils.capitalize(moduleId));
+		}
+		moduleName = StringUtils.capitalize(moduleName);
+		moduleClassnamePrefix = StringUtils.deleteWhitespace(moduleName).replace(".", "");
 
-        archetypeVersion = getSdkVersion();
-        packageName = "org.openmrs.module." + artifactId;
+		moduleDescription = wizard
+				.promptForValueIfMissingWithDefault(DESCRIPTION_PROMPT_TMPL, moduleDescription, "", "no description");
 
-        Properties properties = new Properties();
-        properties.setProperty("artifactId", artifactId);
-        properties.setProperty("groupId", groupId);
-        properties.setProperty("version", version);
-        properties.setProperty("moduleClassnamePrefix", moduleClassnamePrefix);
-        properties.setProperty("moduleName", moduleName);
-        properties.setProperty("moduleDescription", moduleDescription);
-        properties.setProperty("moduleAuthor", moduleAuthor);
-        if (platform != null) {
-            properties.setProperty("openmrsPlatformVersion", platform);
-        } else if (refapp != null) {
-            properties.setProperty("openmrsRefappVersion", refapp);
-        }
-        properties.setProperty("package", packageName);
-        session.getExecutionProperties().putAll(properties);
+		wizard.showMessage(MAVEN_INFO);
+		groupId = wizard.promptForValueIfMissingWithDefault(GROUP_ID_PROMPT_TMPL, groupId, "groupId", "org.openmrs.module");
+		while (!groupId.matches("[a-z][a-z0-9.]*")) {
+			wizard.showError("The specified groupId " + groupId
+					+ " is not valid. It must start from a letter and can contain only alphanumerics and dots.");
+			groupId = null;
+			groupId = wizard
+					.promptForValueIfMissingWithDefault(GROUP_ID_PROMPT_TMPL, groupId, "groupId", "org.openmrs.module");
+		}
 
-        // Using custom prompts, avoid manager plugin interaction
-        setPrivateField("interactiveMode", Boolean.FALSE);
-        setPrivateField("archetypeArtifactId", archetypeArtifactId);
-        setPrivateField("archetypeGroupId", archetypeGroupId);
-        setPrivateField("archetypeVersion", archetypeVersion);
-        setPrivateField("archetypeRepository", archetypeRepository);
-        setPrivateField("archetypeCatalog", archetypeCatalog);
-        setPrivateField("localRepository", localRepository);
-        setPrivateField("remoteArtifactRepositories", remoteArtifactRepositories);
-        setPrivateField("basedir", basedir);
-        setPrivateField("session", session);
-        setPrivateField("goals", goals);
-        setPrivateField("manager", manager);
-        setPrivateField("selector", selector);
-        setPrivateField("configurator", configurator);
-        setPrivateField("invoker", invoker);
+		artifactId = moduleId;
 
-        setPrivateField("session", session);
+		version = wizard.promptForValueIfMissingWithDefault(null, version, "initial version", "1.0.0-SNAPSHOT");
 
-        Map<String, String> archetypeToVersion = new LinkedHashMap<>();
+		moduleAuthor = wizard.promptForValueIfMissingWithDefault(AUTHOR_PROMPT_TMPL, moduleAuthor, "", "anonymous");
 
-        archetypeToVersion.put(archetypeArtifactId, archetypeVersion);
+		if (TYPE_PLATFORM.equals(type)) {
+			platform = wizard.promptForValueIfMissingWithDefault(
+					"What is the lowest version of the platform (-D%s) you want to support?", platform, "platform",
+					"1.11.6");
+			archetypeArtifactId = SDKConstants.PLATFORM_ARCH_ARTIFACT_ID;
+		} else if (TYPE_REFAPP.equals(type)) {
+			refapp = wizard.promptForValueIfMissingWithDefault(
+					"What is the lowest version of the Reference Application (-D%s) you want to support?", refapp, "refapp",
+					"2.4");
+			archetypeArtifactId = SDKConstants.REFAPP_ARCH_ARTIFACT_ID;
+		} else {
+			throw new MojoExecutionException("Invalid project type");
+		}
 
-        for (Map.Entry<String, String> archetype : archetypeToVersion.entrySet()) {
-            getLog().info("Archetype: " + archetype.getKey());
-            setPrivateField("archetypeArtifactId", archetype.getKey());
-            setPrivateField("archetypeVersion", archetype.getValue());
-            // Execute creating archetype for each archetype id
-            super.execute();
-        }
-    }
+		archetypeVersion = getSdkVersion();
+		packageName = "org.openmrs.module." + artifactId;
 
-    private String getSdkVersion() throws MojoExecutionException {
-        InputStream sdkPom = CreateProject.class.getClassLoader().getResourceAsStream("sdk.properties");
-        Properties sdk = new Properties();
-        try {
-            sdk.load(sdkPom);
-        } catch (IOException e) {
-            throw new MojoExecutionException(e.getMessage());
-        } finally {
-            IOUtils.closeQuietly(sdkPom);
-        }
-        return sdk.getProperty("version");
-    }
+		Properties properties = new Properties();
+		properties.setProperty("artifactId", artifactId);
+		properties.setProperty("groupId", groupId);
+		properties.setProperty("version", version);
+		properties.setProperty("moduleClassnamePrefix", moduleClassnamePrefix);
+		properties.setProperty("moduleName", moduleName);
+		properties.setProperty("moduleDescription", moduleDescription);
+		properties.setProperty("moduleAuthor", moduleAuthor);
+		if (platform != null) {
+			properties.setProperty("openmrsPlatformVersion", platform);
+		} else if (refapp != null) {
+			properties.setProperty("openmrsRefappVersion", refapp);
+		}
+		properties.setProperty("package", packageName);
+		session.getUserProperties().putAll(properties);
 
-    protected void setPrivateField(String fieldName, Object value) throws MojoExecutionException {
-        try {
-            Class<?> superClass = this.getClass().getSuperclass();
-            Field field = superClass.getDeclaredField(fieldName);
-            field.setAccessible(true); // Allow access to private field
-            field.set(this, value);
-        }
-        catch (Exception e) {
-            throw new MojoExecutionException("Unable to set mojo field: " + fieldName, e);
-        }
-    }
+		// Using custom prompts, avoid manager plugin interaction
+		setPrivateField("interactiveMode", Boolean.FALSE);
+		setPrivateField("archetypeArtifactId", archetypeArtifactId);
+		setPrivateField("archetypeGroupId", archetypeGroupId);
+		setPrivateField("archetypeVersion", archetypeVersion);
+		setPrivateField("archetypeRepository", archetypeRepository);
+		setPrivateField("archetypeCatalog", archetypeCatalog);
+		setPrivateField("localRepository", localRepository);
+		setPrivateField("remoteArtifactRepositories", remoteArtifactRepositories);
+		setPrivateField("basedir", basedir);
+		setPrivateField("session", session);
+		setPrivateField("goals", goals);
+		setPrivateField("manager", manager);
+		setPrivateField("selector", selector);
+		setPrivateField("configurator", configurator);
+		setPrivateField("invoker", invoker);
+
+		setPrivateField("session", session);
+
+		Map<String, String> archetypeToVersion = new LinkedHashMap<>();
+
+		archetypeToVersion.put(archetypeArtifactId, archetypeVersion);
+
+		for (Map.Entry<String, String> archetype : archetypeToVersion.entrySet()) {
+			getLog().info("Archetype: " + archetype.getKey());
+			setPrivateField("archetypeArtifactId", archetype.getKey());
+			setPrivateField("archetypeVersion", archetype.getValue());
+			// Execute creating archetype for each archetype id
+			super.execute();
+		}
+	}
+
+	private String getSdkVersion() throws MojoExecutionException {
+		InputStream sdkPom = CreateProject.class.getClassLoader().getResourceAsStream("sdk.properties");
+		Properties sdk = new Properties();
+		try {
+			sdk.load(sdkPom);
+		}
+		catch (IOException e) {
+			throw new MojoExecutionException(e.getMessage());
+		}
+		finally {
+			IOUtils.closeQuietly(sdkPom);
+		}
+		return sdk.getProperty("version");
+	}
+
+	protected void setPrivateField(String fieldName, Object value) throws MojoExecutionException {
+		try {
+			Class<?> superClass = this.getClass().getSuperclass();
+			Field field = superClass.getDeclaredField(fieldName);
+			field.setAccessible(true); // Allow access to private field
+			field.set(this, value);
+		}
+		catch (Exception e) {
+			throw new MojoExecutionException("Unable to set mojo field: " + fieldName, e);
+		}
+	}
 }

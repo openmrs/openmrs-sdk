@@ -3,31 +3,24 @@ package org.openmrs.maven.plugins;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 
 import java.io.File;
 
-/**
- * @goal undeploy
- * @requiresProject false
- */
+@Mojo(name = "undeploy", requiresProject = false)
 public class Undeploy extends AbstractTask {
 
-    /**
-     * @parameter  property="serverId"
-     */
+    @Parameter(property = "serverId")
     private String serverId;
 
-    /**
-     * @parameter  property="artifactId"
-     */
+    @Parameter(property = "artifactId")
     private String artifactId;
 
-    /**
-     * @parameter  property="groupId" default-value="org.openmrs.module"
-     */
+    @Parameter(defaultValue = "org.openmrs.module", property = "groupId")
     private String groupId;
 
     public void executeTask() throws MojoExecutionException, MojoFailureException {

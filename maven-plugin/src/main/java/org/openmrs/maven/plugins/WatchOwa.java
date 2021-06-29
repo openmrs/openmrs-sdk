@@ -2,23 +2,18 @@ package org.openmrs.maven.plugins;
 
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-/**
- *
- * @goal watch-owa
- * @requiresProject false
- *
- */
+@Mojo(name = "watch-owa", requiresProject = false)
 public class WatchOwa extends AbstractTask {
 
-    /**
-     * @parameter  property="serverId"
-     */
+    @Parameter(property = "serverId")
     private String serverId;
 
     private final String CONFIG_FILENAME = "webpack.config.js";

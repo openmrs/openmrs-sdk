@@ -73,7 +73,7 @@ public class Reset extends AbstractTask {
                     .setDbUri(server.getDbUri())
                     .setDbUser(server.getDbUser())
                     .setDbPassword(server.getDbPassword())
-                    .setInteractiveMode("false")
+                    .setInteractiveMode(false)
                     .setJavaHome(server.getJavaHome())
                     .setContainerId(server.getContainerId())
                     .build();

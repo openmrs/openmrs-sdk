@@ -14,6 +14,9 @@ import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugins.annotations.Component;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.classworlds.ClassWorld;
 import org.codehaus.plexus.classworlds.realm.ClassRealm;
@@ -33,60 +36,44 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
 
-/**
- * @goal run-tomcat
- * @requiresProject false
- */
+@Mojo(name = "run-tomcat", requiresProject = false)
 public class RunTomcat extends AbstractMojo {
-
 
 	/**
 	 * The project currently being build.
-	 *
-	 * @parameter  property="project"
 	 */
+	@Parameter(defaultValue = "${project}", readonly = true)
 	MavenProject mavenProject;
 
 	/**
 	 * The current Maven session.
-	 *
-	 * @parameter  property="session"
 	 */
+	@Parameter(defaultValue = "${session}", readonly = true, required = true)
 	MavenSession mavenSession;
 
-	/**
-	 * The Maven BuildPluginManager component.
-	 *
-	 * @component
-	 * @required
-	 */
-	BuildPluginManager pluginManager;
-
-	/**
-	 * @parameter  property="serverId"
-	 */
+	@Parameter(property = "serverId")
 	private String serverId;
 
-	/**
-	 * @parameter  property="port"
-	 */
+	@Parameter(property = "port")
 	private Integer port;
 
-	/**
-	 * @parameter property="watchApi"
-	 */
+	@Parameter(property = "watchApi")
 	private Boolean watchApi;
 
 	/**
-	 * @component
-	 * @required
+	 * The Maven BuildPluginManager component.
 	 */
+	@Component
+	BuildPluginManager pluginManager;
+
+	@Component
 	private Wizard wizard;
 
 	public RunTomcat() {
 	}
 
-	public RunTomcat(String serverId, Integer port, MavenSession mavenSession, MavenProject mavenProject, BuildPluginManager pluginManager, Wizard wizard) {
+	public RunTomcat(String serverId, Integer port, MavenSession mavenSession, MavenProject mavenProject,
+			BuildPluginManager pluginManager, Wizard wizard) {
 		this.serverId = serverId;
 		this.port = port;
 		this.wizard = wizard;
@@ -106,29 +93,32 @@ public class RunTomcat extends AbstractMojo {
 		String jdk = System.getProperty("java.version");
 
 		Version platformVersion = new Version(server.getPlatformVersion());
-		if(platformVersion.getMajorVersion() == 1){
-			if((jdk.startsWith("1.8"))){
-				wizard.showMessage("Please note that it is not recommended to run OpenMRS platform "+server.getPlatformVersion()+" on JDK 8.\n");
+		if (platformVersion.getMajorVersion() == 1) {
+			if ((jdk.startsWith("1.8"))) {
+				wizard.showMessage(
+						"Please note that it is not recommended to run OpenMRS platform " + server.getPlatformVersion()
+								+ " on JDK 8.\n");
 			}
-		} else if (platformVersion.getMajorVersion() == 2){
-			if(!jdk.startsWith("1.8") && platformVersion.getMinorVersion() < 4){
-				wizard.showJdkErrorMessage(jdk, server.getPlatformVersion(), "JDK 1.8", server.getPropertiesFile().getPath());
+		} else if (platformVersion.getMajorVersion() == 2) {
+			if (!jdk.startsWith("1.8") && platformVersion.getMinorVersion() < 4) {
+				wizard.showJdkErrorMessage(jdk, server.getPlatformVersion(), "JDK 1.8",
+						server.getPropertiesFile().getPath());
 				throw new MojoExecutionException(String.format("The JDK %s is not compatible with OpenMRS Platform %s. ",
 						jdk, server.getPlatformVersion()));
 			}
 		} else {
-			throw new MojoExecutionException("Invalid server platform version: "+platformVersion.toString());
+			throw new MojoExecutionException("Invalid server platform version: " + platformVersion.toString());
 		}
 
 		File tempDirectory = server.getServerTmpDirectory();
-        if (tempDirectory.exists()) {
-            try {
-                FileUtils.deleteDirectory(tempDirectory);
-            }
-            catch (IOException e) {
-                throw new MojoExecutionException("Unable to delete existing tmp directory at " + tempDirectory, e);
-            }
-        }
+		if (tempDirectory.exists()) {
+			try {
+				FileUtils.deleteDirectory(tempDirectory);
+			}
+			catch (IOException e) {
+				throw new MojoExecutionException("Unable to delete existing tmp directory at " + tempDirectory, e);
+			}
+		}
 		tempDirectory.mkdirs();
 
 		String warFile = "openmrs.war";
@@ -140,7 +130,7 @@ public class RunTomcat extends AbstractMojo {
 			}
 		}
 
-		if(StringUtils.isNotBlank(server.getContainerId())){
+		if (StringUtils.isNotBlank(server.getContainerId())) {
 			new DockerHelper(mavenProject, mavenSession, pluginManager, wizard).runDbContainer(
 					server.getContainerId(),
 					server.getDbUri(),
@@ -151,11 +141,11 @@ public class RunTomcat extends AbstractMojo {
 		wizard.showMessage("Starting Tomcat...\n");
 
 		Tomcat tomcat = new Tomcat();
-		
+
 		//Tomcat needs a directory for temp files. This should be the first
-	    //method called, else it will default to $PWD/tomcat.$PORT
+		//method called, else it will default to $PWD/tomcat.$PORT
 		tomcat.setBaseDir(tempDirectory.getAbsolutePath());
-		
+
 		if (port == null) {
 			port = 8080;
 		}
@@ -186,16 +176,18 @@ public class RunTomcat extends AbstractMojo {
 
 			tomcat.start();
 			tomcat.getServer().await();
-		} catch (LifecycleException e) {
+		}
+		catch (LifecycleException e) {
 			throw new MojoExecutionException("Tomcat failed to start", e);
-		} finally {
+		}
+		finally {
 			Thread.currentThread().setContextClassLoader(originalClassLoader);
 		}
 	}
 
 	private void setServerCustomProperties(Server server) {
 		HashMap<String, String> customProperties = server.getCustomProperties();
-		for(String key: customProperties.keySet()){
+		for (String key : customProperties.keySet()) {
 			System.setProperty(key, customProperties.get(key));
 		}
 	}
@@ -206,7 +198,8 @@ public class RunTomcat extends AbstractMojo {
 			ClassRealm root = world.newRealm("tomcat", Thread.currentThread().getContextClassLoader());
 
 			return root;
-		} catch (DuplicateRealmException e) {
+		}
+		catch (DuplicateRealmException e) {
 			throw new MojoExecutionException(e.getMessage(), e);
 		}
 	}
@@ -228,7 +221,8 @@ public class RunTomcat extends AbstractMojo {
 				if (isWatchApi()) {
 					System.setProperty(project.getArtifactId() + ".development.directory", project.getPath());
 				}
-				list.add(String.format("%d) %s:%s at %s", i, project.getGroupId(), project.getArtifactId(), project.getPath()));
+				list.add(String.format("%d) %s:%s at %s", i, project.getGroupId(), project.getArtifactId(),
+						project.getPath()));
 				i++;
 			}
 			wizard.showMessage(StringUtils.join(list.iterator(), "\n"));
@@ -239,10 +233,11 @@ public class RunTomcat extends AbstractMojo {
 	private boolean isWatchApi() {
 		return Boolean.TRUE.equals(watchApi);
 	}
-	
+
 	public static final class OpenmrsStartupListener implements LifecycleListener {
 
-		private final  Wizard wizard;
+		private final Wizard wizard;
+
 		private final int port;
 
 		OpenmrsStartupListener(Wizard wizard, int port) {
@@ -256,7 +251,8 @@ public class RunTomcat extends AbstractMojo {
 				return;
 			}
 
-			wizard.showMessage(String.format("OpenMRS is ready for you at http://localhost%s/openmrs/", port == 80 ? "" : ":" + port));
+			wizard.showMessage(
+					String.format("OpenMRS is ready for you at http://localhost%s/openmrs/", port == 80 ? "" : ":" + port));
 		}
 	}
 }

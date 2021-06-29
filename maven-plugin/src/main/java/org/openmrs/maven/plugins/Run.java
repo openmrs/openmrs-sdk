@@ -3,6 +3,8 @@ package org.openmrs.maven.plugins;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.shared.invoker.DefaultInvocationRequest;
 import org.apache.maven.shared.invoker.DefaultInvoker;
 import org.apache.maven.shared.invoker.InvocationRequest;
@@ -16,7 +18,7 @@ import org.openmrs.maven.plugins.utility.SDKConstants;
 import org.openmrs.maven.plugins.utility.ServerHelper;
 
 import java.io.File;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -32,59 +34,46 @@ import static org.twdata.maven.mojoexecutor.MojoExecutor.name;
 import static org.twdata.maven.mojoexecutor.MojoExecutor.plugin;
 import static org.twdata.maven.mojoexecutor.MojoExecutor.version;
 
-/**
- * @goal run
- * @requiresProject false
- */
+@Mojo(name = "run", requiresProject = false)
 public class Run extends AbstractTask {
 
-    public Run(){};
+	public Run() {
+	}
 
-    public Run(AbstractTask other){
-        super(other);
-    }
+	public Run(AbstractTask other) {
+		super(other);
+	}
 
-    public Run(AbstractTask other, String serverId){
-    	this(other);
+	public Run(AbstractTask other, String serverId) {
+		this(other);
 		this.serverId = serverId;
 	}
 
-	/**
-	 * @parameter  property="serverId"
-	 */
+	@Parameter(property = "serverId")
 	private String serverId;
 
-	/**
-	 * @parameter  property="port"
-	 */
+	@Parameter(property = "port")
 	private Integer port;
 
-	/**
-	 * @parameter  property="debug"
-	 */
+	@Parameter(property = "debug")
 	private String debug;
 
-	/**
-	 * @parameter  property="fork"
-	 */
+	@Parameter(property = "fork")
 	private Boolean fork;
 
-	/**
-	 * @parameter  property="watchApi"
-	 */
+	@Parameter(property = "watchApi")
 	private Boolean watchApi;
 
-	/**
-	 * @parameter  property="skipBuild" default-value="false"
-	 */
-	private Boolean skipBuild;
+	@Parameter(defaultValue = "false", property = "skipBuild")
+	private boolean skipBuild;
 
 	private ServerHelper serverHelper;
 
 	public void executeTask() throws MojoExecutionException, MojoFailureException {
 		if (serverId == null) {
 			File currentProperties = Server.checkCurrentDirForServer();
-			if (currentProperties != null) serverId = currentProperties.getName();
+			if (currentProperties != null)
+				serverId = currentProperties.getName();
 		}
 		serverId = wizard.promptForExistingServerIdIfMissing(serverId);
 		Server server = loadValidatedServer(serverId);
@@ -92,7 +81,8 @@ public class Run extends AbstractTask {
 		if (port == null && server.getPort() != null) {
 			port = Integer.valueOf(server.getPort());
 		}
-		if (port == null) {
+
+		if (port == null || port < 1 || port > 65535) {
 			port = 8080;
 		}
 
@@ -142,7 +132,9 @@ public class Run extends AbstractTask {
 				String result = wizard.promptForValueIfMissingWithDefault(message, null, null, String.valueOf(tmpPort));
 				try {
 					port = Integer.parseInt(result);
-				} catch (NumberFormatException ignore) {}
+				}
+				catch (NumberFormatException ignore) {
+				}
 
 				message = String.format("%s is not a valid port. What port would you like to use?", result);
 			}
@@ -187,7 +179,8 @@ public class Run extends AbstractTask {
 		mavenOpts = adjustMaxPermSizeToAtLeast(mavenOpts, 512);
 
 		if (server.hasWatchedProjects() && isWatchApi()) {
-			mavenOpts += " -javaagent:" + new File(Server.getServersPath(), "springloaded.jar").getAbsolutePath() + " -noverify";
+			mavenOpts +=
+					" -javaagent:" + new File(Server.getServersPath(), "springloaded.jar").getAbsolutePath() + " -noverify";
 		}
 
 		mavenOpts = setDebugPort(mavenOpts, server);
@@ -207,7 +200,7 @@ public class Run extends AbstractTask {
 		}
 
 		InvocationRequest request = new DefaultInvocationRequest();
-		request.setGoals(Arrays.asList(SDKConstants.getSDKInfo().getGroupId() + ":"
+		request.setGoals(Collections.singletonList(SDKConstants.getSDKInfo().getGroupId() + ":"
 				+ SDKConstants.getSDKInfo().getArtifactId() + ":" + SDKConstants.getSDKInfo().getVersion() + ":run-tomcat"))
 				.setMavenOpts(mavenOpts)
 				.setProperties(properties)
@@ -224,10 +217,11 @@ public class Run extends AbstractTask {
 		try {
 			Invoker invoker = new DefaultInvoker();
 			InvocationResult result = invoker.execute(request);
-			if (result.getExitCode() != 0 ) {
+			if (result.getExitCode() != 0) {
 				throw new IllegalStateException("Failed running Tomcat", result.getExecutionException());
 			}
-		} catch (MavenInvocationException e) {
+		}
+		catch (MavenInvocationException e) {
 			throw new MojoFailureException("Failed to start Tomcat process", e);
 		}
 	}
@@ -237,8 +231,8 @@ public class Run extends AbstractTask {
 		if (StringUtils.isNotBlank(debug)) {
 			if (StringUtils.isNumeric(debug)) {
 				address = debug;
-			} else if("true".equals(debug)){
-				if(StringUtils.isNotBlank(server.getDebugPort())){
+			} else if ("true".equals(debug)) {
+				if (StringUtils.isNotBlank(server.getDebugPort())) {
 					address = server.getDebugPort();
 				} else {
 					debug = wizard.promptForValueIfMissingWithDefault(
@@ -252,13 +246,13 @@ public class Run extends AbstractTask {
 						wizard.showError("Port number must be numeric");
 					}
 				}
-			} else if("false".equals(debug)){
+			} else if ("false".equals(debug)) {
 				address = null;
 			} else {
 				wizard.showError("Port number must be numeric");
 			}
 		} else {
-			if(StringUtils.isNotBlank(server.getDebugPort())){
+			if (StringUtils.isNotBlank(server.getDebugPort())) {
 				address = server.getDebugPort();
 			}
 		}
@@ -274,7 +268,8 @@ public class Run extends AbstractTask {
 	}
 
 	String adjustMaxPermSizeToAtLeast(String mavenOpts, Integer valueInMegabytes) {
-		return adjustParamToAtLeast(mavenOpts, "-XX:MaxPermSize=([0-9]+)([kKmMgG]?)", "-XX:MaxPermSize=" + valueInMegabytes + "m", valueInMegabytes);
+		return adjustParamToAtLeast(mavenOpts, "-XX:MaxPermSize=([0-9]+)([kKmMgG]?)",
+				"-XX:MaxPermSize=" + valueInMegabytes + "m", valueInMegabytes);
 	}
 
 	private String adjustParamToAtLeast(String input, String pattern, String replacement, Integer valueInMegabytes) {
@@ -282,22 +277,27 @@ public class Run extends AbstractTask {
 		Matcher xmxMatcher = xmx.matcher(input);
 		if (xmxMatcher.find()) {
 			boolean xmxReplace;
-			Integer value = Integer.valueOf(xmxMatcher.group(1));
+			int value = Integer.parseInt(xmxMatcher.group(1));
 			String unit = xmxMatcher.group(2).toLowerCase();
-			if ("k".equals(unit)) {
-				xmxReplace = value < valueInMegabytes * 1024;
-			} else if ("m".equals(unit)) {
-				xmxReplace = value < valueInMegabytes;
-			} else if ("g".equals(unit)) {
-				xmxReplace = value < ((double) valueInMegabytes / 1024);
-			} else {
-				xmxReplace = value < valueInMegabytes * 1024 * 1024;
+			switch (unit) {
+				case "k":
+					xmxReplace = value < valueInMegabytes * 1024;
+					break;
+				case "m":
+					xmxReplace = value < valueInMegabytes;
+					break;
+				case "g":
+					xmxReplace = value < ((double) valueInMegabytes / 1024);
+					break;
+				default:
+					xmxReplace = value < valueInMegabytes * 1024 * 1024;
+					break;
 			}
 
 			if (xmxReplace) {
 				input = xmxMatcher.replaceAll(replacement);
 			}
- 		} else {
+		} else {
 			input += " " + replacement;
 		}
 

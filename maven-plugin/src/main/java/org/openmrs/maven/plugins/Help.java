@@ -5,6 +5,7 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugins.annotations.Mojo;
 import org.ho.yaml.YamlDecoder;
 
 import java.io.EOFException;
@@ -13,12 +14,7 @@ import java.io.PrintWriter;
 import java.util.List;
 import java.util.Map;
 
-/**
- *
- * @goal help
- * @requiresProject false
- *
- */
+@Mojo(name = "help", requiresProject = false)
 public class Help extends AbstractTask {
 
     private static final String HELP_FILE = "help.yaml";
