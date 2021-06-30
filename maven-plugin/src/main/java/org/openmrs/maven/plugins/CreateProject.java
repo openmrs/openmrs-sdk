@@ -1,36 +1,30 @@
 package org.openmrs.maven.plugins;
 
-import org.apache.commons.io.IOUtils;
+import static org.openmrs.maven.plugins.utility.PropertiesUtils.loadPropertiesFromResource;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.artifactId;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.configuration;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.element;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.executeMojo;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.executionEnvironment;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.goal;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.groupId;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.name;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.plugin;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.version;
+
 import org.apache.commons.lang.StringUtils;
-import org.apache.maven.archetype.ArchetypeManager;
-import org.apache.maven.archetype.generator.ArchetypeGenerator;
-import org.apache.maven.archetype.mojos.CreateProjectFromArchetypeMojo;
-import org.apache.maven.archetype.ui.generation.ArchetypeGenerationConfigurator;
-import org.apache.maven.archetype.ui.generation.ArchetypeSelector;
-import org.apache.maven.artifact.repository.ArtifactRepository;
-import org.apache.maven.execution.MavenSession;
-import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
-import org.apache.maven.project.MavenProject;
-import org.apache.maven.shared.invoker.Invoker;
 import org.openmrs.maven.plugins.utility.OwaHelper;
 import org.openmrs.maven.plugins.utility.SDKConstants;
-import org.openmrs.maven.plugins.utility.StatsManager;
 import org.openmrs.maven.plugins.utility.Wizard;
 
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.lang.reflect.Field;
-import java.util.ArrayDeque;
 import java.util.Arrays;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 
 /**
@@ -38,7 +32,7 @@ import java.util.Properties;
  */
 // Most of the logic is from https://github.com/openmrs/openmrs-contrib-maven-plugin-module-wizard/blob/master/src/main/java/org/openmrs/maven/plugins/WizardMojo.java
 @Mojo(name = "create-project", requiresProject = false)
-public class CreateProject extends CreateProjectFromArchetypeMojo {
+public class CreateProject extends AbstractTask {
 
 	private static final String TYPE_PLATFORM = "platform-module";
 
@@ -80,36 +74,6 @@ public class CreateProject extends CreateProjectFromArchetypeMojo {
 
 	private static final String MODULE_TYPE_PROMPT = "What kind of project would you like to create?";
 
-	@Component
-	private ArchetypeManager manager;
-
-	@Component
-	private ArchetypeSelector selector;
-
-	@Component
-	private ArchetypeGenerationConfigurator configurator;
-
-	@Component
-	private ArchetypeGenerator generator;
-
-	@Component
-	private Invoker invoker;
-
-	@Component
-	Wizard wizard;
-
-	/**
-	 * answers to use if not running in interactive mode
-	 */
-	@Parameter(property = "batchAnswers")
-	private ArrayDeque<String> batchAnswers;
-
-	/**
-	 * stats
-	 */
-	@Parameter(defaultValue = "false", property = "stats")
-	boolean stats;
-
 	/**
 	 * The manager's artifactId. This can be an ordered comma separated list.
 	 */
@@ -129,12 +93,6 @@ public class CreateProject extends CreateProjectFromArchetypeMojo {
 	private String archetypeVersion;
 
 	/**
-	 * The manager's repository.
-	 */
-	@Parameter(property = "archetypeRepository")
-	private String archetypeRepository;
-
-	/**
 	 * Applying some filter on displayed archetypes list: format is artifactId or groupId:artifactId.
 	 * org.apache: -> displays all archetypes which contain org.apache in groupId
 	 * :jee or jee -> displays all archetypes which contain jee in artifactId
@@ -145,43 +103,8 @@ public class CreateProject extends CreateProjectFromArchetypeMojo {
 	@Parameter(defaultValue = "org.openmrs.maven.archetypes:", property = "filter")
 	private String filter;
 
-	/**
-	 * Local Maven repository.
-	 */
-	@Parameter(defaultValue = "${localRepository}", readonly = true, required = true)
-	private ArtifactRepository localRepository;
-
-	/**
-	 * List of remote repositories used by the resolver.
-	 */
-	@Parameter(defaultValue = "${project.remoteArtifactRepositories}", readonly = true, required = true)
-	private List<ArtifactRepository> remoteArtifactRepositories;
-
-	/**
-	 * test mode, if true disables interactive mode and uses batchAnswers, even if there is none
-	 *
-	 * @parameter property="testMode" default-value="false"
-	 */
-	@Parameter(defaultValue = "false", property = "testMode")
-	boolean testMode;
-
 	@Parameter(defaultValue = "${project.basedir}", property = "outputDirectory")
 	private File outputDirectory;
-
-	@Parameter(defaultValue = "${session}", readonly = true, required = true)
-	private MavenSession session;
-
-	/**
-	 * The project currently being build.
-	 */
-	@Parameter(defaultValue = "${project}", readonly = true)
-	MavenProject mavenProject;
-
-	/**
-	 * The Maven BuildPluginManager component.
-	 */
-	@Component
-	BuildPluginManager pluginManager;
 
 	/**
 	 * Additional goals that can be specified by the user during the creation of the manager.
@@ -262,18 +185,11 @@ public class CreateProject extends CreateProjectFromArchetypeMojo {
 	private String type;
 
 	@Override
-	public void execute() throws MojoExecutionException, MojoFailureException {
-
-		if ((batchAnswers != null && !batchAnswers.isEmpty()) || testMode) {
-			wizard.setAnswers(batchAnswers);
-			wizard.setInteractiveMode(false);
-		}
-
-		new StatsManager(wizard, session, stats).incrementGoalStats();
+	public void executeTask() throws MojoExecutionException, MojoFailureException {
 		setProjectType();
 
 		if (TYPE_OWA.equals(type)) {
-			new OwaHelper(session, mavenProject, pluginManager, wizard).createOwaProject();
+			new OwaHelper(mavenSession, mavenProject, pluginManager, wizard).createOwaProject();
 		} else {
 			createModule();
 		}
@@ -293,11 +209,11 @@ public class CreateProject extends CreateProjectFromArchetypeMojo {
 		}
 	}
 
-	private void createModule() throws MojoExecutionException, MojoFailureException {
+	private void createModule() throws MojoExecutionException {
 		wizard.showMessage(MODULE_ID_INFO);
 		moduleId = wizard.promptForValueIfMissingWithDefault(null, moduleId, "module id", "basicexample");
 		moduleId = moduleId.toLowerCase();
-		while (!moduleId.matches("[a-z][a-z0-9\\.]*")) {
+		while (!moduleId.matches("[a-z][a-z0-9.]*")) {
 			wizard.showError("The specified moduleId " + moduleId
 					+ " is not valid. It must start from a letter and can contain only alphanumerics and dots.");
 			moduleId = null;
@@ -369,68 +285,33 @@ public class CreateProject extends CreateProjectFromArchetypeMojo {
 			properties.setProperty("openmrsRefappVersion", refapp);
 		}
 		properties.setProperty("package", packageName);
-		session.getUserProperties().putAll(properties);
+		mavenSession.getUserProperties().putAll(properties);
 
-		// Using custom prompts, avoid manager plugin interaction
-		setPrivateField("interactiveMode", Boolean.FALSE);
-		setPrivateField("archetypeArtifactId", archetypeArtifactId);
-		setPrivateField("archetypeGroupId", archetypeGroupId);
-		setPrivateField("archetypeVersion", archetypeVersion);
-		setPrivateField("archetypeRepository", archetypeRepository);
-		setPrivateField("filter", filter);
-		setPrivateField("localRepository", localRepository);
-		setPrivateField("remoteArtifactRepositories", remoteArtifactRepositories);
-		setPrivateField("outputDirectory", outputDirectory);
-		setPrivateField("session", session);
-		setPrivateField("goals", goals);
-		setPrivateField("manager", manager);
-		setPrivateField("selector", selector);
-		setPrivateField("configurator", configurator);
-		setPrivateField("invoker", invoker);
-
-		setPrivateField("session", session);
-
-		Map<String, String> archetypeToVersion = new LinkedHashMap<>();
-
-		archetypeToVersion.put(archetypeArtifactId, archetypeVersion);
-
-		for (Map.Entry<String, String> archetype : archetypeToVersion.entrySet()) {
-			getLog().info("Archetype: " + archetype.getKey());
-			setPrivateField("archetypeArtifactId", archetype.getKey());
-			setPrivateField("archetypeVersion", archetype.getValue());
-			// Execute creating archetype for each archetype id
-			super.execute();
-		}
+		executeMojo(
+				plugin(
+						groupId("org.apache.maven.plugins"),
+						artifactId("maven-archetype-plugin"),
+						version("3.2.0")
+				),
+				goal("generate"),
+				configuration(
+					element(name("interactiveMode"), "false"),
+					element(name("archetypeArtifactId"), archetypeArtifactId),
+					element(name("archetypeGroupId"), archetypeGroupId),
+					element(name("archetypeVersion"), archetypeVersion),
+					element(name("filter"), filter),
+					element(name("outputDirectory"), outputDirectory.getAbsolutePath()),
+					element(name("goals"), goals)
+				),
+				executionEnvironment(
+						mavenProject,
+						mavenSession,
+						pluginManager
+				)
+		);
 	}
 
 	private String getSdkVersion() throws MojoExecutionException {
-		InputStream sdkPom = CreateProject.class.getClassLoader().getResourceAsStream("sdk.properties");
-		Properties sdk = new Properties();
-		try {
-			sdk.load(sdkPom);
-		}
-		catch (IOException e) {
-			throw new MojoExecutionException(e.getMessage());
-		}
-		finally {
-			IOUtils.closeQuietly(sdkPom);
-		}
-		return sdk.getProperty("version");
-	}
-
-	protected void setPrivateField(String fieldName, Object value) throws MojoExecutionException {
-		if (value == null) {
-			return;
-		}
-
-		try {
-			Class<?> superClass = this.getClass().getSuperclass();
-			Field field = superClass.getDeclaredField(fieldName);
-			field.setAccessible(true); // Allow access to private field
-			field.set(this, value);
-		}
-		catch (Exception e) {
-			throw new MojoExecutionException("Unable to set mojo field: " + fieldName, e);
-		}
+		return loadPropertiesFromResource("sdk.properties").getProperty("version", null);
 	}
 }

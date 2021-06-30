@@ -183,6 +183,7 @@ public abstract class AbstractTask extends AbstractMojo {
 		if (StringUtils.isNotBlank(openMRSPath)) {
 			Server.setServersPath(openMRSPath);
 		}
+
 		if ((batchAnswers != null && !batchAnswers.isEmpty()) || testMode) {
 			wizard.setAnswers(batchAnswers);
 			wizard.setInteractiveMode(false);
