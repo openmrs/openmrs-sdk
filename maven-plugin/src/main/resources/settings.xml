@@ -21,18 +21,18 @@
                     <name>OpenMRS Repository</name>
                     <url>https://mavenrepo.openmrs.org/public</url>
                 </repository>
-              <repository>
-                <id>archetype</id>
-                <url>https://mavenrepo.openmrs.org/public</url>
-               <releases>
-                 <enabled>true</enabled>
-                 <checksumPolicy>fail</checksumPolicy>
-               </releases>
-               <snapshots>
-                 <enabled>true</enabled>
-                 <checksumPolicy>warn</checksumPolicy>
-              </snapshots>
-              </repository>
+                <repository>
+                    <id>archetype</id>
+                    <url>https://mavenrepo.openmrs.org/public</url>
+                    <releases>
+                        <enabled>true</enabled>
+                        <checksumPolicy>fail</checksumPolicy>
+                    </releases>
+                    <snapshots>
+                        <enabled>true</enabled>
+                        <checksumPolicy>warn</checksumPolicy>
+                    </snapshots>
+                </repository>
                 <repository>
                     <id>openmrs-repo-thirdparty</id>
                     <name>OpenMRS Thirdparty Nexus Repository</name>

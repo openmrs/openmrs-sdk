@@ -17,7 +17,6 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.shared.invoker.Invoker;
-import org.codehaus.plexus.component.annotations.Requirement;
 import org.openmrs.maven.plugins.utility.OwaHelper;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 import org.openmrs.maven.plugins.utility.StatsManager;
@@ -139,10 +138,15 @@ public class CreateProject extends CreateProjectFromArchetypeMojo {
 	private String archetypeRepository;
 
 	/**
-	 * The manager's catalogs. It is a comma separated list of catalogs.
+	 * Applying some filter on displayed archetypes list: format is artifactId or groupId:artifactId.
+	 * org.apache: -> displays all archetypes which contain org.apache in groupId
+	 * :jee or jee -> displays all archetypes which contain jee in artifactId
+	 * org.apache:jee -> displays all archetypes which contain org.apache in groupId AND jee in artifactId
+	 * Since:
+	 * 2.1
 	 */
-	@Parameter(defaultValue = "https://mavenrepo.openmrs.org/releases/content/archetype-catalog.xml", property = "archetypeCatalog")
-	private String archetypeCatalog;
+	@Parameter(defaultValue = "org.openmrs.maven.archetypes:", property = "filter")
+	private String filter;
 
 	/**
 	 * Local Maven repository.
@@ -164,8 +168,8 @@ public class CreateProject extends CreateProjectFromArchetypeMojo {
 	@Parameter(defaultValue = "false", property = "testMode")
 	boolean testMode;
 
-	@Parameter(defaultValue = "${project.basedir}")
-	private File basedir;
+	@Parameter(defaultValue = "${project.basedir}", property = "outputDirectory")
+	private File outputDirectory;
 
 	@Parameter(defaultValue = "${session}", readonly = true, required = true)
 	private MavenSession session;
@@ -305,15 +309,16 @@ public class CreateProject extends CreateProjectFromArchetypeMojo {
 		}
 
 		wizard.showMessage(MODULE_NAME_INFO);
+		String enteredModuleName = moduleName;
 		moduleName = wizard
-				.promptForValueIfMissingWithDefault(null, moduleName, "module name", StringUtils.capitalize(moduleId));
-		while (!moduleName.matches("[a-zA-Z][a-zA-Z0-9\\.\\s]*")) {
+				.promptForValueIfMissingWithDefault(null, enteredModuleName, "module name", StringUtils.capitalize(moduleId));
+		while (!moduleName.matches("[a-zA-Z][a-zA-Z0-9.\\s]*")) {
 			wizard.showError("The specified module name " + moduleName
 					+ " is not valid. It must start from a letter and can contain only alphanumerics and dots.");
-			moduleName = null;
 			moduleName = wizard
-					.promptForValueIfMissingWithDefault(null, moduleName, "module name", StringUtils.capitalize(moduleId));
+					.promptForValueIfMissingWithDefault(null, enteredModuleName, "module name", StringUtils.capitalize(moduleId));
 		}
+
 		moduleName = StringUtils.capitalize(moduleName);
 		moduleClassnamePrefix = StringUtils.deleteWhitespace(moduleName).replace(".", "");
 
@@ -375,10 +380,10 @@ public class CreateProject extends CreateProjectFromArchetypeMojo {
 		setPrivateField("archetypeGroupId", archetypeGroupId);
 		setPrivateField("archetypeVersion", archetypeVersion);
 		setPrivateField("archetypeRepository", archetypeRepository);
-		setPrivateField("archetypeCatalog", archetypeCatalog);
+		setPrivateField("filter", filter);
 		setPrivateField("localRepository", localRepository);
 		setPrivateField("remoteArtifactRepositories", remoteArtifactRepositories);
-		setPrivateField("basedir", basedir);
+		setPrivateField("outputDirectory", outputDirectory);
 		setPrivateField("session", session);
 		setPrivateField("goals", goals);
 		setPrivateField("manager", manager);
