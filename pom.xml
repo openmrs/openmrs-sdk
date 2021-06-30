@@ -207,18 +207,18 @@
             <dependency>
                 <groupId>mysql</groupId>
                 <artifactId>mysql-connector-java</artifactId>
-                <version>5.1.49</version>
+                <version>8.0.22</version>
             </dependency>
             <dependency>
                 <groupId>org.postgresql</groupId>
                 <artifactId>postgresql</artifactId>
-                <version>42.2.16</version>
+                <version>42.2.22.jre7</version>
                 <scope>runtime</scope>
             </dependency>
             <dependency>
                 <groupId>com.h2database</groupId>
                 <artifactId>h2</artifactId>
-                <version>1.4.190</version>
+                <version>1.4.200</version>
             </dependency>
 
             <!-- Tomcat -->
