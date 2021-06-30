@@ -11,11 +11,26 @@ import org.openmrs.maven.plugins.utility.Project;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 import org.openmrs.maven.plugins.utility.SortedProperties;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.FilenameFilter;
+import java.io.IOException;
+import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
 
 /**
  * Class for Server model
@@ -63,7 +78,7 @@ public class Server extends BaseSdkProperties {
     private boolean interactiveMode;
 
     public static class ServerBuilder {
-        private Server server = new Server();
+        private final Server server = new Server();
         public ServerBuilder(Server server){
             this.server.properties = server.properties;
         }
@@ -152,7 +167,8 @@ public class Server extends BaseSdkProperties {
 
     private Server() {
         properties = new Properties();
-    };
+    }
+
     private Server(File file, Properties properties) {
         if (file != null) {
             this.propertiesFile = new File(file, SDKConstants.OPENMRS_SERVER_PROPERTIES);
@@ -270,7 +286,7 @@ public class Server extends BaseSdkProperties {
         saveTo(backupProperties);
     }
 
-    public void deleteBackupProperties() throws MojoExecutionException {
+    public void deleteBackupProperties() {
         File backupProperties = new File(getServerDirectory(), OLD_PROPERTIES_FILENAME);
         backupProperties.delete();
     }
@@ -317,15 +333,12 @@ public class Server extends BaseSdkProperties {
             setParam(Server.PROPERTY_DB_URI, dbUri);
         }
     }
-    public boolean addWatchedProject(Project project) {
+    public void addWatchedProject(Project project) {
         linkProject(project);
 
         Set<Project> watchedProjects = getWatchedProjects();
         if (watchedProjects.add(project)) {
             setWatchedProjects(watchedProjects);
-            return true;
-        } else {
-            return false;
         }
     }
 
@@ -343,12 +356,12 @@ public class Server extends BaseSdkProperties {
                         return true;
                     }
                 } catch (IOException e) {
-                    System.out.println(String.format(CANNOT_CREATE_LINK_MSG, link.getAbsolutePath(), e.getMessage()));
+                    System.out.printf((CANNOT_CREATE_LINK_MSG) + "%n", link.getAbsolutePath(), e.getMessage());
                     return false;
                 }
             } else {
-                System.out.println(String.format(CANNOT_CREATE_LINK_MSG, link.getAbsolutePath(),
-                        "The file or directory already exists!\nPlease delete it manually and try again."));
+                System.out.printf((CANNOT_CREATE_LINK_MSG) + "%n", link.getAbsolutePath(),
+                        "The file or directory already exists!\nPlease delete it manually and try again.");
                 return false;
             }
         }
@@ -357,7 +370,7 @@ public class Server extends BaseSdkProperties {
             try {
                 Files.createSymbolicLink(linkPath, Paths.get(project.getPath()));
             } catch (IOException e) {
-                System.out.println(String.format(CANNOT_CREATE_LINK_MSG, link.getAbsolutePath(), e.getMessage()));
+                System.out.printf((CANNOT_CREATE_LINK_MSG) + "%n", link.getAbsolutePath(), e.getMessage());
                 return false;
             }
         }
@@ -408,8 +421,7 @@ public class Server extends BaseSdkProperties {
 
     private File getWatchedProjectLink(Project project) {
         File watchedProjectsDir = getWatchedProjectsDirectory();
-        File link = new File(watchedProjectsDir, project.getArtifactId());
-        return link;
+        return new File(watchedProjectsDir, project.getArtifactId());
     }
 
     private File getWatchedProjectsDirectory() {
@@ -421,7 +433,7 @@ public class Server extends BaseSdkProperties {
     }
 
     private void setWatchedProjects(Set<Project> watchedProjects) {
-        List<String> list = new ArrayList<String>();
+        List<String> list = new ArrayList<>();
         for (Project watchedProject : watchedProjects) {
             list.add(String.format("%s,%s,%s", watchedProject.getGroupId(),
                     watchedProject.getArtifactId(), watchedProject.getPath()));
@@ -468,10 +480,10 @@ public class Server extends BaseSdkProperties {
     public Set<Project> getWatchedProjects() {
         String watchedProjectsProperty = properties.getProperty("watched.projects");
         if (StringUtils.isBlank(watchedProjectsProperty)) {
-            return new LinkedHashSet<Project>();
+            return new LinkedHashSet<>();
         }
 
-        Set<Project> watchedProjects = new LinkedHashSet<Project>();
+        Set<Project> watchedProjects = new LinkedHashSet<>();
         for (String watchedProjectProperty : watchedProjectsProperty.split(";")) {
             if (StringUtils.isBlank(watchedProjectProperty)) {
                 continue;
@@ -491,7 +503,7 @@ public class Server extends BaseSdkProperties {
     /**
      * adds artifact to user modules list in openmrs-server.properties file
      */
-    public void saveUserModule(Artifact artifact) throws MojoExecutionException {
+    public void saveUserModule(Artifact artifact) {
         String[] params = {artifact.getGroupId(), StringUtils.removeEnd(artifact.getArtifactId(), "-omod"), artifact.getVersion()};
         String module = StringUtils.join(params, "/");
         addToValueList(Server.PROPERTY_USER_MODULES, module);
@@ -511,7 +523,7 @@ public class Server extends BaseSdkProperties {
         }
     }
 
-    public void setUserModules(Collection<Artifact> artifacts) throws MojoExecutionException {
+    public void setUserModules(Collection<Artifact> artifacts) {
         properties.remove(Server.PROPERTY_USER_MODULES);
         for(Artifact artifact : artifacts){
             saveUserModule(artifact);
@@ -543,7 +555,7 @@ public class Server extends BaseSdkProperties {
     /**
      * Get artifacts of core and all modules on server
      */
-    public List<Artifact> getServerModules() throws MojoExecutionException {
+    public List<Artifact> getServerModules() {
         List<Artifact> artifacts = new ArrayList<>();
         artifacts.addAll(getModuleArtifacts());
         artifacts.addAll(getWarArtifacts());
@@ -555,9 +567,8 @@ public class Server extends BaseSdkProperties {
      *
      * @param baseArtifacts - main list
      * @param updateArtifacts - list of artifacts to add/update
-     * @throws MojoExecutionException
      */
-    static List<Artifact> mergeArtifactLists(List<Artifact> baseArtifacts, List<Artifact> updateArtifacts) throws MojoExecutionException {
+    static List<Artifact> mergeArtifactLists(List<Artifact> baseArtifacts, List<Artifact> updateArtifacts) {
         List<Artifact> updatedList = new ArrayList<>(baseArtifacts);
         for(Artifact updateArtifact : updateArtifacts){
             boolean notFound = true;
@@ -653,7 +664,7 @@ public class Server extends BaseSdkProperties {
         if (StringUtils.isBlank(beforeValue))
             beforeValue = value;
         else {
-            List<String> values = new ArrayList<String>(edu.emory.mathcs.backport.java.util.Arrays.asList(beforeValue.split(COMMA)));
+            List<String> values = new ArrayList<>(Arrays.asList(beforeValue.split(COMMA)));
             for (String val : values) {
                 if (val.equals(value))
                     return;
@@ -672,10 +683,8 @@ public class Server extends BaseSdkProperties {
      */
     public void removeFromValueList(String key, String artifactId) {
         String beforeValue = properties.getProperty(key);
-        if (beforeValue == null)
-            return;
-        else {
-            List<String> values = new ArrayList<String>(edu.emory.mathcs.backport.java.util.Arrays.asList(beforeValue.split(COMMA)));
+        if (beforeValue != null) {
+            List<String> values = new ArrayList<>(Arrays.asList(beforeValue.split(COMMA)));
             int indx = -1;
             for (String val : values) {
                 String[] params = val.split(SLASH);
@@ -889,8 +898,8 @@ public class Server extends BaseSdkProperties {
         }
     }
 
-    public HashMap<String, String> getCustomProperties(){
-        HashMap<String, String> customProperties = new LinkedHashMap<>();
+    public Map<String, String> getCustomProperties(){
+        Map<String, String> customProperties = new LinkedHashMap<>();
         for(Object key: properties.keySet()){
             if(key.toString().startsWith("property.")){
                 String newKey = removePropertyStringFromKey(key.toString());
@@ -900,8 +909,8 @@ public class Server extends BaseSdkProperties {
         return customProperties;
     }
 
-    public HashMap<String, String> getServerProperty(String propertyName){
-        HashMap<String, String> customProperties = new LinkedHashMap<>();
+    public Map<String, String> getServerProperty(String propertyName){
+        Map<String, String> customProperties = new LinkedHashMap<>();
         for(Object key: properties.keySet()){
             if(key.toString().equals(propertyName)){
                 String newKey = removePropertyStringFromKey(key.toString());

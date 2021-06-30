@@ -34,6 +34,7 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -523,7 +524,7 @@ public class DefaultWizard implements Wizard {
 		String result;
 		try {
 			final Process process = processBuilder.start();
-			List<String> output = IOUtils.readLines(process.getInputStream());
+			List<String> output = IOUtils.readLines(process.getInputStream(), StandardCharsets.UTF_8);
 			result = StringUtils.join(output.iterator(), "\n");
 		}
 		catch (IOException e) {
@@ -881,8 +882,7 @@ public class DefaultWizard implements Wizard {
 		if (determineDockerForWindowsHost()) {
 			return DockerHelper.DEFAULT_HOST_DOCKER_FOR_WINDOWS;
 		} else {
-			String dockerToolboxHost = determineDockerToolboxHost();
-			return dockerToolboxHost;
+			return determineDockerToolboxHost();
 		}
 	}
 
@@ -909,7 +909,7 @@ public class DefaultWizard implements Wizard {
 		showMessage("Running `docker-machine url` to determine the docker host...");
 		try {
 			Process process = new ProcessBuilder("docker-machine", "url").redirectErrorStream(true).start();
-			List<String> lines = IOUtils.readLines(process.getInputStream());
+			List<String> lines = IOUtils.readLines(process.getInputStream(), StandardCharsets.UTF_8);
 			process.waitFor();
 			//if success
 			if (process.exitValue() == 0) {
@@ -997,7 +997,7 @@ public class DefaultWizard implements Wizard {
 	@Override
 	public List<String> getListOfServers() {
 		File openMRS = new File(Server.getServersPath());
-		Map<Long, String> sortedMap = new TreeMap<Long, String>(Collections.reverseOrder());
+		Map<Long, String> sortedMap = new TreeMap<>(Collections.reverseOrder());
 		File[] list = (openMRS.listFiles() == null) ? new File[0] : openMRS.listFiles();
 		for (File f : list) {
 			if (f.isDirectory()) {

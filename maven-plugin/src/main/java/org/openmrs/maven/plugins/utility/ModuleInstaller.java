@@ -3,7 +3,6 @@ package org.openmrs.maven.plugins.utility;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.project.MavenProject;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.DistroProperties;
@@ -32,13 +31,13 @@ public class ModuleInstaller {
 
     private static final String GOAL_UNPACK = "unpack";
 
-    MavenProject mavenProject;
+    final MavenProject mavenProject;
 
-    MavenSession mavenSession;
+    final MavenSession mavenSession;
 
-    BuildPluginManager pluginManager;
+    final BuildPluginManager pluginManager;
 
-    VersionsHelper versionsHelper;
+    final VersionsHelper versionsHelper;
 
     public ModuleInstaller(MavenProject mavenProject,
                            MavenSession mavenSession,
@@ -107,7 +106,7 @@ public class ModuleInstaller {
             int index = artifacts.indexOf(artifact);
             artifactItems[index] = artifact.toElement(outputDir);
         }
-        List<MojoExecutor.Element> configuration = new ArrayList<MojoExecutor.Element>();
+        List<MojoExecutor.Element> configuration = new ArrayList<>();
         configuration.add(element("artifactItems", artifactItems));
         if (goal.equals(GOAL_UNPACK)) {
             configuration.add(element("overWriteSnapshots", "true"));
@@ -126,7 +125,7 @@ public class ModuleInstaller {
     }
     private void prepareModule(Artifact artifact, String outputDir, String goal) throws MojoExecutionException {
         MojoExecutor.Element artifactElement = artifact.toElement(outputDir);
-        List<MojoExecutor.Element> configuration = new ArrayList<MojoExecutor.Element>();
+        List<MojoExecutor.Element> configuration = new ArrayList<>();
         configuration.add(element("artifactItems", artifactElement));
         if (goal.equals(GOAL_UNPACK)) {
             configuration.add(element("overWriteSnapshots", "true"));

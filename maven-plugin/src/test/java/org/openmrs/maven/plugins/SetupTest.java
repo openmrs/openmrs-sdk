@@ -13,7 +13,7 @@ import org.junit.rules.ExpectedException;
 public class SetupTest {
 
 	@Rule
-	public ExpectedException expectedException = ExpectedException.none();
+	public final ExpectedException expectedException = ExpectedException.none();
 
 	@Test
 	public void determineDbName_shouldReturnDefaultNameIfVariableWasUsed() throws MojoExecutionException {

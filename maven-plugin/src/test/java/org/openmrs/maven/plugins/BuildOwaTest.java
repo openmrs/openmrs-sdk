@@ -26,8 +26,6 @@ import java.util.List;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
@@ -49,7 +47,7 @@ public class BuildOwaTest {
     private List<String> npmRunBuildArgs;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         npmInstallArgs = new ArrayList<>();
         npmInstallArgs.add("install");
         npmInstallArgs.add("--no-optional");

@@ -1,5 +1,8 @@
 package org.openmrs.maven.plugins.model;
 
+import static org.openmrs.maven.plugins.utility.PropertiesUtils.loadPropertiesFromFile;
+import static org.openmrs.maven.plugins.utility.PropertiesUtils.loadPropertiesFromResource;
+
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpResponse;
@@ -32,7 +35,7 @@ public class SdkStatistics {
     private Properties statistics = new Properties();
 
     public SdkStatistics createSdkStatsFile(boolean agree) throws MojoExecutionException {
-        loadStatsFromResource();
+        loadStatsFromResource(SDK_STATS_FILE_NAME);
         initData();
         setStatsEnabled(agree);
         save();
@@ -45,7 +48,7 @@ public class SdkStatistics {
 
     public SdkStatistics(){}
 
-    private SdkStatistics(Properties statistics) throws MojoExecutionException {
+    private SdkStatistics(Properties statistics) {
         this.statistics = statistics;
     }
 
@@ -107,31 +110,28 @@ public class SdkStatistics {
      * @return
      */
     private String buildUrl() {
-        StringBuilder builder = new StringBuilder();
-        builder.append("https://docs.google.com/forms/d/e/1FAIpQLSd1OYp9wiAp0YC09kHlrwnoEGYwmjYY9hz2Mh_D8tUT8yIgmw/formResponse?");
-        builder.append("entry.810765356="+statistics.getProperty("statsSetupCalls"));
-        builder.append("&entry.241459878="+statistics.getProperty("statsDeployCalls"));
-        builder.append("&entry.2099549842="+statistics.getProperty("statsPullCalls"));
-        builder.append("&entry.1422428008="+statistics.getProperty("statsBuildCalls"));
-        builder.append("&entry.774969394="+statistics.getProperty("statsWatchCalls"));
-        builder.append("&entry.308937646="+statistics.getProperty("statsHelpCalls"));
-        builder.append("&entry.1768434209="+statistics.getProperty("statsUndeployCalls"));
-        builder.append("&entry.2073436151="+statistics.getProperty("statsUnwatchCalls"));
-        builder.append("&entry.259090049="+statistics.getProperty("statsLastReported"));
-        builder.append("&entry.1184373549="+statistics.getProperty("statsResetCalls"));
-        builder.append("&entry.2023918399="+statistics.getProperty("statsLastUsed"));
-        builder.append("&entry.138430639="+statistics.getProperty("statsInfoCalls"));
-        builder.append("&entry.783545123="+statistics.getProperty("statsDeleteCalls"));
-        builder.append("&entry.399480215="+statistics.getProperty("statsSdkVersion"));
-        builder.append("&entry.677412410="+statistics.getProperty("statsUser"));
-        builder.append("&entry.678099034="+statistics.getProperty("statsCreate-projectCalls"));
-        builder.append("&entry.1559628016="+statistics.getProperty("statsRunCalls"));
-        builder.append("&entry.2088950996="+statistics.getProperty("statsPrCalls"));
-        builder.append("&entry.1875021849="+statistics.getProperty("statsCloneCalls"));
-        builder.append("&entry.2038776811="+statistics.getProperty("statsReleaseCalls"));
-        builder.append("&entry.1366642496="+statistics.getProperty("statsBuild-distroCalls"));
-
-        return builder.toString();
+        return "https://docs.google.com/forms/d/e/1FAIpQLSd1OYp9wiAp0YC09kHlrwnoEGYwmjYY9hz2Mh_D8tUT8yIgmw/formResponse?"
+                + "entry.810765356=" + statistics.getProperty("statsSetupCalls")
+                + "&entry.241459878=" + statistics.getProperty("statsDeployCalls")
+                + "&entry.2099549842=" + statistics.getProperty("statsPullCalls")
+                + "&entry.1422428008=" + statistics.getProperty("statsBuildCalls")
+                + "&entry.774969394=" + statistics.getProperty("statsWatchCalls")
+                + "&entry.308937646=" + statistics.getProperty("statsHelpCalls")
+                + "&entry.1768434209=" + statistics.getProperty("statsUndeployCalls")
+                + "&entry.2073436151=" + statistics.getProperty("statsUnwatchCalls")
+                + "&entry.259090049=" + statistics.getProperty("statsLastReported")
+                + "&entry.1184373549=" + statistics.getProperty("statsResetCalls")
+                + "&entry.2023918399=" + statistics.getProperty("statsLastUsed")
+                + "&entry.138430639=" + statistics.getProperty("statsInfoCalls")
+                + "&entry.783545123=" + statistics.getProperty("statsDeleteCalls")
+                + "&entry.399480215=" + statistics.getProperty("statsSdkVersion")
+                + "&entry.677412410=" + statistics.getProperty("statsUser")
+                + "&entry.678099034=" + statistics.getProperty("statsCreate-projectCalls")
+                + "&entry.1559628016=" + statistics.getProperty("statsRunCalls")
+                + "&entry.2088950996=" + statistics.getProperty("statsPrCalls")
+                + "&entry.1875021849=" + statistics.getProperty("statsCloneCalls")
+                + "&entry.2038776811=" + statistics.getProperty("statsReleaseCalls")
+                + "&entry.1366642496=" + statistics.getProperty("statsBuild-distroCalls");
     }
 
     /**
@@ -261,47 +261,27 @@ public class SdkStatistics {
      */
     private String getDate() {
         SimpleDateFormat dateFormat = new SimpleDateFormat(DATE_FORMAT);
-        String date = dateFormat.format(new Date());
-        return date;
+        return dateFormat.format(new Date());
     }
 
     /**
-     * Loads statistics from file
-     * @param file
-     * @throws MojoExecutionException
+     * Loads statistics from a file
+     *
+     * @param file the file to load statistics from
+     * @throws MojoExecutionException if an exception occurs loading or reading the file
      */
     private void loadStatsFromFile(File file) throws MojoExecutionException {
-        FileInputStream in = null;
-        try {
-            in = new FileInputStream(file);
-            statistics.load(in);
-            in.close();
-        }
-        catch (IOException e) {
-            throw new MojoExecutionException(e.getMessage());
-        }
-        finally {
-            IOUtils.closeQuietly(in);
-        }
+        loadPropertiesFromFile(file, statistics);
     }
 
     /**
-     * Loads initial statistics from resource
-     * @throws MojoExecutionException
+     * Loads statistics from classpath resource
+     *
+     * @param resource the resource to load statistics from
+     * @throws MojoExecutionException if an exception occurs loading or reading the resource
      */
-    public void loadStatsFromResource() throws MojoExecutionException {
-        InputStream in = null;
-        try {
-            in = getClass().getClassLoader().getResourceAsStream(SDK_STATS_FILE_NAME);
-            statistics.load(in);
-            in.close();
-        }
-        catch (IOException e) {
-            throw new MojoExecutionException(e.getMessage());
-        }
-        finally {
-            IOUtils.closeQuietly(in);
-        }
+    private void loadStatsFromResource(String resource) throws MojoExecutionException {
+        loadPropertiesFromResource(resource, statistics);
     }
 
     /**

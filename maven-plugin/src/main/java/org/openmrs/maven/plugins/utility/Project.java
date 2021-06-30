@@ -19,7 +19,7 @@ import java.io.IOException;
  */
 public class Project {
 	
-	private Model model;
+	private final Model model;
 	
 	public Project(String groupId, String artifactId, String version, String path) {
 		model = new Model();
@@ -65,10 +65,7 @@ public class Project {
 			model.setPomFile(pom);
 			return new Project(model);
 		}
-		catch (IOException e) {
-			throw new MojoExecutionException(e.getMessage());
-		}
-		catch (XmlPullParserException e) {
+		catch (IOException | XmlPullParserException e) {
 			throw new MojoExecutionException(e.getMessage());
 		}
 		finally {

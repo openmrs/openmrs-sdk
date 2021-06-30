@@ -3,7 +3,6 @@ package org.openmrs.maven.plugins;
 import com.github.dockerjava.api.model.Container;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.MojoFailureException;
 
 import java.sql.DriverManager;
 
@@ -43,7 +42,7 @@ public class RunDb extends AbstractDockerMojo {
     protected String password;
 
     @Override
-    public void executeTask() throws MojoExecutionException, MojoFailureException {
+    public void executeTask() throws MojoExecutionException {
         Container dbContainer = null;
 
         if (StringUtils.isNotBlank(container)) {

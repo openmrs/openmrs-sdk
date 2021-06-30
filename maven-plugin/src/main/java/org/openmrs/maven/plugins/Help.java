@@ -4,7 +4,6 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.ho.yaml.YamlDecoder;
 
@@ -22,15 +21,17 @@ public class Help extends AbstractTask {
     private static final String INFO = "OpenMRS SDK %s";
     private static final String WIKI = "https://wiki.openmrs.org/display/docs/OpenMRS+SDK";
 
-    public void executeTask() throws MojoExecutionException, MojoFailureException {
+    public void executeTask() throws MojoExecutionException {
         InputStream stream = getClass().getClassLoader().getResourceAsStream(HELP_FILE);
         YamlDecoder dec = new YamlDecoder(stream);
         HelpFormatter formatter = new HelpFormatter();
         formatter.setLeftPadding(4);
         formatter.setDescPadding(8);
         try {
-            Map keys = (Map) dec.readObject();
-            List l = (List) keys.get("help");
+            @SuppressWarnings("unchecked")
+            Map<String, Object> keys = (Map<String, Object>) dec.readObject();
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> l = (List<Map<String, Object>>) keys.get("help");
             String printVersion = String.format(INFO, keys.get("version"));
             String printWikiLink = "For more info, see SDK documentation: " + WIKI;
             PrintWriter writer = new PrintWriter(System.out);
@@ -45,22 +46,21 @@ public class Help extends AbstractTask {
             if (l == null) {
                 throw new MojoExecutionException("Error during reading help data");
             }
-            for (Object o: l) {
-                Map m = (Map) o;
+            for (Map<String, Object> o: l) {
                 Options options = new Options();
-                List params = (List) m.get("options");
-                String header = (m.get("desc") != null) ? m.get("desc").toString() : "None";
+                @SuppressWarnings("unchecked")
+                List<Map<String, Object>> params = (List<Map<String, Object>>) o.get("options");
+                String header = (o.get("desc") != null) ? o.get("desc").toString() : "None";
                 header = DESC_MESSAGE.concat(header);
                 if (params != null) {
-                    for (Object x: params) {
-                        Map option = (Map) x;
-                        String name = option.get("name").toString();
-                        String desc = option.get("desc").toString();
+                    for (Map<String, Object> x: params) {
+                        String name = x.get("name").toString();
+                        String desc = x.get("desc").toString();
                         if ((name == null) || (desc == null)) throw new MojoExecutionException("Error in help file structure");
                         options.addOption(new Option(name, desc));
                     }
                 }
-                formatter.printHelp(m.get("name").toString(), header, options, "");
+                formatter.printHelp(o.get("name").toString(), header, options, "");
                 writer.println();
                 writer.flush();
             }

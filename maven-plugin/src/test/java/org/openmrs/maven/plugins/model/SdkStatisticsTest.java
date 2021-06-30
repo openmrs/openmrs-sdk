@@ -1,6 +1,5 @@
 package org.openmrs.maven.plugins.model;
 
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -23,7 +22,7 @@ public class SdkStatisticsTest {
     }
 
     @Test
-    public void shouldIncrementGoal() throws Exception {
+    public void shouldIncrementGoal() {
         int beforeCalls = sdkStatistics.getGoalCalls("Setup");
         beforeCalls++;
         sdkStatistics.incrementGoal("Setup");

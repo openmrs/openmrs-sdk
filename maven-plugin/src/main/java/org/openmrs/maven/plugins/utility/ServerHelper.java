@@ -7,7 +7,7 @@ import java.io.IOException;
 import java.net.ServerSocket;
 
 public class ServerHelper {
-    private Wizard wizard;
+    private final Wizard wizard;
     private final Logger log = LoggerFactory.getLogger(ServerHelper.class);
 
     private static final int MAX_USHORT_VALUE = 65535;
@@ -23,7 +23,7 @@ public class ServerHelper {
     }
 
     public boolean checkPortUsage(int port) {
-        ServerSocket serverSocket = null;
+        ServerSocket serverSocket;
         try {
             serverSocket = new ServerSocket(port);
             this.closeTestingServerSocket(serverSocket);
@@ -40,9 +40,11 @@ public class ServerHelper {
 
         while (!serverSocket.isClosed()) {
             try {
-                Thread.sleep(500);
+                serverSocket.wait(100);
             } catch (InterruptedException e) {
-                log.debug("Failed to close test socket", e);
+                if (!serverSocket.isClosed()) {
+                    log.debug("Failed to close test socket", e);
+                }
             }
         }
     }
@@ -55,9 +57,6 @@ public class ServerHelper {
     }
 
     public boolean isPort(int port) {
-        if (port <= ServerHelper.MAX_USHORT_VALUE && port > 0) {
-            return true;
-        }
-        return false;
+        return port <= ServerHelper.MAX_USHORT_VALUE && port > 0;
     }
 }

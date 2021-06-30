@@ -14,7 +14,7 @@ public class SortedProperties extends Properties {
     @Override
     public synchronized Enumeration<Object> keys() {
         Enumeration<Object> keys = super.keys();
-        Vector<Object> v = new Vector<Object>();
+        Vector<Object> v = new Vector<>();
         while (keys.hasMoreElements()) {
             v.add(keys.nextElement());
         }

@@ -39,8 +39,8 @@ public class DefaultWizardTest {
 		assertThat(actualUri.getPort(), equalTo(expectedUri.getPort()));
 		assertThat(actualUri.getPath(), equalTo(expectedUri.getPath()));
 
-		List<NameValuePair> actualNameValuePairs = URLEncodedUtils.parse(actualUri, StandardCharsets.UTF_8.name());
-		List<NameValuePair> expectedNameValuePairs = URLEncodedUtils.parse(expectedUri, StandardCharsets.UTF_8.name());
+		List<NameValuePair> actualNameValuePairs = URLEncodedUtils.parse(actualUri, StandardCharsets.UTF_8);
+		List<NameValuePair> expectedNameValuePairs = URLEncodedUtils.parse(expectedUri, StandardCharsets.UTF_8);
 
 		assertThat(actualNameValuePairs, everyItem(in(expectedNameValuePairs)));
 	}
@@ -59,8 +59,8 @@ public class DefaultWizardTest {
 		assertThat(actualUri.getPort(), equalTo(expectedUri.getPort()));
 		assertThat(actualUri.getPath(), equalTo(expectedUri.getPath()));
 
-		List<NameValuePair> actualNameValuePairs = URLEncodedUtils.parse(actualUri, StandardCharsets.UTF_8.name());
-		List<NameValuePair> expectedNameValuePairs = URLEncodedUtils.parse(expectedUri, StandardCharsets.UTF_8.name());
+		List<NameValuePair> actualNameValuePairs = URLEncodedUtils.parse(actualUri, StandardCharsets.UTF_8);
+		List<NameValuePair> expectedNameValuePairs = URLEncodedUtils.parse(expectedUri, StandardCharsets.UTF_8);
 
 		assertThat(actualNameValuePairs, everyItem(in(expectedNameValuePairs)));
 	}
@@ -79,8 +79,8 @@ public class DefaultWizardTest {
 		assertThat(actualUri.getPort(), equalTo(expectedUri.getPort()));
 		assertThat(actualUri.getPath(), equalTo(expectedUri.getPath()));
 
-		List<NameValuePair> actualNameValuePairs = URLEncodedUtils.parse(actualUri, StandardCharsets.UTF_8.name());
-		List<NameValuePair> expectedNameValuePairs = URLEncodedUtils.parse(expectedUri, StandardCharsets.UTF_8.name());
+		List<NameValuePair> actualNameValuePairs = URLEncodedUtils.parse(actualUri, StandardCharsets.UTF_8);
+		List<NameValuePair> expectedNameValuePairs = URLEncodedUtils.parse(actualUri, StandardCharsets.UTF_8);
 
 		assertThat(actualNameValuePairs, everyItem(in(expectedNameValuePairs)));
 	}
@@ -99,8 +99,8 @@ public class DefaultWizardTest {
 		assertThat(actualUri.getPort(), equalTo(expectedUri.getPort()));
 		assertThat(actualUri.getPath(), equalTo(expectedUri.getPath()));
 
-		List<NameValuePair> actualNameValuePairs = URLEncodedUtils.parse(actualUri, StandardCharsets.UTF_8.name());
-		List<NameValuePair> expectedNameValuePairs = URLEncodedUtils.parse(expectedUri, StandardCharsets.UTF_8.name());
+		List<NameValuePair> actualNameValuePairs = URLEncodedUtils.parse(actualUri, StandardCharsets.UTF_8);
+		List<NameValuePair> expectedNameValuePairs = URLEncodedUtils.parse(actualUri, StandardCharsets.UTF_8);
 
 		assertThat(actualNameValuePairs, everyItem(in(expectedNameValuePairs)));
 	}

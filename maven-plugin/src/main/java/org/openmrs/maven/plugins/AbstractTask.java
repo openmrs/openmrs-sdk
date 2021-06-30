@@ -27,7 +27,6 @@ import org.openmrs.maven.plugins.utility.StatsManager;
 import org.openmrs.maven.plugins.utility.VersionsHelper;
 import org.openmrs.maven.plugins.utility.Wizard;
 
-import java.io.File;
 import java.util.ArrayDeque;
 
 /**

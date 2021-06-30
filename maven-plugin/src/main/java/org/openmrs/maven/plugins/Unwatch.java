@@ -2,7 +2,6 @@ package org.openmrs.maven.plugins;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.openmrs.maven.plugins.model.Server;
@@ -20,7 +19,7 @@ public class Unwatch extends AbstractServerTask {
     private String groupId;
 
 	@Override
-    public void executeTask() throws MojoExecutionException, MojoFailureException {
+    public void executeTask() throws MojoExecutionException {
 	    Server serverConfig = getServer();
 	    
 	    File userDir = new File(System.getProperty("user.dir"));

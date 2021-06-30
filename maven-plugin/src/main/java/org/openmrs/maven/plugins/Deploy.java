@@ -310,7 +310,7 @@ public class Deploy extends AbstractServerTask {
 		openmrsCorePath.delete();
 		server.deleteServerTmpDirectory();
 
-		List<Element> artifactItems = new ArrayList<Element>();
+		List<Element> artifactItems = new ArrayList<>();
 		artifactItems.add(artifact.toElement(server.getServerDirectory().getPath()));
 
 		executeMojoPlugin(artifactItems);
@@ -331,7 +331,7 @@ public class Deploy extends AbstractServerTask {
 	 */
 	public void deployModule(String groupId, String artifactId, String version, Server server)
 			throws MojoExecutionException {
-		List<Element> artifactItems = new ArrayList<Element>();
+		List<Element> artifactItems = new ArrayList<>();
 		Artifact artifact = getModuleArtifactForSelectedParameters(groupId, artifactId, version);
 
 		File modules = new File(server.getServerDirectory(), SDKConstants.OPENMRS_SERVER_MODULES);
@@ -393,7 +393,7 @@ public class Deploy extends AbstractServerTask {
 
 				if (!oldVersion.equals(newVersion)) {
 					if (oldVersion.higher(newVersion)) {
-						wizard.showMessage(String.format(TEMPLATE_DOWNGRADE, oldVersion.toString(), newVersion.toString()));
+						wizard.showMessage(TEMPLATE_DOWNGRADE);
 					}
 
 					boolean agree = wizard
@@ -416,11 +416,8 @@ public class Deploy extends AbstractServerTask {
 	 *
 	 * @param server
 	 * @return artifact to update, if update requested or null
-	 * @throws MojoExecutionException
-	 * @throws MojoFailureException
 	 */
-	public Artifact checkCurrentDirectoryForOpenmrsWebappUpdate(Server server)
-			throws MojoExecutionException, MojoFailureException {
+	public Artifact checkCurrentDirectoryForOpenmrsWebappUpdate(Server server) {
 		String moduleName = mavenProject.getArtifactId();
 		if (moduleName.equals("openmrs")) {
 			if (!new Version(mavenProject.getVersion()).equals(new Version(server.getPlatformVersion())) || new Version(
@@ -477,9 +474,9 @@ public class Deploy extends AbstractServerTask {
 	 */
 	public Artifact getModuleArtifactForSelectedParameters(String groupId, String artifactId, String version)
 			throws MojoExecutionException {
-		String moduleGroupId = null;
-		String moduleArtifactId = null;
-		String moduleVersion = null;
+		String moduleGroupId;
+		String moduleArtifactId;
+		String moduleVersion;
 
 		File userDir = new File(System.getProperty("user.dir"));
 		Project project = null;

@@ -28,6 +28,7 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -308,7 +309,7 @@ public class OwaHelper {
 			else {
 				process = new ProcessBuilder(command).redirectErrorStream(true).start();
 			}
-			lines = IOUtils.readLines(process.getInputStream());
+			lines = IOUtils.readLines(process.getInputStream(), StandardCharsets.UTF_8);
 			process.waitFor();
 		} catch (InterruptedException | IOException e) {
 			System.out.println(e.getMessage());
@@ -380,8 +381,7 @@ public class OwaHelper {
 				//it's an expression
 				exact = false;
 				Parser<Expression> parser = ExpressionParser.newInstance();
-				Expression exp = parser.parse(version);
-				expression = exp;
+				expression = parser.parse(version);
 			}
 		}
 

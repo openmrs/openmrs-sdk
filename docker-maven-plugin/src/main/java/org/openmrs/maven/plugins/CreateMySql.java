@@ -2,7 +2,6 @@ package org.openmrs.maven.plugins;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.async.ResultCallback;
-import com.github.dockerjava.api.command.CreateContainerCmd;
 import com.github.dockerjava.api.model.Bind;
 import com.github.dockerjava.api.model.ExposedPort;
 import com.github.dockerjava.api.model.HostConfig;
@@ -11,15 +10,9 @@ import com.github.dockerjava.api.model.PortBinding;
 import com.github.dockerjava.api.model.Ports;
 import com.github.dockerjava.api.model.PullResponseItem;
 import com.github.dockerjava.api.model.Volume;
-import com.github.dockerjava.api.model.VolumesFrom;
 import org.apache.commons.lang.StringUtils;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.MojoFailureException;
 
-import javax.ws.rs.ProcessingException;
 import java.io.Closeable;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,7 +46,7 @@ public class CreateMySql extends AbstractDockerMojo {
     protected String rootPassword;
 
     @Override
-    public void executeTask() throws MojoExecutionException, MojoFailureException {
+    public void executeTask() {
         if (StringUtils.isBlank(port)) port = DEFAULT_MYSQL_EXPOSED_PORT;
         //root password may be blank but not null, if user wants to have empty password
         if (rootPassword == null) rootPassword = DEFAULT_MYSQL_PASSWORD;
@@ -123,7 +116,7 @@ public class CreateMySql extends AbstractDockerMojo {
                     }
 
                     @Override
-                    public void close() throws IOException {
+                    public void close() {
 
                     }
                 });

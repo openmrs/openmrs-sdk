@@ -3,7 +3,6 @@ package org.openmrs.maven.plugins;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.model.Model;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.eclipse.egit.github.core.RepositoryId;
@@ -42,19 +41,14 @@ public class Clone extends AbstractTask {
 	private String personalAccessToken;
 
 	@Override
-	public void executeTask() throws MojoExecutionException, MojoFailureException {
+	public void executeTask() throws MojoExecutionException {
 		groupId = wizard.promptForValueIfMissingWithDefault(null, groupId, "groupId", "org.openmrs.module");
 		artifactId = wizard.promptForValueIfMissing(artifactId, "artifactId");
 
 		String version = versionsHelper.getLatestReleasedVersion(new Artifact(artifactId, "0", groupId));
 		String repoUrl;
 
-		try {
-			repoUrl = extractGitHubHttpKeyFromModulePom(artifactId, version, groupId);
-		}
-		catch (IOException e) {
-			throw new IllegalStateException("Failed to fetch scm url from maven repository", e);
-		}
+		repoUrl = extractGitHubHttpKeyFromModulePom(artifactId, version, groupId);
 
 		username = wizard.promptForValueIfMissing(username, "your GitHub username");
 		personalAccessToken = wizard
@@ -64,7 +58,7 @@ public class Clone extends AbstractTask {
 	}
 
 	private String extractGitHubHttpKeyFromModulePom(String artifactId, String version, String groupId)
-			throws MojoExecutionException, IOException {
+			throws MojoExecutionException {
 		downloadModulePom(new Artifact(artifactId, version, groupId, "pom"));
 		String pomFileName = this.artifactId + "-" + version + ".pom";
 		File pomDir = new File("pom/");
@@ -100,7 +94,7 @@ public class Clone extends AbstractTask {
 	private void downloadModulePom(Artifact artifact) throws MojoExecutionException {
 		MojoExecutor.Element[] artifactItems = new MojoExecutor.Element[1];
 		artifactItems[0] = artifact.toElement("pom/");
-		List<Element> configuration = new ArrayList<Element>();
+		List<Element> configuration = new ArrayList<>();
 		configuration.add(element("artifactItems", artifactItems));
 		executeMojo(
 				plugin(
@@ -135,7 +129,7 @@ public class Clone extends AbstractTask {
 
 		String repoName = repoUrl.substring(repoOwner.length() + 1, repoUrl.lastIndexOf(".git"));
 
-		if ("false".equals(testMode)) {
+		if (!testMode) {
 			forkRepo(repoName, repoOwner);
 		}
 

@@ -58,7 +58,7 @@ public class ServerTest {
     }
 
     @Test
-    public void testMergeArtifactList() throws Exception{
+    public void testMergeArtifactList() {
         Artifact owa14 = new Artifact("owa", "1.4");
         Artifact appui15 = new Artifact("appui", "1.5");
         Artifact refapp2232 = new Artifact("refapp", "2232");

@@ -13,7 +13,7 @@ import static org.hamcrest.core.IsNull.notNullValue;
 
 public class XmlHelperTest {
 
-    private XmlHelper helper = new XmlHelper();
+    private final XmlHelper helper = new XmlHelper();
 
     @Test
     public void testApplyChanges(){

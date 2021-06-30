@@ -59,10 +59,10 @@ public class PullRequestTest {
 
     RevCommit commit1;
     RevCommit commit2;
-    private String issueId ="SDK-100";
-    private String username = "test_user";
-    private String password= "test_password";
-    private String reponame= "test_reponame";
+    private final String issueId ="SDK-100";
+    private final String username = "test_user";
+    private final String password= "test_password";
+    private final String reponame= "test_reponame";
     private org.eclipse.egit.github.core.PullRequest mockPR;
 
     /**

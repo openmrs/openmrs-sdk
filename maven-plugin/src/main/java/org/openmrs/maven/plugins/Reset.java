@@ -4,14 +4,12 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
-import org.apache.maven.plugin.MojoFailureException;
 import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.utility.DBConnector;
 import org.openmrs.maven.plugins.utility.DockerHelper;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 
-import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 
@@ -20,7 +18,7 @@ public class Reset extends AbstractServerTask {
 
     private static final String TEMPLATE_SUCCESS_FULL = "Server '%s' has been reset";
 
-    public void executeTask() throws MojoExecutionException, MojoFailureException {
+    public void executeTask() throws MojoExecutionException {
         Server server = getServer();
         if(StringUtils.isNotBlank(server.getContainerId())){
             new DockerHelper(mavenProject, mavenSession, pluginManager, wizard).runDbContainer(

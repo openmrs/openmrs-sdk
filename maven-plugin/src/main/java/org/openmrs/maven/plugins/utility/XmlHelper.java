@@ -51,28 +51,23 @@ public class XmlHelper {
     }
 
     protected void applyModifications(Element modificationsRoot, Element targetRoot) {
-        for(Object object : modificationsRoot.elements()){
-            if(object instanceof Element){
-                Element modificationElement = (Element) object;
-                String copy = modificationElement.attributeValue("sdk-copy");
-                if("true".equals(copy)){
-                    addModification(targetRoot, modificationElement);
-                } else {
-                    Element targetElement = targetRoot.element(modificationElement.getName());
-                    if(targetElement == null) {
-                        targetElement = targetRoot.addElement(modificationElement.getName());
-                    }
-                    applyModifications(modificationElement, targetElement);
+        for(Element modificationElement : modificationsRoot.elements()){
+            String copy = modificationElement.attributeValue("sdk-copy");
+            if("true".equals(copy)){
+                addModification(targetRoot, modificationElement);
+            } else {
+                Element targetElement = targetRoot.element(modificationElement.getName());
+                if(targetElement == null) {
+                    targetElement = targetRoot.addElement(modificationElement.getName());
                 }
+                applyModifications(modificationElement, targetElement);
             }
         }
     }
 
     protected void addChildren(Element modificationsRoot, Element targetRoot){
-        for(Object object : modificationsRoot.elements()){
-            if(object instanceof Element){
-                addModification(targetRoot, (Element) object);
-            }
+        for(Element element : modificationsRoot.elements()){
+            addModification(targetRoot, element);
         }
     }
 

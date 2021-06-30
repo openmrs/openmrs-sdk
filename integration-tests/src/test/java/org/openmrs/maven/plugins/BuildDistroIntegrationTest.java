@@ -2,9 +2,6 @@ package org.openmrs.maven.plugins;
 
 import org.junit.Test;
 
-import java.io.File;
-import java.util.UUID;
-
 public class BuildDistroIntegrationTest extends AbstractSdkIntegrationTest {
 
     @Test

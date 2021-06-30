@@ -47,7 +47,7 @@ abstract class AbstractDockerMojo extends AbstractMojo {
     protected DockerClient docker;
 
     @Override
-    public void execute() throws MojoExecutionException, MojoFailureException {
+    public void execute() throws MojoExecutionException {
         resolveDocker();
         executeTask();
         try {
@@ -57,7 +57,7 @@ abstract class AbstractDockerMojo extends AbstractMojo {
         }
     }
 
-    public abstract void executeTask() throws MojoExecutionException, MojoFailureException;
+    public abstract void executeTask() throws MojoExecutionException;
 
     protected void resolveDocker() throws MojoExecutionException {
         DockerClientConfig config = DefaultDockerClientConfig.createDefaultConfigBuilder()

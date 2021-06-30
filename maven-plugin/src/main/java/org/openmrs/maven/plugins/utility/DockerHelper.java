@@ -27,7 +27,7 @@ import static org.twdata.maven.mojoexecutor.MojoExecutor.version;
 
 public class DockerHelper {
 
-    public static String DOCKER_DEFAULT_CONTAINER_ID = "openmrs-sdk-mysql-v3-2";
+    public static final String DOCKER_DEFAULT_CONTAINER_ID = "openmrs-sdk-mysql-v3-2";
     public static final String DOCKER_MYSQL_PORT = "3308";
     public static final String DOCKER_MYSQL_USERNAME = "root";
     public static final String DOCKER_MYSQL_PASSWORD = "Admin123";
@@ -46,10 +46,10 @@ public class DockerHelper {
 
     private static final String DOCKER_HOST_DEFAULT_LINUX = "unix:///var/run/docker.sock";
 
-    private MavenProject mavenProject;
-    private MavenSession mavenSession;
-    private BuildPluginManager pluginManager;
-    private Wizard wizard;
+    private final MavenProject mavenProject;
+    private final MavenSession mavenSession;
+    private final BuildPluginManager pluginManager;
+    private final Wizard wizard;
 
     public DockerHelper(MavenProject mavenProject, MavenSession mavenSession, BuildPluginManager pluginManager, Wizard wizard){
         this.mavenProject = mavenProject;

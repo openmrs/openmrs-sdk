@@ -1,7 +1,6 @@
 package org.openmrs.maven.plugins;
 
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.openmrs.maven.plugins.utility.OwaHelper;
@@ -42,7 +41,7 @@ public class AddFeature extends AbstractTask {
 	private String feature;
 
 	@Override
-	public void executeTask() throws MojoExecutionException, MojoFailureException {
+	public void executeTask() throws MojoExecutionException {
 		if (Project.hasProject(new File(System.getProperty("user.dir")))) {
 			feature = wizard.promptForMissingValueWithOptions("What feature would you like to add?", feature, "feature",
 					OPTIONS, null, null);

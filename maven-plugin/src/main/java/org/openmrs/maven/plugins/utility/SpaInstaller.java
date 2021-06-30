@@ -28,9 +28,9 @@ public class SpaInstaller {
     static final String NPM_VERSION = "7.13.0";
     static final String BUILD_TARGET_DIR = "frontend";
 
-    private NodeHelper nodeHelper;
+    private final NodeHelper nodeHelper;
 
-    private DistroHelper distroHelper;
+    private final DistroHelper distroHelper;
 
     public SpaInstaller(DistroHelper distroHelper,
                         NodeHelper nodeHelper) {

@@ -16,7 +16,7 @@ public class DefaultJira implements Jira {
     @Override
     public Issue getIssue(String issueId) {
         JiraRestClientFactory factory = new AsynchronousJiraRestClientFactory();
-        URI jiraServerUri = null;
+        URI jiraServerUri;
         try {
             jiraServerUri = new URI(OPENMRS_ISSUES_URI);
         } catch (URISyntaxException e) {

@@ -9,7 +9,6 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.http.protocol.ResponseServer;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -88,9 +87,9 @@ public class OpenMRSSDKRedirectServletTest{
         when(request.getScheme()).thenReturn("https");
         when(request.getServerName()).thenReturn("localhost");
 
-        servlet.service(request, response);;
+        servlet.service(request, response);
 
-        verify(response).setStatus(HttpServletResponse.SC_MOVED_PERMANENTLY);
+	    verify(response).setStatus(HttpServletResponse.SC_MOVED_PERMANENTLY);
         verify(response).setHeader("Location", "https://localhost:8443/openmrs");
     }
 

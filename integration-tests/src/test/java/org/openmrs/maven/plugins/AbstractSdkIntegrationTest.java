@@ -52,7 +52,7 @@ public abstract class AbstractSdkIntegrationTest {
     static final String MOJO_OPTION_TMPL = "-D%s=\"%s\"";
     protected static final String BATCH_ANSWERS = "batchAnswers";
 
-    protected ArrayDeque<String> batchAnswers = new ArrayDeque<>();
+    protected final ArrayDeque<String> batchAnswers = new ArrayDeque<>();
 
     /**
      * contains files in test directory which are not created during tests and will not be cleaned up
@@ -85,8 +85,7 @@ public abstract class AbstractSdkIntegrationTest {
         testDirectory = ResourceExtractor.simpleExtractResources(getClass(), TEST_DIRECTORY);
         verifier = new Verifier(testDirectory.getAbsolutePath());
 
-        testFilesToPersist = new ArrayList<File>(Arrays.asList(testDirectory.listFiles()));
-
+        testFilesToPersist = new ArrayList<>(Arrays.asList(testDirectory.listFiles()));
 
         addTaskParam("openMRSPath",testDirectory.getAbsolutePath());
     }
@@ -223,7 +222,7 @@ public abstract class AbstractSdkIntegrationTest {
     /**
      * check if server dir and installation.properties are created
      */
-    protected void assertServerInstalled(String serverId) throws Exception{
+    protected void assertServerInstalled(String serverId) {
         assertFilePresent(serverId);
         assertFilePresent(serverId + File.separator + "openmrs-server.properties");
     }
@@ -240,7 +239,7 @@ public abstract class AbstractSdkIntegrationTest {
 
     protected void assertModulesInstalled(String serverId, DistroProperties distroProperties) {
         List<Artifact> modules = distroProperties.getModuleArtifacts();
-        List<String> moduleFilenames = new ArrayList<String>();
+        List<String> moduleFilenames = new ArrayList<>();
 
         for(Artifact module : modules){
             moduleFilenames.add(module.getDestFileName());

@@ -9,10 +9,10 @@ import java.util.Map;
  * Basic wrapper for list and map of artifacts
  */
 public class UpgradeDifferential {
-    private final List<Artifact> modulesToAdd = new ArrayList<Artifact>();
-    private final List<Artifact> modulesToDelete = new ArrayList<Artifact>();
-    private final Map<Artifact, Artifact> updateOldToNewMap = new HashMap<Artifact,Artifact>();
-    private final Map<Artifact, Artifact> downgradeNewToOldMap = new HashMap<Artifact,Artifact>();
+    private final List<Artifact> modulesToAdd = new ArrayList<>();
+    private final List<Artifact> modulesToDelete = new ArrayList<>();
+    private final Map<Artifact, Artifact> updateOldToNewMap = new HashMap<>();
+    private final Map<Artifact, Artifact> downgradeNewToOldMap = new HashMap<>();
     private Artifact platformArtifact;
     private boolean platformUpgraded;
 

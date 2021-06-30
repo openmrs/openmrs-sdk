@@ -1,9 +1,7 @@
 package org.openmrs.maven.plugins;
 
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
-import org.apache.maven.plugins.annotations.Parameter;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.utility.Project;
 
@@ -13,7 +11,7 @@ import java.util.Set;
 public class Info extends AbstractServerTask {
 
 	@Override
-	public void executeTask() throws MojoExecutionException, MojoFailureException {
+	public void executeTask() throws MojoExecutionException {
 		Server serverConfig = getServer();
         Set<Project> watchedProjects = serverConfig.getWatchedProjects();
         

@@ -161,38 +161,40 @@ public abstract class BaseSdkProperties {
             }
             return setting;
         } else {
-            if (param.equals(ARTIFACT_ID)) {
-                return extractArtifactId(key);
-            } else if (param.equals(GROUP_ID)) {
-                if (getArtifactType(key).equals(TYPE_WAR)) { //for openmrs.war use org.openmrs.web groupId
-                    return Artifact.GROUP_WEB;
-                } else if (getArtifactType(key).equals(TYPE_OMOD)) {
-                    return Artifact.GROUP_MODULE;
-                } else if (getArtifactType(key).equals(TYPE_DISTRO)) {
-                    return Artifact.GROUP_DISTRO;
-                }else {
-                    return "";
-                }
+	        switch (param) {
+		        case ARTIFACT_ID:
+			        return extractArtifactId(key);
+		        case GROUP_ID:
+                    switch (getArtifactType(key)) {
+                        case TYPE_WAR:  //for openmrs.war use org.openmrs.web groupId
+                            return Artifact.GROUP_WEB;
+                        case TYPE_OMOD:
+                            return Artifact.GROUP_MODULE;
+                        case TYPE_DISTRO:
+                            return Artifact.GROUP_DISTRO;
+                        default:
+                            return "";
+                    }
 
-            } else if (param.equals(TYPE)) {
-                if(getArtifactType(key).equals(TYPE_OMOD)){
-                    return TYPE_JAR;
-                }else if(getArtifactType(key).equals(TYPE_WAR)){
-                    return TYPE_WAR;
-                } else if(getArtifactType(key).equals(TYPE_DISTRO)) {
-                    return TYPE_JAR;
-                } else {
-                    return "";
-                }
-            } else {
-                return "";
-            }
+		        case TYPE:
+                    switch (getArtifactType(key)) {
+                        case TYPE_OMOD:
+                        case TYPE_DISTRO:
+                            return TYPE_JAR;
+                        case TYPE_WAR:
+                            return TYPE_WAR;
+                        default:
+                            return "";
+                    }
+		        default:
+			        return "";
+	        }
         }
     }
 
     private String extractArtifactId(String key){
         String type = getArtifactType(key);
-        StringBuilder stringBuilder = new StringBuilder(key.substring(key.indexOf(".")+1, key.length()));
+        StringBuilder stringBuilder = new StringBuilder(key.substring(key.indexOf(".") + 1));
         if(type.equals(TYPE_OMOD)) {
             stringBuilder.append("-");
             stringBuilder.append(type);

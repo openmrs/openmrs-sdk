@@ -41,8 +41,8 @@ public class Build extends AbstractServerTask {
 	}
 
 	public Build(AbstractTask other) {
-        super(other);
-    }
+		super(other);
+	}
 
 	public Build(AbstractServerTask other, String serverId) {
 		super(other);
@@ -120,15 +120,10 @@ public class Build extends AbstractServerTask {
 			buildProject(project);
 		}
 
-		try {
-			deployWatchedProjects(server);
-		}
-		catch (MavenInvocationException e) {
-			throw new MojoFailureException("Failed to deploy watched modules", e);
-		}
+		deployWatchedProjects(server);
 	}
 
-	private void buildCoreIfWatched(Server server) throws MojoFailureException {
+	private void buildCoreIfWatched(Server server) {
 		for (Project project : server.getWatchedProjects()) {
 			if (project.isOpenmrsCore()) {
 				buildProject(project);
@@ -163,10 +158,8 @@ public class Build extends AbstractServerTask {
 	 * @param server
 	 * @throws MojoFailureException
 	 * @throws MojoExecutionException
-	 * @throws MavenInvocationException
 	 */
-	private void deployWatchedProjects(Server server)
-			throws MojoFailureException, MojoExecutionException, MavenInvocationException {
+	private void deployWatchedProjects(Server server) throws MojoFailureException, MojoExecutionException {
 		Set<Project> watchedProject = server.getWatchedProjects();
 		for (Project module : watchedProject) {
 			Project project = Project.loadProject(new File(module.getPath()));
@@ -180,10 +173,8 @@ public class Build extends AbstractServerTask {
 
 	/**
 	 * Run "mvn clean install -DskipTests" command in the given directory
-	 *
-	 * @throws MojoFailureException
 	 */
-	public void buildProject(Project project) throws MojoFailureException {
+	public void buildProject(Project project) {
 		Properties properties = new Properties();
 		properties.put("skipTests", "true");
 

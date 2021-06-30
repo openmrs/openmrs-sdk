@@ -1,5 +1,8 @@
 package org.openmrs.maven.plugins.model;
 
+import static org.openmrs.maven.plugins.utility.PropertiesUtils.loadPropertiesFromFile;
+import static org.openmrs.maven.plugins.utility.PropertiesUtils.loadPropertiesFromResource;
+
 import org.apache.commons.io.IOUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.openmrs.maven.plugins.utility.DistroHelper;
@@ -33,7 +36,7 @@ public class DistroProperties extends BaseSdkProperties {
     public DistroProperties(String version){
         properties = new Properties();
         try {
-            loadPropertiesFromResource(createFileName(version));
+            loadPropertiesFromResource(createFileName(version), properties);
         } catch (MojoExecutionException e) {
             e.printStackTrace();
         }
@@ -52,41 +55,11 @@ public class DistroProperties extends BaseSdkProperties {
 
     public DistroProperties(File file) throws MojoExecutionException{
         this.properties = new Properties();
-        loadPropertiesFromFile(file);
+        loadPropertiesFromFile(file, this.properties);
     }
 
     private String createFileName(String version){
         return String.format(DEAFAULT_FILE_NAME, version);
-    }
-
-    private void loadPropertiesFromFile(File file) throws MojoExecutionException {
-        FileInputStream in = null;
-        try {
-            in = new FileInputStream(file);
-            properties.load(in);
-            in.close();
-        }
-        catch (IOException e) {
-            throw new MojoExecutionException(e.getMessage());
-        }
-        finally {
-            IOUtils.closeQuietly(in);
-        }
-    }
-
-    private void loadPropertiesFromResource(String fileName) throws MojoExecutionException {
-        InputStream in = null;
-        try {
-            in = getClass().getClassLoader().getResourceAsStream(fileName);
-            properties.load(in);
-            in.close();
-        }
-        catch (IOException e) {
-            throw new MojoExecutionException(e.getMessage());
-        }
-        finally {
-            IOUtils.closeQuietly(in);
-        }
     }
 
     public boolean isH2Supported(){
@@ -202,8 +175,7 @@ public class DistroProperties extends BaseSdkProperties {
     }
 
     private List<Artifact> mergeArtifactLists(List<Artifact> childArtifacts, List<Artifact> parentArtifacts) {
-        List<Artifact> artifactList = new ArrayList<>();
-        artifactList.addAll(childArtifacts);
+        List<Artifact> artifactList = new ArrayList<>(childArtifacts);
         for (Artifact parentArtifact : parentArtifacts) {
             boolean found = false;
             for (Artifact childArtifact : childArtifacts) {

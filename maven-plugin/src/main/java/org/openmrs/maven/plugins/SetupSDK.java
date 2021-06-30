@@ -22,12 +22,12 @@ public class SetupSDK extends AbstractTask {
 	private static final String SDK_INFO = "Now you can use sdk: mvn openmrs-sdk:<task_name>";
 
 	public void execute()
-			throws MojoFailureException, MojoExecutionException { //execute method is overwritten to not change the workflow
+			throws MojoExecutionException { //execute method is overwritten to not change the workflow
 		initTask();                                                             //in SetupSDK, but we need to extends AbstractTask to support batchAnswers
 		executeTask();
 	}
 
-	public void executeTask() throws MojoExecutionException, MojoFailureException {
+	public void executeTask() throws MojoExecutionException {
 		initSdkStatsFile();
 		String localRepository = mavenSession.getSettings().getLocalRepository();
 		File mavenHome = new File(localRepository).getParentFile();

@@ -66,6 +66,7 @@ public class VersionsHelper {
         }
     }
 
+    @SuppressWarnings("unchecked")
     private void sortDescending(List<ArtifactVersion> versions){
         Collections.sort(versions);
         Collections.reverse(versions);

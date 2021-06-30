@@ -2,7 +2,6 @@ package org.openmrs.maven.plugins;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.eclipse.jgit.api.CheckoutCommand;
@@ -68,9 +67,9 @@ public class Pull extends AbstractServerTask {
 	@Parameter(property = "branch")
 	private String branch;
 
-	private List<String> updatedModules = new ArrayList<>();
+	private final List<String> updatedModules = new ArrayList<>();
 
-	private List<String> notUpdatedModules = new ArrayList<>();
+	private final List<String> notUpdatedModules = new ArrayList<>();
 
 	private String userBranch;
 
@@ -89,7 +88,7 @@ public class Pull extends AbstractServerTask {
 	}
 
 	@Override
-	public void executeTask() throws MojoExecutionException, MojoFailureException {
+	public void executeTask() throws MojoExecutionException {
 		if (isGitProjectPresent() && StringUtils.isBlank(serverId)) {
 			pullProjectFromUserDir();
 		} else {
@@ -182,10 +181,7 @@ public class Pull extends AbstractServerTask {
 	 */
 	private boolean isGitProjectPresent() {
 		File file = new File(System.getProperty("user.dir"), ".git");
-		if (file.exists()) {
-			return true;
-		}
-		return false;
+		return file.exists() && file.isDirectory();
 	}
 
 	public void pullLatestUpstream(CompositeException allExceptions, Project project) {

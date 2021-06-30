@@ -7,7 +7,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.openmrs.maven.plugins.model.Artifact;
@@ -25,6 +24,7 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 @Mojo(name = "build-distro", requiresProject = false)
@@ -80,7 +80,7 @@ public class BuildDistro extends AbstractTask {
 	private boolean reset;
 
 	@Override
-	public void executeTask() throws MojoExecutionException, MojoFailureException {
+	public void executeTask() throws MojoExecutionException {
 		File buildDirectory = getBuildDirectory();
 
 		File userDir = new File(System.getProperty("user.dir"));
@@ -288,10 +288,7 @@ public class BuildDistro extends AbstractTask {
 		File dockerComposeOverride = new File(targetDir, DOCKER_COMPOSE_OVERRIDE_YML);
 		File dockerCompose = new File(targetDir, DOCKER_COMPOSE_YML);
 		File dockerComposeProd = new File(targetDir, DOCKER_COMPOSE_PROD_YML);
-		if (dockerCompose.exists() && dockerComposeOverride.exists() && dockerComposeProd.exists()) {
-			return true;
-		}
-		return false;
+		return dockerCompose.exists() && dockerComposeOverride.exists() && dockerComposeProd.exists();
 	}
 
 	private void copyDockerfile(File targetDirectory, DistroProperties distroProperties) throws MojoExecutionException {
@@ -346,7 +343,7 @@ public class BuildDistro extends AbstractTask {
 		File compose = new File(targetDirectory, filename);
 		if (!compose.exists()) {
 			try (InputStream inputStream = composeUrl.openStream(); FileWriter composeWriter = new FileWriter(compose)) {
-				String content = IOUtils.toString(inputStream);
+				String content = IOUtils.toString(inputStream, StandardCharsets.UTF_8);
 				content = content.replaceAll("<distro>", distro);
 				content = content.replaceAll("<tag>", version);
 				composeWriter.write(content);
@@ -361,7 +358,7 @@ public class BuildDistro extends AbstractTask {
 		return part.replaceAll("\\s+", "").toLowerCase();
 	}
 
-	private void copyDbDump(File targetDirectory, InputStream stream) throws MojoExecutionException {
+	private void copyDbDump(File targetDirectory, InputStream stream) {
 		File dbdump = new File(targetDirectory, DB_DUMP_PATH);
 		try {
 			dbdump.getParentFile().mkdirs();
@@ -378,7 +375,7 @@ public class BuildDistro extends AbstractTask {
 				writer.write(c);
 			}
 
-			writer.write("\n" + String.format(SDKConstants.RESET_SEARCH_INDEX_SQL, "openmrs") + "\n");
+			writer.write("\n" + SDKConstants.RESET_SEARCH_INDEX_SQL + "\n");
 			writer.flush();
 		}
 		catch (IOException e) {

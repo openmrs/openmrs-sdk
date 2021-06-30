@@ -8,6 +8,7 @@ import org.openmrs.maven.plugins.model.Server;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Properties;
 import java.util.UUID;
 
@@ -162,7 +163,7 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
         assertFilePresent(serverId + File.separator + "frontend" + File.separator + "importmap.json");
         assertFilePresent(serverId + File.separator + "frontend" + File.separator + "openmrs-esm-login-app-3.1.0");
         assertFilePresent(serverId + File.separator + "frontend" + File.separator + "openmrs-esm-patient-chart-app-3.0.0");
-        String indexContents = FileUtils.readFileToString(new File(testDirectory.getAbsolutePath(), indexFilePath));
+        String indexContents = FileUtils.readFileToString(new File(testDirectory.getAbsolutePath(), indexFilePath), StandardCharsets.UTF_8);
         assertThat(indexContents, containsString("apiUrl: \"notopenmrs\""));
         assertThat(indexContents, containsString("configUrls: [\"foo\"]"));
 

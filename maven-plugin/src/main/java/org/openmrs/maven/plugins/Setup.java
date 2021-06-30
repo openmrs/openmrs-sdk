@@ -461,11 +461,7 @@ public class Setup extends AbstractServerTask {
 			DatabaseMetaData md = connector.getConnection().getMetaData();
 
 			try (ResultSet rs = md.getTables(server.getDbName(), null, null, new String[] { "TABLE" })) {
-				if (rs.next()) {
-					return true;
-				}
-
-				return false;
+				return rs.next();
 			}
 		}
 		catch (SQLException e) {
@@ -473,7 +469,7 @@ public class Setup extends AbstractServerTask {
 		}
 	}
 
-	private void resetSearchIndex(Server server) throws MojoExecutionException {
+	private void resetSearchIndex(Server server) {
 		String uri = server.getDbUri();
 		uri = uri.substring(0, uri.lastIndexOf("/") + 1);
 		DBConnector connector = null;

@@ -8,6 +8,7 @@ import org.twdata.maven.mojoexecutor.MojoExecutor;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static org.twdata.maven.mojoexecutor.MojoExecutor.artifactId;
@@ -25,11 +26,11 @@ public class NodeHelper {
     private static final String FRONTEND_MAVEN_ARTIFACT_ID = "frontend-maven-plugin";
     private static final String FRONTEND_MAVEN_VERSION = "1.11.3";
 
-    private MavenSession mavenSession;
+    private final MavenSession mavenSession;
 
-    private MavenProject mavenProject;
+    private final MavenProject mavenProject;
 
-    private BuildPluginManager pluginManager;
+    private final BuildPluginManager pluginManager;
 
     public NodeHelper(MavenProject mavenProject,
                       MavenSession mavenSession,
@@ -47,11 +48,11 @@ public class NodeHelper {
     }
 
     public void runNpm(String arguments) throws MojoExecutionException {
-        runFrontendMavenPlugin("npm", Arrays.asList(element("arguments", arguments)));
+        runFrontendMavenPlugin("npm", Collections.singletonList(element("arguments", arguments)));
     }
 
     public void runNpx(String arguments) throws MojoExecutionException {
-        runFrontendMavenPlugin("npx", Arrays.asList(element("arguments", arguments)));
+        runFrontendMavenPlugin("npx", Collections.singletonList(element("arguments", arguments)));
     }
 
     private void runFrontendMavenPlugin(String goal, List<MojoExecutor.Element> configuration) throws MojoExecutionException {

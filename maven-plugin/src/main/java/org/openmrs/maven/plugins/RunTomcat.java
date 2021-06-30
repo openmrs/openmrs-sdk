@@ -13,7 +13,6 @@ import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
@@ -32,8 +31,8 @@ import org.openmrs.maven.plugins.utility.Wizard;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 @Mojo(name = "run-tomcat", requiresProject = false)
@@ -83,7 +82,7 @@ public class RunTomcat extends AbstractMojo {
 	}
 
 	@Override
-	public void execute() throws MojoExecutionException, MojoFailureException {
+	public void execute() throws MojoExecutionException {
 		wizard.showMessage("\nUsing JAVA_HOME: " + System.getProperty("java.home"));
 		wizard.showMessage("Using MAVEN_OPTS: " + System.getenv("MAVEN_OPTS"));
 
@@ -107,7 +106,7 @@ public class RunTomcat extends AbstractMojo {
 						jdk, server.getPlatformVersion()));
 			}
 		} else {
-			throw new MojoExecutionException("Invalid server platform version: " + platformVersion.toString());
+			throw new MojoExecutionException("Invalid server platform version: " + platformVersion);
 		}
 
 		File tempDirectory = server.getServerTmpDirectory();
@@ -187,7 +186,7 @@ public class RunTomcat extends AbstractMojo {
 	}
 
 	private void setServerCustomProperties(Server server) {
-		HashMap<String, String> customProperties = server.getCustomProperties();
+		Map<String, String> customProperties = server.getCustomProperties();
 		for (String key : customProperties.keySet()) {
 			System.setProperty(key, customProperties.get(key));
 		}
@@ -196,9 +195,8 @@ public class RunTomcat extends AbstractMojo {
 	protected ClassRealm newTomcatClassLoader() throws MojoExecutionException {
 		try {
 			ClassWorld world = new ClassWorld();
-			ClassRealm root = world.newRealm("tomcat", Thread.currentThread().getContextClassLoader());
 
-			return root;
+			return world.newRealm("tomcat", Thread.currentThread().getContextClassLoader());
 		}
 		catch (DuplicateRealmException e) {
 			throw new MojoExecutionException(e.getMessage(), e);
@@ -215,7 +213,7 @@ public class RunTomcat extends AbstractMojo {
 				wizard.showMessage("Hot redeployment of UI framework changes enabled for:");
 			}
 			int i = 1;
-			List<String> list = new ArrayList<String>();
+			List<String> list = new ArrayList<>();
 			for (Project project : watchedProjects) {
 				System.setProperty("uiFramework.development." + project.getArtifactId(), project.getPath());
 

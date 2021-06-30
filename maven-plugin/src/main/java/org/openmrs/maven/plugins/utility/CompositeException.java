@@ -11,7 +11,7 @@ import java.util.Map;
  */
 public class CompositeException extends Exception {
 
-    private Map<String, Exception> exceptions = new LinkedHashMap<>();
+    private final Map<String, Exception> exceptions = new LinkedHashMap<>();
 
     public CompositeException(String message) {
         super(message);

@@ -12,9 +12,7 @@ import org.eclipse.egit.github.core.service.RepositoryService;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.RebaseCommand;
 import org.eclipse.jgit.api.RemoteAddCommand;
-import org.eclipse.jgit.api.RemoteListCommand;
 import org.eclipse.jgit.api.RemoteRemoveCommand;
-import org.eclipse.jgit.api.RemoteSetUrlCommand;
 import org.eclipse.jgit.api.ResetCommand;
 import org.eclipse.jgit.api.RevertCommand;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -232,7 +230,7 @@ public class DefaultGitHelper implements GitHelper {
     public PullRequest openPullRequest(GithubPrRequest request) {
         RepositoryService repositoryService = new RepositoryService();
         repositoryService.getClient().setCredentials(request.getUsername(), request.getPassword());
-        org.eclipse.egit.github.core.Repository openmrs = null;
+        org.eclipse.egit.github.core.Repository openmrs;
         try {
             openmrs = repositoryService.getRepository(OPENMRS_USER, request.getRepository());
         } catch (IOException e) {
@@ -260,7 +258,7 @@ public class DefaultGitHelper implements GitHelper {
     @Override
     public PullRequest getPullRequestIfExists(String base, String head, String repository) {
         RepositoryService repositoryService = new RepositoryService();
-        org.eclipse.egit.github.core.Repository openmrs = null;
+        org.eclipse.egit.github.core.Repository openmrs;
         boolean exists = false;
         try {
             openmrs = repositoryService.getRepository(OPENMRS_USER, repository);
@@ -494,7 +492,7 @@ public class DefaultGitHelper implements GitHelper {
      * get github repository URL from pom.xml
      */
     private String getRemoteRepoUrlFromPom(String path) throws MojoExecutionException {
-        Model model = null;
+        Model model;
         try {
             File pomFile = new File(path);
             if(pomFile.isDirectory()){

@@ -33,9 +33,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import static org.twdata.maven.mojoexecutor.MojoExecutor.element;
-import static org.twdata.maven.mojoexecutor.MojoExecutor.plugin;
-
 /**
  * Creates a new OpenMRS project from an archetype
  */

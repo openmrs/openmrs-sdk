@@ -12,11 +12,11 @@ public class StatsManager {
 
     private SdkStatistics sdkStatistics;
 
-    private Wizard wizard;
+    private final Wizard wizard;
 
-    private MavenSession mavenSession;
+    private final MavenSession mavenSession;
 
-    private boolean stats;
+    private final boolean stats;
 
     public StatsManager(Wizard wizard, MavenSession mavenSession, boolean stats){
         this.wizard = wizard;
@@ -39,7 +39,7 @@ public class StatsManager {
         }
     }
 
-    public void incrementGoalStats() throws MojoExecutionException {
+    public void incrementGoalStats() {
         try {
             loadStatistics();
 

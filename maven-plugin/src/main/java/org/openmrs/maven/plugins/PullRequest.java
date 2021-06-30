@@ -6,9 +6,7 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
-import org.eclipse.jgit.api.CreateBranchCommand;
 import org.eclipse.jgit.api.Git;
-import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.openmrs.maven.plugins.git.GithubPrRequest;
@@ -64,7 +62,7 @@ public class PullRequest extends AbstractTask {
 		}
 		String path = mavenProject.getBasedir().getAbsolutePath();
 		Repository localRepository = gitHelper.getLocalRepository(path);
-		String localBranch = null;
+		String localBranch;
 		try {
 			localBranch = localRepository.getBranch();
 		}

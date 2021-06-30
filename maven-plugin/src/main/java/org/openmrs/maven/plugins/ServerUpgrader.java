@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 public class ServerUpgrader {
-    private AbstractTask parentTask;
+    private final AbstractTask parentTask;
 
 
 	public ServerUpgrader(AbstractTask parentTask) {
@@ -25,9 +25,8 @@ public class ServerUpgrader {
      * Upgrades platform of given server
      *
      * @throws MojoExecutionException
-     * @throws MojoFailureException
      */
-    public void upgradePlatform(Server server, String version) throws MojoExecutionException, MojoFailureException {
+    public void upgradePlatform(Server server, String version) throws MojoExecutionException {
         server.saveBackupProperties();
 		confirmUpgrade(server.getPlatformVersion(), version);
 		replaceWebapp(server, version);
@@ -35,7 +34,7 @@ public class ServerUpgrader {
         parentTask.getLog().info(String.format("Server %s has been successfully upgraded to %s", server.getServerId(), version));
     }
 
-	public void upgradeToDistro(Server server, DistroProperties distroProperties) throws MojoExecutionException, MojoFailureException {
+	public void upgradeToDistro(Server server, DistroProperties distroProperties) throws MojoExecutionException {
         UpgradeDifferential upgradeDifferential = DistroHelper.calculateUpdateDifferential(parentTask.distroHelper, server, distroProperties);
         boolean confirmed = parentTask.wizard.promptForConfirmDistroUpgrade(upgradeDifferential, server, distroProperties);
 		if(confirmed){
@@ -126,10 +125,9 @@ public class ServerUpgrader {
 
     /**
      * @param server server to upgrade
-     * @throws MojoFailureException
      * @throws MojoExecutionException
      */
-    private void replaceWebapp(Server server, String version) throws MojoFailureException, MojoExecutionException {
+    private void replaceWebapp(Server server, String version) throws MojoExecutionException {
         File webapp = new File(server.getServerDirectory(), "openmrs-"+server.getPlatformVersion()+".war");
         webapp.delete();
         Artifact webappArtifact = new Artifact(SDKConstants.WEBAPP_ARTIFACT_ID, version, Artifact.GROUP_WEB, Artifact.TYPE_WAR);
@@ -141,7 +139,7 @@ public class ServerUpgrader {
 	public void validateServerMetadata(File serverPath) throws MojoExecutionException {
 		File serverProperties = new File(serverPath, SDKConstants.OPENMRS_SERVER_PROPERTIES);
 		File installationProperties = new File(serverPath, "installation.properties");
-		Server server = null;
+		Server server;
 
 		if (installationProperties.exists()){
 			if(serverProperties.exists()){

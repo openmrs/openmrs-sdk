@@ -2,7 +2,6 @@ package org.openmrs.maven.plugins;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.openmrs.maven.plugins.model.Artifact;
@@ -61,7 +60,7 @@ public class Fetch extends AbstractTask {
 
 	private ProjectType projectType;
 
-	public void executeTask() throws MojoExecutionException, MojoFailureException {
+	public void executeTask() throws MojoExecutionException {
 		if (StringUtils.isBlank(groupId)) {
 			groupId = DEFAULT_GROUP_ID;
 		}
@@ -182,7 +181,7 @@ public class Fetch extends AbstractTask {
 		if (!artifactId.endsWith("-" + Artifact.TYPE_OMOD)) {
 			artifactId = artifactId + "-" + Artifact.TYPE_OMOD;
 		}
-		List<MojoExecutor.Element> artifactItems = new ArrayList<MojoExecutor.Element>();
+		List<MojoExecutor.Element> artifactItems = new ArrayList<>();
 		Artifact artifact = new Artifact(artifactId, version, groupId, Artifact.TYPE_JAR, Artifact.TYPE_OMOD);
 		artifactItems.add(artifact.toElement(downloadDirectory.getPath()));
 		executeMojoPlugin(artifactItems);

@@ -4,7 +4,6 @@ import com.google.common.base.Objects;
 import org.apache.commons.lang.StringUtils;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import static org.twdata.maven.mojoexecutor.MojoExecutor.Element;
@@ -145,7 +144,7 @@ public class Artifact {
      * @return
      */
     public Element toElement(String outputDir) {
-        List<Element> attributes = new ArrayList<Element>();
+        List<Element> attributes = new ArrayList<>();
         attributes.add(element("groupId", groupId));
         attributes.add(element("artifactId", artifactId));
         attributes.add(element("version", version));

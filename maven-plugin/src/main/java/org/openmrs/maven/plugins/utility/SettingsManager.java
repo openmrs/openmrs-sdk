@@ -12,7 +12,6 @@ import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -39,11 +38,10 @@ public class SettingsManager {
         try {
             settings = reader.read(stream);
             stream.close();
-        } catch (IOException e) {
+        } catch (IOException | XmlPullParserException e) {
             throw new MojoExecutionException(e.getMessage());
-        } catch (XmlPullParserException e) {
-            throw new MojoExecutionException(e.getMessage());
-        } finally {
+        }
+        finally {
             IOUtils.closeQuietly(stream);
         }
     }
@@ -106,9 +104,9 @@ public class SettingsManager {
             settings.setProfiles(new ArrayList<Profile>());
         }
         // remove already created OpenMRS profile
-        List<Profile> profilesToRemove = new ArrayList<Profile>();
+        List<Profile> profilesToRemove = new ArrayList<>();
         for (Profile p: settings.getProfiles()) {
-            if (p.getId().toLowerCase().equals(profile.getId().toLowerCase())) {
+            if (p.getId().equalsIgnoreCase(profile.getId())) {
                 profilesToRemove.add(p);
             }
         }

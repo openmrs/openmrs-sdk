@@ -7,6 +7,7 @@ import org.openmrs.maven.plugins.model.UpgradeDifferential;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static org.hamcrest.CoreMatchers.hasItem;
@@ -51,21 +52,21 @@ public class DistroHelperTest {
         assertThat(artifact.getVersion(), is("2.3"));
     }
     @Test
-    public void calculateUpdateDifferentialShouldFindArtifactsToAddList() throws Exception{
+    public void calculateUpdateDifferentialShouldFindArtifactsToAddList() {
         UpgradeDifferential upgradeDifferential = DistroHelper.calculateUpdateDifferential(getMockOldArtifactList(), getMockNewArtifactList());
 
         assertThat(upgradeDifferential.getModulesToAdd(), hasItem(new Artifact("drugs", "0.2-SNAPSHOT")));
         assertThat(upgradeDifferential.getModulesToAdd(), hasSize(1));
     }
     @Test
-    public void calculateUpdateDifferentialShouldFindArtifactsToDeleteList() throws Exception{
+    public void calculateUpdateDifferentialShouldFindArtifactsToDeleteList() {
         UpgradeDifferential upgradeDifferential = DistroHelper.calculateUpdateDifferential(getMockOldArtifactList(), getMockNewArtifactList());
 
         assertThat(upgradeDifferential.getModulesToDelete(), hasItem(new Artifact("owa", "1.5")));
         assertThat(upgradeDifferential.getModulesToAdd(), hasSize(1));
     }
     @Test
-    public void calculateUpdateDifferentialShouldAddSnapshotToUpdateMap() throws Exception{
+    public void calculateUpdateDifferentialShouldAddSnapshotToUpdateMap() {
         UpgradeDifferential upgradeDifferential = DistroHelper.calculateUpdateDifferential(getMockOldArtifactList(), getMockNewArtifactList());
 
         assertThat(upgradeDifferential.getUpdateOldToNewMap().keySet(), hasItem(new Artifact("appui", "0.1-SNAPSHOT")));
@@ -74,7 +75,7 @@ public class DistroHelperTest {
         assertThat(upgradeDifferential.getUpdateOldToNewMap().keySet(), hasSize(2));
     }
     @Test
-    public void calculateUpdateDifferentialShouldAddSnapshotToDowngradeMap() throws Exception{
+    public void calculateUpdateDifferentialShouldAddSnapshotToDowngradeMap() {
         UpgradeDifferential upgradeDifferential = DistroHelper.calculateUpdateDifferential(getMockOldArtifactList(), getMockNewArtifactList());
 
         assertThat(upgradeDifferential.getDowngradeNewToOldMap().keySet(), hasItem(new Artifact("legacyui","1.5")));
@@ -82,23 +83,27 @@ public class DistroHelperTest {
         assertThat(upgradeDifferential.getDowngradeNewToOldMap().keySet(), hasSize(1));
     }
     @Test
-    public void calculateUpdateDifferentialShouldFindPlatformUpdate() throws Exception{
+    public void calculateUpdateDifferentialShouldFindPlatformUpdate() {
         Artifact oldPlatform = new Artifact("openmrs-webapp", "10.7", Artifact.GROUP_WEB, Artifact.TYPE_WAR);
         Artifact newPlatform = new Artifact("openmrs-webapp", "12.0", Artifact.GROUP_WEB, Artifact.TYPE_WAR);
 
-        UpgradeDifferential upgradeDifferential = DistroHelper.calculateUpdateDifferential(Arrays.asList(oldPlatform), Arrays.asList(newPlatform));
+        UpgradeDifferential upgradeDifferential = DistroHelper.calculateUpdateDifferential(
+                Collections.singletonList(oldPlatform),
+                Collections.singletonList(newPlatform));
         assertThat(upgradeDifferential.getPlatformArtifact(), is(newPlatform));
     }
     @Test(expected = IllegalStateException.class)
-    public void calculateUpdateDifferentialShouldNotAllowToDeletePlatform() throws Exception{
+    public void calculateUpdateDifferentialShouldNotAllowToDeletePlatform() {
         Artifact oldPlatform = new Artifact("openmrs-webapp", "10.7", Artifact.GROUP_WEB, Artifact.TYPE_WAR);
         Artifact artifact = new Artifact("owa", "12.0");
 
-        UpgradeDifferential upgradeDifferential = DistroHelper.calculateUpdateDifferential(Arrays.asList(oldPlatform), Arrays.asList(artifact));
+        UpgradeDifferential upgradeDifferential = DistroHelper.calculateUpdateDifferential(
+                Collections.singletonList(oldPlatform),
+                Collections.singletonList(artifact));
     }
 
     @Test
-    public void calculateUpgradeDifferentialShouldReturnEmptyListIfOlderModules() throws Exception{
+    public void calculateUpgradeDifferentialShouldReturnEmptyListIfOlderModules() {
         UpgradeDifferential upgradeDifferential = DistroHelper.calculateUpdateDifferential(getMockOldArtifactList(), getMockOldestArtifactList());
 
         assertThat(upgradeDifferential.getPlatformArtifact(), is(nullValue()));
@@ -107,7 +112,7 @@ public class DistroHelperTest {
     }
 
     @Test
-    public void calculateUpgradeDifferentialShouldReturnOnlyUpdateSnapshotsIfSameList() throws Exception{
+    public void calculateUpgradeDifferentialShouldReturnOnlyUpdateSnapshotsIfSameList() {
         UpgradeDifferential upgradeDifferential = DistroHelper.calculateUpdateDifferential(getMockOldArtifactList(), getMockOldArtifactList());
 
         assertThat(upgradeDifferential.getPlatformArtifact(), is(nullValue()));
@@ -118,9 +123,8 @@ public class DistroHelperTest {
 
 
     private List<Artifact> getMockOldestArtifactList(){
-        List<Artifact> oldList = new ArrayList<>();
-        oldList.addAll(Arrays.asList(
-                new Artifact("webservices","0.7"),
+        List<Artifact> oldList = new ArrayList<>(Arrays.asList(
+                new Artifact("webservices", "0.7"),
                 new Artifact("webapp", "1.7"),
                 new Artifact("openmrs-webapp", "10.7", Artifact.GROUP_WEB, Artifact.TYPE_WAR)
         ));
@@ -129,9 +133,8 @@ public class DistroHelperTest {
     }
 
     private List<Artifact> getMockOldArtifactList(){
-        List<Artifact> oldList = new ArrayList<>();
-        oldList.addAll(Arrays.asList(
-                new Artifact("webservices","1.0"),
+        List<Artifact> oldList = new ArrayList<>(Arrays.asList(
+                new Artifact("webservices", "1.0"),
                 new Artifact("webapp", "1.12"),
                 new Artifact("owa", "1.5"),
                 new Artifact("legacyui", "1.5"),
@@ -143,9 +146,8 @@ public class DistroHelperTest {
     }
 
     private List<Artifact> getMockNewArtifactList(){
-        List<Artifact> oldList = new ArrayList<>();
-        oldList.addAll(Arrays.asList(
-                new Artifact("webservices","1.2"),
+        List<Artifact> oldList = new ArrayList<>(Arrays.asList(
+                new Artifact("webservices", "1.2"),
                 new Artifact("webapp", "1.12"),
                 new Artifact("appui", "0.1-SNAPSHOT"),
                 new Artifact("legacyui", "1.4"),
