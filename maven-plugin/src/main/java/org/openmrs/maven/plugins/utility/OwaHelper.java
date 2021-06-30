@@ -1,6 +1,5 @@
 package org.openmrs.maven.plugins.utility;
 
-import com.atlassian.util.concurrent.Nullable;
 import com.github.zafarkhaja.semver.Parser;
 import com.github.zafarkhaja.semver.Version;
 import com.github.zafarkhaja.semver.expr.Expression;
@@ -42,6 +41,8 @@ import static org.twdata.maven.mojoexecutor.MojoExecutor.goal;
 import static org.twdata.maven.mojoexecutor.MojoExecutor.groupId;
 import static org.twdata.maven.mojoexecutor.MojoExecutor.plugin;
 import static org.twdata.maven.mojoexecutor.MojoExecutor.version;
+
+import javax.annotation.Nullable;
 
 public class OwaHelper {
 	private final static String FRONTEND_BUILDER_GROUP_ID = "com.github.eirslett";

@@ -1,6 +1,7 @@
 package org.openmrs.maven.plugins.utility;
 
-import com.atlassian.util.concurrent.Nullable;
+import javax.annotation.Nullable;
+
 import com.google.common.collect.Lists;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;

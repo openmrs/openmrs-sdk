@@ -1,6 +1,6 @@
 package org.openmrs.maven.plugins;
 
-import com.atlassian.jira.rest.client.domain.Issue;
+import com.atlassian.jira.rest.client.api.domain.Issue;
 import com.google.inject.internal.util.Lists;
 import org.apache.maven.model.Scm;
 import org.apache.maven.plugin.MojoExecutionException;
