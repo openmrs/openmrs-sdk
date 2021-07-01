@@ -75,22 +75,17 @@ public class ModuleInstaller {
 
     public void installModules(List<Artifact> artifacts, String outputDir) throws MojoExecutionException {
         final String goal = "copy";
+        prepareModules(artifacts.toArray(new Artifact[0]), outputDir, goal);
+    }
+
+    public void installModules(Artifact[] artifacts, String outputDir) throws MojoExecutionException {
+        final String goal = "copy";
         prepareModules(artifacts, outputDir, goal);
     }
 
     public void installModule(Artifact artifact, String outputDir) throws MojoExecutionException {
         final String goal = "copy";
-        prepareModule(artifact, outputDir, goal);
-    }
-
-    /**
-     * Extract selected Artifact list
-     * @param artifacts
-     * @param outputDir
-     * @throws MojoExecutionException
-     */
-    public void extractModules(List<Artifact> artifacts, String outputDir) throws MojoExecutionException {
-        prepareModules(artifacts, outputDir, GOAL_UNPACK);
+        prepareModules(new Artifact[] { artifact }, outputDir, goal);
     }
 
     /**
@@ -100,33 +95,14 @@ public class ModuleInstaller {
      * @param goal
      * @throws MojoExecutionException
      */
-    private void prepareModules(List<Artifact> artifacts, String outputDir, String goal) throws MojoExecutionException {
-        MojoExecutor.Element[] artifactItems = new MojoExecutor.Element[artifacts.size()];
-        for (Artifact artifact: artifacts) {
-            int index = artifacts.indexOf(artifact);
-            artifactItems[index] = artifact.toElement(outputDir);
+    private void prepareModules(Artifact[] artifacts, String outputDir, String goal) throws MojoExecutionException {
+        MojoExecutor.Element[] artifactItems = new MojoExecutor.Element[artifacts.length];
+        for (int index = 0; index < artifacts.length; index++) {
+            artifactItems[index] = artifacts[index].toElement(outputDir);
         }
+
         List<MojoExecutor.Element> configuration = new ArrayList<>();
         configuration.add(element("artifactItems", artifactItems));
-        if (goal.equals(GOAL_UNPACK)) {
-            configuration.add(element("overWriteSnapshots", "true"));
-            configuration.add(element("overWriteReleases", "true"));
-        }
-        executeMojo(
-                plugin(
-                        groupId(SDKConstants.PLUGIN_DEPENDENCIES_GROUP_ID),
-                        artifactId(SDKConstants.PLUGIN_DEPENDENCIES_ARTIFACT_ID),
-                        version(SDKConstants.PLUGIN_DEPENDENCIES_VERSION)
-                ),
-                goal(goal),
-                configuration(configuration.toArray(new Element[0])),
-                executionEnvironment(mavenProject, mavenSession, pluginManager)
-        );
-    }
-    private void prepareModule(Artifact artifact, String outputDir, String goal) throws MojoExecutionException {
-        MojoExecutor.Element artifactElement = artifact.toElement(outputDir);
-        List<MojoExecutor.Element> configuration = new ArrayList<>();
-        configuration.add(element("artifactItems", artifactElement));
         if (goal.equals(GOAL_UNPACK)) {
             configuration.add(element("overWriteSnapshots", "true"));
             configuration.add(element("overWriteReleases", "true"));
