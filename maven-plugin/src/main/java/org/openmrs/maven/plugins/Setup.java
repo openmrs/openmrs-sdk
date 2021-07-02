@@ -25,6 +25,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
@@ -597,8 +598,7 @@ public class Setup extends AbstractServerTask {
 
 		Server.ServerBuilder serverBuilder;
 		if (file != null) {
-			File serverPath = new File(file);
-			serverBuilder = new Server.ServerBuilder(Server.loadServer(serverPath));
+			serverBuilder = new Server.ServerBuilder(Server.loadServer(Paths.get(file)));
 		} else {
 			serverBuilder = new Server.ServerBuilder();
 		}
@@ -616,7 +616,7 @@ public class Setup extends AbstractServerTask {
 
 		wizard.promptForNewServerIfMissing(server);
 
-		File serverDir = new File(Server.getServersPath(), server.getServerId());
+		File serverDir = Server.getServersPath().resolve(server.getServerId()).toFile();
 		if (serverDir.isDirectory()) {
 			throw new MojoExecutionException(
 					"Cannot create server: directory with name " + serverDir.getName() + " already exists");

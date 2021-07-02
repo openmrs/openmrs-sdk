@@ -30,7 +30,7 @@ public class CloneIntegrationTest extends AbstractSdkIntegrationTest {
         assertSuccess();
 
         // Check if files are present
-        assertFilePresent("/openmrs-module-appui/pom.xml");
+        assertFilePresent("openmrs-module-appui", "pom.xml");
 
         // Check if upstream was added
         String absolutePath = new File(testDirectory.getAbsolutePath(), "openmrs-module-appui").getAbsolutePath();

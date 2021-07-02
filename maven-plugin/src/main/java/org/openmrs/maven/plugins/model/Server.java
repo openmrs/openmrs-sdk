@@ -1,5 +1,7 @@
 package org.openmrs.maven.plugins.model;
 
+import static org.openmrs.maven.plugins.utility.PropertiesUtils.loadPropertiesFromFile;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
@@ -12,7 +14,6 @@ import org.openmrs.maven.plugins.utility.SDKConstants;
 import org.openmrs.maven.plugins.utility.SortedProperties;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.FilenameFilter;
@@ -69,7 +70,7 @@ public class Server extends BaseSdkProperties {
 
     public static final String PROPERTY_SERVER_PORT = "server.port";
 
-    private static String serversPath = System.getProperty("user.home")+File.separator+SDKConstants.OPENMRS_SERVER_PATH;
+    private static Path serversPath = Paths.get(System.getProperty("user.home"), SDKConstants.OPENMRS_SERVER_PATH).toAbsolutePath();
 
     private File propertiesFile;
 
@@ -177,23 +178,18 @@ public class Server extends BaseSdkProperties {
         this.properties = properties;
     }
 
-    public static File getServersPathFile(){
-        return new File(serversPath);
-    }
-
-    public static String getServersPath(){
+    public static Path getServersPath(){
         return serversPath;
     }
 
     public static void setServersPath(String serversPath){
-        Server.serversPath = serversPath;
+        Server.serversPath = Paths.get(serversPath).toAbsolutePath();
     }
 
-    public static boolean hasServerConfig(File dir) {
-        if (dir.exists()) {
-            File serverProperties = new File(dir, SDKConstants.OPENMRS_SERVER_PROPERTIES);
-            File installationProperties = new File(dir, "installation.properties");
-            return serverProperties.exists() || installationProperties.exists();
+    public static boolean hasServerConfig(Path dir) {
+        if (dir.toFile().exists()) {
+            return dir.resolve(SDKConstants.OPENMRS_SERVER_PROPERTIES).toFile().exists() ||
+                    dir.resolve("installation.properties").toFile().exists();
         }
         return false;
     }
@@ -201,10 +197,10 @@ public class Server extends BaseSdkProperties {
     /**
      * @return openmrs-server.properties file if there is server, null otherwise
      */
-    public static File checkCurrentDirForServer() {
-        File dir = new File(System.getProperty("user.dir"));
+    public static Path checkCurrentDirForServer() {
+        Path dir = Paths.get(System.getProperty("user.dir"));
         boolean hasServer = hasServerConfig(dir);
-        if(hasServer){
+        if (hasServer){
             return dir;
         } else {
             return null;
@@ -217,33 +213,20 @@ public class Server extends BaseSdkProperties {
     }
 
     public static Server loadServer(String serverId) throws MojoExecutionException {
-        File serversPath = getServersPathFile();
-        File serverPath = new File(serversPath, serverId);
-        return loadServer(serverPath);
+        if (StringUtils.isBlank(serverId)) {
+            throw new MojoExecutionException("A serverId must be provided for this task to work");
+        }
+
+        return loadServer(getServersPath().resolve(serverId));
     }
 
-    public static Server loadServer(File dir) throws MojoExecutionException {
+    public static Server loadServer(Path dir) throws MojoExecutionException {
         if (!hasServerConfig(dir)) {
-            throw new IllegalArgumentException(SDKConstants.OPENMRS_SERVER_PROPERTIES + " properties file is missing");
+            throw new MojoExecutionException(SDKConstants.OPENMRS_SERVER_PROPERTIES + " properties file is missing");
         }
 
-        Properties properties = new Properties();
-        File config = new File(dir, SDKConstants.OPENMRS_SERVER_PROPERTIES);
-
-        FileInputStream in = null;
-        try {
-            in = new FileInputStream(config);
-            properties.load(in);
-            in.close();
-        }
-        catch (IOException e) {
-            throw new MojoExecutionException(e.getMessage());
-        }
-        finally {
-            IOUtils.closeQuietly(in);
-        }
-
-        return new Server(dir, properties);
+        Properties properties = loadPropertiesFromFile(dir.resolve(SDKConstants.OPENMRS_SERVER_PROPERTIES).toFile());
+        return new Server(dir.toFile(), properties);
     }
 
     /**

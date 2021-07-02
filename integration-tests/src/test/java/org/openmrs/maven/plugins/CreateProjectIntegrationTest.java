@@ -5,10 +5,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.File;
-
 public class CreateProjectIntegrationTest extends AbstractSdkIntegrationTest {
-
 
     Model model;
 
@@ -81,8 +78,8 @@ public class CreateProjectIntegrationTest extends AbstractSdkIntegrationTest {
         //check only basic structure of module project and pom existence, not coupled with archetype itself
         assertFilePresent("test");
 
-        assertFilePresent("test"+ File.separator+"api");
-        assertFilePresent("test"+ File.separator+"omod");
-        assertFilePresent("test"+ File.separator+"pom.xml");
+        assertFilePresent("test", "api");
+        assertFilePresent("test", "omod");
+        assertFilePresent("test", "pom.xml");
     }
 }

@@ -2,7 +2,6 @@ package org.openmrs.maven.plugins;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.shared.utils.StringUtils;
 import org.openmrs.maven.plugins.model.*;
 import org.openmrs.maven.plugins.utility.DistroHelper;
@@ -10,6 +9,7 @@ import org.openmrs.maven.plugins.utility.SDKConstants;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 
@@ -136,10 +136,9 @@ public class ServerUpgrader {
 		server.saveAndSynchronizeDistro();
     }
 
-	public void validateServerMetadata(File serverPath) throws MojoExecutionException {
-		File serverProperties = new File(serverPath, SDKConstants.OPENMRS_SERVER_PROPERTIES);
-		File installationProperties = new File(serverPath, "installation.properties");
-		Server server;
+	public void validateServerMetadata(Path serverPath) throws MojoExecutionException {
+		File serverProperties = serverPath.resolve(SDKConstants.OPENMRS_SERVER_PROPERTIES).toFile();
+		File installationProperties = serverPath.resolve("installation.properties").toFile();
 
 		if (installationProperties.exists()){
 			if(serverProperties.exists()){
@@ -149,6 +148,7 @@ public class ServerUpgrader {
 			}
 		}
 
+		Server server;
 		if(serverProperties.exists()){
 			server = Server.loadServer(serverPath);
 			String webappVersion = server.getWebappVersionFromFilesystem();
@@ -182,13 +182,13 @@ public class ServerUpgrader {
 							" -Ddistro=referenceapplication:2.3.1'");
 				}
 				configureMissingDistroArtifact(server);
-				if(!new File(serverPath, DistroProperties.DISTRO_FILE_NAME).exists()){
+				if(!serverPath.resolve(DistroProperties.DISTRO_FILE_NAME).toFile().exists()){
 					String distro = server.getDistroArtifactId() + ":" + server.getParam(Server.PROPERTY_VERSION);
-					parentTask.distroHelper.saveDistroPropertiesTo(serverPath, distro);
+					parentTask.distroHelper.saveDistroPropertiesTo(serverPath.toAbsolutePath().toFile(), distro);
 				}
 			} else if(StringUtils.isBlank(server.getVersion())){
 				DistroProperties distroProperties = new DistroProperties(server.getServerId(), server.getOpenmrsCoreVersion());
-				distroProperties.saveTo(serverPath.getAbsoluteFile());
+				distroProperties.saveTo(serverPath.toAbsolutePath().toFile());
 			}
 			if(StringUtils.isNotBlank(server.getParam(Server.PROPERTY_PLATFORM))){
 				server.setValuesFromDistroPropertiesModules(

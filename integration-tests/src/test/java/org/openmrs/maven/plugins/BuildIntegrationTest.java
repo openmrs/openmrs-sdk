@@ -20,6 +20,7 @@ public class BuildIntegrationTest extends AbstractSdkIntegrationTest {
 	@Before
 	public void setup() throws Exception {
 		testDirectory = ResourceExtractor.simpleExtractResources(getClass(), TEST_DIRECTORY + File.separator + "buildIT");
+		testDirectoryPath = testDirectory.toPath();
 		verifier = new Verifier(testDirectory.getAbsolutePath());
 
 		testFilesToPersist = Arrays.asList(Objects.requireNonNull(testDirectory.listFiles()));
@@ -28,7 +29,7 @@ public class BuildIntegrationTest extends AbstractSdkIntegrationTest {
 
 		serverId = setupTestServer();
 
-		Server server = Server.loadServer(new File(testDirectory, serverId));
+		Server server = Server.loadServer(testDirectoryPath.resolve(serverId));
 		File firstDir = new File(testDirectory, "module1");
 		File secondDir = new File(testDirectory, "module2");
 		server.addWatchedProject(Project.loadProject(firstDir));
@@ -45,8 +46,8 @@ public class BuildIntegrationTest extends AbstractSdkIntegrationTest {
 
 	@Test
 	public void build_shouldBuildAllWatchedProjects() throws Exception {
-		assertFileNotPresent(serverId + File.separator + "module2-1.0-SNAPSHOT.omod");
-		assertFileNotPresent(serverId + File.separator + "module1-1.0-SNAPSHOT.omod");
+		assertFileNotPresent(serverId, "module2-1.0-SNAPSHOT.omod");
+		assertFileNotPresent(serverId, "module1-1.0-SNAPSHOT.omod");
 
 		addTaskParam("openMRSPath", testDirectory.getAbsolutePath());
 		addTaskParam("serverId", serverId);

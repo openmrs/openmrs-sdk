@@ -57,9 +57,9 @@ public interface Wizard {
 
     boolean checkYes(String value);
 
-    String promptForExistingServerIdIfMissing(String serverId);
+    String promptForExistingServerIdIfMissing(String serverId) throws MojoExecutionException;
 
-    List<String> getListOfServers();
+    List<String> getListOfServers() throws MojoExecutionException;
 
     void showJdkErrorMessage(String jdk, String platform, String recommendedJdk, String pathToProps);
 

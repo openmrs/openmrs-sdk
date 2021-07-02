@@ -1,5 +1,7 @@
 package org.openmrs.maven.plugins.utility;
 
+import static org.openmrs.maven.plugins.utility.PropertiesUtils.loadPropertiesFromFile;
+
 import javax.annotation.Nullable;
 
 import com.google.common.collect.Lists;
@@ -23,11 +25,8 @@ import org.openmrs.maven.plugins.model.UpgradeDifferential;
 import org.openmrs.maven.plugins.model.Version;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.net.HttpURLConnection;
@@ -36,6 +35,9 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -165,14 +167,15 @@ public class DefaultWizard implements Wizard {
 	 */
 	@Override
 	public void promptForNewServerIfMissing(Server server) {
-		String defaultServerId = DEFAULT_SERVER_NAME;
-		int indx = 0;
-		while (new File(Server.getServersPath(), defaultServerId).exists()) {
-			indx++;
-			defaultServerId = DEFAULT_SERVER_NAME + indx;
+		Path omrsServerPath = Server.getServersPath();
+		String newServerId = DEFAULT_SERVER_NAME;
+
+		for (int idx = 0; omrsServerPath.resolve(newServerId).toFile().exists(); idx++) {
+			newServerId = DEFAULT_SERVER_NAME + idx;
 		}
+
 		String serverId = promptForValueIfMissingWithDefault("Specify server id (-D%s)", server.getServerId(), "serverId",
-				defaultServerId);
+				newServerId);
 		server.setServerId(serverId);
 	}
 
@@ -380,21 +383,24 @@ public class DefaultWizard implements Wizard {
 	 * @throws MojoFailureException
 	 */
 	@Override
-	public String promptForExistingServerIdIfMissing(String serverId) {
-		File omrsHome = new File(Server.getServersPath());
+	public String promptForExistingServerIdIfMissing(String serverId) throws MojoExecutionException {
+		Path omrsHome = Server.getServersPath();
 		List<String> servers = getListOfServers();
 		if (servers.isEmpty()) {
 			throw new RuntimeException("There is no servers available");
 		}
+
 		serverId = promptForMissingValueWithOptions("You have the following servers:", serverId, "serverId", servers);
 		if (serverId.equals(NONE)) {
 			throw new RuntimeException(INVALID_SERVER);
 		}
-		File serverPath = new File(omrsHome, serverId);
+
+		File serverPath = omrsHome.resolve(serverId).toFile();
 		if (!serverPath.exists()) {
 			throw new RuntimeException(
 					"There is no server with server id: " + serverId + ". Please create it first using openmrs-sdk:setup.");
 		}
+
 		return serverId;
 	}
 
@@ -543,7 +549,7 @@ public class DefaultWizard implements Wizard {
 	}
 
 	private void addJavaHomeToSdkProperties(String path) throws MojoExecutionException {
-		File sdkPropertiesFile = new File(Server.getServersPathFile(), SDKConstants.OPENMRS_SDK_PROPERTIES);
+		Path sdkPropertiesPath = Server.getServersPath().resolve(SDKConstants.OPENMRS_SDK_PROPERTIES).toAbsolutePath();
 		Properties sdkProperties = getSdkProperties();
 		List<String> jdkPaths = getJavaHomeOptions();
 
@@ -558,38 +564,29 @@ public class DefaultWizard implements Wizard {
 
 			String updatedProperty = StringUtils.join(jdkPaths.iterator(), ", ");
 			sdkProperties.setProperty(SDKConstants.OPENMRS_SDK_PROPERTIES_JAVA_HOME_OPTIONS, updatedProperty);
-			savePropertiesChangesToFile(sdkProperties, sdkPropertiesFile);
+			savePropertiesChangesToFile(sdkProperties, sdkPropertiesPath.toFile());
 		}
 	}
 
-	private Properties getSdkProperties() {
-		File sdkPropertiesFile = new File(Server.getServersPathFile(), SDKConstants.OPENMRS_SDK_PROPERTIES);
+	private Properties getSdkProperties() throws MojoExecutionException {
+		Path sdkPropertiesPath = Server.getServersPath().resolve(SDKConstants.OPENMRS_SDK_PROPERTIES).toAbsolutePath();
+		File sdkPropertiesFile = sdkPropertiesPath.toFile();
 
 		if (!sdkPropertiesFile.exists()) {
 			try {
-				sdkPropertiesFile.createNewFile();
+				if (!sdkPropertiesFile.createNewFile()) {
+					throw new MojoExecutionException("Failed to create SDK properties file in: \"" + sdkPropertiesPath + "\"");
+				}
 			}
 			catch (IOException e) {
-				throw new IllegalStateException(
-						"Failed to create SDK properties file in: \"" + Server.getServersPathFile() + "/"
-								+ SDKConstants.OPENMRS_SDK_PROPERTIES + "\"");
+				throw new MojoExecutionException(
+						"Failed to create SDK properties file in: \"" + sdkPropertiesPath + "\"");
 			}
+
+			return new Properties();
 		}
 
-		Properties sdkProperties = new Properties();
-		try (InputStream in = new FileInputStream(sdkPropertiesFile)) {
-			sdkProperties.load(in);
-		}
-		catch (FileNotFoundException e) {
-			throw new IllegalStateException(
-					"SDK properties file not found at: \"" + Server.getServersPathFile() + File.pathSeparator
-							+ SDKConstants.OPENMRS_SDK_PROPERTIES + "\"");
-		}
-		catch (IOException e) {
-			throw new IllegalStateException("Failed to load properties from file");
-		}
-
-		return sdkProperties;
+		return loadPropertiesFromFile(sdkPropertiesFile);
 	}
 
 	private List<String> getJavaHomeOptions() throws MojoExecutionException {
@@ -610,7 +607,7 @@ public class DefaultWizard implements Wizard {
 				String updatedProperty = StringUtils.join(result.iterator(), ", ");
 				sdkProperties.setProperty(SDKConstants.OPENMRS_SDK_PROPERTIES_JAVA_HOME_OPTIONS, updatedProperty);
 
-				File sdkPropertiesFile = new File(Server.getServersPathFile(), SDKConstants.OPENMRS_SDK_PROPERTIES);
+				File sdkPropertiesFile = Server.getServersPath().resolve(SDKConstants.OPENMRS_SDK_PROPERTIES).toFile();
 				savePropertiesChangesToFile(sdkProperties, sdkPropertiesFile);
 
 				return result;
@@ -822,7 +819,7 @@ public class DefaultWizard implements Wizard {
 		dockerHelper.runDbContainer(server.getContainerId(), server.getDbUri(), server.getDbUser(), server.getDbPassword());
 	}
 
-	private String getDefaultDbUri(Server server, DockerHelper dockerHelper) {
+	private String getDefaultDbUri(Server server, DockerHelper dockerHelper) throws MojoExecutionException {
 		String dbUri = SDKConstants.URI_MYSQL.replace("3306", DockerHelper.DOCKER_MYSQL_PORT);
 		//In case of using the Docker Machine, which gets assigned an IP different than the host
 		if (dockerHelper.getDockerHost().startsWith("tcp://")) {
@@ -838,7 +835,7 @@ public class DefaultWizard implements Wizard {
 		return dbUri;
 	}
 
-	private void promptForDockerHostIfMissing(DockerHelper dockerHelper, String dockerHost) {
+	private void promptForDockerHostIfMissing(DockerHelper dockerHelper, String dockerHost) throws MojoExecutionException {
 		// If user specified -DdockerHost
 		if (StringUtils.isNotEmpty(dockerHost)) {
 			// If specified without value
@@ -996,17 +993,27 @@ public class DefaultWizard implements Wizard {
 	 * @return
 	 */
 	@Override
-	public List<String> getListOfServers() {
-		File openMRS = new File(Server.getServersPath());
+	public List<String> getListOfServers() throws MojoExecutionException {
+		Path openMRS = Server.getServersPath();
 		Map<Long, String> sortedMap = new TreeMap<>(Collections.reverseOrder());
-		File[] list = (openMRS.listFiles() == null) ? new File[0] : openMRS.listFiles();
-		for (File f : list) {
-			if (f.isDirectory()) {
-				if (Server.hasServerConfig(f)) {
-					sortedMap.put(f.lastModified(), f.getName());
+		try (DirectoryStream<Path> subDirectories = Files.newDirectoryStream(openMRS, new DirectoryStream.Filter<Path>() {
+
+			@Override
+			public boolean accept(Path entry) {
+				return entry.toFile().isDirectory();
+			}
+		})) {
+			for (Path dir : subDirectories) {
+				if (Server.hasServerConfig(dir)) {
+					sortedMap.put(dir.toFile().lastModified(), dir.getFileName().toString());
 				}
 			}
 		}
+		catch (IOException e) {
+			throw new MojoExecutionException("Exception occurred while trying to read list of servers: " + e.getMessage(),
+					e);
+		}
+
 		return new ArrayList<>(sortedMap.values());
 	}
 

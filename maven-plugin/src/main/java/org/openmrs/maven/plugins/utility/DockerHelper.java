@@ -1,6 +1,5 @@
 package org.openmrs.maven.plugins.utility;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.SystemUtils;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.BuildPluginManager;
@@ -10,11 +9,11 @@ import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.Server;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Properties;
 
+import static org.openmrs.maven.plugins.utility.PropertiesUtils.loadPropertiesFromFile;
 import static org.twdata.maven.mojoexecutor.MojoExecutor.artifactId;
 import static org.twdata.maven.mojoexecutor.MojoExecutor.configuration;
 import static org.twdata.maven.mojoexecutor.MojoExecutor.element;
@@ -58,43 +57,29 @@ public class DockerHelper {
         this.wizard = wizard;
     }
 
-    private Properties getSdkProperties(){
-        File sdkFile = new File(Server.getServersPath(), SDKConstants.OPENMRS_SDK_PROPERTIES);
-        Properties sdkProperties = new Properties();
-        if(sdkFile.exists()){
-            FileInputStream inStream = null;
-            try {
-                inStream = new FileInputStream(sdkFile);
-                sdkProperties.load(inStream);
-            } catch (IOException e) {
-                throw new RuntimeException("Failed to load sdk.properties file from your openmrs directory", e);
-            } finally {
-                IOUtils.closeQuietly(inStream);
-            }
+    private Properties getSdkProperties() throws MojoExecutionException {
+        File sdkFile = Server.getServersPath().resolve(SDKConstants.OPENMRS_SDK_PROPERTIES).toFile();
+        if (sdkFile.exists()){
+            return loadPropertiesFromFile(sdkFile);
         }
-        return sdkProperties;
+        return new Properties();
     }
 
-    private void saveSdkProperties(Properties properties){
-        File sdkFile = new File(Server.getServersPath(), SDKConstants.OPENMRS_SDK_PROPERTIES);
-        FileOutputStream out = null;
-        try {
-            out = new FileOutputStream(sdkFile);
+    private void saveSdkProperties(Properties properties) throws MojoExecutionException {
+        File sdkFile = Server.getServersPath().resolve(SDKConstants.OPENMRS_SDK_PROPERTIES).toFile();
+        try (FileOutputStream out = new FileOutputStream(sdkFile)) {
             properties.store(out, null);
-            out.close();
         } catch (IOException e) {
-            throw new RuntimeException("Failed to save sdk.properties file from your openmrs directory", e);
-        } finally {
-            IOUtils.closeQuietly(out);
+            throw new MojoExecutionException("Failed to save sdk.properties file from your openmrs directory", e);
         }
     }
 
-    public String getDockerHost(){
+    public String getDockerHost() throws MojoExecutionException {
         Properties sdkProperties = getSdkProperties();
         return sdkProperties.getProperty(DOCKER_HOST_KEY);
     }
 
-    public void saveDockerHost(String dockerHost){
+    public void saveDockerHost(String dockerHost) throws MojoExecutionException {
         Properties sdkProperties = getSdkProperties();
         sdkProperties.setProperty(DOCKER_HOST_KEY, dockerHost);
         saveSdkProperties(sdkProperties);

@@ -30,6 +30,7 @@ public class PullIntegrationTest extends AbstractSdkIntegrationTest {
     @Before
     public void setup() throws Exception {
         testDirectory = ResourceExtractor.simpleExtractResources(getClass(), TEST_DIRECTORY);
+        testDirectoryPath = testDirectory.toPath();
         verifier = new Verifier(new File(testDirectory, OPENMRS_MODULE_IDGEN).getAbsolutePath());
         serverId = setupTestServer();
 
@@ -42,7 +43,7 @@ public class PullIntegrationTest extends AbstractSdkIntegrationTest {
     @After
     public void teardown() throws Exception {
         deleteTestServer(serverId);
-        FileUtils.deleteDirectory(new File(testDirectory, OPENMRS_MODULE_IDGEN));
+        FileUtils.deleteDirectory(testDirectoryPath.resolve(OPENMRS_MODULE_IDGEN).toFile());
     }
 
     @Test
@@ -99,7 +100,7 @@ public class PullIntegrationTest extends AbstractSdkIntegrationTest {
     }
 
     private void addWatchedProjects() throws MojoExecutionException {
-        Server server = Server.loadServer(new File(testDirectory, serverId));
+        Server server = Server.loadServer(testDirectoryPath.resolve(serverId));
         File firstDir = new File(testDirectory, OPENMRS_MODULE_IDGEN);
         server.addWatchedProject(Project.loadProject(firstDir));
         server.save();

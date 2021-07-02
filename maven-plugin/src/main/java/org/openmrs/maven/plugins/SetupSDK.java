@@ -13,6 +13,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Path;
 
 @Mojo(name = "setup-sdk", requiresProject = false)
 public class SetupSDK extends AbstractTask {
@@ -49,11 +50,13 @@ public class SetupSDK extends AbstractTask {
 	}
 
 	private void initSdkStatsFile() throws MojoExecutionException {
-		File openMrsServers = new File(Server.getServersPath());
+		Path omrsServerPath = Server.getServersPath();
+		File openMrsServers = omrsServerPath.toFile();
 		if (!openMrsServers.exists()) {
 			openMrsServers.mkdirs();
 		}
-		File sdkStats = new File(Server.getServersPath(), "sdk-stats.properties");
+
+		File sdkStats = omrsServerPath.resolve(SdkStatistics.SDK_STATS_FILE_NAME).toFile();
 		if (!sdkStats.exists()) {
 			boolean agree;
 			if (!mavenSession.getRequest().isInteractiveMode()) {
@@ -61,6 +64,7 @@ public class SetupSDK extends AbstractTask {
 			} else {
 				agree = wizard.promptYesNo(SDKConstants.SDK_STATS_ENABLED_QUESTION);
 			}
+
 			SdkStatistics sdkStatistics = new SdkStatistics().createSdkStatsFile(agree);
 			sdkStatistics.sendReport(wizard);
 		}

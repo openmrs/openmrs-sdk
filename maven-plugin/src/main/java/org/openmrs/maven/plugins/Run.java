@@ -18,6 +18,7 @@ import org.openmrs.maven.plugins.utility.SDKConstants;
 import org.openmrs.maven.plugins.utility.ServerHelper;
 
 import java.io.File;
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Properties;
 import java.util.regex.Matcher;
@@ -135,8 +136,8 @@ public class Run extends AbstractServerTask {
 	private void runInFork(Server server) throws MojoExecutionException, MojoFailureException {
 
 		if (server.hasWatchedProjects()) {
-			File serversPath = Server.getServersPathFile();
-			File springloadedJar = new File(serversPath, "springloaded.jar");
+			Path serversPath = Server.getServersPath();
+			File springloadedJar = serversPath.resolve("springloaded.jar").toFile();;
 			if (!springloadedJar.exists()) {
 				Artifact artifact = new Artifact("springloaded", "1.2.5.RELEASE", "org.springframework", "jar");
 				artifact.setDestFileName("springloaded.jar");
@@ -148,7 +149,7 @@ public class Run extends AbstractServerTask {
 						),
 						goal("copy"),
 						configuration(
-								element(name("artifactItems"), artifact.toElement(serversPath.getAbsolutePath()))
+								element(name("artifactItems"), artifact.toElement(serversPath.toAbsolutePath().toString()))
 						),
 						executionEnvironment(mavenProject, mavenSession, pluginManager)
 				);
@@ -171,7 +172,7 @@ public class Run extends AbstractServerTask {
 
 		if (server.hasWatchedProjects() && isWatchApi()) {
 			mavenOpts +=
-					" -javaagent:" + new File(Server.getServersPath(), "springloaded.jar").getAbsolutePath() + " -noverify";
+					" -javaagent:\"" + Server.getServersPath().resolve("springloaded.jar").toAbsolutePath() + "\" -noverify";
 		}
 
 		mavenOpts = setDebugPort(mavenOpts, server);
@@ -222,7 +223,7 @@ public class Run extends AbstractServerTask {
 		if (StringUtils.isNotBlank(debug)) {
 			if (StringUtils.isNumeric(debug)) {
 				address = debug;
-			} else if ("true".equals(debug)) {
+			} else if (Boolean.parseBoolean(debug)) {
 				if (StringUtils.isNotBlank(server.getDebugPort())) {
 					address = server.getDebugPort();
 				} else {
@@ -237,9 +238,7 @@ public class Run extends AbstractServerTask {
 						wizard.showError("Port number must be numeric");
 					}
 				}
-			} else if ("false".equals(debug)) {
-				address = null;
-			} else {
+			} else if (!"false".equalsIgnoreCase(debug)) {
 				wizard.showError("Port number must be numeric");
 			}
 		} else {
@@ -249,7 +248,7 @@ public class Run extends AbstractServerTask {
 		}
 		if (StringUtils.isNotBlank(address)) {
 			mavenOpts += " -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=" + address;
-			System.out.println("\nConnect remote debugger with port " + address + "\n");
+			wizard.showMessage("Connect remote debugger via port " + address);
 		}
 		return mavenOpts;
 	}

@@ -1,7 +1,8 @@
 package org.openmrs.maven.plugins;
 
-import java.io.File;
+import java.nio.file.Path;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.openmrs.maven.plugins.model.Server;
@@ -41,9 +42,9 @@ public abstract class AbstractServerTask extends AbstractTask {
 
 	public Server getServer() throws MojoExecutionException {
 		if (serverId == null) {
-			File currentProperties = Server.checkCurrentDirForServer();
-			if (currentProperties != null) {
-				serverId = currentProperties.getName();
+			Path currentServerDir = Server.checkCurrentDirForServer();
+			if (currentServerDir != null && currentServerDir.toFile().exists()) {
+				serverId = currentServerDir.getFileName().toString();
 			}
 		}
 
@@ -62,8 +63,11 @@ public abstract class AbstractServerTask extends AbstractTask {
 	}
 
 	protected Server loadValidatedServer(String serverId) throws MojoExecutionException {
-		File serversPath = Server.getServersPathFile();
-		File serverPath = new File(serversPath, serverId);
+		if (StringUtils.isBlank(serverId)) {
+			throw new MojoExecutionException("A serverId must be provided for this task to work");
+		}
+
+		Path serverPath = Server.getServersPath().resolve(serverId);
 		new ServerUpgrader(this).validateServerMetadata(serverPath);
 		return Server.loadServer(serverPath);
 	}

@@ -4,11 +4,14 @@ import org.apache.commons.io.FileUtils;
 import org.junit.Test;
 import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.Server;
+import org.openmrs.maven.plugins.utility.SDKConstants;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Properties;
 import java.util.UUID;
 
@@ -41,9 +44,9 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
 
         assertSuccess();
         assertServerInstalled(serverId);
-        assertFilePresent(serverId + File.separator + "openmrs-1.11.5.war");
-        assertFilePresent(serverId + File.separator + "modules");
-        assertFileNotPresent(serverId + File.separator + "tmp");
+        assertFilePresent(serverId, "openmrs-1.11.5.war");
+        assertFilePresent(serverId, "modules");
+        assertFileNotPresent(serverId, "tmp");
 
         DistroProperties distroProperties = new DistroProperties("2.3.1");
         assertModulesInstalled(serverId, distroProperties);
@@ -70,14 +73,14 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
 
         assertSuccess();
         assertServerInstalled(serverId);
-        assertFilePresent(serverId + File.separator + "openmrs-1.11.5.war");
-        assertFilePresent(serverId + File.separator + "h2-1.4.190.jar");
-        assertFileNotPresent(serverId + File.separator + "modules");
+        assertFilePresent(serverId, "openmrs-1.11.5.war");
+        assertFilePresent(serverId,  "h2-1.4.190.jar");
+        assertFileNotPresent(serverId, "modules");
 
         Server.setServersPath(testDirectory.getAbsolutePath());
         Server server = Server.loadServer(serverId);
         assertThat(server, serverHasVersion("1.0"));
-        assertFilePresent(serverId + File.separator + "openmrs-distro.properties");
+        assertFilePresent(serverId, DistroProperties.DISTRO_FILE_NAME);
         assertThat(server, serverHasName(serverId));
         assertThat(server, serverHasDebugPort("1044"));
     }
@@ -98,13 +101,13 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
 
         assertSuccess();
         assertServerInstalled(serverId);
-        assertFilePresent(serverId + File.separator + "openmrs-2.0.2.war");
-        assertFilePresent(serverId + File.separator + "modules");
+        assertFilePresent(serverId, "openmrs-2.0.2.war");
+        assertFilePresent(serverId, "modules");
 
         Server.setServersPath(testDirectory.getAbsolutePath());
         Server server = Server.loadServer(serverId);
         assertThat(server, serverHasVersion("2.0.2"));
-        assertFilePresent(serverId + File.separator + "openmrs-distro.properties");
+        assertFilePresent(serverId, DistroProperties.DISTRO_FILE_NAME);
         assertThat(server, serverHasDebugPort("1044"));
         assertThat(server, hasModuleVersion("webservices.rest", "2.16"));
     }
@@ -126,8 +129,8 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
 
         assertSuccess();
         assertServerInstalled(serverId);
-        assertFilePresent(serverId + File.separator + "openmrs-1.11.5.war");
-        assertFilePresent(serverId + File.separator + "modules");
+        assertFilePresent(serverId, "openmrs-1.11.5.war");
+        assertFilePresent(serverId, "modules");
         assertModulesInstalled(serverId, "owa-1.4.omod", "uicommons-1.7.omod", "uiframework-3.6.omod");
 
         Server.setServersPath(testDirectory.getAbsolutePath());
@@ -154,16 +157,16 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
 
         assertSuccess();
         assertServerInstalled(serverId);
-        assertFilePresent(serverId + File.separator + "openmrs-1.11.5.war");
-        assertFilePresent(serverId + File.separator + "modules");
+        assertFilePresent(serverId, "openmrs-1.11.5.war");
+        assertFilePresent(serverId, "modules");
         assertModulesInstalled(serverId, "owa-1.4.omod", "uicommons-1.7.omod", "uiframework-3.6.omod");
-        assertFilePresent(serverId + File.separator + "frontend");
-        String indexFilePath = serverId + File.separator + "frontend" + File.separator + "index.html";
-        assertFilePresent(indexFilePath);
-        assertFilePresent(serverId + File.separator + "frontend" + File.separator + "importmap.json");
-        assertFilePresent(serverId + File.separator + "frontend" + File.separator + "openmrs-esm-login-app-3.1.0");
-        assertFilePresent(serverId + File.separator + "frontend" + File.separator + "openmrs-esm-patient-chart-app-3.0.0");
-        String indexContents = FileUtils.readFileToString(new File(testDirectory.getAbsolutePath(), indexFilePath), StandardCharsets.UTF_8);
+        assertFilePresent(serverId, "frontend");
+        Path indexFilePath = testDirectoryPath.resolve(Paths.get(serverId, "frontend", "index.html"));
+        assertPathPresent(indexFilePath);
+        assertFilePresent(serverId, "frontend", "importmap.json");
+        assertFilePresent(serverId,  "frontend", "openmrs-esm-login-app-3.1.0");
+        assertFilePresent(serverId, "frontend", "openmrs-esm-patient-chart-app-3.0.0");
+        String indexContents = FileUtils.readFileToString(getTestFile(indexFilePath), StandardCharsets.UTF_8);
         assertThat(indexContents, containsString("apiUrl: \"notopenmrs\""));
         assertThat(indexContents, containsString("configUrls: [\"foo\"]"));
 
@@ -192,9 +195,9 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
         assertSuccess();
         assertServerInstalled(serverId);
 
-        assertFilePresent(serverId + File.separator + "openmrs-server.properties");
+        assertFilePresent(serverId, SDKConstants.OPENMRS_SERVER_PROPERTIES);
 
-        File serverPropertiesFile = new File(testDirectory.getAbsolutePath() + File.separator + serverId, "openmrs-server.properties");
+        File serverPropertiesFile = getTestFile(serverId, SDKConstants.OPENMRS_SERVER_PROPERTIES);
         String javaHomeServerProperty = readValueFromPropertyKey(serverPropertiesFile, "javaHome");
         assertThat(javaHomeServerProperty, is(nullValue()));
 	}
@@ -219,10 +222,10 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
         Server.setServersPath(testDirectory.getAbsolutePath());
         Server server = Server.loadServer(serverId);
 
-        assertFilePresent(serverId + File.separator + "openmrs-server.properties");
+        assertFilePresent(serverId, SDKConstants.OPENMRS_SERVER_PROPERTIES);
         assertThat(server, hasPropertyThatContains("version", "SNAPSHOT"));
 
-        File serverPropertiesFile = new File(testDirectory.getAbsolutePath() + File.separator + serverId, "openmrs-server.properties");
+        File serverPropertiesFile = getTestFile(serverId, SDKConstants.OPENMRS_SERVER_PROPERTIES);
         String javaHomeServerProperty = readValueFromPropertyKey(serverPropertiesFile, "javaHome");
         assertThat(javaHomeServerProperty, is(nullValue()));
     }
@@ -249,10 +252,10 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
         Server.setServersPath(testDirectory.getAbsolutePath());
         Server server = Server.loadServer(serverId);
 
-        assertFilePresent(serverId + File.separator + "openmrs-server.properties");
+        assertFilePresent(serverId, SDKConstants.OPENMRS_SERVER_PROPERTIES);
         assertThat(server, hasPropertyThatContains("version", "SNAPSHOT"));
 
-        File serverPropertiesFile = new File(testDirectory.getAbsolutePath() + File.separator + serverId, "openmrs-server.properties");
+        File serverPropertiesFile = getTestFile(serverId, SDKConstants.OPENMRS_SERVER_PROPERTIES);
         String javaHomeServerProperty = readValueFromPropertyKey(serverPropertiesFile, "javaHome");
         assertThat(javaHomeServerProperty, is(nullValue()));
     }
@@ -277,10 +280,10 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
         Server.setServersPath(testDirectory.getAbsolutePath());
         Server server = Server.loadServer(serverId);
 
-        assertFilePresent(serverId + File.separator + "openmrs-server.properties");
+        assertFilePresent(serverId, SDKConstants.OPENMRS_SERVER_PROPERTIES);
         assertThat(server, hasPropertyThatNotContains("version", "SNAPSHOT"));
 
-        File serverPropertiesFile = new File(testDirectory.getAbsolutePath() + File.separator + serverId, "openmrs-server.properties");
+        File serverPropertiesFile = getTestFile(serverId, SDKConstants.OPENMRS_SERVER_PROPERTIES);
         String javaHomeServerProperty = readValueFromPropertyKey(serverPropertiesFile, "javaHome");
         assertThat(javaHomeServerProperty, is(nullValue()));
     }
@@ -307,10 +310,10 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
         Server.setServersPath(testDirectory.getAbsolutePath());
         Server server = Server.loadServer(serverId);
 
-        assertFilePresent(serverId + File.separator + "openmrs-server.properties");
+        assertFilePresent(serverId, SDKConstants.OPENMRS_SERVER_PROPERTIES);
         assertThat(server, hasPropertyThatNotContains("version", "SNAPSHOT"));
 
-        File serverPropertiesFile = new File(testDirectory.getAbsolutePath() + File.separator + serverId, "openmrs-server.properties");
+        File serverPropertiesFile = getTestFile(serverId, SDKConstants.OPENMRS_SERVER_PROPERTIES);
         String javaHomeServerProperty = readValueFromPropertyKey(serverPropertiesFile, "javaHome");
         assertThat(javaHomeServerProperty, is(nullValue()));
     }
@@ -335,14 +338,14 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
         assertSuccess();
         assertServerInstalled(serverId);
 
-		assertFilePresent(serverId + File.separator + "openmrs-server.properties");
+        assertFilePresent(serverId, SDKConstants.OPENMRS_SERVER_PROPERTIES);
 
-		File serverPropertiesFile = new File(testDirectory.getAbsoluteFile(), serverId + File.separator + "openmrs-server.properties");
+        File serverPropertiesFile = getTestFile(serverId, SDKConstants.OPENMRS_SERVER_PROPERTIES);
 		String javaHomeServerProperty = readValueFromPropertyKey(serverPropertiesFile, "javaHome");
 		assertThat(javaHomeServerProperty, is(customJavaHome));
 
-		assertFilePresent("sdk.properties");
-		File sdkProperties = new File(testDirectory.getAbsoluteFile(), "sdk.properties");
+		assertFilePresent(SDKConstants.OPENMRS_SDK_PROPERTIES);
+		File sdkProperties = getTestFile(SDKConstants.OPENMRS_SDK_PROPERTIES);
 		String javaHomes = readValueFromPropertyKey(sdkProperties, "javaHomeOptions");
 		assertThat(javaHomes, is(customJavaHome));
 
@@ -363,9 +366,9 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
 
         executeTask("setup");
 
-        assertFilePresent( serverId + File.separator + "openmrs-2.0.1.war");
+        assertFilePresent( serverId, "openmrs-2.0.1.war");
         assertModulesInstalled(serverId, "htmlformentry-3.3.1.omod");
-        assertFileNotPresent(serverId + File.separator + "modules" + File.separator + "htmlformentry-3.3.0.omod");
+        assertFileNotPresent(serverId, "modules", "htmlformentry-3.3.0.omod");
     }
 
     private String readValueFromPropertyKey(File propertiesFile, String key) throws Exception {

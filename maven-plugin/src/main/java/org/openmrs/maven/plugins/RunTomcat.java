@@ -165,7 +165,7 @@ public class RunTomcat extends AbstractMojo {
 
 		setServerCustomProperties(server);
 
-		setSystemPropertiesForWatchedProjects(serverPath);
+		setSystemPropertiesForWatchedProjects(server);
 
 		ClassLoader originalClassLoader = Thread.currentThread().getContextClassLoader();
 		try {
@@ -203,9 +203,8 @@ public class RunTomcat extends AbstractMojo {
 		}
 	}
 
-	private void setSystemPropertiesForWatchedProjects(File serverPath) throws MojoExecutionException {
-		Server serverConfig = Server.loadServer(serverPath);
-		Set<Project> watchedProjects = serverConfig.getWatchedProjects();
+	private void setSystemPropertiesForWatchedProjects(Server server) {
+		Set<Project> watchedProjects = server.getWatchedProjects();
 		if (!watchedProjects.isEmpty()) {
 			if (isWatchApi()) {
 				wizard.showMessage("Hot redeployment of API classes and UI framework changes enabled for:");

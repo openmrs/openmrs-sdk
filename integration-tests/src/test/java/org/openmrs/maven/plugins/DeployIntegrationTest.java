@@ -14,6 +14,7 @@ import java.util.Arrays;
 
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasItemInArray;
 import static org.openmrs.maven.plugins.SdkMatchers.hasNameStartingWith;
 import static org.openmrs.maven.plugins.SdkMatchers.hasUserOwa;
 import static org.openmrs.maven.plugins.SdkMatchers.serverHasVersion;
@@ -41,9 +42,9 @@ public class DeployIntegrationTest extends AbstractSdkIntegrationTest {
         executeTask("deploy");
 
         assertSuccess();
-        assertFilePresent(testServerId + File.separator + "openmrs-1.11.5.war");
+        assertFilePresent(testServerId, "openmrs-1.11.5.war");
         assertPlatformUpdated(testServerId, "1.11.5");
-        assertFileNotPresent(testServerId + File.separator + "modules" + File.separator + "webservices.rest-2.14.omod");
+        assertFileNotPresent(testServerId, "modules", "webservices.rest-2.14.omod");
     }
 
     @Test
@@ -56,7 +57,7 @@ public class DeployIntegrationTest extends AbstractSdkIntegrationTest {
         executeTask("deploy");
 
         assertSuccess();
-        assertFilePresent(testServerId + File.separator + "openmrs-2.0.2.war");
+        assertFilePresent(testServerId, "openmrs-2.0.2.war");
         assertModulesInstalled(testServerId, "webservices.rest-2.16.omod");
     }
 
@@ -73,7 +74,7 @@ public class DeployIntegrationTest extends AbstractSdkIntegrationTest {
         executeTask("deploy");
 
         assertSuccess();
-        assertFilePresent(testServerId + File.separator + "openmrs-1.11.5.war");
+        assertFilePresent(testServerId, "openmrs-1.11.5.war");
         DistroProperties distroProperties = new DistroProperties("2.3.1");
         assertModulesInstalled(testServerId, distroProperties);
         assertPlatformUpdated(testServerId, "1.11.5");
@@ -96,7 +97,7 @@ public class DeployIntegrationTest extends AbstractSdkIntegrationTest {
         executeTask("deploy");
 
         assertSuccess();
-        assertFilePresent(testServerId + File.separator + "openmrs-1.10.0.war");
+        assertFilePresent(testServerId, "openmrs-1.10.0.war");
         DistroProperties distroProperties = new DistroProperties("2.1");
         assertModulesInstalled(testServerId, distroProperties);
         assertPlatformUpdated(testServerId, "1.10.0");
@@ -112,19 +113,19 @@ public class DeployIntegrationTest extends AbstractSdkIntegrationTest {
         addAnswer("y");
         addAnswer("y");
 
-        assertFilePresent(testServerId + File.separator + "modules" + File.separator + "appui-1.3.omod");
+        assertFilePresent(testServerId, "modules", "appui-1.3.omod");
 
-        assertFileNotPresent(testServerId + File.separator + "frontend");
+        assertFileNotPresent(testServerId, "frontend");
 
         executeTask("deploy");
 
         assertSuccess();
-        assertFilePresent(testServerId + File.separator + "openmrs-1.11.5.war");
-        assertFileNotPresent(testServerId + File.separator + "modules" + File.separator + "appui-1.3.omod");
+        assertFilePresent(testServerId, "openmrs-1.11.5.war");
+        assertFileNotPresent(testServerId, "modules", "appui-1.3.omod");
         assertModulesInstalled(testServerId, "owa-1.4.omod", "uicommons-1.7.omod", "uiframework-3.6.omod");
         assertModuleUpdated(testServerId, "owa", "1.4");
-        assertFilePresent(testServerId + File.separator + "frontend" + File.separator + "index.html");
-        assertFilePresent(testServerId + File.separator + "frontend" + File.separator + "openmrs-esm-login-app-3.1.0");
+        assertFilePresent(testServerId, "frontend", "index.html");
+        assertFilePresent(testServerId, "frontend", "openmrs-esm-login-app-3.1.0");
     }
 
     @Test
@@ -166,14 +167,14 @@ public class DeployIntegrationTest extends AbstractSdkIntegrationTest {
         executeTask("deploy");
 
         assertSuccess();
-        assertFilePresent(testServerId+ File.separator+"owa");
-        assertFilePresent(Paths.get(testServerId, "owa", "conceptdictionary.owa").toString());
+        assertFilePresent(testServerId, "owa");
+        assertFilePresent(testServerId, "owa", "conceptdictionary.owa");
 
         //check if any owa module is installed
-        File modulesDir = new File(testDirectory, testServerId+File.separator+"modules");
+        File modulesDir = getTestFile(testServerId, "modules");
 
         //can't check for specific file, as always the latest release is installed
-        assertThat(Arrays.asList(modulesDir.listFiles()), hasItem(hasNameStartingWith("owa")));
+        assertThat(modulesDir.listFiles(), hasItemInArray(hasNameStartingWith("owa")));
 
         Server.setServersPath(testDirectory.getAbsolutePath());
         Server server = Server.loadServer(testServerId);

@@ -3,7 +3,6 @@ package org.openmrs.maven.plugins.model;
 import static org.openmrs.maven.plugins.utility.PropertiesUtils.loadPropertiesFromFile;
 import static org.openmrs.maven.plugins.utility.PropertiesUtils.loadPropertiesFromResource;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -14,10 +13,9 @@ import org.openmrs.maven.plugins.utility.SDKConstants;
 import org.openmrs.maven.plugins.utility.Wizard;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
+import java.nio.file.Path;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -29,7 +27,7 @@ import java.util.UUID;
  */
 public class SdkStatistics {
 
-    private static final String SDK_STATS_FILE_NAME = "sdk-stats.properties";
+    public static final String SDK_STATS_FILE_NAME = "sdk-stats.properties";
     private static final String DATE_FORMAT = "dd-M-yyyy";
 
     private Properties statistics = new Properties();
@@ -43,7 +41,7 @@ public class SdkStatistics {
     }
 
     public static SdkStatistics loadStatistics() throws IllegalStateException, MojoExecutionException {
-        return new SdkStatistics(new File(Server.getServersPath(), SDK_STATS_FILE_NAME));
+        return new SdkStatistics(Server.getServersPath().resolve(SDK_STATS_FILE_NAME).toFile());
     }
 
     public SdkStatistics(){}
@@ -289,27 +287,26 @@ public class SdkStatistics {
      * @throws MojoExecutionException
      */
     public void save() throws MojoExecutionException {
-        new File(Server.getServersPath()).mkdirs();
-        saveTo(new File(Server.getServersPath(), SDK_STATS_FILE_NAME));
+        Path serverPath = Server.getServersPath();
+        File serverDir = serverPath.toFile();
+        if (!serverDir.exists()) {
+            serverDir.mkdirs();
+        }
+
+        saveTo(serverPath.resolve(SDK_STATS_FILE_NAME).toFile());
     }
 
     /**
-     * Save statistics to specific dir
-     * @param path
+     * Save statistics to specific file
+     * @param file
      * @throws MojoExecutionException
      */
-    public void saveTo(File path) throws MojoExecutionException {
-        FileOutputStream out = null;
-        try {
-            out = new FileOutputStream(path);
+    public void saveTo(File file) throws MojoExecutionException {
+        try (FileOutputStream out = new FileOutputStream(file)) {
             statistics.store(out, null);
-            out.close();
         }
         catch (IOException e) {
-            throw new MojoExecutionException(e.getMessage());
-        }
-        finally {
-            IOUtils.closeQuietly(out);
+            throw new MojoExecutionException(e.getMessage(), e);
         }
     }
 }

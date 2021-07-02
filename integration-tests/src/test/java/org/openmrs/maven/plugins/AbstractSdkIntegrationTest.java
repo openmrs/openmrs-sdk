@@ -19,12 +19,15 @@ import org.junit.runners.BlockJUnit4ClassRunner;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.Server;
+import org.openmrs.maven.plugins.utility.SDKConstants;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -34,8 +37,9 @@ import java.util.UUID;
 import java.util.zip.ZipFile;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.io.FileMatchers.anExistingFileOrDirectory;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
 import static org.openmrs.maven.plugins.SdkMatchers.hasModuleVersion;
 import static org.openmrs.maven.plugins.SdkMatchers.hasModuleVersionInDisstro;
 import static org.openmrs.maven.plugins.SdkMatchers.hasPlatformVersion;
@@ -58,14 +62,18 @@ public abstract class AbstractSdkIntegrationTest {
      * contains files in test directory which are not created during tests and will not be cleaned up
      */
     List<File> testFilesToPersist;
+
     /**
      * maven utility for integration tests
      */
     Verifier verifier;
+
     /**
      * test directory, contains mock files and files created during tests
      */
     File testDirectory;
+
+    Path testDirectoryPath;
 
     public static String resolveSdkArtifact() throws MojoExecutionException {
         InputStream sdkPom = AbstractSdkIntegrationTest.class.getClassLoader().getResourceAsStream("sdk.properties");
@@ -83,6 +91,7 @@ public abstract class AbstractSdkIntegrationTest {
     @Before
     public void setup() throws Exception{
         testDirectory = ResourceExtractor.simpleExtractResources(getClass(), TEST_DIRECTORY);
+        testDirectoryPath = testDirectory.toPath();
         verifier = new Verifier(testDirectory.getAbsolutePath());
 
         testFilesToPersist = new ArrayList<>(Arrays.asList(testDirectory.listFiles()));
@@ -116,8 +125,8 @@ public abstract class AbstractSdkIntegrationTest {
         cleanAnswers();
 
         String sdk = resolveSdkArtifact();
-        setupServer.executeGoal(sdk+":setup");
-        assertFilePresent(serverId+File.separator+"openmrs-server.properties");
+        setupServer.executeGoal(sdk + ":setup");
+        assertFilePresent(serverId, "openmrs-server.properties");
         new File(testDirectory, "log.txt").delete();
         return serverId;
     }
@@ -186,23 +195,63 @@ public abstract class AbstractSdkIntegrationTest {
         assertThat(server.getDistroProperties(), hasModuleVersionInDisstro(artifactId, version));
     }
 
+    public File getTestFile(String file) {
+        return testDirectoryPath.resolve(file).toFile();
+    }
+
+    public File getTestFile(String... paths) {
+        Path resolvedPath = testDirectoryPath;
+        for (String path : paths) {
+            resolvedPath = resolvedPath.resolve(path);
+        }
+        return getTestFile(resolvedPath);
+    }
+
+    public File getTestFile(Path path) {
+        return testDirectoryPath.resolve(path).toFile();
+    }
+
     /**
      * asserts that file with given path is present in test directory
      */
-    public void assertFilePresent(String path){
-        File file = new File(testDirectory.getAbsolutePath(), path);
-        if (!file.exists()) {
-            fail("Expected " + file.getAbsolutePath());
+    public void assertFilePresent(String path) {
+        Path resolvedPath = testDirectoryPath.resolve(path).toAbsolutePath();
+        assertPathPresent(resolvedPath);
+    }
+
+    public void assertFilePresent(String... paths) {
+        Path resolvedPath = testDirectoryPath.toAbsolutePath();
+        for (String path : paths) {
+            resolvedPath = resolvedPath.resolve(path);
         }
+
+        assertPathPresent(resolvedPath);
+    }
+
+    public void assertPathPresent(Path path) {
+        assertThat("Expected " + path + " to be an existing file or directory",
+                path.toFile(), anExistingFileOrDirectory());
     }
     /**
      * asserts that file with given path is not present in test directory
      */
-    public void assertFileNotPresent(String path){
-        File file = new File(testDirectory.getAbsolutePath(), path);
-        if (file.exists()) {
-            fail("Expected not to find " + file.getAbsolutePath());
+    public void assertFileNotPresent(String path) {
+        Path resolvedPath = testDirectoryPath.resolve(path).toAbsolutePath();
+        assertPathNotPresent(resolvedPath);
+    }
+
+    public void assertFileNotPresent(String... paths) {
+        Path resolvedPath = testDirectoryPath.toAbsolutePath();
+        for (String path : paths) {
+            resolvedPath = resolvedPath.resolve(path);
         }
+
+        assertPathNotPresent(resolvedPath);
+    }
+
+    public void assertPathNotPresent(Path path) {
+        assertThat("Expected " + path + " to not exist",
+                path.toFile(), not(anExistingFileOrDirectory()));
     }
 
     public void assertZipEntryPresent(String path, String zipEntryName) throws Exception {
@@ -224,26 +273,24 @@ public abstract class AbstractSdkIntegrationTest {
      */
     protected void assertServerInstalled(String serverId) {
         assertFilePresent(serverId);
-        assertFilePresent(serverId + File.separator + "openmrs-server.properties");
+        assertFilePresent(serverId, SDKConstants.OPENMRS_SERVER_PROPERTIES);
     }
 
     protected void assertModulesInstalled(String serverId, String... filenames){
-        assertModulesInstalled(serverId, Lists.newArrayList(filenames));
-    }
-
-    private void assertModulesInstalled(String serverId, List<String> filenames){
+        Path modulesRoot = testDirectoryPath.resolve(Paths.get(serverId, "modules"));
         for(String filename : filenames){
-            assertFilePresent(serverId + File.separator + "modules" + File.separator + filename);
+            assertPathPresent(modulesRoot.resolve(filename));
         }
     }
 
     protected void assertModulesInstalled(String serverId, DistroProperties distroProperties) {
         List<Artifact> modules = distroProperties.getModuleArtifacts();
-        List<String> moduleFilenames = new ArrayList<>();
+        String[] moduleFilenames = new String[modules.size()];
 
-        for(Artifact module : modules){
-            moduleFilenames.add(module.getDestFileName());
+        for (int i = 0; i < modules.size(); i ++) {
+            moduleFilenames[i] = modules.get(i).getDestFileName();
         }
+
         assertModulesInstalled(serverId, moduleFilenames);
     }
 
