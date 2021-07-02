@@ -64,9 +64,9 @@ public class AddFeature extends AbstractTask {
 
 		//apply changes to config.xml and main pom.xml
 		wizard.showMessage("Modifying pom.xml files...");
-		new XmlHelper().modifyXml(new File(mavenProject.getBasedir(), "omod" + File.separator + "pom.xml"),
+		XmlHelper.modifyXml(new File(mavenProject.getBasedir(), "omod" + File.separator + "pom.xml"),
 				"archetype-submodule-owa/omod.pom.xml");
-		new XmlHelper().modifyXml(new File(mavenProject.getBasedir(),
+		XmlHelper.modifyXml(new File(mavenProject.getBasedir(),
 				"omod" + File.separator + "src" + File.separator + "main" + File.separator + "resources" + File.separator
 						+ "config.xml"), "archetype-submodule-owa/config.xml");
 

@@ -13,8 +13,6 @@ import static org.hamcrest.core.IsNull.notNullValue;
 
 public class XmlHelperTest {
 
-    private final XmlHelper helper = new XmlHelper();
-
     @Test
     public void testApplyChanges(){
         Element modificationsRoot = new DefaultElement("project");
@@ -23,7 +21,7 @@ public class XmlHelperTest {
         Document target = DocumentFactory.getInstance().createDocument(targetRoot);
         Document modifications = DocumentFactory.getInstance().createDocument(modificationsRoot);
 
-        Element targetDependencies = target.getRootElement().addElement("dependencies");
+        target.getRootElement().addElement("dependencies");
 
         Element dependency = modifications.getRootElement()
                 .addElement("dependencies")
@@ -35,7 +33,7 @@ public class XmlHelperTest {
 
         assertThat(target.getRootElement().element("dependencies").element("dependency"), is(nullValue()));
 
-        helper.applyModifications(modifications.getRootElement(), target.getRootElement());
+        XmlHelper.applyModifications(modifications.getRootElement(), target.getRootElement());
 
         assertThat(target.getRootElement().element("dependencies").element("dependency"), is(notNullValue()));
         assertThat(target.getRootElement().element("dependencies").element("dependency").element("groupId").getText(), is("org.openmrs.module"));
@@ -59,7 +57,7 @@ public class XmlHelperTest {
 
         assertThat(target.getRootElement().element("dependencies"), is(nullValue()));
 
-        helper.applyModifications(modifications.getRootElement(), target.getRootElement());
+        XmlHelper.applyModifications(modifications.getRootElement(), target.getRootElement());
 
         assertThat(target.getRootElement().element("dependencies").element("dependency"), is(notNullValue()));
     }

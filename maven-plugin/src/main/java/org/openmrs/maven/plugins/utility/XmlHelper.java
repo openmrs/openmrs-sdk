@@ -1,5 +1,7 @@
 package org.openmrs.maven.plugins.utility;
 
+import javax.xml.parsers.SAXParserFactory;
+
 import org.apache.commons.io.IOUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.codehaus.plexus.util.FileUtils;
@@ -14,78 +16,81 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringWriter;
 
-public class XmlHelper {
+public final class XmlHelper {
 
-    public void modifyXml(File targetfile, String modificationsPath) throws MojoExecutionException {
+	private XmlHelper() {
+	}
 
-        StringWriter writer = new StringWriter();
+	public static void modifyXml(File targetFile, String modificationsPath) throws MojoExecutionException {
 
-        try (
-                InputStream modificationsStream = getClass().getClassLoader().getResourceAsStream(modificationsPath)
-        ){
-            Document targetDocument = getDocument(targetfile);
-            Document modificationsDocument = getDocument(modificationsStream);
+		StringWriter writer = new StringWriter();
 
-            Element targetRoot = targetDocument.getRootElement();
-            Element modificationsRoot = modificationsDocument.getRootElement();
+		try (InputStream modificationsStream = XmlHelper.class.getClassLoader().getResourceAsStream(modificationsPath)) {
+			Document targetDocument = getDocument(targetFile);
+			Document modificationsDocument = getDocument(modificationsStream);
 
-            if(!targetRoot.getName().equals(modificationsRoot.getName())){
-                throw new IllegalArgumentException(
-                        "Target file and modifications file have differing root elements -  target:"+targetRoot.getName()+", root: "+modificationsRoot.getName()
-                );
-            }
+			Element targetRoot = targetDocument.getRootElement();
+			Element modificationsRoot = modificationsDocument.getRootElement();
 
-            applyModifications(modificationsRoot, targetRoot);
+			if (!targetRoot.getName().equals(modificationsRoot.getName())) {
+				throw new IllegalArgumentException(
+						"Target file and modifications file have differing root elements -  target:" + targetRoot.getName()
+								+ ", root: " + modificationsRoot.getName()
+				);
+			}
 
-            XMLWriter xmlWriter = new XMLWriter( writer );
-            xmlWriter.write( targetDocument );
+			applyModifications(modificationsRoot, targetRoot);
 
-            FileUtils.fileWrite(targetfile, writer.toString());
+			XMLWriter xmlWriter = new XMLWriter(writer);
+			xmlWriter.write(targetDocument);
 
-        } catch (IOException | DocumentException e) {
-            throw new MojoExecutionException("Failed to create owa submodule", e);
-        }
-    }
+			FileUtils.fileWrite(targetFile, writer.toString());
 
-    protected void applyModifications(Element modificationsRoot, Element targetRoot) {
-        for(Element modificationElement : modificationsRoot.elements()){
-            String copy = modificationElement.attributeValue("sdk-copy");
-            if("true".equals(copy)){
-                addModification(targetRoot, modificationElement);
-            } else {
-                Element targetElement = targetRoot.element(modificationElement.getName());
-                if(targetElement == null) {
-                    targetElement = targetRoot.addElement(modificationElement.getName());
-                }
-                applyModifications(modificationElement, targetElement);
-            }
-        }
-    }
+		}
+		catch (IOException | DocumentException e) {
+			throw new MojoExecutionException("Failed to create owa submodule", e);
+		}
+	}
 
-    protected void addChildren(Element modificationsRoot, Element targetRoot){
-        for(Element element : modificationsRoot.elements()){
-            addModification(targetRoot, element);
-        }
-    }
+	protected static void applyModifications(Element modificationsRoot, Element targetRoot) {
+		for (Element modificationElement : modificationsRoot.elements()) {
+			String copy = modificationElement.attributeValue("sdk-copy");
+			if ("true".equals(copy)) {
+				addModification(targetRoot, modificationElement);
+			} else {
+				Element targetElement = targetRoot.element(modificationElement.getName());
+				if (targetElement == null) {
+					targetElement = targetRoot.addElement(modificationElement.getName());
+				}
+				applyModifications(modificationElement, targetElement);
+			}
+		}
+	}
 
-    protected void addModification(Element targetRoot, Element modificationElement) {
-        Element targetElement = targetRoot.addElement(modificationElement.getName());
-        targetElement.setText(modificationElement.getText());
-        //add children values
-        addChildren(modificationElement, targetElement);
-    }
+	protected static void addChildren(Element modificationsRoot, Element targetRoot) {
+		for (Element element : modificationsRoot.elements()) {
+			addModification(targetRoot, element);
+		}
+	}
 
-    protected Document getDocument(File file) throws IOException, DocumentException {
-        return getDocument(new FileInputStream(file));
-    }
+	protected static void addModification(Element targetRoot, Element modificationElement) {
+		Element targetElement = targetRoot.addElement(modificationElement.getName());
+		targetElement.setText(modificationElement.getText());
+		//add children values
+		addChildren(modificationElement, targetElement);
+	}
 
-    protected Document getDocument(InputStream stream) throws IOException, DocumentException {
-        Reader targetReader = ReaderFactory.newXmlReader(stream);
-        Document doc = new SAXReader().read(targetReader);
-        IOUtils.closeQuietly(stream);
-        return doc;
-    }
+	protected static Document getDocument(File file) throws IOException, DocumentException {
+		try (FileInputStream fis = new FileInputStream(file)) {
+			return getDocument(fis);
+		}
+	}
+
+	protected static Document getDocument(InputStream stream) throws IOException, DocumentException {
+		return new SAXReader().read(stream);
+	}
 }
