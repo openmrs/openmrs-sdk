@@ -48,6 +48,16 @@
             <groupId>com.github.docker-java</groupId>
             <artifactId>docker-java</artifactId>
             <version>${docker-java.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.github.docker-java</groupId>
+                    <artifactId>docker-java-transport-jersey</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.github.docker-java</groupId>
+                    <artifactId>docker-java-transport-netty</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.github.docker-java</groupId>
@@ -56,9 +66,8 @@
         </dependency>
 
         <dependency>
-            <artifactId>jackson-core</artifactId>
             <groupId>com.fasterxml.jackson.core</groupId>
-            <version>2.12.3</version>
+            <artifactId>jackson-databind</artifactId>
         </dependency>
 
         <!--mysql-->

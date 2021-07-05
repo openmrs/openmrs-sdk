@@ -1,8 +1,6 @@
 package org.openmrs.maven.plugins.utility;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.BuildPluginManager;
@@ -11,10 +9,10 @@ import org.apache.maven.project.MavenProject;
 import org.openmrs.maven.plugins.model.DistroProperties;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -51,26 +49,30 @@ public class SpaInstaller {
         // If no SPA elements are present in the distro properties, the SPA is not installed.
         Map<String, String> spaProperties = distroProperties.getSpaProperties(distroHelper, appDataDir);
         if (!spaProperties.isEmpty()) {
-            JsonObject spaConfigJson = convertPropertiesToJSON(spaProperties);
+            Map<String, Object> spaConfigJson = convertPropertiesToJSON(spaProperties);
+
             File spaConfigFile = new File(appDataDir, "spa-build-config.json");
             writeJSONObject(spaConfigFile, spaConfigJson);
+
             nodeHelper.installNodeAndNpm(NODE_VERSION, NPM_VERSION);
             File buildTargetDir = new File(appDataDir, BUILD_TARGET_DIR);
+
             nodeHelper.runNpx("openmrs@next --version");  // print frontend tool version number
             nodeHelper.runNpx(String.format("openmrs@next build --target %s --build-config %s", buildTargetDir, spaConfigFile));
             nodeHelper.runNpx(String.format("openmrs@next assemble --target %s --mode config --config %s", buildTargetDir, spaConfigFile));
         }
     }
 
-    private JsonObject convertPropertiesToJSON(Map<String, String> properties) throws MojoExecutionException {
+    private Map<String, Object> convertPropertiesToJSON(Map<String, String> properties) throws MojoExecutionException {
         Set<String> foundPropertySetKeys = new HashSet<>();
-        JsonObject result = new JsonObject();
+        Map<String, Object> result = new LinkedHashMap<>();
         for (String dotDelimitedKeys : properties.keySet()) {
             String[] keys = dotDelimitedKeys.split("\\.");
             for (int i = 0; i < keys.length - 1; i++) {
                 foundPropertySetKeys.add(StringUtils.join(Arrays.copyOfRange(keys, 0, i), "."));
             }
         }
+
         for (String dotDelimitedKeys : properties.keySet()) {
             if (foundPropertySetKeys.contains(dotDelimitedKeys)) {
                 String badLine = "spa." + dotDelimitedKeys + "=" + properties.get(dotDelimitedKeys);
@@ -79,6 +81,7 @@ public class SpaInstaller {
             }
             addPropertyToJSONObject(result, dotDelimitedKeys, properties.get(dotDelimitedKeys));
         }
+
         return result;
     }
 
@@ -91,45 +94,48 @@ public class SpaInstaller {
      * @param propertyKey
      * @param value
      */
-    private void addPropertyToJSONObject(JsonObject jsonObject, String propertyKey, String value)
+    private void addPropertyToJSONObject(Map<String, Object> jsonObject, String propertyKey, String value)
             throws MojoExecutionException {
         String[] keys = propertyKey.split("\\.");
+
         if (keys.length == 1) {
-            if (jsonObject.has(keys[0])) {
+            if (jsonObject.containsKey(keys[0])) {
                 throw new MojoExecutionException(BAD_SPA_PROPERTIES_MESSAGE +
                         " Encountered this error processing a property containing the key '" + keys[0] + "' and with value " + value);
             }
-            
+
             if ("configUrls".equals(keys[0])) {
-                JsonArray arr = new JsonArray();
-                for (String valueElement : value.split(",")) {
-                    arr.add(valueElement);
-                }
-                jsonObject.add(keys[0], arr);
+                String[] urls = value.split(",");
+                jsonObject.put(keys[0], urls);
             } else {
-                jsonObject.addProperty(keys[0], value);
+                jsonObject.put(keys[0], value);
             }
         } else {
-            if (!jsonObject.has(keys[0])) {
-                jsonObject.add(keys[0], new JsonObject());
+            if (!jsonObject.containsKey(keys[0])) {
+                jsonObject.put(keys[0], new LinkedHashMap<String, Object>());
             }
+
             Object childObject = jsonObject.get(keys[0]);
-            if (!(childObject instanceof JsonObject)) {
+            if (!(childObject instanceof Map)) {
                 throw new MojoExecutionException(BAD_SPA_PROPERTIES_MESSAGE +
                         " Also please post to OpenMRS Talk and include this full message. If you are seeing this, there has been a programming error.");
             }
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> child = (Map<String, Object>) childObject;
             String childKeys = StringUtils.join(Arrays.copyOfRange(keys, 1, keys.length), ".");
-            addPropertyToJSONObject((JsonObject) childObject, childKeys, value);
+            addPropertyToJSONObject(child, childKeys, value);
         }
     }
 
-    private static void writeJSONObject(File file, JsonObject jsonObject) throws MojoExecutionException {
-        Gson gson = new Gson();
-        try (FileWriter out = new FileWriter(file)) {
-        	gson.toJson(jsonObject, out);
+    private static void writeJSONObject(File file, Map<String, Object> jsonObject) throws MojoExecutionException {
+        ObjectMapper om = new ObjectMapper();
+        try {
+            om.writeValue(file, jsonObject);
         }
         catch (IOException e) {
-        	throw new MojoExecutionException(e.getMessage(), e);
+            throw new MojoExecutionException("Exception while writing JSON to \"" + file.getAbsolutePath() + "\" "
+                    + e.getMessage(), e);
         }
     }
 

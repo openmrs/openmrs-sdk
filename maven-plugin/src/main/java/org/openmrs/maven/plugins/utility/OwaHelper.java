@@ -1,10 +1,12 @@
 package org.openmrs.maven.plugins.utility;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.zafarkhaja.semver.Parser;
 import com.github.zafarkhaja.semver.Version;
 import com.github.zafarkhaja.semver.expr.Expression;
 import com.github.zafarkhaja.semver.expr.ExpressionParser;
-import com.google.gson.Gson;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
@@ -18,7 +20,6 @@ import org.openmrs.maven.plugins.model.NodeDistro;
 import org.openmrs.maven.plugins.model.PackageJson;
 import org.twdata.maven.mojoexecutor.MojoExecutor;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
@@ -331,15 +332,15 @@ public class OwaHelper {
 	}
 
 	public List<NodeDistro> getNodeDistros() throws MojoExecutionException {
-		Gson gson = new Gson();
-		HttpURLConnection conn;
+		ObjectMapper om = new ObjectMapper();
+		om.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+		HttpURLConnection con;
 		try {
-			URL url = new URL("https://nodejs.org/dist/index.json");
-			conn = (HttpURLConnection) url.openConnection();
-			conn.setRequestMethod("GET");
-			BufferedReader rd = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-			NodeDistro[] result = gson.fromJson(rd, NodeDistro[].class);
-			return new ArrayList<>(Arrays.asList(result));
+			con = (HttpURLConnection) new URL("https://nodejs.org/dist/index.json").openConnection();
+			con.setRequestMethod("GET");
+
+			return om.readValue(con.getInputStream(), new TypeReference<List<NodeDistro>>() {});
 		} catch (IOException e) {
 			throw new MojoExecutionException("Failed to fetch node distributions " + e.getMessage(), e);
 		}
@@ -457,7 +458,8 @@ public class OwaHelper {
 					return null;
 				}
 			}
-			return new Gson().fromJson(reader, PackageJson.class);
+
+			return new ObjectMapper().readValue(reader, PackageJson.class);
 		} catch (IOException e) {
 			throw new MojoExecutionException("Couldn't find \"" + jsonFilename + "\" at \"" + json.getAbsolutePath() + "\"");
 		} finally {

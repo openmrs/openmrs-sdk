@@ -1,6 +1,8 @@
 package org.openmrs.maven.plugins;
 
-import com.google.gson.Gson;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.junit.Before;
 import org.junit.Test;
@@ -17,10 +19,7 @@ import org.openmrs.maven.plugins.utility.SDKConstants;
 import org.openmrs.maven.plugins.utility.Wizard;
 
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -245,9 +244,9 @@ public class BuildOwaTest {
     private List<NodeDistro> getNodeDistVersionsViaLocalResources() throws Exception {
         try (InputStream in = getClass().getResourceAsStream("/nodeDistVersions.json")) {
             if (in != null) {
-                Reader rd = new InputStreamReader(in);
-                NodeDistro[] result = new Gson().fromJson(rd, NodeDistro[].class);
-                return Arrays.asList(result);
+                ObjectMapper om = new ObjectMapper();
+                om.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+                return om.readValue(in, new TypeReference<List<NodeDistro>>() {});
             }
         }
 

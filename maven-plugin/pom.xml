@@ -154,12 +154,6 @@
             <artifactId>org.eclipse.egit.github.core</artifactId>
         </dependency>
 
-        <!-- JSON parsing -->
-        <dependency>
-            <groupId>com.google.code.gson</groupId>
-            <artifactId>gson</artifactId>
-        </dependency>
-
         <!-- Version parser -->
         <dependency>
             <groupId>com.github.zafarkhaja</groupId>

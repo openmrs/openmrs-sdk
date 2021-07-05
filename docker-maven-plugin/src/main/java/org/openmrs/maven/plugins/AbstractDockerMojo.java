@@ -9,7 +9,6 @@ import com.github.dockerjava.httpclient5.ApacheDockerHttpClient;
 import org.apache.commons.lang.SystemUtils;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.MojoFailureException;
 
 import java.io.IOException;
 import java.net.URI;
