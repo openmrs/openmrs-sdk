@@ -84,9 +84,9 @@ public class AddFeature extends AbstractTask {
 		wizard.showMessage("Creating OWA submodule...");
 		executeMojo(
 				plugin(
-						groupId(SDKConstants.PLUGIN_ARCHETYPE_GROUP_ID),
-						artifactId(SDKConstants.PLUGIN_ARCHETYPE_ARTIFACT_ID),
-						version(SDKConstants.PLUGIN_ARCHETYPE_VERSION)
+						groupId(SDKConstants.ARCHETYPE_PLUGIN_GROUP_ID),
+						artifactId(SDKConstants.ARCHETYPE_PLUGIN_ARTIFACT_ID),
+						version(SDKConstants.ARCHETYPE_PLUGIN_VERSION)
 				),
 				goal("generate"), configuration(
 						element("interactiveMode", "false"),
@@ -94,6 +94,7 @@ public class AddFeature extends AbstractTask {
 						element("archetypeGroupId", "org.openmrs.maven.archetypes"),
 						element("archetypeVersion", SDKConstants.getSDKInfo().getVersion())
 				),
-				executionEnvironment(mavenProject, mavenSession, pluginManager));
+				executionEnvironment(mavenProject, mavenSession, pluginManager)
+		);
 	}
 }

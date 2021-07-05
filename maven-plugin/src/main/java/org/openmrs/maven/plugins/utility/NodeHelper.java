@@ -7,7 +7,6 @@ import org.apache.maven.project.MavenProject;
 import org.twdata.maven.mojoexecutor.MojoExecutor;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -22,9 +21,6 @@ import static org.twdata.maven.mojoexecutor.MojoExecutor.plugin;
 import static org.twdata.maven.mojoexecutor.MojoExecutor.version;
 
 public class NodeHelper {
-    private static final String FRONTEND_MAVEN_GROUP_ID = "com.github.eirslett";
-    private static final String FRONTEND_MAVEN_ARTIFACT_ID = "frontend-maven-plugin";
-    private static final String FRONTEND_MAVEN_VERSION = "1.11.3";
 
     private final MavenSession mavenSession;
 
@@ -58,9 +54,9 @@ public class NodeHelper {
     private void runFrontendMavenPlugin(String goal, List<MojoExecutor.Element> configuration) throws MojoExecutionException {
         executeMojo(
                 plugin(
-                        groupId(FRONTEND_MAVEN_GROUP_ID),
-                        artifactId(FRONTEND_MAVEN_ARTIFACT_ID),
-                        version(FRONTEND_MAVEN_VERSION)
+                        groupId(SDKConstants.FRONTEND_PLUGIN_GROUP_ID),
+                        artifactId(SDKConstants.FRONTEND_PLUGIN_ARTIFACT_ID),
+                        version(SDKConstants.FRONTEND_PLUGIN_VERSION)
                 ),
                 goal(goal),
                 configuration(configuration.toArray(new MojoExecutor.Element[0])),

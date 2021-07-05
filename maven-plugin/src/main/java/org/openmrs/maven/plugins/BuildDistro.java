@@ -446,9 +446,9 @@ public class BuildDistro extends AbstractTask {
 			}
 		});
 		for (File file : warFiles) {
-			System.out.println("file:" + file.getAbsolutePath());
+			wizard.showMessage("file:" + file.getAbsolutePath());
 		}
-		System.out.println("target:" + targetDirectory);
+		wizard.showMessage("target:" + targetDirectory);
 		if (warFiles != null && warFiles.length == 1) {
 			boolean renameSuccess = warFiles[0].renameTo(openmrsWar);
 			if (!renameSuccess) {

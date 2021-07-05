@@ -109,9 +109,9 @@ public class ModuleInstaller {
         }
         executeMojo(
                 plugin(
-                        groupId(SDKConstants.PLUGIN_DEPENDENCIES_GROUP_ID),
-                        artifactId(SDKConstants.PLUGIN_DEPENDENCIES_ARTIFACT_ID),
-                        version(SDKConstants.PLUGIN_DEPENDENCIES_VERSION)
+                        groupId(SDKConstants.DEPENDENCY_PLUGIN_GROUP_ID),
+                        artifactId(SDKConstants.DEPENDENCY_PLUGIN_ARTIFACT_ID),
+                        version(SDKConstants.DEPENDENCY_PLUGIN_VERSION)
                 ),
                 goal(goal),
                 configuration(configuration.toArray(new Element[0])),

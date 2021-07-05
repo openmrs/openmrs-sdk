@@ -98,9 +98,9 @@ public class Clone extends AbstractTask {
 		configuration.add(element("artifactItems", artifactItems));
 		executeMojo(
 				plugin(
-						groupId(SDKConstants.PLUGIN_DEPENDENCIES_GROUP_ID),
-						artifactId(SDKConstants.PLUGIN_DEPENDENCIES_ARTIFACT_ID),
-						version(SDKConstants.PLUGIN_DEPENDENCIES_VERSION)
+						groupId(SDKConstants.DEPENDENCY_PLUGIN_GROUP_ID),
+						artifactId(SDKConstants.DEPENDENCY_PLUGIN_ARTIFACT_ID),
+						version(SDKConstants.DEPENDENCY_PLUGIN_VERSION)
 				),
 				goal("copy"),
 				configuration(configuration.toArray(new Element[0])),

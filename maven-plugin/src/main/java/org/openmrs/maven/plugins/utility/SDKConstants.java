@@ -2,6 +2,7 @@ package org.openmrs.maven.plugins.utility;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.maven.model.Plugin;
+import org.apache.maven.plugin.MojoExecutionException;
 import org.openmrs.maven.plugins.model.Artifact;
 
 import java.io.IOException;
@@ -12,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import static org.openmrs.maven.plugins.utility.PropertiesUtils.loadPropertiesFromResource;
 import static org.twdata.maven.mojoexecutor.MojoExecutor.artifactId;
 import static org.twdata.maven.mojoexecutor.MojoExecutor.groupId;
 import static org.twdata.maven.mojoexecutor.MojoExecutor.plugin;
@@ -24,29 +26,27 @@ public class SDKConstants {
     public static final String SDK_STATS_ENABLED_QUESTION = "Would you be willing to help us improve SDK by sending us once in a while anonymous " +
             "usage statistics (you can always change your mind by going to sdk-stats.properties and setting statsEnabled to false)";
     // dependency plugin
-    public static final String PLUGIN_DEPENDENCIES_GROUP_ID = "org.apache.maven.plugins";
-    public static final String PLUGIN_DEPENDENCIES_ARTIFACT_ID = "maven-dependency-plugin";
-    public static final String PLUGIN_DEPENDENCIES_VERSION = "2.8";
+    public static final String DEPENDENCY_PLUGIN_GROUP_ID = "org.apache.maven.plugins";
+    public static final String DEPENDENCY_PLUGIN_ARTIFACT_ID = "maven-dependency-plugin";
+    public static final String DEPENDENCY_PLUGIN_VERSION = "3.2.0";
     // archetype plugin
-    public static final String PLUGIN_ARCHETYPE_GROUP_ID = "org.apache.maven.plugins";
-    public static final String PLUGIN_ARCHETYPE_ARTIFACT_ID = "maven-archetype-plugin";
-    public static final String PLUGIN_ARCHETYPE_VERSION = "2.4";
+    public static final String ARCHETYPE_PLUGIN_GROUP_ID = "org.apache.maven.plugins";
+    public static final String ARCHETYPE_PLUGIN_ARTIFACT_ID = "maven-archetype-plugin";
+    public static final String ARCHETYPE_PLUGIN_VERSION = "3.2.0";
     //docker plugin
     public static final String PLUGIN_DOCKER_ARTIFACT_ID = "openmrs-sdk-docker-maven-plugin";
-    // release plugin
-    public static final String PLUGIN_RELEASE_GROUP_ID = "org.apache.maven.plugins";
-    public static final String PLUGIN_RELEASE_ARTIFACT_ID = "maven-release-plugin";
-    public static final String PLUGIN_RELEASE_VERSION = "2.5.3";
-    // run plugin
-    public static final String PLUGIN_JETTY_GROUP_ID = "org.eclipse.jetty";
-    public static final String PLUGIN_JETTY_ARTIFACT_ID = "jetty-maven-plugin";
-    public static final String PLUGIN_JETTY_VERSION = "9.0.4.v20130625";
-    public static final String DB_NAME_TEMPLATE = "openmrs-%s";
+    // frontend plugin
+    public static final String FRONTEND_PLUGIN_GROUP_ID = "com.github.eirslett";
+    public static final String FRONTEND_PLUGIN_ARTIFACT_ID = "frontend-maven-plugin";
+    public static final String FRONTEND_PLUGIN_VERSION = "1.11.3";
+    // exec maven plugin
+    public final static String EXEC_PLUGIN_GROUP_ID = "org.codehaus.mojo";
+    public final static String EXEC_PLUGIN_ARTIFACT_ID = "exec-maven-plugin";
+    public final static String EXEC_PLUGIN_VERSION = "1.5.0";
     //archetypes artifactId
     public static final String REFAPP_ARCH_ARTIFACT_ID = "openmrs-sdk-archetype-module-refapp";
     public static final String PLATFORM_ARCH_ARTIFACT_ID = "openmrs-sdk-archetype-module-platform";
     // default path to projects
-    public static final String OPENMRS_MODULE_POM = "pom.xml";
     public static final String OPENMRS_SERVER_PATH = "openmrs";
     public static final String OPENMRS_SERVER_PROPERTIES = "openmrs-server.properties";
     public static final String OPENMRS_SDK_JDK_OPTION = "Which JDK would you like to use to run this server?";
@@ -54,7 +54,6 @@ public class SDKConstants {
     public static final String OPENMRS_SDK_JDK_CUSTOM_INVALID = "JDK path is invalid";
     public static final String OPENMRS_SDK_PROPERTIES = "sdk.properties";
     public static final String OPENMRS_SERVER_MODULES = "modules";
-    public static final String OPENMRS_DOCKER_MYSQL_STORAGE = "mysql";
     // properties names
     public static final String OPENMRS_SDK_PROPERTIES_JAVA_HOME_OPTIONS = "javaHomeOptions";
     // dbUri for different db
@@ -70,7 +69,8 @@ public class SDKConstants {
     public static final Artifact H2_ARTIFACT = new Artifact("h2", "1.4.190", Artifact.GROUP_H2, Artifact.TYPE_JAR);
     // default settings path
     public static final String MAVEN_SETTINGS = "settings.xml";
-    public static final String TMP = "tmp";
+    public static final String DB_NAME_TEMPLATE = "openmrs-%s";
+
     // non-platform web app versions
     public static final String WEBAPP_ARTIFACT_ID = "openmrs-webapp";
     public static final String PLATFORM_ARTIFACT_ID = "platform";
@@ -121,31 +121,8 @@ public class SDKConstants {
         return new Artifact(artifactId, version, groupId);
     }
 
-    public static Artifact getSDKInfo() {
-    	Properties properties = new Properties();
-    	InputStream in = SDKConstants.class.getClassLoader().getResourceAsStream("sdk.properties");
-    	try {
-			properties.load(in);
-			in.close();
-			return new Artifact(properties.getProperty("artifactId"), properties.getProperty("version"), properties.getProperty("groupId"));
-		}
-		catch (IOException e) {
-			throw new RuntimeException(e);
-		} finally {
-			IOUtils.closeQuietly(in);
-		}
-    }
-    public static boolean isExtensionSupported(String type) {
-        return type.equals(SUPPORTED_MODULE_EXTENSIONS[0])
-                || type.equals(SUPPORTED_MODULE_EXTENSIONS[1])
-                || type.equals(SUPPORTED_MODULE_EXTENSIONS[2]);
-    }
-
-    public static Plugin getReleasePlugin() {
-        return plugin(
-                groupId(SDKConstants.PLUGIN_RELEASE_GROUP_ID),
-                artifactId(SDKConstants.PLUGIN_RELEASE_ARTIFACT_ID),
-                version(SDKConstants.PLUGIN_RELEASE_VERSION)
-        );
+    public static Artifact getSDKInfo() throws MojoExecutionException {
+        Properties properties = loadPropertiesFromResource(SDKConstants.OPENMRS_SDK_PROPERTIES);
+        return new Artifact(properties.getProperty("artifactId"), properties.getProperty("version"), properties.getProperty("groupId"));
     }
 }

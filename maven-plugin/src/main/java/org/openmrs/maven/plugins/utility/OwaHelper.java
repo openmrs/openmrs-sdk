@@ -45,13 +45,6 @@ import static org.twdata.maven.mojoexecutor.MojoExecutor.version;
 import javax.annotation.Nullable;
 
 public class OwaHelper {
-	private final static String FRONTEND_BUILDER_GROUP_ID = "com.github.eirslett";
-	private final static String FRONTEND_BUILDER_ARTIFACT_ID = "frontend-maven-plugin";
-	private final static String FRONTEND_BUILDER_VERSION = "1.12.0";
-
-	private final static String MAVEN_EXEC_PLUGIN_GROUP_ID = "org.codehaus.mojo";
-	private final static String MAVEN_EXEC_PLUGIN_ARTIFACT_ID = "exec-maven-plugin";
-	private final static String MAVEN_EXEC_PLUGIN_VERSION = "1.5.0";
 
 	public static final String PACKAGE_JSON_FILENAME = "package.json";
 	public static final String NODE_VERSION_KEY = "node";
@@ -244,36 +237,23 @@ public class OwaHelper {
 		}
 	}
 
-	private void runMojoExecutor(List<MojoExecutor.Element> configuration, String goal) throws MojoExecutionException {
-		executeMojo(
-				plugin(
-						groupId(FRONTEND_BUILDER_GROUP_ID),
-						artifactId(FRONTEND_BUILDER_ARTIFACT_ID),
-						version(FRONTEND_BUILDER_VERSION)
-				),
-				goal(goal),
-				configuration(configuration.toArray(new MojoExecutor.Element[0])),
-				executionEnvironment(mavenProject, session, pluginManager)
-		);
-	}
-
 	public String getSystemNpmVersion() {
 		String npmExecutable = getNpmSystemExecutable();
-		String npm = runProcessAndGetFirstResponseLine(npmExecutable, "-v", true);
+		String npm = runProcessAndGetFirstResponseLine(npmExecutable, "-v");
 		return StringUtils.isNotBlank(npm) ? npm : null;
 	}
 
 	public String getSystemNodeVersion() {
-		String node = runProcessAndGetFirstResponseLine("node", "-v", true);
+		String node = runProcessAndGetFirstResponseLine("node", "-v");
 		return formatNodeVersion(node);
 	}
 
 	public String getProjectNodeVersion() {
 		String node;
 		if (SystemUtils.IS_OS_WINDOWS) {
-			node = runProcessAndGetFirstResponseLine("node\\node.exe", "-v", true);
+			node = runProcessAndGetFirstResponseLine("node\\node.exe", "-v");
 		} else {
-			node = runProcessAndGetFirstResponseLine("node/node", "-v", true);
+			node = runProcessAndGetFirstResponseLine("node/node", "-v");
 		}
 		return formatNodeVersion(node);
 	}
@@ -281,9 +261,9 @@ public class OwaHelper {
 	public String getProjectNpmVersion() {
 		String npm;
 		if (SystemUtils.IS_OS_WINDOWS) {
-			npm = runProcessAndGetFirstResponseLine("node\\npm.cmd", "-v", true);
+			npm = runProcessAndGetFirstResponseLine("node\\npm.cmd", "-v");
 		} else {
-			npm = runProcessAndGetFirstResponseLine("node/npm", "-v", true);
+			npm = runProcessAndGetFirstResponseLine("node/npm", "-v");
 		}
 		return StringUtils.isNotBlank(npm) ? npm : null;
 	}
@@ -300,7 +280,7 @@ public class OwaHelper {
 		}
 	}
 
-	private String runProcessAndGetFirstResponseLine(String command, @Nullable String params, boolean quiet) {
+	private String runProcessAndGetFirstResponseLine(String command, @Nullable String params) {
 		Process process = null;
 		List<String> lines = null;
 		try {
@@ -501,9 +481,9 @@ public class OwaHelper {
 		}
 		executeMojo(
 				plugin(
-						groupId(FRONTEND_BUILDER_GROUP_ID),
-						artifactId(FRONTEND_BUILDER_ARTIFACT_ID),
-						version(FRONTEND_BUILDER_VERSION)
+						groupId(SDKConstants.FRONTEND_PLUGIN_GROUP_ID),
+						artifactId(SDKConstants.FRONTEND_PLUGIN_ARTIFACT_ID),
+						version(SDKConstants.FRONTEND_PLUGIN_VERSION)
 				),
 				goal("npm"),
 				configuration(configuration.toArray(new MojoExecutor.Element[0])),
@@ -526,9 +506,9 @@ public class OwaHelper {
 		configuration.add(parentArgs);
 		executeMojo(
 				plugin(
-						groupId(MAVEN_EXEC_PLUGIN_GROUP_ID),
-						artifactId(MAVEN_EXEC_PLUGIN_ARTIFACT_ID),
-						version(MAVEN_EXEC_PLUGIN_VERSION)
+						groupId(SDKConstants.EXEC_PLUGIN_GROUP_ID),
+						artifactId(SDKConstants.EXEC_PLUGIN_ARTIFACT_ID),
+						version(SDKConstants.EXEC_PLUGIN_VERSION)
 				),
 				goal("exec"),
 				configuration(configuration.toArray(new MojoExecutor.Element[0])),
@@ -638,9 +618,9 @@ public class OwaHelper {
 		}
 		executeMojo(
 				plugin(
-						groupId(FRONTEND_BUILDER_GROUP_ID),
-						artifactId(FRONTEND_BUILDER_ARTIFACT_ID),
-						version(FRONTEND_BUILDER_VERSION)
+						groupId(SDKConstants.FRONTEND_PLUGIN_GROUP_ID),
+						artifactId(SDKConstants.FRONTEND_PLUGIN_ARTIFACT_ID),
+						version(SDKConstants.FRONTEND_PLUGIN_VERSION)
 				),
 				goal("install-node-and-npm"),
 				configuration(configuration.toArray(new MojoExecutor.Element[0])),

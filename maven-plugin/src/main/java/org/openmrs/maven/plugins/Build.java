@@ -156,10 +156,9 @@ public class Build extends AbstractServerTask {
 	 * Deploy all watched modules to server
 	 *
 	 * @param server
-	 * @throws MojoFailureException
 	 * @throws MojoExecutionException
 	 */
-	private void deployWatchedProjects(Server server) throws MojoFailureException, MojoExecutionException {
+	private void deployWatchedProjects(Server server) throws MojoExecutionException {
 		Set<Project> watchedProject = server.getWatchedProjects();
 		for (Project module : watchedProject) {
 			Project project = Project.loadProject(new File(module.getPath()));

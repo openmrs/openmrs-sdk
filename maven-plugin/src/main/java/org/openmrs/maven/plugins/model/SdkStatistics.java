@@ -135,7 +135,7 @@ public class SdkStatistics {
     /**
      * Init data when creating sdk-stats.properties file
      */
-    private void initData() {
+    private void initData() throws MojoExecutionException {
         setUser();
         setLastUsed();
         setSdkVersion(SDKConstants.getSDKInfo().getVersion());
