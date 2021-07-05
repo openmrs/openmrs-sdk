@@ -112,7 +112,7 @@ public class DockerHelper {
         }
     }
 
-    private String promptForDockerHostIfMissing(String dockerHost) {
+    private String promptForDockerHostIfMissing(String dockerHost) throws MojoExecutionException {
         if(SystemUtils.IS_OS_LINUX){
             return wizard.promptForValueIfMissingWithDefault(DOCKER_HOST_MSG_LINUX, dockerHost, "docker host", DOCKER_HOST_DEFAULT_LINUX);
         } else {

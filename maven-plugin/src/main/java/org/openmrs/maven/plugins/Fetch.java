@@ -75,7 +75,7 @@ public class Fetch extends AbstractTask {
 		}
 	}
 
-	private void getData() {
+	private void getData() throws MojoExecutionException {
 		downloadDirectory = resolveDownloadDirectory(dir);
 
 		projectType = resolveProjectType(artifactId, owa);
@@ -106,7 +106,7 @@ public class Fetch extends AbstractTask {
 		return new File(dirPath);
 	}
 
-	private ProjectType resolveProjectType(String artifactId, String owa) {
+	private ProjectType resolveProjectType(String artifactId, String owa) throws MojoExecutionException {
 		ProjectType result = null;
 
 		//Resolve project type if defined
@@ -118,10 +118,10 @@ public class Fetch extends AbstractTask {
 
 		//Resolve project type if undefined
 		if (result == null) {
-			List<String> options = new ArrayList<>(Arrays.asList(
+			List<String> options = Arrays.asList(
 					FETCH_MODULE_OPTION,
 					FETCH_OWA_OPTION
-			));
+			);
 
 			String choice = wizard.promptForMissingValueWithOptions("What would you like to fetch?%s", null, "", options);
 			switch (choice) {
@@ -136,7 +136,7 @@ public class Fetch extends AbstractTask {
 		return result;
 	}
 
-	private String resolveProjectName(String artifactId, String owa) {
+	private String resolveProjectName(String artifactId, String owa) throws MojoExecutionException {
 		//Resolve project type and name if defined
 		if (StringUtils.isNotBlank(artifactId)) {
 			return artifactId;
@@ -147,7 +147,7 @@ public class Fetch extends AbstractTask {
 		}
 	}
 
-	private String resolveVersion(String projectName) {
+	private String resolveVersion(String projectName) throws MojoExecutionException {
 		//Check if there is version number in project name
 		if (projectName.contains(":")) {
 			String substringName = (projectName.split(":"))[0];
@@ -156,13 +156,13 @@ public class Fetch extends AbstractTask {
 				this.projectName = substringName;
 				return substringVersion;
 			} else {
-				throw new IllegalArgumentException(ERROR_INVALID_VERSION);
+				throw new MojoExecutionException(ERROR_INVALID_VERSION + " \"" + projectName + "\"");
 			}
 		}
 		return null;
 	}
 
-	private String askForMavenRepoProjectVersion(String projectName, String groupId) {
+	private String askForMavenRepoProjectVersion(String projectName, String groupId) throws MojoExecutionException {
 		List<String> availableVersions = versionsHelper.getSuggestedVersions(new Artifact(projectName, "1.0", groupId), 5);
 		return wizard.promptForMissingValueWithOptions(
 				"You can fetch the following versions of the module", version, "version", availableVersions,

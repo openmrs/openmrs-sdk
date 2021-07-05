@@ -1,5 +1,6 @@
 package org.openmrs.maven.plugins.model;
 
+import org.apache.maven.plugin.MojoExecutionException;
 import org.hamcrest.FeatureMatcher;
 import org.hamcrest.Matcher;
 import org.junit.Test;
@@ -39,7 +40,7 @@ public class DistroPropertiesTest {
     }
 
     @Test
-    public void resolvePlaceholders_shouldReplaceVersions(){
+    public void resolvePlaceholders_shouldReplaceVersions() throws MojoExecutionException {
         DistroProperties distro = getDistro();
         distro.resolvePlaceholders(getProjectProperties());
         List<Artifact> distroArtifacts = distro.getModuleArtifacts();
@@ -49,8 +50,8 @@ public class DistroPropertiesTest {
         assertThat(distro.getPlatformVersion(), is("222"));
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void resolvePlaceholders_shouldFailIfNoPropertyForPlaceholderFound(){
+    @Test(expected = MojoExecutionException.class)
+    public void resolvePlaceholders_shouldFailIfNoPropertyForPlaceholderFound() throws MojoExecutionException {
         Properties properties = new Properties();
         properties.setProperty("omod.fails", "${failsVersion}");
         DistroProperties distro = new DistroProperties(properties);

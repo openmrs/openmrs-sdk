@@ -15,29 +15,33 @@ public interface Wizard {
 
     void setInteractiveMode(boolean interactiveMode);
 
-    void promptForNewServerIfMissing(Server server);
+    void promptForNewServerIfMissing(Server server) throws MojoExecutionException;
 
     void promptForDb(Server server, DockerHelper dockerHelper, boolean h2supported, String dbDriver, String dockerHost) throws MojoExecutionException;
 
-    void promptForDbCredentialsIfMissing(Server server);
+    void promptForDbCredentialsIfMissing(Server server) throws MojoExecutionException;
 
-    String promptForPlatformVersionIfMissing(String version, List<String> versions);
+    String promptForPlatformVersionIfMissing(String version, List<String> versions) throws MojoExecutionException;
 
-    String promptForPlatformVersion(List<String> versions);
+    String promptForPlatformVersion(List<String> versions) throws MojoExecutionException;
 
     void promptForRefAppVersionIfMissing(Server server, VersionsHelper versionsHelper) throws MojoExecutionException;
 
     void promptForRefAppVersionIfMissing(Server server, VersionsHelper versionsHelper, @Nullable String customMessage) throws MojoExecutionException;
 
-    String promptForRefAppVersion(VersionsHelper versionsHelper);
+    String promptForRefAppVersion(VersionsHelper versionsHelper) throws MojoExecutionException;
 
-    String promptForDistroVersion(String distroGroupId, String distroArtifactId, String distroVersion, String distroName, VersionsHelper versionsHelper, @Nullable String customMessage);
+    String promptForDistroVersion(String distroGroupId, String distroArtifactId, String distroVersion, String distroName, VersionsHelper versionsHelper, @Nullable String customMessage)
+            throws MojoExecutionException;
 
-    String promptForDistroVersion(String distroGroupId, String distroArtifactId, String distroVersion, String distroName, VersionsHelper versionsHelper);
+    String promptForDistroVersion(String distroGroupId, String distroArtifactId, String distroVersion, String distroName, VersionsHelper versionsHelper)
+            throws MojoExecutionException;
 
-    String promptForMissingValueWithOptions(String message, String value, String parameterName, List<String> options);
+    String promptForMissingValueWithOptions(String message, String value, String parameterName, List<String> options)
+            throws MojoExecutionException;
 
-    String promptForMissingValueWithOptions(String message, String value, String parameterName, List<String> options, String customMessage, String customDefault);
+    String promptForMissingValueWithOptions(String message, String value, String parameterName, List<String> options, String customMessage, String customDefault)
+            throws MojoExecutionException;
 
     void showMessage(String message);
 
@@ -45,15 +49,16 @@ public interface Wizard {
 
     void showError(String message);
 
-    String promptForValueIfMissingWithDefault(String message, String value, String parameterName, String defValue);
+    String promptForValueIfMissingWithDefault(String message, String value, String parameterName, String defValue)
+            throws MojoExecutionException;
 
-    String promptForValueIfMissing(String value, String parameterName);
+    String promptForValueIfMissing(String value, String parameterName) throws MojoExecutionException;
 
-    String promptForPasswordIfMissing(String value, String parameter);
+    String promptForPasswordIfMissing(String value, String parameter) throws MojoExecutionException;
 
     void promptForJavaHomeIfMissing(Server server) throws MojoExecutionException;
 
-    boolean promptYesNo(String text);
+    boolean promptYesNo(String text) throws MojoExecutionException;
 
     boolean checkYes(String value);
 
@@ -63,7 +68,8 @@ public interface Wizard {
 
     void showJdkErrorMessage(String jdk, String platform, String recommendedJdk, String pathToProps);
 
-    boolean promptForConfirmDistroUpgrade(UpgradeDifferential upgradeDifferential, Server server, DistroProperties distroProperties);
+    boolean promptForConfirmDistroUpgrade(UpgradeDifferential upgradeDifferential, Server server, DistroProperties distroProperties)
+            throws MojoExecutionException;
 
     void setAnswers(ArrayDeque<String> batchAnswers);
 }

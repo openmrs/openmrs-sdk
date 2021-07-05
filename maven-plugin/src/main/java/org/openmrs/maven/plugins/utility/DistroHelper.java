@@ -78,12 +78,11 @@ public class DistroHelper {
 			try {
 				return new DistroProperties(distroFile);
 			}
-			catch (MojoExecutionException e) {
-				return null;
+			catch (MojoExecutionException ignored) {
 			}
-		} else {
-			return null;
 		}
+
+		return null;
 	}
 
 	/**
@@ -92,7 +91,7 @@ public class DistroHelper {
 	 * @param properties
 	 * @param server
 	 */
-	public void savePropertiesToServer(DistroProperties properties, Server server) {
+	public void savePropertiesToServer(DistroProperties properties, Server server) throws MojoExecutionException {
 		if (properties != null) {
 			Properties userBashProperties = mavenSession.getRequest().getUserProperties();
 			Set<String> propertiesNames = properties.getPropertiesNames();
@@ -214,10 +213,8 @@ public class DistroHelper {
 		File distroFile = downloadDistro(path, artifact);
 		File resultFile;
 
-		ZipFile zipFile = null;
-		try {
+		try (ZipFile zipFile = new ZipFile(distroFile)) {
 			resultFile = File.createTempFile(filename, ".tmp");
-			zipFile = new ZipFile(distroFile);
 
 			Enumeration<? extends ZipEntry> entries = zipFile.entries();
 
@@ -230,21 +227,19 @@ public class DistroHelper {
 			zipFile.close();
 		}
 		catch (IOException e) {
-			throw new RuntimeException("Could not read " + distroFile.toString() + " to temp folder", e);
+			throw new MojoExecutionException("Could not read \"" + distroFile.getAbsolutePath() + "\" to temp folder " + e.getMessage(), e);
 		}
 		finally {
-			IOUtils.closeQuietly(zipFile);
 			distroFile.delete();
 		}
+
 		return resultFile;
 	}
 
 	public DistroProperties downloadDistroProperties(File path, Artifact artifact) throws MojoExecutionException {
 		File file = downloadDistro(path, artifact);
 		DistroProperties distroProperties = null;
-		ZipFile zipFile = null;
-		try {
-			zipFile = new ZipFile(file);
+		try (ZipFile zipFile = new ZipFile(file)) {
 			Enumeration<? extends ZipEntry> entries = zipFile.entries();
 
 			while (entries.hasMoreElements()) {
@@ -255,13 +250,11 @@ public class DistroHelper {
 					distroProperties = new DistroProperties(properties);
 				}
 			}
-			zipFile.close();
 		}
 		catch (IOException e) {
-			throw new RuntimeException("Could not read " + file, e);
+			throw new MojoExecutionException("Could not read \"" + file.getAbsolutePath() + "\" " + e.getMessage(), e);
 		}
 		finally {
-			IOUtils.closeQuietly(zipFile);
 			file.delete();
 		}
 
@@ -336,7 +329,8 @@ public class DistroHelper {
 		return calculateUpdateDifferential(server.getServerModules(), newList);
 	}
 
-	static UpgradeDifferential calculateUpdateDifferential(List<Artifact> oldList, List<Artifact> newList) {
+	static UpgradeDifferential calculateUpdateDifferential(List<Artifact> oldList, List<Artifact> newList)
+			throws MojoExecutionException {
 		UpgradeDifferential upgradeDifferential = new UpgradeDifferential();
 		for (Artifact newListModule : newList) {
 			boolean toAdd = true;
@@ -375,7 +369,7 @@ public class DistroHelper {
 			}
 			if (moduleNotFound) {
 				if (isOpenmrsWebapp(oldListModule)) {
-					throw new IllegalStateException("You can delete only modules. Deleting openmrs core is not available");
+					throw new MojoExecutionException("You can delete only modules. Deleting openmrs core is not possible");
 				} else {
 					upgradeDifferential.addModuleToDelete(oldListModule);
 				}

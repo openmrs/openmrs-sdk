@@ -137,37 +137,11 @@ public class SettingsManager {
             SettingsXpp3Writer writer = new SettingsXpp3Writer();
             try {
                 writer.write(stream, settings);
-                stream.close();
             } catch (IOException e) {
                 throw new MojoExecutionException("Failed to write setting.xml", e);
             } finally {
                 IOUtils.closeQuietly(stream);
             }
         }
-    }
-
-    /**
-     * Write settings to file
-     */
-    public void apply() throws MojoExecutionException {
-        if (settings != null && settingsFile != null) {
-            SettingsXpp3Writer writer = new SettingsXpp3Writer();
-            OutputStream stream = null;
-            try {
-                stream = new FileOutputStream(settingsFile);
-                writer.write(stream, settings);
-                stream.close();
-            } catch (IOException e) {
-                throw new MojoExecutionException(e.getMessage());
-            } finally {
-                IOUtils.closeQuietly(stream);
-            }
-        } else throw new IllegalStateException("Settings and settings file must not be null to apply");
-    }
-
-    public void addServer(Server server) {
-        List<Server> servers = settings.getServers();
-        servers.add(server);
-        settings.setServers(servers);
     }
 }

@@ -13,6 +13,7 @@ import java.util.List;
 
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
+import org.apache.maven.plugin.MojoExecutionException;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -26,7 +27,8 @@ public class DefaultWizardTest {
 	}
 
 	@Test
-	public void addMySQLParamsIfMissing_shouldAddMissingMySQLParamsIfNoParamsSpecified() throws URISyntaxException {
+	public void addMySQLParamsIfMissing_shouldAddMissingMySQLParamsIfNoParamsSpecified()
+			throws URISyntaxException, MojoExecutionException {
 		String uri = "jdbc:mysql://localhost:3016/openmrs";
 
 		String correctUri = wizard.addMySQLParamsIfMissing(uri);
@@ -46,7 +48,8 @@ public class DefaultWizardTest {
 	}
 
 	@Test
-	public void addMySQLParamsIfMissing_shouldAddMissingMySQLParamsIfSomeParamsSpecified() throws URISyntaxException {
+	public void addMySQLParamsIfMissing_shouldAddMissingMySQLParamsIfSomeParamsSpecified()
+			throws URISyntaxException, MojoExecutionException {
 		String uri = "jdbc:mysql://localhost:3016/openmrs?autoReconnect=false&useUnicode=false";
 
 		String correctUri = wizard.addMySQLParamsIfMissing(uri);
@@ -66,7 +69,8 @@ public class DefaultWizardTest {
 	}
 
 	@Test
-	public void addPostgresParamsIfMissing_shouldAddMissingPostgresParamsIfNoParamsSpecified() throws URISyntaxException {
+	public void addPostgresParamsIfMissing_shouldAddMissingPostgresParamsIfNoParamsSpecified()
+			throws URISyntaxException, MojoExecutionException {
 		String uri = "jdbc:postgresql://localhost:5438/openmrs";
 
 		String correctUri = wizard.addPostgreSQLParamsIfMissing(uri);
@@ -86,7 +90,8 @@ public class DefaultWizardTest {
 	}
 
 	@Test
-	public void addPostgresParamsIfMissing_shouldAddMissingPostgresParamsIfSomeParamsSpecified() throws URISyntaxException {
+	public void addPostgresParamsIfMissing_shouldAddMissingPostgresParamsIfSomeParamsSpecified()
+			throws URISyntaxException, MojoExecutionException {
 		String uri = "jdbc:postgresql://localhost:5438/openmrs?autoReconnect=false&useUnicode=false";
 
 		String correctUri = wizard.addPostgreSQLParamsIfMissing(uri);

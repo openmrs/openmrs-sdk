@@ -16,6 +16,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -28,9 +29,12 @@ import java.util.UUID;
 public class SdkStatistics {
 
     public static final String SDK_STATS_FILE_NAME = "sdk-stats.properties";
+
     private static final String DATE_FORMAT = "dd-M-yyyy";
 
     private Properties statistics = new Properties();
+
+    private final DateFormat dateFormat = new SimpleDateFormat(DATE_FORMAT);
 
     public SdkStatistics createSdkStatsFile(boolean agree) throws MojoExecutionException {
         loadStatsFromResource(SDK_STATS_FILE_NAME);
@@ -40,7 +44,7 @@ public class SdkStatistics {
         return new SdkStatistics(statistics);
     }
 
-    public static SdkStatistics loadStatistics() throws IllegalStateException, MojoExecutionException {
+    public static SdkStatistics loadStatistics() throws MojoExecutionException {
         return new SdkStatistics(Server.getServersPath().resolve(SDK_STATS_FILE_NAME).toFile());
     }
 
@@ -50,11 +54,11 @@ public class SdkStatistics {
         this.statistics = statistics;
     }
 
-    SdkStatistics(File file) throws IllegalStateException, MojoExecutionException {
+    SdkStatistics(File file) throws MojoExecutionException {
         if (file.exists()) {
             loadStatsFromFile(file);
         } else {
-            throw new IllegalStateException("File does not exist");
+            throw new MojoExecutionException("File does not exist");
         }
         setSdkVersion(SDKConstants.getSDKInfo().getVersion());
     }
@@ -81,7 +85,13 @@ public class SdkStatistics {
      * @return
      */
     private boolean checkIfOneWeekFromLastReport(){
-        Date lastReport = getLastReported();
+        Date lastReport;
+        try {
+            lastReport = getLastReported();
+        } catch (ParseException e) {
+            lastReport = null;
+        }
+
         Date currentDate = new Date();
 
         if (lastReport != null) {
@@ -216,20 +226,13 @@ public class SdkStatistics {
      * Get last date  that statistics were reported
      * @return
      */
-    private Date getLastReported(){
+    private Date getLastReported() throws ParseException {
         String statsLastReported = statistics.getProperty("statsLastReported");
-        if(StringUtils.isBlank(statsLastReported)){
+        if (StringUtils.isBlank(statsLastReported)){
             return null;
         }
-        SimpleDateFormat dateFormat = new SimpleDateFormat(DATE_FORMAT);
 
-        Date date;
-        try {
-            date = dateFormat.parse(statsLastReported);
-            return date;
-        } catch (ParseException e) {
-            throw new RuntimeException("Couldn't parse String to Date", e);
-        }
+        return dateFormat.parse(statsLastReported);
     }
 
     public int getGoalCalls(String goal) {
@@ -240,17 +243,9 @@ public class SdkStatistics {
      * Get last date that sdk was used
      * @return
      */
-    private Date getLastUsed(){
+    private Date getLastUsed() throws ParseException {
         String statsLastUsed = statistics.getProperty("statsLastUsed");
-        SimpleDateFormat dateFormat = new SimpleDateFormat(DATE_FORMAT);
-
-        Date date;
-        try {
-            date = dateFormat.parse(statsLastUsed);
-            return date;
-        } catch (ParseException e) {
-            throw new RuntimeException("Couldn't parse String to Date", e);
-        }
+        return dateFormat.parse(statsLastUsed);
     }
 
     /**
@@ -258,7 +253,6 @@ public class SdkStatistics {
      * @return String
      */
     private String getDate() {
-        SimpleDateFormat dateFormat = new SimpleDateFormat(DATE_FORMAT);
         return dateFormat.format(new Date());
     }
 

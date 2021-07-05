@@ -134,10 +134,8 @@ public class OwaHelper {
 			if (!useSystemNode) {
 				addHelperScripts(owaDir.getAbsolutePath());
 			}
-		} catch (IOException e) {
-			throw new IllegalStateException("Failed starting yeoman", e);
-		} catch (InterruptedException e) {
-			throw new IllegalStateException("Failed running yeoman", e);
+		} catch (IOException | InterruptedException e) {
+			throw new MojoExecutionException("Failed running yeoman " + e.getMessage(), e);
 		}
 	}
 
@@ -158,7 +156,7 @@ public class OwaHelper {
 		}
 	}
 
-	private File prepareOwaDir() {
+	private File prepareOwaDir() throws MojoExecutionException {
 		File owaDir = new File(System.getProperty("user.dir"));
 		boolean pathCorrect = false;
 		do {
@@ -193,7 +191,7 @@ public class OwaHelper {
 		return owaDir;
 	}
 
-	private void addHelperScripts(String path) {
+	private void addHelperScripts(String path) throws MojoExecutionException {
 		File npmCmd = new File(path, "npm.cmd");
 		URL npmCmdSrc = getClass().getClassLoader().getResource("npm.cmd");
 		File npm = new File(path, "npm");
@@ -204,7 +202,7 @@ public class OwaHelper {
 			npm.setExecutable(true);
 			npmCmd.setExecutable(true);
 		} catch (IOException e) {
-			throw new RuntimeException("Could not copy helper scripts to OWA directory", e);
+			throw new MojoExecutionException("Could not copy helper scripts to OWA directory " + e.getMessage(), e);
 		}
 
 	}
@@ -309,7 +307,7 @@ public class OwaHelper {
 		}
 	}
 
-	public void resolveExactVersions(SemVersion node, SemVersion npm) {
+	public void resolveExactVersions(SemVersion node, SemVersion npm) throws MojoExecutionException {
 		List<NodeDistro> versions = getNodeDistros();
 
 		for (NodeDistro distVersion : versions) {
@@ -332,7 +330,7 @@ public class OwaHelper {
 		}
 	}
 
-	public List<NodeDistro> getNodeDistros() {
+	public List<NodeDistro> getNodeDistros() throws MojoExecutionException {
 		Gson gson = new Gson();
 		HttpURLConnection conn;
 		try {
@@ -343,7 +341,7 @@ public class OwaHelper {
 			NodeDistro[] result = gson.fromJson(rd, NodeDistro[].class);
 			return new ArrayList<>(Arrays.asList(result));
 		} catch (IOException e) {
-			throw new IllegalStateException("Failed to fetch node distributions", e);
+			throw new MojoExecutionException("Failed to fetch node distributions " + e.getMessage(), e);
 		}
 	}
 
@@ -422,14 +420,15 @@ public class OwaHelper {
 		return SemVersion.valueOf(version);
 	}
 
-	public SemVersion getProjectNpmFromPackageJson() {
+	public SemVersion getProjectNpmFromPackageJson() throws MojoExecutionException {
 		PackageJson packageJson = getPackageJson(PACKAGE_JSON_FILENAME);
 		if (packageJson != null && packageJson.getEngines() != null) {
 			return SemVersion.valueOf(packageJson.getEngines().get(NPM_VERSION_KEY));
 		}
 		return null;
 	}
-	public SemVersion getProjectNodeFromPackageJson() {
+
+	public SemVersion getProjectNodeFromPackageJson() throws MojoExecutionException {
 		PackageJson packageJson = getPackageJson(PACKAGE_JSON_FILENAME);
 		if (packageJson != null && packageJson.getEngines() != null) {
 			return SemVersion.valueOf(packageJson.getEngines().get(NODE_VERSION_KEY));
@@ -437,7 +436,7 @@ public class OwaHelper {
 		return null;
 	}
 
-	public PackageJson getPackageJson(String jsonFilename) {
+	public PackageJson getPackageJson(String jsonFilename) throws MojoExecutionException {
 		Reader reader = null;
 		File json;
 		if (mavenProject == null) {
@@ -458,11 +457,9 @@ public class OwaHelper {
 					return null;
 				}
 			}
-			PackageJson result = new Gson().fromJson(reader, PackageJson.class);
-			reader.close();
-			return result;
+			return new Gson().fromJson(reader, PackageJson.class);
 		} catch (IOException e) {
-			throw new IllegalStateException("Couldn't find " + jsonFilename + " at " + json.getAbsolutePath());
+			throw new MojoExecutionException("Couldn't find \"" + jsonFilename + "\" at \"" + json.getAbsolutePath() + "\"");
 		} finally {
 			IOUtils.closeQuietly(reader);
 		}

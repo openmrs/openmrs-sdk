@@ -42,7 +42,7 @@ public class Project {
 	
 	public static Project loadProject(File dir) throws MojoExecutionException {
 		if (!hasProject(dir)) {
-			throw new IllegalArgumentException("Project at " + dir.getAbsolutePath() + " does not exist");
+			throw new MojoExecutionException("Project at " + dir.getAbsolutePath() + " does not exist");
 		}
 		File pom = new File(dir, "pom.xml");
 		return findProject(pom);
@@ -51,7 +51,7 @@ public class Project {
 	public static Project loadProject(File dir, String pomFilename) throws MojoExecutionException {
 		File pom = new File(dir, pomFilename);
 		if (!pom.exists()) {
-			throw new IllegalArgumentException("File " + pomFilename + " is not present at " + dir.getAbsolutePath() + "/");
+			throw new MojoExecutionException("File " + pomFilename + " is not present at " + dir.getAbsolutePath() + "/");
 		}
 		return findProject(pom);
 	}

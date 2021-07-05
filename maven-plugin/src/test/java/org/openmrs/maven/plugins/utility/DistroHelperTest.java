@@ -52,21 +52,21 @@ public class DistroHelperTest {
         assertThat(artifact.getVersion(), is("2.3"));
     }
     @Test
-    public void calculateUpdateDifferentialShouldFindArtifactsToAddList() {
+    public void calculateUpdateDifferentialShouldFindArtifactsToAddList() throws MojoExecutionException {
         UpgradeDifferential upgradeDifferential = DistroHelper.calculateUpdateDifferential(getMockOldArtifactList(), getMockNewArtifactList());
 
         assertThat(upgradeDifferential.getModulesToAdd(), hasItem(new Artifact("drugs", "0.2-SNAPSHOT")));
         assertThat(upgradeDifferential.getModulesToAdd(), hasSize(1));
     }
     @Test
-    public void calculateUpdateDifferentialShouldFindArtifactsToDeleteList() {
+    public void calculateUpdateDifferentialShouldFindArtifactsToDeleteList() throws MojoExecutionException {
         UpgradeDifferential upgradeDifferential = DistroHelper.calculateUpdateDifferential(getMockOldArtifactList(), getMockNewArtifactList());
 
         assertThat(upgradeDifferential.getModulesToDelete(), hasItem(new Artifact("owa", "1.5")));
         assertThat(upgradeDifferential.getModulesToAdd(), hasSize(1));
     }
     @Test
-    public void calculateUpdateDifferentialShouldAddSnapshotToUpdateMap() {
+    public void calculateUpdateDifferentialShouldAddSnapshotToUpdateMap() throws MojoExecutionException {
         UpgradeDifferential upgradeDifferential = DistroHelper.calculateUpdateDifferential(getMockOldArtifactList(), getMockNewArtifactList());
 
         assertThat(upgradeDifferential.getUpdateOldToNewMap().keySet(), hasItem(new Artifact("appui", "0.1-SNAPSHOT")));
@@ -74,16 +74,18 @@ public class DistroHelperTest {
         assertThat(upgradeDifferential.getUpdateOldToNewMap().values(), hasItem(new Artifact("webservices","1.2")));
         assertThat(upgradeDifferential.getUpdateOldToNewMap().keySet(), hasSize(2));
     }
+
     @Test
-    public void calculateUpdateDifferentialShouldAddSnapshotToDowngradeMap() {
+    public void calculateUpdateDifferentialShouldAddSnapshotToDowngradeMap() throws MojoExecutionException {
         UpgradeDifferential upgradeDifferential = DistroHelper.calculateUpdateDifferential(getMockOldArtifactList(), getMockNewArtifactList());
 
         assertThat(upgradeDifferential.getDowngradeNewToOldMap().keySet(), hasItem(new Artifact("legacyui","1.5")));
         assertThat(upgradeDifferential.getDowngradeNewToOldMap().values(), hasItem(new Artifact("legacyui","1.4")));
         assertThat(upgradeDifferential.getDowngradeNewToOldMap().keySet(), hasSize(1));
     }
+
     @Test
-    public void calculateUpdateDifferentialShouldFindPlatformUpdate() {
+    public void calculateUpdateDifferentialShouldFindPlatformUpdate() throws MojoExecutionException {
         Artifact oldPlatform = new Artifact("openmrs-webapp", "10.7", Artifact.GROUP_WEB, Artifact.TYPE_WAR);
         Artifact newPlatform = new Artifact("openmrs-webapp", "12.0", Artifact.GROUP_WEB, Artifact.TYPE_WAR);
 
@@ -92,8 +94,9 @@ public class DistroHelperTest {
                 Collections.singletonList(newPlatform));
         assertThat(upgradeDifferential.getPlatformArtifact(), is(newPlatform));
     }
-    @Test(expected = IllegalStateException.class)
-    public void calculateUpdateDifferentialShouldNotAllowToDeletePlatform() {
+
+    @Test(expected = MojoExecutionException.class)
+    public void calculateUpdateDifferentialShouldNotAllowToDeletePlatform() throws MojoExecutionException {
         Artifact oldPlatform = new Artifact("openmrs-webapp", "10.7", Artifact.GROUP_WEB, Artifact.TYPE_WAR);
         Artifact artifact = new Artifact("owa", "12.0");
 
@@ -103,7 +106,7 @@ public class DistroHelperTest {
     }
 
     @Test
-    public void calculateUpgradeDifferentialShouldReturnEmptyListIfOlderModules() {
+    public void calculateUpgradeDifferentialShouldReturnEmptyListIfOlderModules() throws MojoExecutionException {
         UpgradeDifferential upgradeDifferential = DistroHelper.calculateUpdateDifferential(getMockOldArtifactList(), getMockOldestArtifactList());
 
         assertThat(upgradeDifferential.getPlatformArtifact(), is(nullValue()));
@@ -112,7 +115,7 @@ public class DistroHelperTest {
     }
 
     @Test
-    public void calculateUpgradeDifferentialShouldReturnOnlyUpdateSnapshotsIfSameList() {
+    public void calculateUpgradeDifferentialShouldReturnOnlyUpdateSnapshotsIfSameList() throws MojoExecutionException {
         UpgradeDifferential upgradeDifferential = DistroHelper.calculateUpdateDifferential(getMockOldArtifactList(), getMockOldArtifactList());
 
         assertThat(upgradeDifferential.getPlatformArtifact(), is(nullValue()));

@@ -16,12 +16,12 @@ public interface GitHelper {
      * @param path to local git repository
      * @return repository object from given path
      */
-    Repository getLocalRepository(String path);
+    Repository getLocalRepository(String path) throws MojoExecutionException;
 
     /**
      * @return if there are any uncommited changes in given git repo
      */
-    boolean checkIfUncommitedChanges(Git git);
+    boolean checkIfUncommittedChanges(Git git) throws MojoExecutionException;
 
     /**
      * basically calls 'git rebase -i HEAD~{rebaseSize}'
@@ -51,7 +51,8 @@ public interface GitHelper {
      * @param remote
      *@param force  @return returns JGit resut of push
      */
-    Iterable<PushResult> push(Git git, String username, String personalAccessToken, String ref, String remote, boolean force);
+    Iterable<PushResult> push(Git git, String username, String personalAccessToken, String ref, String remote, boolean force)
+            throws MojoExecutionException;
 
     /**
      * returns commits which differ between given base and head references
@@ -60,18 +61,18 @@ public interface GitHelper {
      * @param headRef head reference
      * @return
      */
-    Iterable<RevCommit> getCommitDifferential(Git git, String baseRef, String headRef);
+    Iterable<RevCommit> getCommitDifferential(Git git, String baseRef, String headRef) throws MojoExecutionException;
 
     /**
      * this weird method is neccessary to allow unit testing of PullRequest task,
      * because RevCommit has final methods which cannot be easily mocked
      */
-    List<String> getCommitDifferentialMessages(Git git, String baseRef, String headRef);
+    List<String> getCommitDifferentialMessages(Git git, String baseRef, String headRef) throws MojoExecutionException;
 
     /**
      * opens pull request using parameters from given request
      */
-    PullRequest openPullRequest(GithubPrRequest request);
+    PullRequest openPullRequest(GithubPrRequest request) throws MojoExecutionException;
 
     /**
      * @param base git reference
@@ -79,19 +80,19 @@ public interface GitHelper {
      * @param repository name of openmrs repository to check
      * @return
      */
-    PullRequest getPullRequestIfExists(String base, String head, String repository);
+    PullRequest getPullRequestIfExists(String base, String head, String repository) throws MojoExecutionException;
 
     /**
      * returns last commit from current branch
      * @param git
      * @return
      */
-    RevCommit getLastCommit(Git git);
+    RevCommit getLastCommit(Git git) throws MojoExecutionException;
 
     /**
      * calls reset hard on current branch with passed commit as argument
      */
-    void resetHard(Git git, RevCommit commit);
+    void resetHard(Git git, RevCommit commit) throws MojoExecutionException;
 
     /**
      * returns tag with passed name in local and remote repository
@@ -101,7 +102,7 @@ public interface GitHelper {
      * @param personalAccessToken github personal access token
      * @return
      */
-    boolean deleteTag(Git git, String tagRef, String username, String personalAccessToken);
+    boolean deleteTag(Git git, String tagRef, String username, String personalAccessToken) throws MojoExecutionException;
 
     /**
      * revert passed commits on current branch
@@ -109,7 +110,7 @@ public interface GitHelper {
      * @param git
      * @param commits
      */
-    void revertCommits(Git git, Iterable<RevCommit> commits);
+    void revertCommits(Git git, Iterable<RevCommit> commits) throws MojoExecutionException;
 
     /**
      * Adds 'upstream' reference to remote repositories
@@ -121,7 +122,7 @@ public interface GitHelper {
      */
     void addRemoteUpstream(Git git, String path) throws Exception;
 
-    String adjustRemoteOrigin(Git git, String scmUrl, String username);
+    String adjustRemoteOrigin(Git git, String scmUrl, String username) throws MojoExecutionException;
 
-    void checkoutToNewBranch(Git git, String branchName);
+    void checkoutToNewBranch(Git git, String branchName) throws MojoExecutionException;
 }

@@ -83,7 +83,7 @@ public class Build extends AbstractServerTask {
 								buildExecuted = true;
 							}
 							catch (Exception e) {
-								throw new RuntimeException("Failed to build project");
+								throw new MojoExecutionException("Failed to build project", e);
 							}
 						}
 					}
@@ -123,7 +123,7 @@ public class Build extends AbstractServerTask {
 		deployWatchedProjects(server);
 	}
 
-	private void buildCoreIfWatched(Server server) {
+	private void buildCoreIfWatched(Server server) throws MojoExecutionException, MojoFailureException {
 		for (Project project : server.getWatchedProjects()) {
 			if (project.isOpenmrsCore()) {
 				buildProject(project);
@@ -173,7 +173,7 @@ public class Build extends AbstractServerTask {
 	/**
 	 * Run "mvn clean install -DskipTests" command in the given directory
 	 */
-	public void buildProject(Project project) {
+	public void buildProject(Project project) throws MojoExecutionException, MojoFailureException {
 		Properties properties = new Properties();
 		properties.put("skipTests", "true");
 
@@ -193,10 +193,11 @@ public class Build extends AbstractServerTask {
 			result = invoker.execute(request);
 		}
 		catch (MavenInvocationException e) {
-			throw new RuntimeException("Failed to build project in directory: " + project.getPath());
+			throw new MojoExecutionException("Failed to build project in directory: " + project.getPath(), e);
 		}
+
 		if (result.getExitCode() != 0) {
-			throw new IllegalStateException("Failed building project in " + project.getPath(),
+			throw new MojoFailureException("Failed building project in " + project.getPath(),
 					result.getExecutionException());
 		}
 	}

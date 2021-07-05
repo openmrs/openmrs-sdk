@@ -166,7 +166,7 @@ public class DefaultWizard implements Wizard {
 	 * @param server the server to look for
 	 */
 	@Override
-	public void promptForNewServerIfMissing(Server server) {
+	public void promptForNewServerIfMissing(Server server) throws MojoExecutionException {
 		Path omrsServerPath = Server.getServersPath();
 		String newServerId = DEFAULT_SERVER_NAME;
 
@@ -189,17 +189,18 @@ public class DefaultWizard implements Wizard {
 	 * @return value
 	 */
 	@Override
-	public String promptForValueIfMissingWithDefault(String message, String value, String parameterName, String defValue) {
+	public String promptForValueIfMissingWithDefault(String message, String value, String parameterName, String defValue)
+			throws MojoExecutionException {
 		return promptForValueIfMissingWithDefault(message, value, parameterName, defValue, false);
 	}
 
 	public String promptForPasswordIfMissingWithDefault(String message, String value, String parameterName,
-			String defValue) {
+			String defValue) throws MojoExecutionException {
 		return promptForValueIfMissingWithDefault(message, value, parameterName, defValue, true);
 	}
 
 	public String promptForValueIfMissingWithDefault(String message, String value, String parameterName, String defaultValue,
-			boolean password) {
+			boolean password) throws MojoExecutionException {
 		String textToShow = String.format(message != null ? message : DEFAULT_PROMPT_TMPL, parameterName);
 		if (StringUtils.isNotBlank(defaultValue)) {
 			textToShow += String.format(DEFAULT_VALUE_TMPL, defaultValue);
@@ -226,13 +227,13 @@ public class DefaultWizard implements Wizard {
 
 	@Override
 	public String promptForMissingValueWithOptions(String message, String value, String parameterName,
-			List<String> options) {
+			List<String> options) throws MojoExecutionException {
 		return promptForMissingValueWithOptions(message, value, parameterName, options, null, null);
 	}
 
 	@Override
 	public String promptForMissingValueWithOptions(String message, String value, String parameterName, List<String> options,
-			String customMessage, String customDefault) {
+			String customMessage, String customDefault) throws MojoExecutionException {
 
 		String defaultOption = (options == null || options.isEmpty()) ? "" : options.get(0);
 		String question = String
@@ -298,7 +299,7 @@ public class DefaultWizard implements Wizard {
 		return reader.readLine(textToShow + ": ", '*');
 	}
 
-	public String promptForPasswordIfMissing(String value, String parameter) {
+	public String promptForPasswordIfMissing(String value, String parameter) throws MojoExecutionException {
 		if (value != null) {
 			return value;
 		} else if (!interactiveMode) {
@@ -330,7 +331,7 @@ public class DefaultWizard implements Wizard {
 	 * @return
 	 */
 	@Override
-	public String promptForValueIfMissing(String value, String parameterName) {
+	public String promptForValueIfMissing(String value, String parameterName) throws MojoExecutionException {
 		return promptForValueIfMissingWithDefault(null, value, parameterName, EMPTY_STRING);
 	}
 
@@ -341,7 +342,7 @@ public class DefaultWizard implements Wizard {
 	 * @return true if the user chose yes, false otherwise
 	 */
 	@Override
-	public boolean promptYesNo(String text) {
+	public boolean promptYesNo(String text) throws MojoExecutionException {
 		return promptYesNo(text, true);
 	}
 
@@ -350,7 +351,7 @@ public class DefaultWizard implements Wizard {
 	 * @param defaultValue Value to use if response is empty
 	 * @return true if the user selected yes, false if the user selected no, and the default value if none was used
 	 */
-	public boolean promptYesNo(String text, boolean defaultValue) {
+	public boolean promptYesNo(String text, boolean defaultValue) throws MojoExecutionException {
 		String yesNo;
 		if (interactiveMode) {
 			yesNo = prompt(text.concat(defaultValue ? YESNO : NOYES));
@@ -387,43 +388,44 @@ public class DefaultWizard implements Wizard {
 		Path omrsHome = Server.getServersPath();
 		List<String> servers = getListOfServers();
 		if (servers.isEmpty()) {
-			throw new RuntimeException("There is no servers available");
+			throw new MojoExecutionException("There are no servers available");
 		}
 
 		serverId = promptForMissingValueWithOptions("You have the following servers:", serverId, "serverId", servers);
 		if (serverId.equals(NONE)) {
-			throw new RuntimeException(INVALID_SERVER);
+			throw new MojoExecutionException(INVALID_SERVER);
 		}
 
 		File serverPath = omrsHome.resolve(serverId).toFile();
 		if (!serverPath.exists()) {
-			throw new RuntimeException(
-					"There is no server with server id: " + serverId + ". Please create it first using openmrs-sdk:setup.");
+			throw new MojoExecutionException(
+					"There is no server with server id \"" + serverId + "\". Please create it first by using openmrs-sdk:setup.");
 		}
 
 		return serverId;
 	}
 
 	@Override
-	public String promptForPlatformVersionIfMissing(String version, List<String> versions) {
+	public String promptForPlatformVersionIfMissing(String version, List<String> versions) throws MojoExecutionException {
 		return promptForMissingValueWithOptions(PLATFORM_VERSION_PROMPT,
 				version, "version", versions, "Please specify platform version", null);
 	}
 
 	@Override
-	public String promptForPlatformVersion(List<String> versions) {
+	public String promptForPlatformVersion(List<String> versions) throws MojoExecutionException {
 		return promptForMissingValueWithOptions(PLATFORM_VERSION_PROMPT,
 				null, "version", versions, "Please specify platform version", null);
 	}
 
 	@Override
 	public void promptForJavaHomeIfMissing(Server server) throws MojoExecutionException {
-		if (!StringUtils.isBlank(server.getJavaHome())) {
-			if (isJavaHomeValid(server.getJavaHome())) {
-				addJavaHomeToSdkProperties(server.getJavaHome());
+		String javaHome = server.getJavaHome();
+		if (StringUtils.isNotBlank(javaHome)) {
+			if (isJavaHomeValid(javaHome)) {
+				addJavaHomeToSdkProperties(javaHome);
 				return;
 			} else {
-				throw new IllegalArgumentException("The specified -DjavaHome property is invalid");
+				throw new MojoExecutionException("The specified -DjavaHome, \"" + javaHome + "\", is invalid");
 			}
 		}
 
@@ -513,7 +515,7 @@ public class DefaultWizard implements Wizard {
 		return (Integer.parseInt(version) > 8);
 	}
 
-	private String determineJavaVersionFromPath(String path) {
+	private String determineJavaVersionFromPath(String path) throws MojoExecutionException {
 		File javaPath = new File(path, "bin");
 
 		List<String> commands = new ArrayList<>();
@@ -535,7 +537,7 @@ public class DefaultWizard implements Wizard {
 			result = StringUtils.join(output.iterator(), "\n");
 		}
 		catch (IOException e) {
-			throw new RuntimeException("Failed to fetch Java version from \"" + path + "\"");
+			throw new MojoExecutionException("Failed to fetch Java version from \"" + path + "\" " + e.getMessage(), e);
 		}
 
 		Pattern p = Pattern.compile(".*\"(.*)\".*");
@@ -543,7 +545,7 @@ public class DefaultWizard implements Wizard {
 		if (m.find()) {
 			return m.group(1);
 		} else {
-			throw new RuntimeException(
+			throw new MojoExecutionException(
 					"Failed to fetch Java version from \"" + path + "\". 'java -version' returned " + result);
 		}
 	}
@@ -659,19 +661,19 @@ public class DefaultWizard implements Wizard {
 		}
 	}
 
-	public String promptForRefAppVersion(VersionsHelper versionsHelper) {
+	public String promptForRefAppVersion(VersionsHelper versionsHelper) throws MojoExecutionException {
 		return promptForRefAppVersion(versionsHelper, null);
 	}
 
 	@Override
 	public String promptForDistroVersion(String distroGroupId, String distroArtifactId, String distroVersion,
-			String distroName, VersionsHelper versionsHelper) {
+			String distroName, VersionsHelper versionsHelper) throws MojoExecutionException {
 		return promptForDistroVersion(distroGroupId, distroArtifactId, distroVersion, distroName, versionsHelper, null);
 	}
 
 	@Override
 	public String promptForDistroVersion(String distroGroupId, String distroArtifactId, String distroVersion,
-			String distroName, VersionsHelper versionsHelper, @Nullable String customMessage) {
+			String distroName, VersionsHelper versionsHelper, @Nullable String customMessage) throws MojoExecutionException {
 		final String optionTemplate = distroName + " %s";
 		final String artifacttemplate = distroGroupId + ":" + distroArtifactId + ":" + "%s";
 
@@ -684,7 +686,8 @@ public class DefaultWizard implements Wizard {
 		return promptForVersion(optionsMap, customMessage);
 	}
 
-	public String promptForRefAppVersion(VersionsHelper versionsHelper, @Nullable String customMessage) {
+	public String promptForRefAppVersion(VersionsHelper versionsHelper, @Nullable String customMessage)
+			throws MojoExecutionException {
 		Set<String> versions = new LinkedHashSet<>(
 				versionsHelper.getSuggestedVersions(SDKConstants.getReferenceModule("2.3.1"), MAX_OPTIONS_SIZE));
 		versions.addAll(SDKConstants.SUPPPORTED_REFAPP_VERSIONS_2_3_1_OR_LOWER);
@@ -693,7 +696,8 @@ public class DefaultWizard implements Wizard {
 		return promptForVersion(optionsMap, customMessage);
 	}
 
-	private String promptForVersion(Map<String, String> optionsMap, @Nullable String customMessage) {
+	private String promptForVersion(Map<String, String> optionsMap, @Nullable String customMessage)
+			throws MojoExecutionException {
 		String message = customMessage != null ? customMessage : DISTRIBUTION_VERSION_PROMPT;
 		String version = promptForMissingValueWithOptions(message,
 				null, "distribution artifact", Lists.newArrayList(optionsMap.keySet()), "Please specify %s",
@@ -768,7 +772,7 @@ public class DefaultWizard implements Wizard {
 		}
 	}
 
-	private void promptForDbUri(Server server, String driver) {
+	private void promptForDbUri(Server server, String driver) throws MojoExecutionException {
 		if (server.getDbDriver() == null) {
 			server.setDbDriver(driver);
 		}
@@ -828,7 +832,8 @@ public class DefaultWizard implements Wizard {
 				dbUri = dbUri.replace("localhost", uri.getHost());
 			}
 			catch (URISyntaxException e) {
-				throw new IllegalStateException(e);
+				throw new MojoExecutionException("URI for Docker host, \"" + dockerHelper.getDockerHost() +
+						"\" is not valid " + e.getMessage(), e);
 			}
 		}
 		dbUri = dbUri.replace(DBNAME_URL_VARIABLE, server.getServerId());
@@ -970,7 +975,7 @@ public class DefaultWizard implements Wizard {
 	}
 
 	@Override
-	public void promptForDbCredentialsIfMissing(Server server) {
+	public void promptForDbCredentialsIfMissing(Server server) throws MojoExecutionException {
 		String defaultUser = "root";
 		if (server.isPostgreSqlDb()) {
 			defaultUser = "postgres";
@@ -1017,18 +1022,18 @@ public class DefaultWizard implements Wizard {
 		return new ArrayList<>(sortedMap.values());
 	}
 
-	public String addMySQLParamsIfMissing(String dbUri) {
+	public String addMySQLParamsIfMissing(String dbUri) throws MojoExecutionException {
 		URIBuilder uri = addDefaultParamsIfMissing(dbUri);
 		uri.setParameter("sessionVariables", "default_storage_engine=InnoDB");
 
 		return "jdbc:" + uri;
 	}
 
-	public String addPostgreSQLParamsIfMissing(String dbUri) {
+	public String addPostgreSQLParamsIfMissing(String dbUri) throws MojoExecutionException {
 		return "jdbc:" + addDefaultParamsIfMissing(dbUri);
 	}
 
-	private URIBuilder addDefaultParamsIfMissing(String dbUri) {
+	private URIBuilder addDefaultParamsIfMissing(String dbUri) throws MojoExecutionException {
 		String noJdbc = dbUri.substring(5);
 
 		URIBuilder uri;
@@ -1036,7 +1041,7 @@ public class DefaultWizard implements Wizard {
 			uri = new URIBuilder(noJdbc);
 		}
 		catch (URISyntaxException e) {
-			throw new IllegalArgumentException(e);
+			throw new MojoExecutionException("Database URI \"" + noJdbc + "\" is not a valid URI " + e.getMessage(),  e);
 		}
 		uri.setParameter("autoReconnect", "true");
 		uri.setParameter("useUnicode", "true");
@@ -1057,7 +1062,7 @@ public class DefaultWizard implements Wizard {
 	 */
 	@Override
 	public boolean promptForConfirmDistroUpgrade(UpgradeDifferential upgradeDifferential, Server server,
-			DistroProperties distroProperties) {
+			DistroProperties distroProperties) throws MojoExecutionException {
 		if (upgradeDifferential.isEmpty()) {
 			showMessage(NO_DIFFERENTIAL);
 			return false;
@@ -1128,10 +1133,10 @@ public class DefaultWizard implements Wizard {
 		this.batchAnswers = batchAnswers;
 	}
 
-	private String getAnswer(String question) {
+	private String getAnswer(String question) throws MojoExecutionException {
 		String answer = batchAnswers.poll();
 		if (answer == null) {
-			throw new RuntimeException("Answer not provided for question: " + question);
+			throw new MojoExecutionException("Answer not provided for question: " + question);
 		}
 		return answer.trim();
 	}

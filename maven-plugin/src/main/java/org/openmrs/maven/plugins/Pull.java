@@ -160,7 +160,7 @@ public class Pull extends AbstractServerTask {
 					try {
 						cleanUp(project.getPath(), project.getArtifactId());
 					}
-					catch (IllegalStateException e1) {
+					catch (MojoExecutionException e1) {
 						allExceptions.add(project.getPath(), e1);
 					}
 				}
@@ -193,7 +193,7 @@ public class Pull extends AbstractServerTask {
 			try {
 				cleanUp(project.getPath(), project.getArtifactId());
 			}
-			catch (IllegalStateException e1) {
+			catch (MojoExecutionException e1) {
 				allExceptions.add(project.getPath(), e1);
 			}
 		}
@@ -248,9 +248,8 @@ public class Pull extends AbstractServerTask {
 	 *
 	 * @param path
 	 * @param moduleName
-	 * @throws IllegalStateException
 	 */
-	private void cleanUp(String path, String moduleName) throws IllegalStateException {
+	private void cleanUp(String path, String moduleName) throws MojoExecutionException {
 		try {
 			Repository localRepo = gitHelper.getLocalRepository(path);
 			Git git = new Git(localRepo);
@@ -268,7 +267,7 @@ public class Pull extends AbstractServerTask {
 			}
 		}
 		catch (Exception e) {
-			throw new IllegalStateException(String.format(CLEAN_UP_ERROR_MESSAGE, userBranch, moduleName), e);
+			throw new MojoExecutionException(String.format(CLEAN_UP_ERROR_MESSAGE, userBranch, moduleName), e);
 		}
 	}
 

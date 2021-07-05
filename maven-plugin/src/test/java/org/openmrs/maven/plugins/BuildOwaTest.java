@@ -62,7 +62,7 @@ public class BuildOwaTest {
     }
 
     @Test
-    public void buildOwa_shouldReadNpmAndNodeVersionPropertyFromPackageJson() {
+    public void buildOwa_shouldReadNpmAndNodeVersionPropertyFromPackageJson() throws MojoExecutionException {
         final String packageJsonPath = "/package.json";
         final String projectNpmVersion = "3.10.8";
         final String projectNodeVersion = "7.0.0";

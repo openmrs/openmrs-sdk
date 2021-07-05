@@ -31,7 +31,7 @@ public class WatchOwa extends AbstractServerTask {
                 owaHelper.runSystemNpmCommandWithArgs(args);
             }
         } else {
-            throw new IllegalStateException("Config file not found at" + new File(configFilename).getAbsolutePath());
+            throw new MojoExecutionException("Config file not found at" + configFile.getAbsolutePath());
         }
     }
 

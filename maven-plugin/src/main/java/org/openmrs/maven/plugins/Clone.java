@@ -108,7 +108,7 @@ public class Clone extends AbstractTask {
 		);
 	}
 
-	private void forkRepo(String repoName, String repoOwner) {
+	private void forkRepo(String repoName, String repoOwner) throws MojoExecutionException {
 		wizard.showMessage("Forking " + repoName + " from " + repoOwner);
 		GitHubClient client = new GitHubClient();
 		client.setCredentials(username, personalAccessToken);
@@ -119,11 +119,11 @@ public class Clone extends AbstractTask {
 			service.forkRepository(toBeForked);
 		}
 		catch (IOException e) {
-			throw new IllegalStateException("Failed to fork repository", e);
+			throw new MojoExecutionException("Failed to fork repository", e);
 		}
 	}
 
-	private void cloneRepo(String repoUrl) {
+	private void cloneRepo(String repoUrl) throws MojoExecutionException {
 		String repoOwner = repoUrl.substring(0, repoUrl.indexOf("/"));
 		String originUrl = StringUtils.replaceOnce(repoUrl, repoOwner, username);
 
@@ -136,7 +136,7 @@ public class Clone extends AbstractTask {
 		File localPath = new File(repoName);
 		wizard.showMessage("Cloning from " + originUrl + " into " + localPath.getAbsolutePath());
 		if (localPath.exists()) {
-			throw new IllegalStateException("Destination path \"" + localPath.getAbsolutePath() + "\" already exists.");
+			throw new MojoExecutionException("Destination path \"" + localPath.getAbsolutePath() + "\" already exists.");
 		}
 
 		try {
@@ -148,7 +148,7 @@ public class Clone extends AbstractTask {
 			gitHelper.addRemoteUpstream(git, localPath.getAbsolutePath());
 		}
 		catch (Exception e) {
-			throw new IllegalStateException("Failed to clone repository", e);
+			throw new MojoExecutionException("Failed to clone repository", e);
 		}
 	}
 }

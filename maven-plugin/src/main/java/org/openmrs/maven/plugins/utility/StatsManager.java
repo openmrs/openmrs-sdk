@@ -27,7 +27,7 @@ public class StatsManager {
     private void loadStatistics() throws MojoExecutionException {
         try {
             sdkStatistics = SdkStatistics.loadStatistics();
-        } catch (IllegalStateException e) {
+        } catch (MojoExecutionException e) {
             boolean agree;
             if (!mavenSession.getRequest().isInteractiveMode()) {
                 agree = stats;

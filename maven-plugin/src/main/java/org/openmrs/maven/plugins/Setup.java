@@ -198,7 +198,7 @@ public class Setup extends AbstractServerTask {
 		} else {  // getting distro properties from file
 			distroProperties = distroHelper.resolveDistroPropertiesForStringSpecifier(distro, versionsHelper);
 			if (distroProperties == null) {
-				throw new IllegalArgumentException("Distro " + distro + "could not be retrieved");
+				throw new MojoExecutionException("Distro " + distro + "could not be retrieved");
 			}
 			server.setPlatformVersion(distroProperties.getPlatformVersion(distroHelper, server.getServerTmpDirectory()));
 			server.setVersion(distroProperties.getVersion());
@@ -327,7 +327,7 @@ public class Setup extends AbstractServerTask {
 		}
 	}
 
-	private void setServerPort(Server server) {
+	private void setServerPort(Server server) throws MojoExecutionException {
 		String message = "What port would you like your server to use?";
 		String port = wizard.promptForValueIfMissingWithDefault(
 				message,
@@ -342,7 +342,7 @@ public class Setup extends AbstractServerTask {
 		server.setPort(port);
 	}
 
-	private void setDebugPort(Server server) {
+	private void setDebugPort(Server server) throws MojoExecutionException {
 		if (StringUtils.isBlank(debug) || wizard.checkYes(debug)) {
 			while (!NO_DEBUGGING_DEFAULT_ANSWER.equals(debug) && !StringUtils.isNumeric(debug)) {
 				debug = wizard.promptForValueIfMissingWithDefault(
@@ -455,7 +455,7 @@ public class Setup extends AbstractServerTask {
 		}
 	}
 
-	private boolean hasDbTables(Server server) {
+	private boolean hasDbTables(Server server) throws MojoExecutionException {
 		String uri = server.getDbUri();
 		uri = uri.substring(0, uri.lastIndexOf("/") + 1);
 		try (DBConnector connector = new DBConnector(uri, server.getDbUser(), server.getDbPassword(), server.getDbName())) {
@@ -466,11 +466,11 @@ public class Setup extends AbstractServerTask {
 			}
 		}
 		catch (SQLException e) {
-			throw new IllegalStateException("Failed to fetch table list from \"" + server.getDbName() + "\" database.", e);
+			throw new MojoExecutionException("Failed to fetch table list from \"" + server.getDbName() + "\" database. " + e.getMessage(), e);
 		}
 	}
 
-	private void resetSearchIndex(Server server) {
+	private void resetSearchIndex(Server server) throws MojoExecutionException {
 		String uri = server.getDbUri();
 		uri = uri.substring(0, uri.lastIndexOf("/") + 1);
 		DBConnector connector = null;
@@ -487,7 +487,7 @@ public class Setup extends AbstractServerTask {
 			wizard.showMessage("The search index has been reset.");
 		}
 		catch (SQLException e) {
-			throw new IllegalStateException("Failed to reset search index", e);
+			throw new MojoExecutionException("Failed to reset search index " + e.getMessage(), e);
 		}
 		finally {
 			if (ps != null) {
@@ -536,7 +536,8 @@ public class Setup extends AbstractServerTask {
 				sqlStream = new FileInputStream(scriptFile);
 			}
 			catch (FileNotFoundException e) {
-				throw new RuntimeException("Invalid path to SQL import script", e);
+				throw new MojoExecutionException("SQL import script could not be found at \"" +
+						scriptFile.getAbsolutePath() + "\" " + e.getMessage() , e);
 			}
 		}
 

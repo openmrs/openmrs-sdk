@@ -1,11 +1,7 @@
 package org.openmrs.maven.plugins.utility;
 
-import javax.xml.parsers.SAXParserFactory;
-
-import org.apache.commons.io.IOUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.codehaus.plexus.util.FileUtils;
-import org.codehaus.plexus.util.ReaderFactory;
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
 import org.dom4j.Element;
@@ -16,8 +12,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
 import java.io.StringWriter;
 
 public final class XmlHelper {
@@ -37,7 +31,7 @@ public final class XmlHelper {
 			Element modificationsRoot = modificationsDocument.getRootElement();
 
 			if (!targetRoot.getName().equals(modificationsRoot.getName())) {
-				throw new IllegalArgumentException(
+				throw new MojoExecutionException(
 						"Target file and modifications file have differing root elements -  target:" + targetRoot.getName()
 								+ ", root: " + modificationsRoot.getName()
 				);

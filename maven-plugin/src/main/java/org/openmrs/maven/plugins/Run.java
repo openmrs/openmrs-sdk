@@ -112,7 +112,7 @@ public class Run extends AbstractServerTask {
 		}
 	}
 
-	private void validatePort() {
+	private void validatePort() throws MojoExecutionException {
 		int tmpPort = port;
 
 		tmpPort = serverHelper.findFreePort(tmpPort);
@@ -210,7 +210,8 @@ public class Run extends AbstractServerTask {
 			Invoker invoker = new DefaultInvoker();
 			InvocationResult result = invoker.execute(request);
 			if (result.getExitCode() != 0) {
-				throw new IllegalStateException("Failed running Tomcat", result.getExecutionException());
+				throw new MojoFailureException("Failed running Tomcat " + result.getExecutionException().getMessage(),
+						result.getExecutionException());
 			}
 		}
 		catch (MavenInvocationException e) {
@@ -218,7 +219,7 @@ public class Run extends AbstractServerTask {
 		}
 	}
 
-	private String setDebugPort(String mavenOpts, Server server) {
+	private String setDebugPort(String mavenOpts, Server server) throws MojoExecutionException {
 		String address = null;
 		if (StringUtils.isNotBlank(debug)) {
 			if (StringUtils.isNumeric(debug)) {

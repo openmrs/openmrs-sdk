@@ -11,6 +11,7 @@ import com.github.dockerjava.api.model.Ports;
 import com.github.dockerjava.api.model.PullResponseItem;
 import com.github.dockerjava.api.model.Volume;
 import org.apache.commons.lang.StringUtils;
+import org.apache.maven.plugin.MojoExecutionException;
 
 import java.io.Closeable;
 import java.util.HashMap;
@@ -46,7 +47,7 @@ public class CreateMySql extends AbstractDockerMojo {
     protected String rootPassword;
 
     @Override
-    public void executeTask() {
+    public void executeTask() throws MojoExecutionException {
         if (StringUtils.isBlank(port)) port = DEFAULT_MYSQL_EXPOSED_PORT;
         //root password may be blank but not null, if user wants to have empty password
         if (rootPassword == null) rootPassword = DEFAULT_MYSQL_PASSWORD;
@@ -89,7 +90,7 @@ public class CreateMySql extends AbstractDockerMojo {
                 .exec();
     }
 
-    private void pullMySqlImage(DockerClient docker) {
+    private void pullMySqlImage(DockerClient docker) throws MojoExecutionException {
         final CountDownLatch latch = new CountDownLatch(1);
         docker.pullImageCmd("mysql")
                 .withTag("5.6")
@@ -123,7 +124,7 @@ public class CreateMySql extends AbstractDockerMojo {
         try {
             latch.await();
         } catch (InterruptedException e) {
-            throw new RuntimeException("Failed to create mysql container", e);
+            throw new MojoExecutionException("Failed to create mysql container " + e.getMessage(), e);
         }
     }
 }

@@ -380,7 +380,7 @@ public class Server extends BaseSdkProperties {
             Writer writer = new FileWriter(pomFile);
             new MavenXpp3Writer().write(writer, reactorProject);
         } catch (IOException e) {
-            throw new RuntimeException("Failed to write pom.xml", e);
+            throw new MojoExecutionException("Failed to write pom.xml " + e.getMessage(), e);
         }
 
         projects.add(Project.loadProject(getWatchedProjectsDirectory()));

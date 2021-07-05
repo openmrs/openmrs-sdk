@@ -94,7 +94,7 @@ public class Deploy extends AbstractServerTask {
 
 		if ((platform == null && distro == null && owa == null) && artifactId == null) {
 			Artifact artifact = checkCurrentDirectoryForOpenmrsWebappUpdate(server);
-			DistroProperties distroProperties = checkCurrentDirectoryForDistroProperties(server);
+			DistroProperties distroProperties = checkCurrentDirectoryForDistroProperties();
 			if (artifact != null) {
 				deployOpenmrsFromDir(server, artifact);
 			} else if (distroProperties != null) {
@@ -417,7 +417,7 @@ public class Deploy extends AbstractServerTask {
 	 * @param server
 	 * @return artifact to update, if update requested or null
 	 */
-	public Artifact checkCurrentDirectoryForOpenmrsWebappUpdate(Server server) {
+	public Artifact checkCurrentDirectoryForOpenmrsWebappUpdate(Server server) throws MojoExecutionException {
 		String moduleName = mavenProject.getArtifactId();
 		if (moduleName.equals("openmrs")) {
 			if (!new Version(mavenProject.getVersion()).equals(new Version(server.getPlatformVersion())) || new Version(
@@ -445,7 +445,7 @@ public class Deploy extends AbstractServerTask {
 		return null;
 	}
 
-	private DistroProperties checkCurrentDirectoryForDistroProperties(Server server) {
+	private DistroProperties checkCurrentDirectoryForDistroProperties() throws MojoExecutionException {
 		DistroProperties distroProperties = DistroHelper.getDistroPropertiesFromDir();
 		if (distroProperties != null) {
 			String message = String.format(
@@ -456,12 +456,10 @@ public class Deploy extends AbstractServerTask {
 			boolean agree = wizard.promptYesNo(message);
 			if (agree) {
 				return distroProperties;
-			} else {
-				return null;
 			}
-		} else {
-			return null;
 		}
+
+		return null;
 	}
 
 	/**

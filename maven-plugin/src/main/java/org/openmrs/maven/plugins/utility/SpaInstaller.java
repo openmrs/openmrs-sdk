@@ -62,7 +62,7 @@ public class SpaInstaller {
         }
     }
 
-    private JsonObject convertPropertiesToJSON(Map<String, String> properties) throws RuntimeException {
+    private JsonObject convertPropertiesToJSON(Map<String, String> properties) throws MojoExecutionException {
         Set<String> foundPropertySetKeys = new HashSet<>();
         JsonObject result = new JsonObject();
         for (String dotDelimitedKeys : properties.keySet()) {
@@ -74,7 +74,7 @@ public class SpaInstaller {
         for (String dotDelimitedKeys : properties.keySet()) {
             if (foundPropertySetKeys.contains(dotDelimitedKeys)) {
                 String badLine = "spa." + dotDelimitedKeys + "=" + properties.get(dotDelimitedKeys);
-                throw new RuntimeException(BAD_SPA_PROPERTIES_MESSAGE +
+                throw new MojoExecutionException(BAD_SPA_PROPERTIES_MESSAGE +
                         " The following property is a parent property to another, and therefore cannot be assigned a value:\t\"" + badLine + "\"");
             }
             addPropertyToJSONObject(result, dotDelimitedKeys, properties.get(dotDelimitedKeys));
@@ -91,13 +91,15 @@ public class SpaInstaller {
      * @param propertyKey
      * @param value
      */
-    private void addPropertyToJSONObject(JsonObject jsonObject, String propertyKey, String value) {
+    private void addPropertyToJSONObject(JsonObject jsonObject, String propertyKey, String value)
+            throws MojoExecutionException {
         String[] keys = propertyKey.split("\\.");
         if (keys.length == 1) {
             if (jsonObject.has(keys[0])) {
-                throw new RuntimeException(BAD_SPA_PROPERTIES_MESSAGE +
+                throw new MojoExecutionException(BAD_SPA_PROPERTIES_MESSAGE +
                         " Encountered this error processing a property containing the key '" + keys[0] + "' and with value " + value);
             }
+            
             if ("configUrls".equals(keys[0])) {
                 JsonArray arr = new JsonArray();
                 for (String valueElement : value.split(",")) {
@@ -113,7 +115,7 @@ public class SpaInstaller {
             }
             Object childObject = jsonObject.get(keys[0]);
             if (!(childObject instanceof JsonObject)) {
-                throw new RuntimeException(BAD_SPA_PROPERTIES_MESSAGE +
+                throw new MojoExecutionException(BAD_SPA_PROPERTIES_MESSAGE +
                         " Also please post to OpenMRS Talk and include this full message. If you are seeing this, there has been a programming error.");
             }
             String childKeys = StringUtils.join(Arrays.copyOfRange(keys, 1, keys.length), ".");

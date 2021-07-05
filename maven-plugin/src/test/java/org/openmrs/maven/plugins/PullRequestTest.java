@@ -84,7 +84,7 @@ public class PullRequestTest {
         when(gitHelper.getLocalRepository(anyString())).thenReturn(repository);
         when(repository.getBranch()).thenReturn("master");
         //doReturn syntax here to avoid org.mockito.exceptions.misusing.WrongTypeOfReturnValue exceptions
-        doReturn(false).when(gitHelper).checkIfUncommitedChanges(any(Git.class));
+        doReturn(false).when(gitHelper).checkIfUncommittedChanges(any(Git.class));
         doReturn(Lists.newArrayList(commit1, commit2)).when(gitHelper)
                 .getCommitDifferential(any(Git.class), anyString(), anyString());
         doReturn(Lists.newArrayList("test", issueId +" test")).when(gitHelper)
@@ -130,7 +130,7 @@ public class PullRequestTest {
 
     @Test(expected = MojoExecutionException.class)
     public void should_throwIfUncommitedChanges() throws Exception {
-        doReturn(true).when(gitHelper).checkIfUncommitedChanges(any(Git.class));
+        doReturn(true).when(gitHelper).checkIfUncommittedChanges(any(Git.class));
         pullRequest.executeTask();
     }
 

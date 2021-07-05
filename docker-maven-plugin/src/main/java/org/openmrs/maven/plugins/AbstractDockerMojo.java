@@ -77,10 +77,10 @@ abstract class AbstractDockerMojo extends AbstractMojo {
             docker.infoCmd().exec();
         } catch (Exception e) {
             if (SystemUtils.IS_OS_LINUX) {
-                throw new RuntimeException(String.format(LINUX_UNABLE_TO_CONNECT_MESSAGE, dockerHost), e);
+                throw new MojoExecutionException(String.format(LINUX_UNABLE_TO_CONNECT_MESSAGE, dockerHost), e);
             }
             else {
-                throw new RuntimeException(String.format(NOT_LINUX_UNABLE_TO_CONNECT_MESSAGE, dockerHost), e);
+                throw new MojoExecutionException(String.format(NOT_LINUX_UNABLE_TO_CONNECT_MESSAGE, dockerHost), e);
             }
         }
     }

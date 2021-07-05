@@ -7,6 +7,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.openmrs.maven.plugins.model.Artifact;
@@ -17,6 +18,7 @@ import org.openmrs.maven.plugins.utility.DistroHelper;
 import org.openmrs.maven.plugins.utility.Project;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileWriter;
@@ -80,7 +82,7 @@ public class BuildDistro extends AbstractTask {
 	private boolean reset;
 
 	@Override
-	public void executeTask() throws MojoExecutionException {
+	public void executeTask() throws MojoExecutionException, MojoFailureException {
 		File buildDirectory = getBuildDirectory();
 
 		File userDir = new File(System.getProperty("user.dir"));
@@ -128,7 +130,7 @@ public class BuildDistro extends AbstractTask {
 		}
 
 		if (distroProperties == null) {
-			throw new IllegalArgumentException("The distro you specified '" + distro + "' could not be retrieved");
+			throw new MojoExecutionException("The distro you specified, '" + distro + "' could not be retrieved");
 		}
 
 		String distroName = buildDistro(buildDirectory, distroArtifact, distroProperties);
@@ -138,7 +140,7 @@ public class BuildDistro extends AbstractTask {
 						+ buildDirectory.getAbsolutePath() + "\n");
 	}
 
-	private File getBuildDirectory() {
+	private File getBuildDirectory() throws MojoExecutionException {
 		final File targetDir;
 		if (StringUtils.isBlank(dir)) {
 			String directory = wizard.promptForValueIfMissingWithDefault(
@@ -192,12 +194,12 @@ public class BuildDistro extends AbstractTask {
 		}
 	}
 
-	private void deleteDirectory(File targetDir) {
+	private void deleteDirectory(File targetDir) throws MojoExecutionException {
 		try {
 			FileUtils.cleanDirectory(targetDir);
 		}
 		catch (IOException e) {
-			throw new IllegalStateException("Could not clean up directory", e);
+			throw new MojoExecutionException("Could not clean up directory \"" + targetDir.getAbsolutePath() + "\" " + e.getMessage(), e);
 		}
 	}
 
@@ -231,11 +233,11 @@ public class BuildDistro extends AbstractTask {
 					FileUtils.deleteDirectory(tempDir);
 				}
 				catch (IOException e) {
-					throw new RuntimeException("Failed to remove " + tempDir.getName() + " file", e);
+					throw new MojoExecutionException("Failed to remove " + tempDir.getName() + " file " + e.getMessage(), e);
 				}
 			}
 			catch (ZipException e) {
-				throw new RuntimeException("Failed to bundle modules into *.war file", e);
+				throw new MojoExecutionException("Failed to bundle modules into *.war file " + e.getMessage(), e);
 			}
 		} else {
 			File modulesDir = new File(web, "modules");
@@ -324,21 +326,21 @@ public class BuildDistro extends AbstractTask {
 		}
 	}
 
-	private void writeDockerCompose(File targetDirectory, String distro, String version) {
+	private void writeDockerCompose(File targetDirectory, String distro, String version) throws MojoExecutionException {
 		writeTemplatedFile(targetDirectory, distro, version, DOCKER_COMPOSE_PATH, DOCKER_COMPOSE_YML);
 		writeTemplatedFile(targetDirectory, distro, version, DOCKER_COMPOSE_OVERRIDE_PATH, DOCKER_COMPOSE_OVERRIDE_YML);
 		writeTemplatedFile(targetDirectory, distro, version, DOCKER_COMPOSE_PROD_PATH, DOCKER_COMPOSE_PROD_YML);
 	}
 
-	private void writeReadme(File targetDirectory, String distro, String version) {
+	private void writeReadme(File targetDirectory, String distro, String version) throws MojoExecutionException {
 		writeTemplatedFile(targetDirectory, distro, version, README_PATH, "README.md");
 	}
 
 	private void writeTemplatedFile(File targetDirectory, String distro, String version,
-			String path, String filename) {
+			String path, String filename) throws MojoExecutionException {
 		URL composeUrl = getClass().getClassLoader().getResource(path);
 		if (composeUrl == null) {
-			throw new RuntimeException("Failed to find file '" + path + "' in classpath");
+			throw new MojoExecutionException("Failed to find file '" + path + "' in classpath");
 		}
 		File compose = new File(targetDirectory, filename);
 		if (!compose.exists()) {
@@ -348,8 +350,8 @@ public class BuildDistro extends AbstractTask {
 				content = content.replaceAll("<tag>", version);
 				composeWriter.write(content);
 			}
-			catch (IOException | NullPointerException e/*don't check if url is not null, because same error handling*/) {
-				throw new RuntimeException("Failed to write " + filename + " file", e);
+			catch (IOException e) {
+				throw new MojoExecutionException("Failed to write " + filename + " file " + e.getMessage(), e);
 			}
 		}
 	}
@@ -358,20 +360,22 @@ public class BuildDistro extends AbstractTask {
 		return part.replaceAll("\\s+", "").toLowerCase();
 	}
 
-	private void copyDbDump(File targetDirectory, InputStream stream) {
-		File dbdump = new File(targetDirectory, DB_DUMP_PATH);
+	private void copyDbDump(File targetDirectory, InputStream stream) throws MojoExecutionException {
+		File dbDump = new File(targetDirectory, DB_DUMP_PATH);
 		try {
-			dbdump.getParentFile().mkdirs();
-			dbdump.createNewFile();
+			dbDump.getParentFile().mkdirs();
+			dbDump.createNewFile();
 		}
 		catch (IOException e) {
-			throw new RuntimeException("Failed to create SQL dump file");
+			throw new MojoExecutionException("Failed to create SQL dump file " + e.getMessage(), e);
 		}
-		try (FileWriter writer = new FileWriter(dbdump)) {
+
+		try (FileWriter writer = new FileWriter(dbDump);
+		     BufferedInputStream bis = new BufferedInputStream(stream)) {
 			writer.write(DUMP_PREFIX);
 
 			int c;
-			while ((c = stream.read()) != -1) {
+			while ((c = bis.read()) != -1) {
 				writer.write(c);
 			}
 
@@ -379,7 +383,7 @@ public class BuildDistro extends AbstractTask {
 			writer.flush();
 		}
 		catch (IOException e) {
-			throw new RuntimeException("Failed to create dump file", e);
+			throw new MojoExecutionException("Failed to create dump file " + e.getMessage(), e);
 		}
 		finally {
 			IOUtils.closeQuietly(stream);
@@ -413,31 +417,30 @@ public class BuildDistro extends AbstractTask {
 				if (scriptFile.exists()) {
 					stream = new FileInputStream(scriptFile);
 				} else {
-					throw new IllegalArgumentException("Invalid db script: " + sqlScriptPath);
+					throw new MojoExecutionException("Specified script \"" + scriptFile.getAbsolutePath() + "\" does not exist.");
 				}
 			}
 		}
 		catch (IOException e) {
-			throw new RuntimeException("Failed to open stream to sql dump script");
+			throw new MojoExecutionException("Failed to open stream to sql dump script " + e.getMessage(), e);
 		}
 		return stream;
 	}
 
-	private void copyBuildDistroResource(String resource, File target) {
+	private void copyBuildDistroResource(String resource, File target) throws MojoExecutionException {
 		URL resourceUrl = getClass().getClassLoader().getResource("build-distro/web/" + resource);
-		if (!target.exists()) {
+		if (resourceUrl != null && !target.exists()) {
 			try {
 				FileUtils.copyURLToFile(resourceUrl, target);
 			}
 			catch (IOException e) {
-				throw new RuntimeException(
-						"Failed to copy file from classpath: " + resourceUrl + " to " + target.getAbsolutePath());
+				throw new MojoExecutionException(
+						"Failed to copy file from classpath: " + resourceUrl + " to " + target.getAbsolutePath() + e.getMessage(), e);
 			}
 		}
 	}
 
-	private void renameWebApp(File targetDirectory) {
-		File openmrsWar = new File(targetDirectory, OPENMRS_WAR);
+	private void renameWebApp(File targetDirectory) throws MojoExecutionException {
 		File[] warFiles = targetDirectory.listFiles(new FilenameFilter() {
 
 			@Override
@@ -445,17 +448,22 @@ public class BuildDistro extends AbstractTask {
 				return name.endsWith(".war");
 			}
 		});
-		for (File file : warFiles) {
-			wizard.showMessage("file:" + file.getAbsolutePath());
-		}
-		wizard.showMessage("target:" + targetDirectory);
-		if (warFiles != null && warFiles.length == 1) {
-			boolean renameSuccess = warFiles[0].renameTo(openmrsWar);
-			if (!renameSuccess) {
-				throw new RuntimeException("Failed to rename openmrs '.war' file");
+
+		if (warFiles != null) {
+			for (File file : warFiles) {
+				wizard.showMessage("file:" + file.getAbsolutePath());
 			}
-		} else {
-			throw new RuntimeException("Distro should contain single war file");
+
+			wizard.showMessage("target:" + targetDirectory);
+
+			if (warFiles.length == 1) {
+				boolean renameSuccess = warFiles[0].renameTo(new File(targetDirectory, OPENMRS_WAR));
+				if (!renameSuccess) {
+					throw new MojoExecutionException("Failed to rename openmrs '.war' file");
+				}
+			} else {
+				throw new MojoExecutionException("Distro should contain only single war file");
+			}
 		}
 	}
 }

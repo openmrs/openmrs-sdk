@@ -196,7 +196,7 @@ public class CreateProject extends AbstractTask {
 
 	}
 
-	private void setProjectType() {
+	private void setProjectType() throws MojoExecutionException {
 		String choice = wizard.promptForMissingValueWithOptions(MODULE_TYPE_PROMPT, type, null,
 				Arrays.asList(OPTION_PLATFORM, OPTION_REFAPP, OPTION_OWA));
 

@@ -210,18 +210,21 @@ public class DistroProperties extends BaseSdkProperties {
         }
     }
 
-    public void resolvePlaceholders(Properties projectProperties){
+    public void resolvePlaceholders(Properties projectProperties) throws MojoExecutionException {
         for(Map.Entry<Object, Object> property: properties.entrySet()){
             if(hasPlaceholder(property.getValue())){
                 try{
                     Object placeholderValue = projectProperties.get(getPlaceholderKey((String)property.getValue()));
                     if(placeholderValue == null){
-                        throw new IllegalArgumentException("Failed to resolve property placeholders in distro file, no property for key: "+property.getKey());
+                        throw new MojoExecutionException(
+                                "Failed to resolve property placeholders in distro file, no property for key \"" +
+                                        property.getKey() + "\"");
                     } else {
-                            property.setValue(putInPlaceholder((String)property.getValue(), (String)placeholderValue));
-                        }
-                } catch(ClassCastException e){
-                    throw new IllegalArgumentException("Property with key "+property.getKey()+" and value "+property.getValue()+"is not placeholder.");
+                        property.setValue(putInPlaceholder((String)property.getValue(), (String)placeholderValue));
+                    }
+                } catch (ClassCastException e){
+                    throw new MojoExecutionException("Property with key \"" + property.getKey() + "\" and value \"" +
+                            property.getValue() + "\" is not placeholder.");
                 }
             }
         }

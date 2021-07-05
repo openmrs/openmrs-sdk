@@ -72,7 +72,7 @@ public class PullRequest extends AbstractTask {
 
 		Git git = new Git(localRepository);
 
-		if (gitHelper.checkIfUncommitedChanges(git)) {
+		if (gitHelper.checkIfUncommittedChanges(git)) {
 			wizard.showMessage("There are uncommitted changes. Please commit before proceeding.");
 			throw new MojoExecutionException("There are uncommitted changes. Please commit before proceeding.");
 		}
@@ -120,7 +120,7 @@ public class PullRequest extends AbstractTask {
 	 * @param localRef    reference to local branch
 	 * @param upstreamRef reference to upstream branch
 	 */
-	private void squashCommitsIfAccepted(Git git, String localRef, String upstreamRef) {
+	private void squashCommitsIfAccepted(Git git, String localRef, String upstreamRef) throws MojoExecutionException {
 		Iterable<RevCommit> commits = gitHelper.getCommitDifferential(git, upstreamRef, localRef);
 
 		int size = Iterables.size(commits);
@@ -175,7 +175,7 @@ public class PullRequest extends AbstractTask {
 	 * @param originBranch name of branch to be head of PR
 	 * @param repoName     name of openmrs repository to be base of PR
 	 */
-	private void createUpdatePullRequest(Issue issue, String originBranch, String repoName) {
+	private void createUpdatePullRequest(Issue issue, String originBranch, String repoName) throws MojoExecutionException {
 		org.eclipse.egit.github.core.PullRequest pr = gitHelper
 				.getPullRequestIfExists(branch, username + ":" + originBranch, repoName);
 		if (pr == null) {

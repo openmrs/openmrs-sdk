@@ -48,11 +48,11 @@ public class AddFeature extends AbstractTask {
 			if (feature.equals(OPEN_WEB_APP) || feature.equals("owa")) {
 				addOwaSubmodule();
 			} else {
-				throw new IllegalArgumentException(
+				throw new MojoExecutionException(
 						"Adding feature " + feature + " is not available. Available features: " + OPTIONS);
 			}
 		} else {
-			throw new IllegalArgumentException(
+			throw new MojoExecutionException(
 					"No project found in this directory. Please enter project's main directory and run this command again");
 		}
 	}
