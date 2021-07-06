@@ -311,14 +311,12 @@ public class Setup extends AbstractServerTask {
 	}
 
 	private void wipeDatabase(Server server) throws MojoExecutionException {
-		String uri = server.getDbUri();
-		uri = uri.substring(0, uri.lastIndexOf("/") + 1);
+		String uri = getUriWithoutDb(server);
 		try (DBConnector connector = new DBConnector(uri, server.getDbUser(), server.getDbPassword(), server.getDbName())) {
 			connector.dropDatabase();
-			if (server.isMySqlDb()) {
-				connectToDatabase(server);
-			} else if (server.isPostgreSqlDb()) {
-				connectToDatabase(server);
+			if (server.isMySqlDb() || server.isPostgreSqlDb()) {
+				connector.checkAndCreate(server);
+				wizard.showMessage("Connected to the database.");
 			}
 			wizard.showMessage("Database " + server.getDbName() + " has been wiped.");
 		}
@@ -389,8 +387,10 @@ public class Setup extends AbstractServerTask {
 		}
 
 		if (server.isMySqlDb() || server.isPostgreSqlDb()) {
-			try {
-				connectToDatabase(server);
+			String uri = getUriWithoutDb(server);
+			try (DBConnector connector = new DBConnector(uri, server.getDbUser(), server.getDbPassword(), server.getDbName())) {
+				connector.checkAndCreate(server);
+				wizard.showMessage("Connected to the database.");
 			}
 			catch (SQLException e) {
 				throw new MojoExecutionException("Failed to connect to the specified database " + server.getDbUri(), e);
@@ -447,17 +447,8 @@ public class Setup extends AbstractServerTask {
 		}
 	}
 
-	private void connectToDatabase(Server server) throws SQLException {
-		try (DBConnector connector = new DBConnector(server.getDbUri(), server.getDbUser(), server.getDbPassword(),
-				server.getDbName())) {
-			connector.checkAndCreate(server);
-			wizard.showMessage("Connected to the database.");
-		}
-	}
-
 	private boolean hasDbTables(Server server) throws MojoExecutionException {
-		String uri = server.getDbUri();
-		uri = uri.substring(0, uri.lastIndexOf("/") + 1);
+		String uri = getUriWithoutDb(server);
 		try (DBConnector connector = new DBConnector(uri, server.getDbUser(), server.getDbPassword(), server.getDbName())) {
 			DatabaseMetaData md = connector.getConnection().getMetaData();
 
@@ -472,40 +463,14 @@ public class Setup extends AbstractServerTask {
 
 	private void resetSearchIndex(Server server) throws MojoExecutionException {
 		String uri = server.getDbUri();
-		uri = uri.substring(0, uri.lastIndexOf("/") + 1);
-		DBConnector connector = null;
-		PreparedStatement ps = null;
-		try {
-			connector = new DBConnector(uri + server.getDbName(), server.getDbUser(), server.getDbPassword(),
-					server.getDbName());
-			ps = connector.getConnection().prepareStatement(SDKConstants.RESET_SEARCH_INDEX_SQL);
+
+		try (DBConnector connector = new DBConnector(uri, server.getDbUser(), server.getDbPassword(), server.getDbName());
+			PreparedStatement ps = connector.getConnection().prepareStatement(SDKConstants.RESET_SEARCH_INDEX_SQL)) {
 			ps.execute();
-
-			ps.close();
-			connector.close();
-
 			wizard.showMessage("The search index has been reset.");
 		}
 		catch (SQLException e) {
 			throw new MojoExecutionException("Failed to reset search index " + e.getMessage(), e);
-		}
-		finally {
-			if (ps != null) {
-				try {
-					ps.close();
-				}
-				catch (SQLException e) {
-					getLog().error(e.getMessage());
-				}
-			}
-			if (connector != null) {
-				try {
-					connector.close();
-				}
-				catch (SQLException e) {
-					getLog().error(e.getMessage());
-				}
-			}
 		}
 	}
 
@@ -640,5 +605,11 @@ public class Setup extends AbstractServerTask {
 		if (run) {
 			new Run(this, server.getServerId()).execute();
 		}
+	}
+
+	private String getUriWithoutDb(Server server) {
+		String uri = server.getDbUri();
+		uri = uri.substring(0, uri.lastIndexOf("/") + 1);
+		return uri;
 	}
 }
