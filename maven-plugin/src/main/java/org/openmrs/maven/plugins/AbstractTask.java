@@ -152,6 +152,10 @@ public abstract class AbstractTask extends AbstractMojo {
 		this.gitHelper = other.gitHelper;
 		this.dockerHelper = other.dockerHelper;
 		this.settings = other.settings;
+		this.batchAnswers = other.batchAnswers;
+		this.testMode = other.testMode;
+		this.openMRSPath = other.openMRSPath;
+		this.stats = other.stats;
 		initTask();
 	}
 

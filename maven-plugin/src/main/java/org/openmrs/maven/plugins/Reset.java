@@ -1,5 +1,7 @@
 package org.openmrs.maven.plugins;
 
+import static org.openmrs.maven.plugins.model.Server.getServersPath;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -20,14 +22,15 @@ public class Reset extends AbstractServerTask {
 
     public void executeTask() throws MojoExecutionException {
         Server server = getServer();
-        if(StringUtils.isNotBlank(server.getContainerId())){
+        if (StringUtils.isNotBlank(server.getContainerId())){
             new DockerHelper(mavenProject, mavenSession, pluginManager, wizard).runDbContainer(
                     server.getContainerId(),
                     server.getMySqlPort(),
                     server.getDbUser(),
                     server.getDbPassword());
         }
-        if(server.getDbDriver().equals(SDKConstants.DRIVER_MYSQL)){
+
+        if (server.isMySqlDb() || server.isPostgreSqlDb()){
             DBConnector connector = null;
             try {
                 String dbName = String.format(SDKConstants.DB_NAME_TEMPLATE, serverId);
@@ -62,6 +65,8 @@ public class Reset extends AbstractServerTask {
                     .setJavaHome(server.getJavaHome())
                     .setContainerId(server.getContainerId())
                     .build();
+            newServer.setServerDirectory(getServersPath().resolve(serverId).toFile());
+
             Setup setup = new Setup(this);
             DistroProperties distroProperties = server.getDistroProperties();
             FileUtils.deleteDirectory(server.getServerDirectory());
