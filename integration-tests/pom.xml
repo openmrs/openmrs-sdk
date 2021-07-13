@@ -5,12 +5,12 @@
     <parent>
         <groupId>org.openmrs.maven</groupId>
         <artifactId>openmrs-sdk</artifactId>
-        <version>4.0.2-SNAPSHOT</version>
+        <version>4.1.0</version>
     </parent>
 
     <groupId>org.openmrs.maven</groupId>
     <artifactId>openmrs-sdk-integration-tests</artifactId>
-    <version>4.0.2-SNAPSHOT</version>
+    <version>4.1.0</version>
 
     <name>OpenMRS SDK Integration Tests</name>
     <description>Set of integration tests for OpenMRS SDK Maven Plugin</description>
