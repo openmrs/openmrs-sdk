@@ -9,7 +9,6 @@
 
     <groupId>org.openmrs.maven.archetypes</groupId>
     <artifactId>openmrs-sdk-archetype-submodule-owa</artifactId>
-    <version>4.2.0-SNAPSHOT</version>
     <packaging>maven-archetype</packaging>
 
     <name>OpenMRS OWA Submodule Maven Archetype</name>
