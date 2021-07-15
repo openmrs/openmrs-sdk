@@ -86,7 +86,7 @@ public class SpaInstaller {
     /**
      * Add a line from the properties file to the new JSON object. Creates nested objects as needed.
      * Known array-valued keys are parsed as comma-delimited arrays; e.g.,
-     *   `configUrl=qux` becomes `{ "configUrl": ["qux"] }` because `configUrl` is known to be array-valued
+     *   `configUrls=qux` becomes `{ "configUrls": ["qux"] }` because `configUrls` is known to be array-valued
      *
      * @param jsonObject the object being constructed
      * @param propertyKey
