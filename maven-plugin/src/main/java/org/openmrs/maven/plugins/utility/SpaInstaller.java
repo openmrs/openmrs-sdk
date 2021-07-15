@@ -85,9 +85,7 @@ public class SpaInstaller {
 
     /**
      * Add a line from the properties file to the new JSON object. Creates nested objects as needed.
-     * If the value contains commas, it is assumed to represent an array of strings. Known array-valued
-     * parameters are always parsed as arrays of strings. e.g.
-     *   `foo=bar,baz` becomes `{ "foo": ["bar", "baz"] }`
+     * Known array-valued keys are parsed as comma-delimited arrays; e.g.,
      *   `configUrl=qux` becomes `{ "configUrl": ["qux"] }` because `configUrl` is known to be array-valued
      *
      * @param jsonObject the object being constructed
@@ -101,7 +99,7 @@ public class SpaInstaller {
                 throw new RuntimeException(BAD_SPA_PROPERTIES_MESSAGE +
                         " Encountered this error processing a property containing the key '" + keys[0] + "' and with value " + value);
             }
-            if (value.contains(",") || "configUrls".equals(keys[0])) {
+            if ("configUrls".equals(keys[0])) {
                 JsonArray arr = new JsonArray();
                 for (String valueElement : value.split(",")) {
                     arr.add(valueElement);
