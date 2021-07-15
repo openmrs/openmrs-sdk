@@ -32,12 +32,10 @@ public class SpaInstaller {
 
     private DistroHelper distroHelper;
 
-    public SpaInstaller(MavenProject mavenProject,
-                        MavenSession mavenSession,
-                        BuildPluginManager pluginManager,
-                        DistroHelper distroHelper) {
+    public SpaInstaller(DistroHelper distroHelper,
+                        NodeHelper nodeHelper) {
         this.distroHelper = distroHelper;
-        this.nodeHelper = new NodeHelper(mavenProject, mavenSession, pluginManager);
+        this.nodeHelper = nodeHelper;
     }
 
     /**

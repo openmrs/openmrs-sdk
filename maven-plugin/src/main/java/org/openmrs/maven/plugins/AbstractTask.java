@@ -19,6 +19,7 @@ import org.openmrs.maven.plugins.git.GitHelper;
 import org.openmrs.maven.plugins.utility.DockerHelper;
 import org.openmrs.maven.plugins.utility.Jira;
 import org.openmrs.maven.plugins.utility.ModuleInstaller;
+import org.openmrs.maven.plugins.utility.NodeHelper;
 import org.openmrs.maven.plugins.utility.OwaHelper;
 import org.openmrs.maven.plugins.utility.SpaInstaller;
 import org.openmrs.maven.plugins.utility.StatsManager;
@@ -190,7 +191,7 @@ public abstract class AbstractTask extends AbstractMojo {
             owaHelper = new OwaHelper(mavenSession, mavenProject, pluginManager, wizard);
         }
         if (spaInstaller == null) {
-            spaInstaller = new SpaInstaller(mavenProject, mavenSession, pluginManager, distroHelper);
+            spaInstaller = new SpaInstaller(distroHelper, new NodeHelper(mavenProject, mavenSession, pluginManager));
         }
         if(dockerHelper == null){
             dockerHelper = new DockerHelper(mavenProject, mavenSession, pluginManager, wizard);
