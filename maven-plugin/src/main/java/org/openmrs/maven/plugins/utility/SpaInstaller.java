@@ -1,6 +1,7 @@
 package org.openmrs.maven.plugins.utility;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.execution.MavenSession;
@@ -31,12 +32,10 @@ public class SpaInstaller {
 
     private DistroHelper distroHelper;
 
-    public SpaInstaller(MavenProject mavenProject,
-                        MavenSession mavenSession,
-                        BuildPluginManager pluginManager,
-                        DistroHelper distroHelper) {
+    public SpaInstaller(DistroHelper distroHelper,
+                        NodeHelper nodeHelper) {
         this.distroHelper = distroHelper;
-        this.nodeHelper = new NodeHelper(mavenProject, mavenSession, pluginManager);
+        this.nodeHelper = nodeHelper;
     }
 
     /**
@@ -49,8 +48,7 @@ public class SpaInstaller {
     public void installFromDistroProperties(File appDataDir, DistroProperties distroProperties) throws MojoExecutionException {
         // We find all the lines in distro properties beginning with `spa` and convert these
         // into a JSON structure. This is passed to the microfrontend build tools.
-        // If no SPA elements are present in the distro properties, we ask the user,
-        // and then run the interactive installer.
+        // If no SPA elements are present in the distro properties, the SPA is not installed.
         Map<String, String> spaProperties = distroProperties.getSpaProperties(distroHelper, appDataDir);
         if (!spaProperties.isEmpty()) {
             JsonObject spaConfigJson = convertPropertiesToJSON(spaProperties);
@@ -83,6 +81,15 @@ public class SpaInstaller {
         return result;
     }
 
+    /**
+     * Add a line from the properties file to the new JSON object. Creates nested objects as needed.
+     * Known array-valued keys are parsed as comma-delimited arrays; e.g.,
+     *   `configUrls=qux` becomes `{ "configUrls": ["qux"] }` because `configUrls` is known to be array-valued
+     *
+     * @param jsonObject the object being constructed
+     * @param propertyKey
+     * @param value
+     */
     private void addPropertyToJSONObject(JsonObject jsonObject, String propertyKey, String value) {
         String[] keys = propertyKey.split("\\.");
         if (keys.length == 1) {
@@ -90,7 +97,15 @@ public class SpaInstaller {
                 throw new RuntimeException(BAD_SPA_PROPERTIES_MESSAGE +
                         " Encountered this error processing a property containing the key '" + keys[0] + "' and with value " + value);
             }
-            jsonObject.addProperty(keys[0], value);
+            if ("configUrls".equals(keys[0])) {
+                JsonArray arr = new JsonArray();
+                for (String valueElement : value.split(",")) {
+                    arr.add(valueElement);
+                }
+                jsonObject.add(keys[0], arr);
+            } else {
+                jsonObject.addProperty(keys[0], value);
+            }
         } else {
             if (!jsonObject.has(keys[0])) {
                 jsonObject.add(keys[0], new JsonObject());

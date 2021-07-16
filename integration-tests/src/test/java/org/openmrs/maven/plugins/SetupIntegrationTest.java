@@ -164,6 +164,7 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
         assertFilePresent(serverId + File.separator + "frontend" + File.separator + "openmrs-esm-patient-chart-app-3.0.0");
         String indexContents = FileUtils.readFileToString(new File(testDirectory.getAbsolutePath(), indexFilePath));
         assertThat(indexContents, containsString("apiUrl: \"notopenmrs\""));
+        assertThat(indexContents, containsString("configUrls: [\"foo\"]"));
 
         Server.setServersPath(testDirectory.getAbsolutePath());
         Server server = Server.loadServer(serverId);
