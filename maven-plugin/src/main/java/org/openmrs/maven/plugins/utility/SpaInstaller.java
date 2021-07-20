@@ -56,6 +56,7 @@ public class SpaInstaller {
             writeJSONObject(spaConfigFile, spaConfigJson);
             nodeHelper.installNodeAndNpm(NODE_VERSION, NPM_VERSION);
             File buildTargetDir = new File(appDataDir, BUILD_TARGET_DIR);
+            nodeHelper.runNpx("openmrs@next --version");  // print frontend tool version number
             nodeHelper.runNpx(String.format("openmrs@next build --target %s --build-config %s", buildTargetDir, spaConfigFile));
             nodeHelper.runNpx(String.format("openmrs@next assemble --target %s --mode config --config %s", buildTargetDir, spaConfigFile));
         }
