@@ -35,10 +35,11 @@ jobs:
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
             ${{ runner.os }}-maven-
+      - name: Clear SDK from cache
+        run: rm -rf ~/.m2/repository/org/openmrs/maven
       - name: Install SDK
-        run: mvn clean install --batch-mode -DskipTests
+        run: mvn clean install -DskipTests=true -Dmaven.javadoc.skip=true --batch-mode --show-version --file pom.xml
       - name: Setup SDK
-        # run in offline mode to try to use the version we just installed
         run: mvn --batch-mode --offline org.openmrs.maven.plugins:openmrs-sdk-maven-plugin:setup-sdk -DbatchAnswers=n
       - name: Build and run tests
-        run: mvn install --batch-mode
+        run: mvn install --offline --batch-mode
