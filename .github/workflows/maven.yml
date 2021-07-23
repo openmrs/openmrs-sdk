@@ -28,15 +28,6 @@ jobs:
         with:
           distribution: "adopt"
           java-version: ${{ matrix.java-version }}
-      - name: Cache local Maven repository
-        uses: actions/cache@v2
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-maven-
-      - name: Clear SDK from cache
-        run: rm -rf ~/.m2/repository/org/openmrs/maven
       - name: Install SDK
         run: mvn clean install -DskipTests=true -Dmaven.javadoc.skip=true --batch-mode --show-version --file pom.xml
       - name: Setup SDK
