@@ -14,7 +14,7 @@
         <repository>
             <id>openmrs-repo</id>
             <name>OpenMRS repository</name>
-            <url>http://mavenrepo.openmrs.org/nexus/content/repositories/public</url>
+            <url>https://mavenrepo.openmrs.org/nexus/content/repositories/public</url>
         </repository>
     </repositories>
 
