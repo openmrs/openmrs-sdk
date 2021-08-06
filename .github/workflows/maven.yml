@@ -33,4 +33,4 @@ jobs:
       - name: Setup SDK
         run: mvn --batch-mode --offline org.openmrs.maven.plugins:openmrs-sdk-maven-plugin:setup-sdk -DbatchAnswers=n
       - name: Build and run tests
-        run: mvn install --offline --batch-mode
+        run: mvn install --batch-mode
