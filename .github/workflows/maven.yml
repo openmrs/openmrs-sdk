@@ -1,5 +1,5 @@
 # this build is designed to replicate the Travis CI workflow
-name: Build with Maven
+name: Build SDK
 
 on:
   push:
@@ -28,9 +28,9 @@ jobs:
         with:
           distribution: "adopt"
           java-version: ${{ matrix.java-version }}
-      - name: Install SDK
+      - name: Install SDK and Dependencies
         run: mvn clean install -DskipTests=true -Dmaven.javadoc.skip=true --batch-mode --show-version --file pom.xml
       - name: Setup SDK
-        run: mvn --batch-mode --offline org.openmrs.maven.plugins:openmrs-sdk-maven-plugin:setup-sdk -DbatchAnswers=n
+        run: mvn --batch-mode org.openmrs.maven.plugins:openmrs-sdk-maven-plugin:setup-sdk -DbatchAnswers=n
       - name: Build and run tests
-        run: mvn install --batch-mode
+        run: mvn test --batch-mode
