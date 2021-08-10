@@ -93,6 +93,7 @@ public abstract class AbstractSdkIntegrationTest {
         testDirectory = ResourceExtractor.simpleExtractResources(getClass(), TEST_DIRECTORY);
         testDirectoryPath = testDirectory.toPath();
         verifier = new Verifier(testDirectory.getAbsolutePath());
+        verifier.setAutoclean(false);
 
         testFilesToPersist = new ArrayList<>(Arrays.asList(testDirectory.listFiles()));
 
