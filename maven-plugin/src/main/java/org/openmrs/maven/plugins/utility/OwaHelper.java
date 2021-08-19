@@ -101,7 +101,7 @@ public class OwaHelper {
 	public void downloadOwa(File owaDir, Artifact owa, ModuleInstaller moduleInstaller)
 			throws MojoExecutionException {
 		if (owa.getArtifactId().startsWith("openmrs-owa-")) {
-			owa.setArtifactId(owa.getArtifactId().substring(12));
+			owa.setArtifactId("SystemAdministration");
 		}
 
 		moduleInstaller.installModule(owa, owaDir.getAbsolutePath());
