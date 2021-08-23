@@ -96,8 +96,10 @@ public class OwaHelper {
 
 	public void downloadOwa(File owaDir, Artifact owa, ModuleInstaller moduleInstaller)
 			throws MojoExecutionException {
+		boolean isSysAdmin = false;
 		if (owa.getArtifactId().startsWith("openmrs-owa-")) {
 			owa.setArtifactId(owa.getArtifactId().substring(12));
+			isSysAdmin = owa.getArtifactId().equalsIgnoreCase("sysadmin");
 		}
 
 		moduleInstaller.installModule(owa, owaDir.getAbsolutePath());
@@ -106,7 +108,13 @@ public class OwaHelper {
 			throw new MojoExecutionException("Unable to download OWA " + owa + " from Maven");
 		}
 
-		File renamedFile = new File(owaDir, owa.getArtifactId() + OWA_PACKAGE_EXTENSION);
+		File renamedFile;
+		if (!isSysAdmin) {
+			renamedFile = new File(owaDir, owa.getArtifactId() + OWA_PACKAGE_EXTENSION);
+		} else {
+			renamedFile = new File(owaDir, "SystemAdministration" + OWA_PACKAGE_EXTENSION);
+		}
+
 		if (renamedFile.exists()) {
 			renamedFile.delete();
 		}
