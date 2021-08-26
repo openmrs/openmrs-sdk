@@ -452,7 +452,7 @@ public class DefaultWizard implements Wizard {
 			// Use default JAVA_HOME
 			if (selectedOption.equals(options.get(0))) {
 				String jdkUnderSpecifiedPathVersion = determineJavaVersionFromPath(System.getProperty("java.home"));
-				if (isAbovePlatformTwoPointThree(platformVersion) && isJava8orAbove(jdkUnderSpecifiedPathVersion)) {
+				if (isPlatform24OrNewer(platformVersion) && isJava8orAbove(jdkUnderSpecifiedPathVersion)) {
 					server.setJavaHome(null);
 				} else if (System.getProperty("java.version").startsWith(requiredJdkVersion)) {
 					server.setJavaHome(null);
@@ -476,7 +476,7 @@ public class DefaultWizard implements Wizard {
 				promptForJavaHomeIfMissing(server);
 			} else {
 				String jdkUnderSpecifiedPathVersion = determineJavaVersionFromPath(selectedOption);
-				if (isAbovePlatformTwoPointThree(platformVersion) && isJava8orAbove(jdkUnderSpecifiedPathVersion)) {
+				if (isPlatform24OrNewer(platformVersion) && isJava8orAbove(jdkUnderSpecifiedPathVersion)) {
 					server.setJavaHome(selectedOption);
 					addJavaHomeToSdkProperties(selectedOption);
 				} else if (jdkUnderSpecifiedPathVersion.startsWith(requiredJdkVersion)) {
@@ -501,7 +501,7 @@ public class DefaultWizard implements Wizard {
 		}
 	}
 
-	private boolean isAbovePlatformTwoPointThree(Version platformVersion) {
+	private boolean isPlatform24OrNewer(Version platformVersion) {
 		return platformVersion.getMajorVersion() > 2
 				|| (platformVersion.getMajorVersion() == 2 && platformVersion.getMinorVersion() > 3);
 	}
@@ -736,13 +736,14 @@ public class DefaultWizard implements Wizard {
 			db = DB_OPTIONS_MAP.get(dbDriver);
 		}
 
-		List<String> options = new ArrayList<>(4);
+		List<String> options = new ArrayList<>(5);
 		if (h2supported) {
 			options.add(DB_OPTION_H2);
 		}
 
 		options.addAll(Lists.newArrayList(DB_OPTION_MYSQL, DB_OPTION_SDK_DOCKER_MYSQL, DB_OPTION_DOCKER_MYSQL));
-		if (isAbovePlatformTwoPointThree(new Version(server.getPlatformVersion()))) {
+		boolean isPlatform24OrNewer = isPlatform24OrNewer(new Version(server.getPlatformVersion()));
+		if (isPlatform24OrNewer) {
 			options.add(DB_OPTION_POSTGRESQL);
 		}
 
@@ -758,7 +759,7 @@ public class DefaultWizard implements Wizard {
 				server.setDbPassword("root");
 				break;
 			case DB_OPTION_MYSQL:
-				promptForDbUri(server, SDKConstants.DRIVER_MYSQL);
+				promptForDbUri(server, isPlatform24OrNewer ? SDKConstants.DRIVER_MYSQL : SDKConstants.DRIVER_MYSQL_OLD);
 				break;
 			case DB_OPTION_SDK_DOCKER_MYSQL:
 				promptForDockerizedSdkMysql(server, dockerHelper, dockerHost);
@@ -791,9 +792,10 @@ public class DefaultWizard implements Wizard {
 						(server.isMySqlDb() ? "MySQL" : "PostgreSQL") +
 						" database. Please specify database uri (-D%s)",
 				server.getDbUri(), "dbUri", uriTemplate);
-		if (dbUri.startsWith("jdbc:mysql:")) {
+
+		if (server.isMySqlDb()) {
 			dbUri = addMySQLParamsIfMissing(dbUri);
-		} else if (dbUri.startsWith("jdbc:postgresql:")) {
+		} else if (server.isPostgreSqlDb()) {
 			dbUri = addPostgreSQLParamsIfMissing(dbUri);
 		}
 
@@ -808,7 +810,11 @@ public class DefaultWizard implements Wizard {
 		promptForDockerHostIfMissing(dockerHelper, dockerHost);
 
 		if (server.getDbDriver() == null) {
-			server.setDbDriver(SDKConstants.DRIVER_MYSQL);
+			if (isPlatform24OrNewer(new Version(server.getPlatformVersion()))) {
+				server.setDbDriver(SDKConstants.DRIVER_MYSQL);
+			} else {
+				server.setDbDriver(SDKConstants.DRIVER_MYSQL_OLD);
+			}
 		}
 
 		String dbUri = getDefaultDbUri(server, dockerHelper);
@@ -949,10 +955,17 @@ public class DefaultWizard implements Wizard {
 
 		String dbUri = promptForValueIfMissingWithDefault(
 				"Please specify database uri (-D%s)", server.getDbUri(), "dbUri", defaultDbUri);
+
 		if (dbUri.startsWith("jdbc:mysql:")) {
-			server.setDbDriver(SDKConstants.DRIVER_MYSQL);
+			if (isPlatform24OrNewer(new Version(server.getPlatformVersion()))) {
+				server.setDbDriver(SDKConstants.DRIVER_MYSQL);
+			} else {
+				server.setDbDriver(SDKConstants.DRIVER_MYSQL_OLD);
+			}
+
 			dbUri = addMySQLParamsIfMissing(dbUri);
 		}
+
 		dbUri = dbUri.replace(DBNAME_URL_VARIABLE, server.getServerId());
 
 		server.setDbUri(dbUri);

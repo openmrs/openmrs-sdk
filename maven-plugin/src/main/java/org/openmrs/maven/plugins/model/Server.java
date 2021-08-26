@@ -721,11 +721,24 @@ public class Server extends BaseSdkProperties {
     }
 
     public boolean isMySqlDb() {
-        return getDbUri().startsWith("jdbc:mysql") || getDbDriver().equals(SDKConstants.DRIVER_MYSQL);
+        String dbUri = getDbUri();
+        if (dbUri != null && dbUri.startsWith("jdbc:mysql")) {
+            return true;
+        }
+
+        String dbDriver = getDbDriver();
+        return dbDriver != null && (dbDriver.equals(SDKConstants.DRIVER_MYSQL) || dbDriver.equals(
+                SDKConstants.DRIVER_MYSQL_OLD));
     }
     
     public boolean isPostgreSqlDb() {
-        return getDbUri().startsWith("jdbc:postgresql") || getDbDriver().equals(SDKConstants.DRIVER_POSTGRESQL);
+        String dbUri = getDbUri();
+        if (dbUri != null && dbUri.startsWith("jdbc:postgresql")) {
+            return true;
+        }
+
+        String dbDriver = getDbDriver();
+        return dbDriver != null && dbDriver.equals(SDKConstants.DRIVER_POSTGRESQL);
     }
 
     public String getDbUri() {

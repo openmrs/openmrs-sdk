@@ -373,6 +373,7 @@ public class Setup extends AbstractServerTask {
 			if (distroProperties != null) {
 				isH2Supported = distroProperties.isH2Supported();
 			}
+
 			wizard.promptForDb(server, dockerHelper, isH2Supported, dbDriver, dockerHost);
 		}
 
