@@ -1,4 +1,4 @@
-[![Build Status](https://github.com/openmrs/openmrs-sdk/actions/workflows/maven/badge.svg)](https://github.com/openmrs/openmrs-sdk/actions/workflows/maven.yml)
+[![Build Status](https://github.com/openmrs/openmrs-sdk/actions/workflows/maven.yml/badge.svg)](https://github.com/openmrs/openmrs-sdk/actions/workflows/maven.yml)
 
 It is a repository of OpenMRS Software Development Kit (SDK).
 
