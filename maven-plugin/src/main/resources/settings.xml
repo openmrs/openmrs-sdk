@@ -11,10 +11,6 @@
     <profiles>
         <profile>
             <id>openmrs</id>
-            <properties>
-                <archetypeCatalog>https://mavenrepo.openmrs.org/public/archetype-catalog.xml</archetypeCatalog>
-                <archetypeRepository>https://mavenrepo.openmrs.org/public</archetypeRepository>
-            </properties>
             <repositories>
                 <repository>
                     <id>openmrs-repo</id>
