@@ -170,7 +170,7 @@ public class DefaultWizard implements Wizard {
 		Path omrsServerPath = Server.getServersPath();
 		String newServerId = DEFAULT_SERVER_NAME;
 
-		for (int idx = 0; omrsServerPath.resolve(newServerId).toFile().exists(); idx++) {
+		for (int idx = 1; omrsServerPath.resolve(newServerId).toFile().exists(); idx++) {
 			newServerId = DEFAULT_SERVER_NAME + idx;
 		}
 
