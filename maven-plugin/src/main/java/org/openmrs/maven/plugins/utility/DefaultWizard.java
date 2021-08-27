@@ -759,7 +759,7 @@ public class DefaultWizard implements Wizard {
 				server.setDbPassword("root");
 				break;
 			case DB_OPTION_MYSQL:
-				promptForDbUri(server, isPlatform24OrNewer ? SDKConstants.DRIVER_MYSQL : SDKConstants.DRIVER_MYSQL_OLD);
+				promptForDbUri(server, SDKConstants.DRIVER_MYSQL_OLD);
 				break;
 			case DB_OPTION_SDK_DOCKER_MYSQL:
 				promptForDockerizedSdkMysql(server, dockerHelper, dockerHost);
@@ -810,11 +810,7 @@ public class DefaultWizard implements Wizard {
 		promptForDockerHostIfMissing(dockerHelper, dockerHost);
 
 		if (server.getDbDriver() == null) {
-			if (isPlatform24OrNewer(new Version(server.getPlatformVersion()))) {
-				server.setDbDriver(SDKConstants.DRIVER_MYSQL);
-			} else {
-				server.setDbDriver(SDKConstants.DRIVER_MYSQL_OLD);
-			}
+			server.setDbDriver(SDKConstants.DRIVER_MYSQL_OLD);
 		}
 
 		String dbUri = getDefaultDbUri(server, dockerHelper);
@@ -957,12 +953,7 @@ public class DefaultWizard implements Wizard {
 				"Please specify database uri (-D%s)", server.getDbUri(), "dbUri", defaultDbUri);
 
 		if (dbUri.startsWith("jdbc:mysql:")) {
-			if (isPlatform24OrNewer(new Version(server.getPlatformVersion()))) {
-				server.setDbDriver(SDKConstants.DRIVER_MYSQL);
-			} else {
-				server.setDbDriver(SDKConstants.DRIVER_MYSQL_OLD);
-			}
-
+			server.setDbDriver(SDKConstants.DRIVER_MYSQL_OLD);
 			dbUri = addMySQLParamsIfMissing(dbUri);
 		}
 
