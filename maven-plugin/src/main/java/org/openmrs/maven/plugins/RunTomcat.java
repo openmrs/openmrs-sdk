@@ -150,7 +150,7 @@ public class RunTomcat extends AbstractMojo {
 		}
 		Context root = tomcat.addContext("", tempDirectory.getAbsolutePath());
 		tomcat.addServlet("", "openmrsRedirectServlet", new OpenMRSSDKRedirectServlet());
-		root.addServletMapping("/*", "openmrsRedirectServlet");
+		root.addServletMappingDecoded("/*", "openmrsRedirectServlet");
 		tomcat.setPort(port);
 		tomcat.getHost().setAppBase(tempDirectory.getAbsolutePath());
 		tomcat.getHost().setAutoDeploy(true);

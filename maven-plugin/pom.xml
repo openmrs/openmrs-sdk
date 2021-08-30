@@ -103,10 +103,6 @@
         </dependency>
         <dependency>
             <groupId>org.apache.tomcat.embed</groupId>
-            <artifactId>tomcat-embed-logging-juli</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.tomcat.embed</groupId>
             <artifactId>tomcat-embed-jasper</artifactId>
         </dependency>
         <dependency>
@@ -214,6 +210,12 @@
         <dependency>
             <groupId>com.atlassian.jira</groupId>
             <artifactId>jira-rest-java-client-core</artifactId>
+            <exclusions>
+            	<exclusion>
+            		<groupId>com.sun.xml.bind</groupId>
+            		<artifactId>jaxb-impl</artifactId>
+            	</exclusion>
+            </exclusions>
         </dependency>
 
         <!-- Maven exec plugin -->
