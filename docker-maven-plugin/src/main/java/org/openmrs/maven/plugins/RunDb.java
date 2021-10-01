@@ -57,7 +57,7 @@ public class RunDb extends AbstractDockerMojo {
             docker.startContainerCmd(dbContainer.getId()).exec();
 
             if (StringUtils.isBlank(dbUri)){
-                dbUri = DEFAULT_MYSQL_DBURI;
+                dbUri = DEFAULT_MYSQL_DB_URI;
             }
             dbUri = stripOffDbName(dbUri);
 
