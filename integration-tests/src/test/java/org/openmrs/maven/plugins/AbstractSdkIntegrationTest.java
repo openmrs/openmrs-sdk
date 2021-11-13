@@ -12,6 +12,7 @@ import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 import org.apache.maven.model.io.xpp3.MavenXpp3Writer;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
+import org.hamcrest.Matchers;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.runner.RunWith;
@@ -23,9 +24,11 @@ import org.openmrs.maven.plugins.utility.SDKConstants;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayDeque;
@@ -34,6 +37,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.zip.ZipFile;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -227,6 +232,15 @@ public abstract class AbstractSdkIntegrationTest {
         }
 
         assertPathPresent(resolvedPath);
+    }
+
+    public void assertFileContains(String regex, String... paths) throws IOException {
+        Path resolvedPath = testDirectoryPath.toAbsolutePath();
+        for (String path : paths) {
+            resolvedPath = resolvedPath.resolve(path);
+        }
+        String jsContents = new String(Files.readAllBytes(resolvedPath));
+        assertThat(jsContents, Matchers.containsString(regex));
     }
 
     public void assertPathPresent(Path path) {

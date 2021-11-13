@@ -45,9 +45,14 @@ public class SpaInstaller {
      */
     public void installFromDistroProperties(File appDataDir, DistroProperties distroProperties) throws MojoExecutionException {
         // We find all the lines in distro properties beginning with `spa` and convert these
-        // into a JSON structure. This is passed to the microfrontend build tools.
+        // into a JSON structure. This is passed to the frontend build tool.
         // If no SPA elements are present in the distro properties, the SPA is not installed.
         Map<String, String> spaProperties = distroProperties.getSpaProperties(distroHelper, appDataDir);
+        // The 'spa.core' property, however, is handled here, and not passed to the build tool.
+        String coreVersion = spaProperties.remove("core");
+        if (coreVersion == null) {
+            coreVersion = "latest";
+        }
         if (!spaProperties.isEmpty()) {
             Map<String, Object> spaConfigJson = convertPropertiesToJSON(spaProperties);
 
@@ -57,9 +62,10 @@ public class SpaInstaller {
             nodeHelper.installNodeAndNpm(NODE_VERSION, NPM_VERSION);
             File buildTargetDir = new File(appDataDir, BUILD_TARGET_DIR);
 
-            nodeHelper.runNpx("openmrs@next --version");  // print frontend tool version number
-            nodeHelper.runNpx(String.format("openmrs@next build --target %s --build-config %s", buildTargetDir, spaConfigFile));
-            nodeHelper.runNpx(String.format("openmrs@next assemble --target %s --mode config --config %s", buildTargetDir, spaConfigFile));
+            String program = "openmrs@" + coreVersion;
+            nodeHelper.runNpx(program + " --version");  // print frontend tool version number
+            nodeHelper.runNpx(String.format(program + " build --target %s --build-config %s", buildTargetDir, spaConfigFile));
+            nodeHelper.runNpx(String.format(program + " assemble --target %s --mode config --config %s", buildTargetDir, spaConfigFile));
         }
     }
 
