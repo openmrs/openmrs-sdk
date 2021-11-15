@@ -9,10 +9,7 @@ import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.Server;
 
 import java.io.File;
-import java.nio.file.Paths;
-import java.util.Arrays;
 
-import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItemInArray;
 import static org.openmrs.maven.plugins.SdkMatchers.hasNameStartingWith;
@@ -126,6 +123,7 @@ public class DeployIntegrationTest extends AbstractSdkIntegrationTest {
         assertModuleUpdated(testServerId, "owa", "1.4");
         assertFilePresent(testServerId, "frontend", "index.html");
         assertFilePresent(testServerId, "frontend", "openmrs-esm-login-app-3.1.0");
+        assertFileContains("spaVersion=\"3.1.12", testServerId, "frontend", "openmrs.js");
     }
 
     @Test
