@@ -84,6 +84,10 @@ public class NodeProxyHelper {
 			// disable the frontend plugin's default proxy behaviour
 			configuration.add(element("npmInheritsProxyConfigFromMaven", "false"));
 			
+			if (proxyConfig == null) {
+				return;
+			}
+			
 			List<MojoExecutor.Element> environmentVariables = new ArrayList<>(3);
 			
 			if (proxyConfig.getHttpProxy() != null) {
