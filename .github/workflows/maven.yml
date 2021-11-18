@@ -28,9 +28,5 @@ jobs:
         with:
           distribution: "adopt"
           java-version: ${{ matrix.java-version }}
-      - name: Install SDK and Dependencies
-        run: mvn clean install -DskipTests=true -Dmaven.javadoc.skip=true --batch-mode --show-version --file pom.xml
-      - name: Setup SDK
-        run: mvn --batch-mode org.openmrs.maven.plugins:openmrs-sdk-maven-plugin:setup-sdk -DbatchAnswers=n
-      - name: Build and run tests
-        run: mvn test --batch-mode
+      - name: Build and test SDK
+        run: mvn clean install --batch-mode --show-version --file pom.xml
