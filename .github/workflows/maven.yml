@@ -29,4 +29,4 @@ jobs:
           distribution: "adopt"
           java-version: ${{ matrix.java-version }}
       - name: Build and test SDK
-        run: mvn clean install --batch-mode --show-version --file pom.xml -X
+        run: mvn clean install --batch-mode --show-version --file pom.xml

@@ -96,6 +96,7 @@ public abstract class AbstractSdkIntegrationTest {
         testDirectoryPath = testDirectory.toPath();
         verifier = new Verifier(testDirectory.getAbsolutePath());
         verifier.setAutoclean(false);
+        verifier.setMavenDebug(true);
 
         testFilesToPersist = new ArrayList<>(Arrays.asList(testDirectory.listFiles()));
 
