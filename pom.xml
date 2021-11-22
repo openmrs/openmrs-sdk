@@ -435,6 +435,7 @@
                         <releaseProfiles>release</releaseProfiles>
                         <preparationGoals>clean install</preparationGoals>
                         <goals>deploy</goals>
+                        <tagNameFormat>@{project.version}</tagNameFormat>
                     </configuration>
                 </plugin>
                 <plugin>
