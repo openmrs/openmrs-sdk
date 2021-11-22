@@ -4,7 +4,7 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.openmrs.maven.plugins.utility.OwaHelper;
-import org.openmrs.maven.plugins.utility.Project;
+import org.openmrs.maven.plugins.model.Project;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 import org.openmrs.maven.plugins.utility.XmlHelper;
 

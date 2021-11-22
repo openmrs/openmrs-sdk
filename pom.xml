@@ -16,7 +16,9 @@
         <module>archetype-module-refapp</module>
         <module>archetype-module-platform</module>
         <module>archetype-submodule-owa</module>
+        <module>sdk-commons</module>
         <module>docker-maven-plugin</module>
+        <module>tomcat-maven-plugin</module>
         <module>maven-plugin</module>
         <module>integration-tests</module>
     </modules>
@@ -149,6 +151,11 @@
     <dependencyManagement>
         <dependencies>
             <!-- Maven -->
+            <dependency>
+                <groupId>org.apache.maven</groupId>
+                <artifactId>maven-core</artifactId>
+                <version>3.3.9</version>
+            </dependency>
             <dependency>
                 <groupId>org.apache.maven</groupId>
                 <artifactId>maven-model</artifactId>
@@ -313,6 +320,11 @@
             <dependency>
                 <groupId>commons-lang</groupId>
                 <artifactId>commons-lang</artifactId>
+                <version>2.6</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-io</groupId>
+                <artifactId>commons-io</artifactId>
                 <version>2.6</version>
             </dependency>
 

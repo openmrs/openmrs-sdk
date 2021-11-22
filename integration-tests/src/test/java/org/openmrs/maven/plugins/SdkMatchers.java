@@ -2,7 +2,7 @@ package org.openmrs.maven.plugins;
 
 import org.hamcrest.FeatureMatcher;
 import org.hamcrest.Matcher;
-import org.openmrs.maven.plugins.owa.OwaId;
+import org.openmrs.maven.plugins.model.OwaId;
 import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.Server;
 

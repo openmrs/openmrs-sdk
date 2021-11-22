@@ -8,10 +8,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Writer;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.openmrs.maven.plugins.owa.OwaId;
-import org.openmrs.maven.plugins.utility.Project;
 import org.openmrs.maven.plugins.utility.SDKConstants;
-import org.openmrs.maven.plugins.utility.SortedProperties;
 
 import java.io.File;
 import java.io.FileOutputStream;

@@ -1,10 +1,10 @@
-package org.openmrs.maven.plugins.utility;
+package org.openmrs.maven.plugins.model;
 
-import edu.emory.mathcs.backport.java.util.Collections;
-
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Properties;
-import java.util.Vector;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 /**
  * Simple extension of Java Properties to support naturally sorted keys
@@ -14,11 +14,13 @@ public class SortedProperties extends Properties {
     @Override
     public synchronized Enumeration<Object> keys() {
         Enumeration<Object> keys = super.keys();
-        Vector<Object> v = new Vector<>();
+    
+        SortedSet<Object> sortedKeys = new TreeSet<>();
+        
         while (keys.hasMoreElements()) {
-            v.add(keys.nextElement());
+            sortedKeys.add(keys.nextElement());
         }
-        Collections.sort(v);
-        return v.elements();
+        
+        return Collections.enumeration(sortedKeys);
     }
 }

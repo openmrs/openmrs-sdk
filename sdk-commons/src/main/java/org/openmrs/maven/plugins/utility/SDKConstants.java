@@ -1,23 +1,13 @@
 package org.openmrs.maven.plugins.utility;
 
-import org.apache.commons.io.IOUtils;
-import org.apache.maven.model.Plugin;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.openmrs.maven.plugins.model.Artifact;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-
-import static org.openmrs.maven.plugins.utility.PropertiesUtils.loadPropertiesFromResource;
-import static org.twdata.maven.mojoexecutor.MojoExecutor.artifactId;
-import static org.twdata.maven.mojoexecutor.MojoExecutor.groupId;
-import static org.twdata.maven.mojoexecutor.MojoExecutor.plugin;
-import static org.twdata.maven.mojoexecutor.MojoExecutor.version;
 
 /**
  * Class for handling static values
@@ -46,6 +36,9 @@ public class SDKConstants {
     //archetypes artifactId
     public static final String REFAPP_ARCH_ARTIFACT_ID = "openmrs-sdk-archetype-module-refapp";
     public static final String PLATFORM_ARCH_ARTIFACT_ID = "openmrs-sdk-archetype-module-platform";
+    // tomcat plugin
+    public static final String OPENMRS_TOMCAT_PLUGIN_GROUP_ID = "org.openmrs.maven.plugins";
+    public static final String OPENMRS_TOMCAT_PLUGIN_ARTIFACT_ID = "openmrs-sdk-tomcat-maven-plugin";
     // default path to projects
     public static final String OPENMRS_SERVER_PATH = "openmrs";
     public static final String OPENMRS_SERVER_PROPERTIES = "openmrs-server.properties";
@@ -123,7 +116,7 @@ public class SDKConstants {
     }
 
     public static Artifact getSDKInfo() throws MojoExecutionException {
-        Properties properties = loadPropertiesFromResource(SDKConstants.OPENMRS_SDK_PROPERTIES);
+        Properties properties = PropertiesUtils.loadPropertiesFromResource(SDKConstants.OPENMRS_SDK_PROPERTIES);
         return new Artifact(properties.getProperty("artifactId"), properties.getProperty("version"), properties.getProperty("groupId"));
     }
 }

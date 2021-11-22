@@ -3,7 +3,7 @@ package org.openmrs.maven.plugins;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.openmrs.maven.plugins.owa.OwaId;
+import org.openmrs.maven.plugins.model.OwaId;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.Server;

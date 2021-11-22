@@ -2,8 +2,6 @@ package org.openmrs.maven.plugins.utility;
 
 import static org.openmrs.maven.plugins.utility.PropertiesUtils.loadPropertiesFromFile;
 
-import javax.annotation.Nullable;
-
 import com.google.common.collect.Lists;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
@@ -673,7 +671,7 @@ public class DefaultWizard implements Wizard {
 
 	@Override
 	public String promptForDistroVersion(String distroGroupId, String distroArtifactId, String distroVersion,
-			String distroName, VersionsHelper versionsHelper, @Nullable String customMessage) throws MojoExecutionException {
+			String distroName, VersionsHelper versionsHelper, String customMessage) throws MojoExecutionException {
 		final String optionTemplate = distroName + " %s";
 		final String artifacttemplate = distroGroupId + ":" + distroArtifactId + ":" + "%s";
 
@@ -686,7 +684,7 @@ public class DefaultWizard implements Wizard {
 		return promptForVersion(optionsMap, customMessage);
 	}
 
-	public String promptForRefAppVersion(VersionsHelper versionsHelper, @Nullable String customMessage)
+	public String promptForRefAppVersion(VersionsHelper versionsHelper, String customMessage)
 			throws MojoExecutionException {
 		Set<String> versions = new LinkedHashSet<>(
 				versionsHelper.getSuggestedVersions(SDKConstants.getReferenceModule("2.3.1"), MAX_OPTIONS_SIZE));
@@ -696,7 +694,7 @@ public class DefaultWizard implements Wizard {
 		return promptForVersion(optionsMap, customMessage);
 	}
 
-	private String promptForVersion(Map<String, String> optionsMap, @Nullable String customMessage)
+	private String promptForVersion(Map<String, String> optionsMap, String customMessage)
 			throws MojoExecutionException {
 		String message = customMessage != null ? customMessage : DISTRIBUTION_VERSION_PROMPT;
 		String version = promptForMissingValueWithOptions(message,

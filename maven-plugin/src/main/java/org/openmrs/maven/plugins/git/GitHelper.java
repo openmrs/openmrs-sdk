@@ -7,7 +7,7 @@ import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.transport.PushResult;
 import org.openmrs.maven.plugins.AbstractTask;
-import org.openmrs.maven.plugins.utility.Project;
+import org.openmrs.maven.plugins.model.Project;
 
 import java.util.List;
 

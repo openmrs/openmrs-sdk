@@ -13,7 +13,7 @@ import org.apache.maven.shared.invoker.Invoker;
 import org.apache.maven.shared.invoker.MavenInvocationException;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.Server;
-import org.openmrs.maven.plugins.utility.Project;
+import org.openmrs.maven.plugins.model.Project;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 import org.openmrs.maven.plugins.utility.ServerHelper;
 
@@ -105,11 +105,8 @@ public class Run extends AbstractServerTask {
 			new Build(this, serverId).executeTask();
 		}
 
-		if (Boolean.FALSE.equals(fork)) {
-			new RunTomcat(serverId, port, mavenSession, mavenProject, pluginManager, wizard).execute();
-		} else {
-			runInFork(server);
-		}
+		
+		runInFork(server);
 	}
 
 	private void validatePort() throws MojoExecutionException {
@@ -192,8 +189,8 @@ public class Run extends AbstractServerTask {
 		}
 
 		InvocationRequest request = new DefaultInvocationRequest();
-		request.setGoals(Collections.singletonList(SDKConstants.getSDKInfo().getGroupId() + ":"
-				+ SDKConstants.getSDKInfo().getArtifactId() + ":" + SDKConstants.getSDKInfo().getVersion() + ":run-tomcat"))
+		request.setGoals(Collections.singletonList(SDKConstants.OPENMRS_TOMCAT_PLUGIN_GROUP_ID + ":"
+				+ SDKConstants.OPENMRS_TOMCAT_PLUGIN_ARTIFACT_ID + ":" + SDKConstants.getSDKInfo().getVersion() + ":run-tomcat"))
 				.setMavenOpts(mavenOpts)
 				.setProperties(properties)
 				.setShowErrors(mavenSession.getRequest().isShowErrors())

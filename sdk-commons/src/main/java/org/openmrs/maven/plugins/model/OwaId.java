@@ -1,4 +1,4 @@
-package org.openmrs.maven.plugins.owa;
+package org.openmrs.maven.plugins.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.base.Objects;

@@ -1,6 +1,7 @@
 package org.openmrs.maven.plugins.model;
 
 import org.junit.Test;
+import org.openmrs.maven.plugins.model.Artifact;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;

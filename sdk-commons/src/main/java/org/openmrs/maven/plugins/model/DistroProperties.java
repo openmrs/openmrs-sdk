@@ -6,13 +6,10 @@ import static org.openmrs.maven.plugins.utility.PropertiesUtils.loadPropertiesFr
 import org.apache.commons.io.IOUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.openmrs.maven.plugins.utility.DistroHelper;
-import org.openmrs.maven.plugins.utility.SortedProperties;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;

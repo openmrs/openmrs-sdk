@@ -1,4 +1,4 @@
-package org.openmrs.maven.plugins;
+package org.openmrs.maven.plugins.utility;
 
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -14,7 +14,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
-import org.openmrs.maven.plugins.utility.OpenMRSSDKRedirectServlet;
 
 @RunWith(MockitoJUnitRunner.Strict.class)
 public class OpenMRSSDKRedirectServletTest{
