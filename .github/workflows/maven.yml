@@ -30,3 +30,7 @@ jobs:
           java-version: ${{ matrix.java-version }}
       - name: Build and test SDK
         run: mvn clean install --batch-mode --show-version --file pom.xml
+      - uses: actions/upload-artifact@v2
+        with:
+          name: IT Output
+          path: integration-tests/target/test-classes/integration-test
