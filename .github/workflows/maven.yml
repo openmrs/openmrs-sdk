@@ -29,7 +29,7 @@ jobs:
           distribution: "adopt"
           java-version: ${{ matrix.java-version }}
       - name: Build and test SDK
-        run: mvn clean install --batch-mode --fail-fast -DskipAfterFailureCount=1 --show-version --file pom.xml
+        run: mvn clean install --batch-mode --fail-fast -DskipAfterFailureCount=1 -Dtest=BuildDistroIntegrationTest#testBuildDistroFromDistroFile --show-version --file pom.xml
       - uses: actions/upload-artifact@v2
         if: ${{ failure() }}
         with:
