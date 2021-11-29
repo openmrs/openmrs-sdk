@@ -115,6 +115,9 @@ public abstract class AbstractSdkIntegrationTest {
 
     public String setupTestServer() throws Exception{
         Verifier setupServer = new Verifier(testDirectory.getAbsolutePath());
+        setupServer.setDebug(true);
+        setupServer.setLogFileName("server-setup-log.txt");
+        
         String serverId = UUID.randomUUID().toString();
 
         addTaskParam(setupServer, "openMRSPath", testDirectory.getAbsolutePath());
@@ -131,7 +134,7 @@ public abstract class AbstractSdkIntegrationTest {
         String sdk = resolveSdkArtifact();
         setupServer.executeGoal(sdk + ":setup");
         assertFilePresent(serverId, "openmrs-server.properties");
-        //new File(testDirectory, "log.txt").delete();
+//        new File(testDirectory, "log.txt").delete();
         return serverId;
     }
 
