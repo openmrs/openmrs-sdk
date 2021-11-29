@@ -33,6 +33,7 @@ import java.nio.file.Paths;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
@@ -131,7 +132,8 @@ public abstract class AbstractSdkIntegrationTest {
         String sdk = resolveSdkArtifact();
         setupServer.executeGoal(sdk + ":setup");
         assertFilePresent(serverId, "openmrs-server.properties");
-        //new File(testDirectory, "log.txt").delete();
+        FileUtils.moveFile(new File(testDirectory, "log.txt"), new File(testDirectory,
+                String.format("log_%1$tY-%1$tm-%1$tdT%1$tH%1$tM%1$ts", new Date())));
         return serverId;
     }
 
