@@ -23,6 +23,7 @@ import org.openmrs.maven.plugins.utility.SDKConstants;
 import org.openmrs.maven.plugins.utility.Wizard;
 
 import java.io.File;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
@@ -210,6 +211,10 @@ public class CreateProject extends AbstractTask {
 	}
 
 	private void createModule() throws MojoExecutionException {
+		if (outputDirectory == null) {
+			outputDirectory = Paths.get("").toFile();
+		}
+		
 		wizard.showMessage(MODULE_ID_INFO);
 		moduleId = wizard.promptForValueIfMissingWithDefault(null, moduleId, "module id", "basicexample");
 		moduleId = moduleId.toLowerCase();
