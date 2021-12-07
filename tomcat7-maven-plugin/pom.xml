@@ -10,11 +10,15 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>org.openmrs.maven.plugins</groupId>
-    <artifactId>openmrs-sdk-tomcat-maven-plugin</artifactId>
+    <artifactId>openmrs-sdk-tomcat7-maven-plugin</artifactId>
     <packaging>maven-plugin</packaging>
 
-    <name>OpenMRS SDK Tomcat Maven Plugin</name>
-    <description>Plugin to use Tomcat to launch an instance of the OpenMRS SDK</description>
+    <name>OpenMRS SDK Tomcat7 Maven Plugin</name>
+    <description>Plugin to use Tomcat 7.x to launch an instance of the OpenMRS SDK</description>
+
+    <properties>
+        <tomcat.version>7.0.109</tomcat.version>
+    </properties>
 
     <dependencies>
         <dependency>
@@ -126,4 +130,5 @@
             </plugin>
         </plugins>
     </build>
+
 </project>

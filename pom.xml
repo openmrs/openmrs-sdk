@@ -18,7 +18,8 @@
         <module>archetype-submodule-owa</module>
         <module>sdk-commons</module>
         <module>docker-maven-plugin</module>
-        <module>tomcat-maven-plugin</module>
+        <module>tomcat7-maven-plugin</module>
+        <module>tomcat9-maven-plugin</module>
         <module>maven-plugin</module>
         <module>integration-tests</module>
     </modules>
@@ -74,7 +75,6 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <tomcat.version>9.0.52</tomcat.version>
         <jline.version>3.20.0</jline.version>
         <jackson.version>2.12.3</jackson.version>
     </properties>

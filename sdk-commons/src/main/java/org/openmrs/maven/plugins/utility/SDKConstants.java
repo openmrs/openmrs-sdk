@@ -38,7 +38,8 @@ public class SDKConstants {
     public static final String PLATFORM_ARCH_ARTIFACT_ID = "openmrs-sdk-archetype-module-platform";
     // tomcat plugin
     public static final String OPENMRS_TOMCAT_PLUGIN_GROUP_ID = "org.openmrs.maven.plugins";
-    public static final String OPENMRS_TOMCAT_PLUGIN_ARTIFACT_ID = "openmrs-sdk-tomcat-maven-plugin";
+    public static final String OPENMRS_TOMCAT7_PLUGIN_ARTIFACT_ID = "openmrs-sdk-tomcat7-maven-plugin";
+    public static final String OPENMRS_TOMCAT9_PLUGIN_ARTIFACT_ID = "openmrs-sdk-tomcat9-maven-plugin";
     // default path to projects
     public static final String OPENMRS_SERVER_PATH = "openmrs";
     public static final String OPENMRS_SERVER_PROPERTIES = "openmrs-server.properties";

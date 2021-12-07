@@ -93,7 +93,15 @@ public class RunTomcat extends AbstractMojo {
 
 		Version platformVersion = new Version(server.getPlatformVersion());
 		if (platformVersion.getMajorVersion() == 1) {
-			if ((jdk.startsWith("1.8"))) {
+			wizard.showMessage(
+					"Please note that it is not recommended to run OpenMRS platform " + server.getPlatformVersion()
+							+ " using Tomcat 9.\n");
+			if (!jdk.startsWith("1.")) {
+				wizard.showJdkErrorMessage(jdk, server.getPlatformVersion(), "JDK 1.7",
+						server.getPropertiesFile().getPath());
+				throw new MojoExecutionException(String.format("The JDK %s is not compatible with OpenMRS Platform %s. ",
+						jdk, server.getPlatformVersion()));
+			} else if ((jdk.startsWith("1.8"))) {
 				wizard.showMessage(
 						"Please note that it is not recommended to run OpenMRS platform " + server.getPlatformVersion()
 								+ " on JDK 8.\n");
@@ -102,6 +110,11 @@ public class RunTomcat extends AbstractMojo {
 			if (!jdk.startsWith("1.8") && platformVersion.getMinorVersion() < 4) {
 				wizard.showJdkErrorMessage(jdk, server.getPlatformVersion(), "JDK 1.8",
 						server.getPropertiesFile().getPath());
+				throw new MojoExecutionException(String.format("The JDK %s is not compatible with OpenMRS Platform %s. ",
+						jdk, server.getPlatformVersion()));
+			} else if (jdk.startsWith("1.") && !jdk.startsWith("1.8")) {
+				wizard.showJdkErrorMessage(jdk, server.getPlatformVersion(), "JDK 1.8+",
+						server.getPropertiesFile().getAbsolutePath());
 				throw new MojoExecutionException(String.format("The JDK %s is not compatible with OpenMRS Platform %s. ",
 						jdk, server.getPlatformVersion()));
 			}
