@@ -10,7 +10,7 @@ import org.eclipse.egit.github.core.client.GitHubClient;
 import org.eclipse.egit.github.core.service.RepositoryService;
 import org.eclipse.jgit.api.Git;
 import org.openmrs.maven.plugins.model.Artifact;
-import org.openmrs.maven.plugins.utility.Project;
+import org.openmrs.maven.plugins.model.Project;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 import org.twdata.maven.mojoexecutor.MojoExecutor;
 

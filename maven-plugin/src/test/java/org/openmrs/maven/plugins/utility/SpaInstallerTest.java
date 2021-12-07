@@ -1,12 +1,9 @@
 package org.openmrs.maven.plugins.utility;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.maven.execution.MavenSession;
 import org.apache.maven.it.util.ResourceExtractor;
-import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
-import org.apache.maven.project.MavenProject;
 import org.hamcrest.Matchers;
 import org.junit.After;
 import org.junit.Assert;

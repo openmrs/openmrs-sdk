@@ -1,7 +1,6 @@
 package org.openmrs.maven.plugins;
 
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.openmrs.maven.plugins.model.SdkStatistics;
 import org.openmrs.maven.plugins.model.Server;

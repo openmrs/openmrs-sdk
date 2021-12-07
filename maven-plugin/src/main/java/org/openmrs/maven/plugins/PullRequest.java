@@ -10,7 +10,7 @@ import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.openmrs.maven.plugins.git.GithubPrRequest;
-import org.openmrs.maven.plugins.utility.Project;
+import org.openmrs.maven.plugins.model.Project;
 
 import java.io.IOException;
 import java.util.ArrayList;

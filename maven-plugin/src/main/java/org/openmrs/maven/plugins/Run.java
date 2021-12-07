@@ -13,7 +13,8 @@ import org.apache.maven.shared.invoker.Invoker;
 import org.apache.maven.shared.invoker.MavenInvocationException;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.Server;
-import org.openmrs.maven.plugins.utility.Project;
+import org.openmrs.maven.plugins.model.Project;
+import org.openmrs.maven.plugins.model.Version;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 import org.openmrs.maven.plugins.utility.ServerHelper;
 
@@ -37,6 +38,8 @@ import static org.twdata.maven.mojoexecutor.MojoExecutor.version;
 
 @Mojo(name = "run", requiresProject = false)
 public class Run extends AbstractServerTask {
+	
+	private static final Version TOMCAT_7_CUTOFF = new Version("2.5.0-SNAPSHOT");
 
 	public Run() {
 	}
@@ -56,14 +59,14 @@ public class Run extends AbstractServerTask {
 	@Parameter(property = "debug")
 	private String debug;
 
-	@Parameter(property = "fork")
-	private Boolean fork;
-
 	@Parameter(property = "watchApi")
 	private Boolean watchApi;
 
 	@Parameter(defaultValue = "false", property = "skipBuild")
 	private boolean skipBuild;
+	
+	@Parameter(property = "runGoal")
+	private String runGoal;
 
 	private ServerHelper serverHelper;
 
@@ -105,11 +108,8 @@ public class Run extends AbstractServerTask {
 			new Build(this, serverId).executeTask();
 		}
 
-		if (Boolean.FALSE.equals(fork)) {
-			new RunTomcat(serverId, port, mavenSession, mavenProject, pluginManager, wizard).execute();
-		} else {
-			runInFork(server);
-		}
+		
+		runInFork(server);
 	}
 
 	private void validatePort() throws MojoExecutionException {
@@ -176,24 +176,37 @@ public class Run extends AbstractServerTask {
 		}
 
 		mavenOpts = setDebugPort(mavenOpts, server);
-
-		System.out.println("\nForking a new process... (use -Dfork=false to prevent forking)\n");
-
+		
 		Properties properties = new Properties();
 		properties.put("serverId", server.getServerId());
 		if (port != null) {
 			properties.put("port", port.toString());
 		}
+		
 		if (isWatchApi()) {
 			properties.put("watchApi", "true");
 		}
+		
 		if (server.hasWatchedProjects() && isWatchApi()) {
 			properties.put("springloaded", "inclusions=org.openmrs..*");
 		}
+		
+		// if the runGoal isn't specified, we default to Tomcat 9, unless running a platform version before 2.5.0-SNAPSHOT
+		if (StringUtils.isBlank(runGoal)) {
+			String tomcatArtifactId = SDKConstants.OPENMRS_TOMCAT9_PLUGIN_ARTIFACT_ID;
+			Version platformVersion = new Version(server.getPlatformVersion());
+			if (platformVersion.lower(TOMCAT_7_CUTOFF)) {
+				tomcatArtifactId = SDKConstants.OPENMRS_TOMCAT7_PLUGIN_ARTIFACT_ID;
+			}
+			
+			runGoal = String.format("%s:%s:%s:run-tomcat",
+					SDKConstants.OPENMRS_TOMCAT_PLUGIN_GROUP_ID,
+					tomcatArtifactId,
+					SDKConstants.getSDKInfo().getVersion());
+		}
 
 		InvocationRequest request = new DefaultInvocationRequest();
-		request.setGoals(Collections.singletonList(SDKConstants.getSDKInfo().getGroupId() + ":"
-				+ SDKConstants.getSDKInfo().getArtifactId() + ":" + SDKConstants.getSDKInfo().getVersion() + ":run-tomcat"))
+		request.setGoals(Collections.singletonList(runGoal))
 				.setMavenOpts(mavenOpts)
 				.setProperties(properties)
 				.setShowErrors(mavenSession.getRequest().isShowErrors())
@@ -210,8 +223,12 @@ public class Run extends AbstractServerTask {
 			Invoker invoker = new DefaultInvoker();
 			InvocationResult result = invoker.execute(request);
 			if (result.getExitCode() != 0) {
-				throw new MojoFailureException("Failed running Tomcat " + result.getExecutionException().getMessage(),
-						result.getExecutionException());
+				if (result.getExecutionException() != null) {
+					throw new MojoFailureException("Failed running Tomcat " + result.getExecutionException().getMessage(),
+							result.getExecutionException());
+				} else {
+					throw new MojoExecutionException("Failed running Tomcat");
+				}
 			}
 		}
 		catch (MavenInvocationException e) {

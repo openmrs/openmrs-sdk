@@ -18,7 +18,7 @@ import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.utility.CompositeException;
-import org.openmrs.maven.plugins.utility.Project;
+import org.openmrs.maven.plugins.model.Project;
 
 import java.io.File;
 import java.io.IOException;

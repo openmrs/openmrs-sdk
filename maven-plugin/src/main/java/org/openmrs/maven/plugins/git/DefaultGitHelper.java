@@ -33,7 +33,7 @@ import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.openmrs.maven.plugins.AbstractTask;
 import org.openmrs.maven.plugins.Pull;
 import org.openmrs.maven.plugins.utility.CompositeException;
-import org.openmrs.maven.plugins.utility.Project;
+import org.openmrs.maven.plugins.model.Project;
 
 import java.io.File;
 import java.io.FileInputStream;
