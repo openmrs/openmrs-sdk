@@ -3,7 +3,6 @@ package org.openmrs.maven.plugins.utility;
 import org.apache.commons.io.FileUtils;
 import org.apache.maven.it.util.ResourceExtractor;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.MojoFailureException;
 import org.hamcrest.Matchers;
 import org.junit.After;
 import org.junit.Assert;
@@ -11,11 +10,12 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.openmrs.maven.plugins.model.DistroProperties;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Properties;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -39,27 +39,27 @@ public class SpaInstallerTest {
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         appDataDir.delete();
     }
 
     @Test
-    public void spaInstall_shouldParseSingleConfigUrlCorrectly() throws MojoExecutionException, MojoFailureException, IOException {
+    public void spaInstall_shouldParseSingleConfigUrlCorrectly() throws MojoExecutionException, IOException {
         Properties distroProperties = new Properties();
         distroProperties.setProperty("spa.configUrls", "foo");
         spaInstaller.installFromDistroProperties(appDataDir, new DistroProperties(distroProperties));
         File spaConfigFile = new File(appDataDir, "spa-build-config.json");
-        String spaConfig = FileUtils.readFileToString(spaConfigFile);
+        String spaConfig = FileUtils.readFileToString(spaConfigFile, StandardCharsets.UTF_8);
         Assert.assertThat(spaConfig, Matchers.containsString("\"configUrls\":[\"foo\"]"));
     }
 
     @Test
-    public void spaInstall_shouldParseConfigUrlsCorrectly() throws MojoExecutionException, MojoFailureException, IOException {
+    public void spaInstall_shouldParseConfigUrlsCorrectly() throws MojoExecutionException, IOException {
         Properties distroProperties = new Properties();
         distroProperties.setProperty("spa.configUrls", "foo,bar,baz");
         spaInstaller.installFromDistroProperties(appDataDir, new DistroProperties(distroProperties));
         File spaConfigFile = new File(appDataDir, "spa-build-config.json");
-        String spaConfig = FileUtils.readFileToString(spaConfigFile);
+        String spaConfig = FileUtils.readFileToString(spaConfigFile, StandardCharsets.UTF_8);
         Assert.assertThat(spaConfig, Matchers.containsString("\"configUrls\":[\"foo\",\"bar\",\"baz\"]"));
     }
 }

@@ -6,6 +6,8 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
 import org.twdata.maven.mojoexecutor.MojoExecutor;
 
+import java.io.File;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -37,26 +39,46 @@ public class NodeHelper {
 	}
 	
 	public void installNodeAndNpm(String nodeVersion, String npmVersion) throws MojoExecutionException {
-		List<MojoExecutor.Element> configuration = new ArrayList<>();
+		List<MojoExecutor.Element> configuration = new ArrayList<>(3);
 		configuration.add(element("nodeVersion", "v" + nodeVersion));
 		configuration.add(element("npmVersion", npmVersion));
+		
+		if (mavenProject != null && mavenProject.getBuild() != null) {
+			configuration.add(
+					element("installDirectory",
+							Paths.get(mavenProject.getBuild().getOutputDirectory()).getParent().resolve("node")
+									.toAbsolutePath().toString()));
+		}
+		
 		runFrontendMavenPlugin("install-node-and-npm", configuration);
 	}
 	
-	public void runNpm(String arguments) throws MojoExecutionException {
-		runFrontendMavenPlugin("npm", Collections.singletonList(element("arguments", arguments)));
-	}
-	
 	public void runNpx(String arguments) throws MojoExecutionException {
-		runFrontendMavenPlugin("npx", Collections.singletonList(element("arguments", arguments)));
+		// it's a little weird to use a custom NPM cache for this; however, it seems to be necessary to get things working on Bamboo
+		// hack added in December 2021; it's use probably should be re-evaluated at some point
+		if (mavenProject != null && mavenProject.getBuild() != null) {
+			arguments +=
+					" -- --cache=" + Paths.get(mavenProject.getBuild().getOutputDirectory()).getParent().resolve("npm-cache")
+							.toAbsolutePath();
+		}
+		
+		List<MojoExecutor.Element> configuration = new ArrayList<>(3);
+		configuration.add(element("arguments", arguments));
+		
+		if (mavenProject != null && mavenProject.getBuild() != null) {
+			configuration.add(
+					element("installDirectory",
+							Paths.get(mavenProject.getBuild().getOutputDirectory()).getParent().resolve("node")
+									.toAbsolutePath().toString()));
+		}
+		
+		runFrontendMavenPlugin("npx", configuration);
 	}
 	
 	private void runFrontendMavenPlugin(String goal, List<MojoExecutor.Element> configuration)
 			throws MojoExecutionException {
 		// the proxy already works for installing node and npm; however, it does not work when running npm or npx
 		if (goal != null && !goal.equalsIgnoreCase("install-node-and-npm")) {
-			// wrap configuration in a list we can expand
-			configuration = new ArrayList<>(configuration);
 			NodeProxyHelper.ProxyContext proxyContext = NodeProxyHelper.setupProxyContext(mavenSession);
 			proxyContext.applyProxyContext(configuration);
 		}
