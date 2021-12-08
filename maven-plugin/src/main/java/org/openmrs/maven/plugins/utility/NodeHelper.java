@@ -54,16 +54,18 @@ public class NodeHelper {
 	}
 	
 	public void runNpx(String arguments) throws MojoExecutionException {
+		String npmExec = "exec -- " + arguments;
+		
 		// it's a little weird to use a custom NPM cache for this; however, it seems to be necessary to get things working on Bamboo
 		// hack added in December 2021; it's use probably should be re-evaluated at some point
 		if (mavenProject != null && mavenProject.getBuild() != null) {
-			arguments +=
-					" -- --cache=" + Paths.get(mavenProject.getBuild().getOutputDirectory()).getParent().resolve("npm-cache")
-							.toAbsolutePath();
+			npmExec =
+					" --cache=" + Paths.get(mavenProject.getBuild().getOutputDirectory()).getParent().resolve("npm-cache")
+							.toAbsolutePath() + " exec -- " + arguments;
 		}
 		
 		List<MojoExecutor.Element> configuration = new ArrayList<>(3);
-		configuration.add(element("arguments", arguments));
+		configuration.add(element("arguments", npmExec));
 		
 		if (mavenProject != null && mavenProject.getBuild() != null) {
 			configuration.add(
@@ -72,7 +74,7 @@ public class NodeHelper {
 									.toAbsolutePath().toString()));
 		}
 		
-		runFrontendMavenPlugin("npx", configuration);
+		runFrontendMavenPlugin("npm", configuration);
 	}
 	
 	private void runFrontendMavenPlugin(String goal, List<MojoExecutor.Element> configuration)

@@ -106,7 +106,7 @@ public abstract class AbstractSdkIntegrationTest {
     public void teardown() throws Exception {
         for(File file : testDirectory.listFiles()){
             if(!testFilesToPersist.contains(file)){
-                FileUtils.deleteQuietly(file);
+//                FileUtils.deleteQuietly(file);
             }
         }
         cleanAnswers();
