@@ -123,7 +123,7 @@ public class DeployIntegrationTest extends AbstractSdkIntegrationTest {
         assertModuleUpdated(testServerId, "owa", "1.4");
         assertFilePresent(testServerId, "frontend", "index.html");
         assertFilePresent(testServerId, "frontend", "openmrs-esm-login-app-3.1.0");
-        assertFileContains("spaVersion=\"3.1.12", testServerId, "frontend", "openmrs.js");
+        assertFileContains("spaVersion=\"3", testServerId, "frontend", "openmrs.js");
     }
 
     @Test
