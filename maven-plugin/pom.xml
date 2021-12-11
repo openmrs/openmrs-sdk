@@ -215,7 +215,7 @@
                 <includes>
                     <include>openmrs-sdk.bat</include>
                 </includes>
-                <targetPath>../../../</targetPath>
+                <targetPath>${project.parent.basedir}</targetPath>
             </resource>
             <resource>
                 <directory>src/main/resources</directory>
