@@ -40,8 +40,9 @@ public class NodeHelper {
 		this.pluginManager = pluginManager;
 		try {
 			this.tempDir = Files.createTempDirectory("openmrs-sdk-node");
+			this.tempDir.toFile().deleteOnExit();
 		} catch (IOException e) {
-			throw new RuntimeException(e);
+			throw new IllegalStateException("Exception while trying to create temporary directory for node", e);
 		}
 	}
 	
