@@ -6,10 +6,10 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
 import org.twdata.maven.mojoexecutor.MojoExecutor;
 
-import java.io.File;
-import java.nio.file.Paths;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import static org.twdata.maven.mojoexecutor.MojoExecutor.artifactId;
@@ -29,6 +29,8 @@ public class NodeHelper {
 	private final MavenProject mavenProject;
 	
 	private final BuildPluginManager pluginManager;
+
+	private Path tempDir;
 	
 	public NodeHelper(MavenProject mavenProject,
 			MavenSession mavenSession,
@@ -36,20 +38,18 @@ public class NodeHelper {
 		this.mavenProject = mavenProject;
 		this.mavenSession = mavenSession;
 		this.pluginManager = pluginManager;
+		try {
+			this.tempDir = Files.createTempDirectory("openmrs-sdk-node");
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
 	}
 	
 	public void installNodeAndNpm(String nodeVersion, String npmVersion) throws MojoExecutionException {
 		List<MojoExecutor.Element> configuration = new ArrayList<>(3);
 		configuration.add(element("nodeVersion", "v" + nodeVersion));
 		configuration.add(element("npmVersion", npmVersion));
-		
-		if (mavenProject != null && mavenProject.getBuild() != null) {
-			configuration.add(
-					element("installDirectory",
-							Paths.get(mavenProject.getBuild().getOutputDirectory()).getParent().resolve("node")
-									.toAbsolutePath().toString()));
-		}
-		
+		configuration.add(element("installDirectory",  tempDir.toAbsolutePath().toString()));
 		runFrontendMavenPlugin("install-node-and-npm", configuration);
 	}
 	
@@ -60,18 +60,14 @@ public class NodeHelper {
 		// hack added in December 2021; it's use probably should be re-evaluated at some point
 		if (mavenProject != null && mavenProject.getBuild() != null) {
 			npmExec =
-					" --cache=" + Paths.get(mavenProject.getBuild().getOutputDirectory()).getParent().resolve("npm-cache")
-							.toAbsolutePath() + " exec -- " + arguments;
+					" --cache=" + tempDir.resolve("npm-cache").toAbsolutePath() + " exec -- " + arguments;
 		}
 		
 		List<MojoExecutor.Element> configuration = new ArrayList<>(3);
 		configuration.add(element("arguments", npmExec));
 		
 		if (mavenProject != null && mavenProject.getBuild() != null) {
-			configuration.add(
-					element("installDirectory",
-							Paths.get(mavenProject.getBuild().getOutputDirectory()).getParent().resolve("node")
-									.toAbsolutePath().toString()));
+			configuration.add(element("installDirectory", tempDir.toAbsolutePath().toString()));
 		}
 		
 		runFrontendMavenPlugin("npm", configuration);
