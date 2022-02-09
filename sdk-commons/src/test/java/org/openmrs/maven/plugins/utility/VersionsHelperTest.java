@@ -59,13 +59,13 @@ public class VersionsHelperTest {
     public void getSuggestedVersions_shouldReturnSortedList(){
         List<String> res = helper.getSuggestedVersions(
                 createTestVersions("1.1.2", "1.5.6", "1.5.7-SNAPSHOT" , "1.1.2-alpha", "1.1.0-SNAPSHOT", "1.3.0-SNAPSHOT", "1.3.0", "1.1.0"), 6);
-        assertThat(res, contains("1.5.7-SNAPSHOT", "1.5.6", "1.3.0", "1.1.2"));
+        assertThat(res, contains("1.5.7-SNAPSHOT", "1.5.6", "1.3.0", "1.3.0-SNAPSHOT", "1.1.2"));
     }
     @Test
-    public void getSuggestedVersions_shouldContainOnlyLatestSnapshot(){
+    public void getSuggestedVersions_shouldContainOnlyLatestTwoSnapshots(){
         List<String> res = helper.getSuggestedVersions(
                 createTestVersions("1.1.2", "1.5.6", "1.5.7-SNAPSHOT","1.4.5-SNAPSHOT", "1.1.0-SNAPSHOT", "1.3.0-SNAPSHOT"), 6);
-        assertThat(res, contains("1.5.7-SNAPSHOT", "1.5.6", "1.1.2"));
+        assertThat(res, contains("1.5.7-SNAPSHOT", "1.5.6", "1.4.5-SNAPSHOT", "1.1.2"));
     }
     @Test
     public void getSuggestedVersions_shouldContainNoMoreThanRequestedQuantity(){

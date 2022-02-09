@@ -133,6 +133,8 @@ public class VersionsHelper {
         }
         sortDescending(allVersions);
         List<String> advices = new ArrayList<>();
+        
+        boolean secondSnaphotAdded = false;
 
         //add first element, presumably last SNAPSHOT version
         advices.add(allVersions.get(0).toString());
@@ -155,6 +157,10 @@ public class VersionsHelper {
                     advices.add(version.toString());
                 }
                 previous = version;
+            }
+            else if(!secondSnaphotAdded && isSnapshot(version)) {
+            	secondSnaphotAdded = true;
+            	advices.add(version.toString());
             }
             if(advices.size() >= maxSize) break;
         }
