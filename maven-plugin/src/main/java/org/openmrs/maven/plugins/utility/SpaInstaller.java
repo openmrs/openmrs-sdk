@@ -22,9 +22,9 @@ public class SpaInstaller {
 			+
 			"Duplicate properties are not allowed.";
 	
-	static final String NODE_VERSION = "16.2.0";
+	static final String NODE_VERSION = "16.15.0";
 	
-	static final String NPM_VERSION = "7.13.0";
+	static final String NPM_VERSION = "8.5.5";
 	
 	static final String BUILD_TARGET_DIR = "frontend";
 	

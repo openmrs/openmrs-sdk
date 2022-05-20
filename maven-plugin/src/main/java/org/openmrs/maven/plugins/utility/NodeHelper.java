@@ -1,5 +1,6 @@
 package org.openmrs.maven.plugins.utility;
 
+import org.apache.commons.lang3.SystemUtils;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -59,7 +60,8 @@ public class NodeHelper {
 		
 		// it's a little weird to use a custom NPM cache for this; however, it seems to be necessary to get things working on Bamboo
 		// hack added in December 2021; it's use probably should be re-evaluated at some point
-		if (mavenProject != null && mavenProject.getBuild() != null) {
+		// additional hack: we do not use --cache on macs due to https://github.com/npm/cli/issues/3256
+		if (mavenProject != null && mavenProject.getBuild() != null && !SystemUtils.IS_OS_MAC_OSX) {
 			npmExec =
 					" --cache=" + tempDir.resolve("npm-cache").toAbsolutePath() + " exec -- " + arguments;
 		}
