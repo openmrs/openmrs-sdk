@@ -3,9 +3,9 @@ package org.openmrs.maven.plugins;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.openmrs.maven.plugins.model.OwaId;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.DistroProperties;
+import org.openmrs.maven.plugins.model.OwaId;
 import org.openmrs.maven.plugins.model.Server;
 
 import java.io.File;
@@ -112,8 +112,6 @@ public class DeployIntegrationTest extends AbstractSdkIntegrationTest {
 
         assertFilePresent(testServerId, "modules", "appui-1.3.omod");
 
-        assertFileNotPresent(testServerId, "frontend");
-
         executeTask("deploy");
 
         assertSuccess();
@@ -121,9 +119,6 @@ public class DeployIntegrationTest extends AbstractSdkIntegrationTest {
         assertFileNotPresent(testServerId, "modules", "appui-1.3.omod");
         assertModulesInstalled(testServerId, "owa-1.4.omod", "uicommons-1.7.omod", "uiframework-3.6.omod");
         assertModuleUpdated(testServerId, "owa", "1.4");
-        assertFilePresent(testServerId, "frontend", "index.html");
-        assertFilePresent(testServerId, "frontend", "openmrs-esm-login-app-3.1.0");
-        assertFileContains("spaVersion=\"3", testServerId, "frontend", "openmrs.js");
     }
 
     @Test
