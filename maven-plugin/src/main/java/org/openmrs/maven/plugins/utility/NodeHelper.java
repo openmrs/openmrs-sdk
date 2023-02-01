@@ -7,6 +7,7 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
 import org.twdata.maven.mojoexecutor.MojoExecutor;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -52,6 +53,8 @@ public class NodeHelper {
 		configuration.add(element("nodeVersion", "v" + nodeVersion));
 		configuration.add(element("npmVersion", npmVersion));
 		configuration.add(element("installDirectory",  tempDir.toAbsolutePath().toString()));
+		// The frontend maven plugin fails without a lib directory within the installDirectory
+		new File(tempDir.toFile(), "lib").mkdirs();
 		runFrontendMavenPlugin("install-node-and-npm", configuration);
 	}
 	

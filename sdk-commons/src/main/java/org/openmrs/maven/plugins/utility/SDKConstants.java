@@ -28,7 +28,7 @@ public class SDKConstants {
     // frontend plugin
     public static final String FRONTEND_PLUGIN_GROUP_ID = "com.github.eirslett";
     public static final String FRONTEND_PLUGIN_ARTIFACT_ID = "frontend-maven-plugin";
-    public static final String FRONTEND_PLUGIN_VERSION = "1.11.3";
+    public static final String FRONTEND_PLUGIN_VERSION = "1.12.0";
     // exec maven plugin
     public final static String EXEC_PLUGIN_GROUP_ID = "org.codehaus.mojo";
     public final static String EXEC_PLUGIN_ARTIFACT_ID = "exec-maven-plugin";
