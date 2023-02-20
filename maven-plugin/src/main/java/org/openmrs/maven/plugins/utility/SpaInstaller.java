@@ -3,7 +3,6 @@ package org.openmrs.maven.plugins.utility;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.project.MavenProject;
 import org.openmrs.maven.plugins.model.DistroProperties;
 
 import java.io.File;
@@ -47,22 +46,33 @@ public class SpaInstaller {
 	 */
 	public void installFromDistroProperties(File appDataDir, DistroProperties distroProperties)
 			throws MojoExecutionException {
+
 		// We find all the lines in distro properties beginning with `spa` and convert these
 		// into a JSON structure. This is passed to the frontend build tool.
 		// If no SPA elements are present in the distro properties, the SPA is not installed.
 		Map<String, String> spaProperties = distroProperties.getSpaProperties(distroHelper, appDataDir);
-		// The 'spa.core' property, however, is handled here, and not passed to the build tool.
+
+		// Three of these properties are not passed to the build tool, but are used to specify the build execution itself
 		String coreVersion = spaProperties.remove("core");
 		if (coreVersion == null) {
 			coreVersion = "latest";
 		}
+		String nodeVersion = spaProperties.remove("node");
+		if (nodeVersion == null) {
+			nodeVersion = NODE_VERSION;
+		}
+		String npmVersion = spaProperties.remove("npm");
+		if (npmVersion == null) {
+			npmVersion = NPM_VERSION;
+		}
+
 		if (!spaProperties.isEmpty()) {
 			Map<String, Object> spaConfigJson = convertPropertiesToJSON(spaProperties);
-			
+
 			File spaConfigFile = new File(appDataDir, "spa-build-config.json");
 			writeJSONObject(spaConfigFile, spaConfigJson);
-			
-			nodeHelper.installNodeAndNpm(NODE_VERSION, NPM_VERSION);
+
+			nodeHelper.installNodeAndNpm(nodeVersion, npmVersion);
 			File buildTargetDir = new File(appDataDir, BUILD_TARGET_DIR);
 			
 			String program = "openmrs@" + coreVersion;
