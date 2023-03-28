@@ -30,7 +30,7 @@ public class SdkStatistics {
 
     public static final String SDK_STATS_FILE_NAME = "sdk-stats.properties";
 
-    private static final String DATE_FORMAT = "dd-M-yyyy";
+    private static final String DATE_FORMAT = "DD-MM-YYYY";
 
     private Properties statistics = new Properties();
 
