@@ -46,8 +46,6 @@ public class Setup extends AbstractServerTask {
 
 	public static final String SETUP_SERVERS_PROMPT = "You can setup the following servers";
 
-	private static final String CLASSPATH_SCRIPT_PREFIX = "classpath://";
-
 	public static final String ENABLE_DEBUGGING_DEFAULT_MESSAGE =
 			"If you want to enable remote debugging by default when running the server, " +
 					"\nspecify the %s here (e.g. 1044). Leave blank to disable debugging. \n(Do not do this on a production server)";
