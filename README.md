@@ -6,8 +6,22 @@ For more details visit [the project page](https://wiki.openmrs.org/display/docs/
 
 ## Requirements
  * Maven 3.x
+    
+    The Latest Version of Apache Maven may Collide with the JDK 8. Try using Apache Maven 3.6.3
+
+
+ * JDK 8
+
  
 ## Installation
+* Maven 3.x 
+   
+Mac:
+   Using homebrew Run `brew install maven` or you can manually download and install the archived version of Apache Maven from [Here (Maven 3.6.3)](https://archive.apache.org/dist/maven/maven-3/3.6.3/binaries/)
+* JDK 8
+
+Mac: First Run `brew tap homebrew/cask-versions` and then ` brew install --cask temurin8`
+
 In order to install the latest version of the sdk run: <br/>
 
 `mvn org.openmrs.maven.plugins:openmrs-sdk-maven-plugin:setup-sdk`
