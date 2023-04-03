@@ -97,25 +97,28 @@ public class Artifact {
     public void setType(String type) { this.type = type; }
 
     public String getDestFileName() {
-        if (destFileName == null) {
-            String[] parts = StringUtils.reverse(artifactId).split("-", 2);
-
-            String id;
-            if (parts.length == 1) {
-                id = artifactId;
-            } else {
-                id = StringUtils.reverse(parts[1]);
-
-                String remainder = StringUtils.reverse(parts[0]);
-                if (!remainder.equals("omod") && !remainder.equals("webapp")) {
-                    id += "-" + remainder;
-                }
-            }
-
-            return String.format(DEST_TEMPLATE, id, version, fileExtension);
-        } else {
+        if (destFileName != null) {
             return destFileName;
         }
+
+        String reversedArtifactId = StringUtils.reverse(artifactId);
+        String[] parts = reversedArtifactId.split("-", 2);
+
+        String id;
+        if (parts.length == 1) {
+            id = artifactId;
+        } else {
+            id = StringUtils.reverse(parts[1]);
+
+            String remainder = StringUtils.reverse(parts[0]);
+            if (!"omod".equals(remainder) && !"webapp".equals(remainder)) {
+                id += "-" + remainder;
+            }
+        }
+
+        String computedDestFileName = String.format(DEST_TEMPLATE, id, version, fileExtension);
+        destFileName = computedDestFileName; // cache the computed value
+        return computedDestFileName;
     }
 
     public void setDestFileName(String destFileName) {
@@ -177,7 +180,9 @@ public class Artifact {
 
     @Override
     public String toString() {
-        return groupId + ':' + artifactId + ':' + version;
+        StringBuilder sb = new StringBuilder();
+        sb.append(groupId).append(':').append(artifactId).append(':').append(version);
+        return sb.toString();
     }
 
     public boolean isValid() {
