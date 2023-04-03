@@ -227,14 +227,13 @@ public abstract class BaseSdkProperties {
 
     public void setModuleProperties(Artifact newModule) {
         newModule = stripArtifactId(newModule);
-        if(!newModule.getGroupId().equals(Artifact.GROUP_MODULE)){
+        if (!Artifact.GROUP_MODULE.equals(newModule.getGroupId())) {
             setCustomModuleGroupId(newModule);
         }
-        if(!newModule.getType().equals(TYPE_JAR)){
+        if (!TYPE_JAR.equals(newModule.getType())) {
             setCustomModuleType(newModule);
         }
         setModule(newModule);
-
     }
 
     public void removeModuleProperties(Artifact artifact) {
