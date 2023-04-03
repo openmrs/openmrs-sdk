@@ -12,7 +12,7 @@ public abstract class AbstractServerTask extends AbstractTask {
 	/**
 	 * The identifier for the server to work with, if any
 	 */
-	@Parameter(property = "serverId")
+	@Parameter(property = "ServerId")
 	String serverId;
 
 	public AbstractServerTask() { super(); }
