@@ -17,6 +17,8 @@ import org.openmrs.maven.plugins.model.Version;
 import org.openmrs.maven.plugins.utility.DistroHelper;
 import org.openmrs.maven.plugins.model.Project;
 import org.openmrs.maven.plugins.utility.SDKConstants;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -61,6 +63,8 @@ public class BuildDistro extends AbstractTask {
 	private static final String DOCKER_COMPOSE_PROD_YML = "docker-compose.prod.yml";
 
 	private static final String DOCKER_COMPOSE_OVERRIDE_YML = "docker-compose.override.yml";
+
+	private static final Logger log = LoggerFactory.getLogger(BuildDistro.class);
 
 	@Parameter(property = "distro")
 	private String distro;
@@ -190,7 +194,7 @@ public class BuildDistro extends AbstractTask {
 			new File(targetDir, OPENMRS_DISTRO_PROPERTIES).delete();
 		}
 		catch (IOException e) {
-			e.printStackTrace();
+			log.error(e.getMessage(), e);
 		}
 	}
 
@@ -319,7 +323,7 @@ public class BuildDistro extends AbstractTask {
 			}
 		}
 	}
-	
+
 	private boolean isPlatform2point5AndAbove(Version platformVersion) {
 		return platformVersion.getMajorVersion() > 2
 				|| (platformVersion.getMajorVersion() == 2 && platformVersion.getMinorVersion() >= 5);

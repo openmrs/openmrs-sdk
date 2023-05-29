@@ -108,6 +108,10 @@
             <id>jgit-repository</id>
             <url>https://repo.eclipse.org/content/groups/releases/</url>
         </repository>
+        <repository>
+            <id>mekom-solutions</id>
+            <url>https://nexus.mekomsolutions.net/repository/maven-releases/</url>
+        </repository>
     </repositories>
 
     <pluginRepositories>

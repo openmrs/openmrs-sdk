@@ -66,6 +66,12 @@ public class VersionsHelper {
         }
     }
 
+    public List<ArtifactVersion> getAllVersions(Artifact artifact, int maxSize) {
+        List<ArtifactVersion> versions = getVersions(artifact);
+        sortDescending(versions);
+        return versions.subList(0, Math.min(versions.size(), maxSize));
+    }
+
     @SuppressWarnings("unchecked")
     private void sortDescending(List<ArtifactVersion> versions){
         Collections.sort(versions);

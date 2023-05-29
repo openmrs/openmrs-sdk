@@ -27,6 +27,8 @@ public interface Wizard {
 
     void promptForRefAppVersionIfMissing(Server server, VersionsHelper versionsHelper, String customMessage) throws MojoExecutionException;
 
+    void promptForO3RefAppVersionIfMissing(Server server, VersionsHelper versionsHelper) throws MojoExecutionException;
+
     String promptForRefAppVersion(VersionsHelper versionsHelper) throws MojoExecutionException;
 
     String promptForDistroVersion(String distroGroupId, String distroArtifactId, String distroVersion, String distroName, VersionsHelper versionsHelper, String customMessage)

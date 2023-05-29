@@ -25,7 +25,8 @@ public abstract class BaseSdkProperties {
     protected static final String TYPE_DISTRO = "distro";
     protected static final String TYPE_OWA = "owa";
     protected static final String TYPE_SPA = "spa";
-
+    protected static final String TYPE_CONFIG = "config";
+    protected static final String TYPE_ZIP = "zip";
 
     protected Properties properties;
 
@@ -134,9 +135,23 @@ public abstract class BaseSdkProperties {
         return  artifactList;
     }
 
-    protected Set<Object> getAllKeys(){
-        return properties.keySet();
-    }
+	public List<Artifact> getConfigArtifacts() {
+		List<Artifact> artifactList = new ArrayList<>();
+		for (Object keyObject : getAllKeys()) {
+			String key = keyObject.toString();
+			String artifactType = getArtifactType(key);
+			if (artifactType.equals(TYPE_CONFIG)) {
+				artifactList.add(
+						new Artifact(checkIfOverwritten(key, ARTIFACT_ID), getParam(key), checkIfOverwritten(key, GROUP_ID),
+								checkIfOverwritten(key, TYPE)));
+			}
+		}
+		return artifactList;
+	}
+
+	protected Set<Object> getAllKeys() {
+		return properties.keySet();
+	}
 
     protected String getArtifactType(String key){
         String[] wordsArray = key.split("\\.");
@@ -171,6 +186,7 @@ public abstract class BaseSdkProperties {
                         case TYPE_OMOD:
                             return Artifact.GROUP_MODULE;
                         case TYPE_DISTRO:
+	                    case TYPE_CONFIG:
                             return Artifact.GROUP_DISTRO;
                         default:
                             return "";
@@ -183,6 +199,8 @@ public abstract class BaseSdkProperties {
                             return TYPE_JAR;
                         case TYPE_WAR:
                             return TYPE_WAR;
+	                    case TYPE_CONFIG:
+							return TYPE_ZIP;
                         default:
                             return "";
                     }

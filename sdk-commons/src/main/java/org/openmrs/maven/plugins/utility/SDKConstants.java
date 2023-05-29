@@ -48,6 +48,7 @@ public class SDKConstants {
     public static final String OPENMRS_SDK_JDK_CUSTOM_INVALID = "JDK path is invalid";
     public static final String OPENMRS_SDK_PROPERTIES = "sdk.properties";
     public static final String OPENMRS_SERVER_MODULES = "modules";
+    public static final String OPENMRS_SERVER_CONFIGURATION = "configuration";
     // properties names
     public static final String OPENMRS_SDK_PROPERTIES_JAVA_HOME_OPTIONS = "javaHomeOptions";
     // dbUri for different db
@@ -108,6 +109,12 @@ public class SDKConstants {
      */
     public static Artifact getReferenceModule(String version) {
         Artifact artifact = new Artifact("referenceapplication-package", version, Artifact.GROUP_DISTRO, Artifact.TYPE_ZIP);
+        artifact.setClassifier("distro");
+        return artifact;
+    }
+
+    public static Artifact getO3Distro(String version) {
+        Artifact artifact = new Artifact("referenceapplication-distro", version, Artifact.GROUP_DISTRO, Artifact.TYPE_ZIP);
         artifact.setClassifier("distro");
         return artifact;
     }
