@@ -1,25 +1,9 @@
 package org.openmrs.maven.plugins;
 
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.output.NullOutputStream;
-import org.apache.commons.lang.StringUtils;
-import org.apache.ibatis.jdbc.ScriptRunner;
-import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.MojoFailureException;
-import org.apache.maven.plugins.annotations.Mojo;
-import org.apache.maven.plugins.annotations.Parameter;
-import org.openmrs.maven.plugins.model.Artifact;
-import org.openmrs.maven.plugins.model.DistroProperties;
-import org.openmrs.maven.plugins.model.Server;
-import org.openmrs.maven.plugins.model.Version;
-import org.openmrs.maven.plugins.utility.DBConnector;
-import org.openmrs.maven.plugins.utility.DistroHelper;
-import org.openmrs.maven.plugins.utility.SDKConstants;
-import org.openmrs.maven.plugins.utility.ServerHelper;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
@@ -34,23 +18,47 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.Properties;
+
+import net.lingala.zip4j.core.ZipFile;
+import net.lingala.zip4j.exception.ZipException;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.output.NullOutputStream;
+import org.apache.commons.lang.StringUtils;
+import org.apache.ibatis.jdbc.ScriptRunner;
+import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
+import org.openmrs.maven.plugins.model.Artifact;
+import org.openmrs.maven.plugins.model.DistroProperties;
+import org.openmrs.maven.plugins.model.Server;
+import org.openmrs.maven.plugins.model.Version;
+import org.openmrs.maven.plugins.utility.DBConnector;
+import org.openmrs.maven.plugins.utility.DistroHelper;
+import org.openmrs.maven.plugins.utility.PropertiesUtils;
+import org.openmrs.maven.plugins.utility.SDKConstants;
+import org.openmrs.maven.plugins.utility.ServerHelper;
 
 @Mojo(name = "setup", requiresProject = false)
 public class Setup extends AbstractServerTask {
-
-	private static final String DISTRIBUTION = "Distribution";
-
-	private static final String PLATFORM = "Platform";
 
 	public static final String SETTING_UP_A_NEW_SERVER = "Setting up a new server...";
 
 	public static final String SETUP_SERVERS_PROMPT = "You can setup the following servers";
 
-	private static final String CLASSPATH_SCRIPT_PREFIX = "classpath://";
-
 	public static final String ENABLE_DEBUGGING_DEFAULT_MESSAGE =
-			"If you want to enable remote debugging by default when running the server, " +
-					"\nspecify the %s here (e.g. 1044). Leave blank to disable debugging. \n(Do not do this on a production server)";
+			"If you want to enable remote debugging by default when running the server, "
+					+ "\nspecify the %s here (e.g. 1044). Leave blank to disable debugging. \n(Do not do this on a production server)";
+
+	private static final String O2_Distribution = "2.x Distribution";
+
+	private static final String PLATFORM = "Platform";
+
+	private static final String O3_Distribution = "03 Distribution";
+
+	private static final String CLASSPATH_SCRIPT_PREFIX = "classpath://";
 
 	private static final String NO_DEBUGGING_DEFAULT_ANSWER = "no debugging";
 
@@ -169,15 +177,16 @@ public class Setup extends AbstractServerTask {
 			if (distroProperties != null) {
 				options.add(distroProperties.getName() + " " + distroProperties.getVersion() + " from current directory");
 			}
-			options.add(DISTRIBUTION);
+			options.add(O2_Distribution);
 			options.add(PLATFORM);
+			options.add(O3_Distribution);
 			String choice = wizard.promptForMissingValueWithOptions(SETUP_SERVERS_PROMPT, null, null, options);
 
 			switch (choice) {
 				case PLATFORM:
 					platformMode = true;
 					break;
-				case DISTRIBUTION:
+				case O2_Distribution:
 					wizard.promptForRefAppVersionIfMissing(server, versionsHelper);
 					if (DistroHelper.isRefapp2_3_1orLower(server.getDistroArtifactId(), server.getVersion())) {
 						distroProperties = new DistroProperties(server.getVersion());
@@ -186,6 +195,31 @@ public class Setup extends AbstractServerTask {
 					}
 					platformMode = false;
 					break;
+				case O3_Distribution:
+					wizard.promptForO3RefAppVersionIfMissing(server, versionsHelper);
+					Artifact artifact = new Artifact(server.getDistroArtifactId(), server.getVersion(),
+							server.getDistroGroupId(), "zip");
+					Properties frontendProperties;
+					if (server.getVersion().equals(versionsHelper.getLatestSnapshotVersion(artifact))) {
+						frontendProperties = PropertiesUtils.getFrontendPropertiesFromSpaConfigUrl(
+								"https://raw.githubusercontent.com/openmrs/openmrs-distro-referenceapplication/main/frontend/spa-build-config.json");
+					} else {
+						frontendProperties = PropertiesUtils.getFrontendPropertiesFromSpaConfigUrl(
+								"https://raw.githubusercontent.com/openmrs/openmrs-distro-referenceapplication/"+ server.getVersion() +"/frontend/spa-build-config.json");
+					}
+					Properties configurationProperties = PropertiesUtils.getConfigurationProperty(artifact);
+					File file = distroHelper.downloadDistro(server.getServerDirectory(), artifact);
+					Properties backendProperties = PropertiesUtils.getDistroProperties(file);
+					Properties spaModuleProperty = PropertiesUtils.getModuleProperty("https://raw.githubusercontent.com/openmrs/openmrs-module-spa/master/pom.xml");
+					Properties allProperties = new Properties();
+					allProperties.putAll(backendProperties);
+					allProperties.putAll(spaModuleProperty);
+					allProperties.putAll(frontendProperties);
+					allProperties.putAll(configurationProperties);
+					distroProperties = new DistroProperties(allProperties);
+					platformMode = false;
+					break;
+
 				default:  // distro properties from current directory
 					server.setPlatformVersion(
 							distroProperties.getPlatformVersion(distroHelper, server.getServerTmpDirectory()));
@@ -243,6 +277,7 @@ public class Setup extends AbstractServerTask {
 			distroHelper.savePropertiesToServer(distroProperties, server);
 			setServerVersionsFromDistroProperties(server, distroProperties);
 			moduleInstaller.installModulesForDistro(server, distroProperties, distroHelper);
+			setConfigFolder(server, distroProperties);
 			if (spaInstaller != null) {
 				spaInstaller.installFromDistroProperties(server.getServerDirectory(), distroProperties);
 			}
@@ -269,9 +304,7 @@ public class Setup extends AbstractServerTask {
 
 		server.setValuesFromDistroPropertiesModules(
 				distroProperties.getWarArtifacts(distroHelper, server.getServerDirectory()),
-				distroProperties.getModuleArtifacts(distroHelper, server.getServerDirectory()),
-				distroProperties
-		);
+				distroProperties.getModuleArtifacts(distroHelper, server.getServerDirectory()), distroProperties);
 		server.setUnspecifiedToDefault();
 		server.save();
 	}
@@ -306,6 +339,57 @@ public class Setup extends AbstractServerTask {
 			for (Artifact owa : owas) {
 				wizard.showMessage("Downloading OWA: " + owa);
 				owaHelper.downloadOwa(owasDir, owa, moduleInstaller);
+			}
+		}
+	}
+
+	/**
+	 * Sets the configuration folder for the specified server using the provided distro properties.
+	 *
+	 * @param server           The server for which to set the configuration folder.
+	 * @param distroProperties The distro properties containing the configuration information.
+	 */
+	private void setConfigFolder(Server server, DistroProperties distroProperties) throws MojoExecutionException {
+		if(distroProperties.getConfigArtifacts().isEmpty()) {
+			return;
+		}
+		File configDir = new File(server.getServerDirectory(), SDKConstants.OPENMRS_SERVER_CONFIGURATION);
+		configDir.mkdir();
+		downloadConfigs(distroProperties, configDir);
+		File referenceApplicationFile = new File(configDir, "referenceapplication-distro.owa");
+		if (!referenceApplicationFile.exists()) {
+			return;
+		}
+		try {
+			ZipFile zipFile = new ZipFile(referenceApplicationFile);
+			zipFile.extractAll(configDir.getPath());
+			for (File file : Objects.requireNonNull(configDir.listFiles())) {
+				if (file.getName().equals("openmrs_config")) {
+					FileUtils.copyDirectory(file, configDir);
+				}
+				FileUtils.deleteQuietly(file);
+			}
+			FileUtils.deleteQuietly(referenceApplicationFile);
+		}
+		catch (ZipException | IOException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	/**
+	 * Downloads the configuration artifact specified in the distro properties and saves them in the provided config directory.
+	 *
+	 * @param distroProperties The distro properties containing the configuration artifacts to download.
+	 * @param configDir        The directory where the configuration files will be saved.
+	 * @throws MojoExecutionException If an error occurs while downloading the configuration files.
+	 */
+	private void downloadConfigs(DistroProperties distroProperties, File configDir) throws MojoExecutionException {
+		List<Artifact> configs = distroProperties.getConfigArtifacts();
+		wizard.showMessage("Downloading Configs...\n");
+		if (!configs.isEmpty()) {
+			for (Artifact config : configs) {
+				wizard.showMessage("Downloading Config: " + config);
+				owaHelper.downloadOwa(configDir, config, moduleInstaller);
 			}
 		}
 	}

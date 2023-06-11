@@ -84,11 +84,15 @@ public class DefaultWizard implements Wizard {
 
 	private static final String REFERENCEAPPLICATION_2_4 = "org.openmrs.distro:referenceapplication-package:2.4";
 
+	private static final String REFERENCEAPPLICATION_O3 = "org.openmrs.distro:referenceapplication-distro:3.0.0";
+
 	private static final String SDK_PROPERTIES_FILE = "SDK Properties file";
 
 	private static final String REFAPP_OPTION_TMPL = "Reference Application %s";
 
 	private static final String REFAPP_ARTIFACT_TMPL = "org.openmrs.distro:referenceapplication-package:%s";
+
+	private static final String O3_ARTIFACT_TMPL = "org.openmrs.distro:referenceapplication-distro:%s";
 
 	private static final String JDK_ERROR_TMPL = "\nThe JDK %s is not compatible with OpenMRS Platform %s. " +
 			"Please use %s to run this server.\n\nIf you are running " +
@@ -109,6 +113,8 @@ public class DefaultWizard implements Wizard {
 	public static final String PLATFORM_VERSION_PROMPT = "You can deploy the following versions of a platform";
 
 	public static final String DISTRIBUTION_VERSION_PROMPT = "You can deploy the following versions of distribution";
+
+	public static final String O3_VERSION_PROMPT = "You can deploy the following versions of O3";
 
 	public static final String DB_OPTION_H2 = "H2";
 
@@ -659,8 +665,24 @@ public class DefaultWizard implements Wizard {
 		}
 	}
 
+	@Override
+	public void promptForO3RefAppVersionIfMissing(Server server, VersionsHelper versionsHelper)
+			throws MojoExecutionException {
+		if (server.getVersion() == null) {
+			String choice = promptForO3Version(versionsHelper);
+			Artifact distro = DistroHelper.parseDistroArtifact(choice, versionsHelper);
+			server.setVersion(distro.getVersion());
+			server.setDistroArtifactId(distro.getArtifactId());
+			server.setDistroGroupId(distro.getGroupId());
+		}
+	}
+
 	public String promptForRefAppVersion(VersionsHelper versionsHelper) throws MojoExecutionException {
 		return promptForRefAppVersion(versionsHelper, null);
+	}
+
+	public String promptForO3Version(VersionsHelper versionsHelper) throws MojoExecutionException {
+		return promptForO3RefAppVersion(versionsHelper, null);
 	}
 
 	@Override
@@ -694,12 +716,33 @@ public class DefaultWizard implements Wizard {
 		return promptForVersion(optionsMap, customMessage);
 	}
 
+	public String promptForO3RefAppVersion(VersionsHelper versionsHelper, String customMessage)
+			throws MojoExecutionException {
+		Map<String, String> optionsMap = getO3VersionsOptionsMap(versionsHelper, REFAPP_OPTION_TMPL,
+				O3_ARTIFACT_TMPL);
+		return promptForO3Version(optionsMap, customMessage);
+	}
+
 	private String promptForVersion(Map<String, String> optionsMap, String customMessage)
 			throws MojoExecutionException {
 		String message = customMessage != null ? customMessage : DISTRIBUTION_VERSION_PROMPT;
 		String version = promptForMissingValueWithOptions(message,
 				null, "distribution artifact", Lists.newArrayList(optionsMap.keySet()), "Please specify %s",
 				REFERENCEAPPLICATION_2_4);
+
+		String artifact = optionsMap.get(version);
+		if (artifact != null) {
+			return artifact;
+		} else {
+			return version;
+		}
+	}
+
+	private String promptForO3Version(Map<String, String> optionsMap, String customMessage) throws MojoExecutionException {
+		String message = customMessage != null ? customMessage : O3_VERSION_PROMPT;
+		String version = promptForMissingValueWithOptions(message,
+				null, "O3 artifact", Lists.newArrayList(optionsMap.keySet()), "Please specify %s",
+				REFERENCEAPPLICATION_O3);
 
 		String artifact = optionsMap.get(version);
 		if (artifact != null) {
@@ -721,6 +764,24 @@ public class DefaultWizard implements Wizard {
 			optionsMap.put(String.format(optionTemplate, version), String.format(artifactTemplate, version));
 			if (optionsMap.size() == MAX_OPTIONS_SIZE)
 				break;
+		}
+		return optionsMap;
+	}
+
+	/**
+	 * Returns a map of options based on the versions of O3
+	 *
+	 * @param versionsHelper   The VersionsHelper object to retrieve the artifact versions from.
+	 * @param optionTemplate   The template for generating option keys in the map.
+	 * @param artifactTemplate The template for generating artifact values in the map.
+	 * @return A LinkedHashMap containing the generated options map.
+	 */
+	private Map<String, String> getO3VersionsOptionsMap(VersionsHelper versionsHelper,
+			String optionTemplate, String artifactTemplate) {
+		Map<String, String> optionsMap = new LinkedHashMap<>();
+		Artifact artifact = new Artifact("referenceapplication-distro", "3.0.0-SNAPSHOT", "org.openmrs.distro", "zip");
+		for (ArtifactVersion version : versionsHelper.getAllVersions(artifact, MAX_OPTIONS_SIZE)) {
+			optionsMap.put(String.format(optionTemplate, version.toString()), String.format(artifactTemplate, version));
 		}
 		return optionsMap;
 	}

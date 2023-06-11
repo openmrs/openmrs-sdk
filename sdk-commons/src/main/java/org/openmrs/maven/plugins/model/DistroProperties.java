@@ -6,6 +6,8 @@ import static org.openmrs.maven.plugins.utility.PropertiesUtils.loadPropertiesFr
 import org.apache.commons.io.IOUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.openmrs.maven.plugins.utility.DistroHelper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -29,13 +31,14 @@ public class DistroProperties extends BaseSdkProperties {
     public static final String PROPERTY_DEFAULT_VALUE_KEY = "property.%s.default";
     public static final String PROPERTY_KEY = "property.%s";
 
+	private static final Logger log = LoggerFactory.getLogger(DistroProperties.class);
 
     public DistroProperties(String version){
         properties = new Properties();
         try {
             loadPropertiesFromResource(createFileName(version), properties);
         } catch (MojoExecutionException e) {
-            e.printStackTrace();
+	        log.error(e.getMessage(), e);
         }
     }
 
