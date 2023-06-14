@@ -111,6 +111,17 @@
             <id>mekom-solutions</id>
             <url>https://nexus.mekomsolutions.net/repository/maven-releases/</url>
         </repository>
+        <repository>
+          <id>mks-nexus-public</id>
+          <url>https://nexus.mekomsolutions.net/repository/maven-public/</url>
+        </repository>
+        <repository>
+          <id>mks-nexus-snapshots</id>
+          <url>https://nexus.mekomsolutions.net/repository/maven-snapshots/</url>
+          <snapshots>
+            <enabled>true</enabled>
+          </snapshots>
+        </repository>
     </repositories>
 
     <pluginRepositories>
@@ -136,6 +147,17 @@
                 <checksumPolicy>warn</checksumPolicy>
             </snapshots>
         </pluginRepository>
+        <pluginRepository>
+          <id>mks-nexus-public</id>
+          <url>https://nexus.mekomsolutions.net/repository/maven-public/</url>
+        </pluginRepository>
+        <pluginRepository>
+          <id>mks-nexus-snapshots</id>
+          <url>https://nexus.mekomsolutions.net/repository/maven-snapshots/</url>
+          <snapshots>
+            <enabled>true</enabled>
+          </snapshots>
+        </pluginRepository>        
     </pluginRepositories>
 
     <distributionManagement>
