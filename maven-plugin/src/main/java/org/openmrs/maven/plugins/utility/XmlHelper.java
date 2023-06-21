@@ -51,7 +51,7 @@ public final class XmlHelper {
 	}
 
 	protected static void applyModifications(Element modificationsRoot, Element targetRoot) {
-		for (Element modificationElement : modificationsRoot.elements()) {
+		modificationsRoot.elements().forEach(modificationElement -> {
 			String copy = modificationElement.attributeValue("sdk-copy");
 			if ("true".equals(copy)) {
 				addModification(targetRoot, modificationElement);
@@ -62,13 +62,11 @@ public final class XmlHelper {
 				}
 				applyModifications(modificationElement, targetElement);
 			}
-		}
+		});
 	}
 
 	protected static void addChildren(Element modificationsRoot, Element targetRoot) {
-		for (Element element : modificationsRoot.elements()) {
-			addModification(targetRoot, element);
-		}
+		modificationsRoot.elements().forEach(element -> addModification(targetRoot, element));
 	}
 
 	protected static void addModification(Element targetRoot, Element modificationElement) {

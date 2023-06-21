@@ -6,7 +6,9 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -23,11 +25,7 @@ public class VersionsHelperTest {
     }
 
     private List<ArtifactVersion> createTestVersions(String... versions){
-        List<ArtifactVersion> list = new ArrayList<>();
-        for(String version: versions) {
-            list.add(new DefaultArtifactVersion(version));
-        }
-        return list;
+        return Arrays.stream(versions).map(DefaultArtifactVersion::new).collect(Collectors.toList());
     }
 
     @Test

@@ -12,10 +12,10 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.DistroProperties;
+import org.openmrs.maven.plugins.model.Project;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.model.Version;
 import org.openmrs.maven.plugins.utility.DistroHelper;
-import org.openmrs.maven.plugins.model.Project;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,11 +24,11 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileWriter;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.List;
 
 @Mojo(name = "build-distro", requiresProject = false)
@@ -333,16 +333,9 @@ public class BuildDistro extends AbstractTask {
 	 * name of sql dump file is unknown, so wipe all files with 'sql' extension
 	 */
 	private void cleanupSqlFiles(File targetDirectory) {
-		File[] sqlFiles = targetDirectory.listFiles(new FilenameFilter() {
-
-			@Override
-			public boolean accept(File dir, String name) {
-				return name.endsWith(".sql");
-			}
-		});
-		for (File sql : sqlFiles) {
-			FileUtils.deleteQuietly(sql);
-		}
+		File[] sqlFiles = targetDirectory.listFiles((dir, name) -> name.endsWith(".sql"));
+		assert sqlFiles != null;
+		Arrays.stream(sqlFiles).forEach(FileUtils::deleteQuietly);
 	}
 
 	private void writeDockerCompose(File targetDirectory, String distro, String version) throws MojoExecutionException {
@@ -460,19 +453,9 @@ public class BuildDistro extends AbstractTask {
 	}
 
 	private void renameWebApp(File targetDirectory) throws MojoExecutionException {
-		File[] warFiles = targetDirectory.listFiles(new FilenameFilter() {
-
-			@Override
-			public boolean accept(File dir, String name) {
-				return name.endsWith(".war");
-			}
-		});
-
+		File[] warFiles = targetDirectory.listFiles((dir, name) -> name.endsWith(".war"));
 		if (warFiles != null) {
-			for (File file : warFiles) {
-				wizard.showMessage("file:" + file.getAbsolutePath());
-			}
-
+			Arrays.stream(warFiles).forEach(file -> wizard.showMessage("file:" + file.getAbsolutePath()));
 			wizard.showMessage("target:" + targetDirectory);
 
 			if (warFiles.length == 1) {

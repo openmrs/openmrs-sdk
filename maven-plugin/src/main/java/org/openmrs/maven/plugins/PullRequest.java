@@ -147,11 +147,7 @@ public class PullRequest extends AbstractTask {
 		List<String> messagesToModify = new ArrayList<>();
 
 		int size = Iterables.size(commitMessages);
-		for (String commit : commitMessages) {
-			if (!commit.startsWith(issueId)) {
-				messagesToModify.add(commit);
-			}
-		}
+		commitMessages.stream().filter(commit -> !commit.startsWith(issueId)).forEach(messagesToModify::add);
 
 		if (messagesToModify.size() > 0) {
 			String messageText = createRenamePrompt(issueId, messagesToModify);
@@ -210,14 +206,14 @@ public class PullRequest extends AbstractTask {
 	private String createRenamePrompt(String issueId, List<String> messagesToModify) {
 		StringBuilder message = new StringBuilder(
 				"Some of your commits do not start from issue id. they should be corrected as following:\n");
-		for (String messageToModify : messagesToModify) {
+		messagesToModify.forEach(messageToModify -> {
 			message.append(messageToModify);
 			message.append(" -> ");
 			message.append(issueId);
 			message.append(" ");
 			message.append(messageToModify);
 			message.append("\n");
-		}
+		});
 		return message.toString();
 	}
 }

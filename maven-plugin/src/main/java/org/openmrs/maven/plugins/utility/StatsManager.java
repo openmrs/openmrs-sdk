@@ -5,6 +5,8 @@ import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.openmrs.maven.plugins.model.SdkStatistics;
 
+import java.util.Optional;
+
 /**
  *
  */
@@ -58,12 +60,12 @@ public class StatsManager {
     }
 
     private String getGoal() {
-        for(String mvnGoal: mavenSession.getGoals()){
-            if(mvnGoal.contains("openmrs-sdk")){
-                String goal = mvnGoal.substring(mvnGoal.lastIndexOf(":")+1);
-                return goal.substring(0,1).toUpperCase() + goal.substring(1);
-            }
-        }
-        return null;
+        Optional<String> foundGoal = mavenSession.getGoals().stream().filter(mvnGoal -> mvnGoal.contains("openmrs-sdk"))
+                .map(mvnGoal -> {
+                    String goal = mvnGoal.substring(mvnGoal.lastIndexOf(":") + 1);
+                    return goal.substring(0, 1).toUpperCase() + goal.substring(1);
+                }).findFirst();
+
+        return foundGoal.orElse(null);
     }
 }

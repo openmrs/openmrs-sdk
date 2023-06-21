@@ -13,11 +13,13 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.Optional;
+import java.util.stream.Stream;
 
 /**
  *
@@ -87,13 +89,10 @@ public class DistroProperties extends BaseSdkProperties {
     }
 
     public Set<String> getPropertiesNames(){
-        Set<String> propertiesNames = new HashSet<>();
-        for(Object key: getAllKeys()){
-            if(key.toString().startsWith("property.")){
-                propertiesNames.add(extractPropertyName(key.toString()));
-            }
-        }
-        return propertiesNames;
+        return getAllKeys().stream()
+                .filter(key -> key.toString().startsWith("property."))
+                .map(key -> extractPropertyName(key.toString()))
+                .collect(Collectors.toSet());
     }
 
     private String extractPropertyName(String key) {
@@ -108,14 +107,17 @@ public class DistroProperties extends BaseSdkProperties {
     }
 
     public Artifact getDistroArtifact() {
-        for (Object keyObject: getAllKeys()) {
-            String key = keyObject.toString();
-            String artifactType = getArtifactType(key);
-            if(artifactType.equals(TYPE_DISTRO)) {
-                return new Artifact(checkIfOverwritten(key, ARTIFACT_ID), getParam(key), checkIfOverwritten(key, GROUP_ID), checkIfOverwritten(key, TYPE), "jar");
-            }
-        }
-        return null;
+        Optional<Artifact> distroArtifact = getAllKeys().stream()
+                .map(Object::toString)
+                .filter(key -> getArtifactType(key).equals(TYPE_DISTRO))
+                .map(key -> new Artifact(checkIfOverwritten(key, ARTIFACT_ID),
+                        getParam(key),
+                        checkIfOverwritten(key, GROUP_ID),
+                        checkIfOverwritten(key, TYPE),
+                        "jar"))
+                .findFirst();
+
+        return distroArtifact.orElse(null);
     }
 
     public List<Artifact> getModuleArtifacts(DistroHelper distroHelper, File directory) throws MojoExecutionException {
@@ -175,23 +177,11 @@ public class DistroProperties extends BaseSdkProperties {
     }
 
     private List<Artifact> mergeArtifactLists(List<Artifact> childArtifacts, List<Artifact> parentArtifacts) {
-        List<Artifact> artifactList = new ArrayList<>(childArtifacts);
-        for (Artifact parentArtifact : parentArtifacts) {
-            boolean found = false;
-            for (Artifact childArtifact : childArtifacts) {
-                boolean isGroupIdMatch = childArtifact.getGroupId().equals(parentArtifact.getGroupId());
-                boolean isArtifactIdMatch = childArtifact.getArtifactId().equals(parentArtifact.getArtifactId());
-                boolean isTypeMatch = childArtifact.getType().equals(parentArtifact.getType());
-                if (isGroupIdMatch && isArtifactIdMatch && isTypeMatch) {
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
-                artifactList.add(parentArtifact);
-            }
-        }
-        return artifactList;
+        return Stream.concat(childArtifacts.stream(), parentArtifacts.stream())
+                .filter(parentArtifact -> childArtifacts.stream()
+                        .noneMatch(childArtifact -> childArtifact.getGroupId()
+                                .equals(parentArtifact.getGroupId()) && childArtifact.getArtifactId().equals(parentArtifact.getArtifactId()) && childArtifact.getType()
+                                .equals(parentArtifact.getType()))).collect(Collectors.toList());
     }
 
     public void saveTo(File path) throws MojoExecutionException {
@@ -211,7 +201,7 @@ public class DistroProperties extends BaseSdkProperties {
     }
 
     public void resolvePlaceholders(Properties projectProperties) throws MojoExecutionException {
-        for(Map.Entry<Object, Object> property: properties.entrySet()){
+        for (Map.Entry<Object, Object> property: properties.entrySet()) {
             if(hasPlaceholder(property.getValue())){
                 try{
                     Object placeholderValue = projectProperties.get(getPlaceholderKey((String)property.getValue()));

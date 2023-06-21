@@ -359,13 +359,8 @@ public class DistroHelper {
 			}
 		}
 		for (Artifact oldListModule : oldList) {
-			boolean moduleNotFound = true;
-			for (Artifact newListModule : newList) {
-				if (isSameArtifact(newListModule, oldListModule)) {
-					moduleNotFound = false;
-					break;
-				}
-			}
+			boolean moduleNotFound = newList.stream()
+					.noneMatch(newListModule -> isSameArtifact(newListModule, oldListModule));
 			if (moduleNotFound) {
 				if (isOpenmrsWebapp(oldListModule)) {
 					throw new MojoExecutionException("You can delete only modules. Deleting openmrs core is not possible");

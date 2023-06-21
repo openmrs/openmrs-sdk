@@ -11,6 +11,8 @@ import org.openmrs.maven.plugins.model.Artifact;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Comparator;
+import java.util.Optional;
 
 /**
  * Created by user on 27.05.16.
@@ -68,7 +70,7 @@ public class VersionsHelper {
 
     public List<ArtifactVersion> getAllVersions(Artifact artifact, int maxSize) {
         List<ArtifactVersion> versions = getVersions(artifact);
-        sortDescending(versions);
+        versions.sort(Comparator.reverseOrder());
         return versions.subList(0, Math.min(versions.size(), maxSize));
     }
 
@@ -95,33 +97,33 @@ public class VersionsHelper {
     }
 
     public String getLatestSnapshotVersion(List<ArtifactVersion> versions) {
-        sortDescending(versions);
-        for(ArtifactVersion version : versions){
-            if (version.toString().contains("SNAPSHOT")) {
-                return version.toString();
-            }
-        }
-        return NO_VERSION_AVAILABLE_MSG;
+        versions.sort(Comparator.reverseOrder());
+        Optional<String> latestSnapshotVersion = versions.stream()
+                .map(ArtifactVersion::toString)
+                .filter(version -> version.contains("SNAPSHOT"))
+                .findFirst();
+
+        return latestSnapshotVersion.orElse(NO_VERSION_AVAILABLE_MSG);
     }
 
     public String getLatestReleasedVersion(List<ArtifactVersion> versions){
-        sortDescending(versions);
-        ArtifactVersion lastSnapshot = null;
-        for (ArtifactVersion version : versions) {
-            if(version.getQualifier() == null)
-                return version.toString();
-            else if (lastSnapshot == null){
-                lastSnapshot = version;
-            }
+        versions.sort(Comparator.reverseOrder());
+
+        Optional<String> latestReleasedVersion = versions.stream()
+                .filter(version -> version.getQualifier() == null)
+                .map(ArtifactVersion::toString)
+                .findFirst();
+
+        if (latestReleasedVersion.isPresent()) {
+            return latestReleasedVersion.get();
         }
 
-        // no releases, return snapshot
-        if (lastSnapshot != null) {
-            return lastSnapshot.toString();
-        }
+        Optional<String> latestSnapshotVersion = versions.stream()
+                .filter(version -> version.getQualifier() != null)
+                .map(ArtifactVersion::toString)
+                .findFirst();
 
-        // no releases nor snapshots, return any last version
-        return NO_VERSION_AVAILABLE_MSG;
+        return latestSnapshotVersion.orElse(NO_VERSION_AVAILABLE_MSG);
     }
 
     /**
@@ -137,12 +139,11 @@ public class VersionsHelper {
         if(allVersions.size() == 0){
             return Collections.emptyList();
         }
-        sortDescending(allVersions);
+        allVersions.sort(Collections.reverseOrder());
         List<String> advices = new ArrayList<>();
         
         boolean secondSnaphotAdded = false;
 
-        //add first element, presumably last SNAPSHOT version
         advices.add(allVersions.get(0).toString());
         ArtifactVersion previous = allVersions.get(0);
         //start from second element

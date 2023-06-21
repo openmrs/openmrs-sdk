@@ -5,6 +5,7 @@ import org.apache.maven.plugin.MojoExecutionException;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -19,11 +20,9 @@ public class CompositeException extends Exception {
 
     @Override
     public String toString() {
-        StringBuilder builder = new StringBuilder();
-        for(Map.Entry<String, Exception> exception: exceptions.entrySet()){
-            builder.append("\n").append(exception.getKey()).append("\n").append("\t").append(ExceptionUtils.getFullStackTrace(exception.getValue()));
-        }
-        return builder.toString();
+        return exceptions.entrySet().stream()
+                .map(exception -> "\n" + exception.getKey() + "\n\t" + ExceptionUtils.getFullStackTrace(exception.getValue()))
+                .collect(Collectors.joining());
     }
 
     public void add(String path, Exception e) {

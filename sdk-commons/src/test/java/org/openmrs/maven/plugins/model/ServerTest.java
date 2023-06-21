@@ -44,16 +44,12 @@ public class ServerTest {
     }
 
     private void checkIfAnyArtifactMatches(List<Artifact> artifacts, Artifact searched) {
-        boolean foundMatch = false;
-        for(Artifact artifact : artifacts){
-            boolean eqArtifactId = artifact.getArtifactId().equals(searched.getArtifactId());
-            boolean eqGroupId = artifact.getGroupId().equals(searched.getGroupId());
-            boolean eqVersion = artifact.getVersion().equals(searched.getVersion());
-            foundMatch = eqArtifactId&&eqGroupId&&eqVersion;
-            if(foundMatch) {
-                break;
-            }
-        }
+        boolean foundMatch = artifacts.stream()
+                .anyMatch(artifact ->
+                        artifact.getArtifactId().equals(searched.getArtifactId()) &&
+                                artifact.getGroupId().equals(searched.getGroupId()) &&
+                                artifact.getVersion().equals(searched.getVersion())
+                );
         assertThat(foundMatch, is(true));
     }
 

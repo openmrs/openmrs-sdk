@@ -47,16 +47,14 @@ public class ServerUpgrader {
 			}
 			if(!upgradeDifferential.getModulesToAdd().isEmpty()){
 				parentTask.moduleInstaller.installModules(upgradeDifferential.getModulesToAdd(), modulesDir);
-				for(Artifact artifact: upgradeDifferential.getModulesToAdd()){
-					server.setModuleProperties(artifact);
-				}
+				upgradeDifferential.getModulesToAdd().forEach(server::setModuleProperties);
 			}
 			if(!upgradeDifferential.getModulesToDelete().isEmpty()){
-				for(Artifact artifact: upgradeDifferential.getModulesToDelete()){
+				upgradeDifferential.getModulesToDelete().forEach(artifact -> {
 					File moduleToDelete = new File(modulesDir, artifact.getDestFileName());
 					moduleToDelete.delete();
 					server.removeModuleProperties(artifact);
-				}
+				});
 			}
 			if(!upgradeDifferential.getUpdateOldToNewMap().isEmpty()){
 				for(Map.Entry<Artifact, Artifact> updateEntry : upgradeDifferential.getUpdateOldToNewMap().entrySet()){
@@ -208,11 +206,10 @@ public class ServerUpgrader {
 	}
 
 	private void updateModulesPropertiesWithUserModules(Server server) throws MojoExecutionException {
-		List<Artifact> userModules = server.getUserModules();
-		for(Artifact userModule: userModules){
+		server.getUserModules().forEach(userModule -> {
 			server.removeModuleProperties(userModule);
 			server.setModuleProperties(userModule);
-		}
+		});
 		server.saveAndSynchronizeDistro();
 	}
 

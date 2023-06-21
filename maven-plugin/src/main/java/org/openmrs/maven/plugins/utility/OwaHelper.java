@@ -32,6 +32,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.twdata.maven.mojoexecutor.MojoExecutor.artifactId;
 import static org.twdata.maven.mojoexecutor.MojoExecutor.configuration;
@@ -318,7 +319,6 @@ public class OwaHelper {
 
 	public void resolveExactVersions(SemVersion node, SemVersion npm) throws MojoExecutionException {
 		List<NodeDistro> versions = getNodeDistros();
-
 		for (NodeDistro distVersion : versions) {
 			if (distVersion.getNpm() == null) {
 				//stop processing for old node distros without npm
@@ -502,13 +502,8 @@ public class OwaHelper {
 		List<MojoExecutor.Element> configuration = new ArrayList<>();
 		configuration.add(element("executable", getNpmSystemExecutable()));
 
-		List<MojoExecutor.Element> elements = new ArrayList<>();
-
-		for (String argument: arguments) {
-			elements.add(element("argument", argument));
-		}
-
-		MojoExecutor.Element parentArgs = new MojoExecutor.Element("arguments", elements.toArray(new MojoExecutor.Element[0]));
+		MojoExecutor.Element parentArgs = new MojoExecutor.Element("arguments", arguments.stream()
+				.map(argument -> element("argument", argument)).toArray(MojoExecutor.Element[]::new));
 
 		configuration.add(parentArgs);
 		executeMojo(

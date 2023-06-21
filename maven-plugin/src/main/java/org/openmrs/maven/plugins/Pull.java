@@ -279,13 +279,7 @@ public class Pull extends AbstractServerTask {
 	 * @throws GitAPIException
 	 */
 	private boolean isTempBranchCreated(Git git) throws GitAPIException {
-		List<Ref> branchList = git.branchList().call();
-		for (Ref ref : branchList) {
-			if (ref.getName().contains(SDK_DASH + serverId)) {
-				return true;
-			}
-		}
-		return false;
+		return git.branchList().call().stream().anyMatch(ref -> ref.getName().contains(SDK_DASH + serverId));
 	}
 
 	/**

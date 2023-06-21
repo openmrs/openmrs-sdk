@@ -196,15 +196,9 @@ public class Deploy extends AbstractServerTask {
 							"Please specify OWA version", null);
 		}
 
-		boolean installOwaModule = true;
-		List<Artifact> serverModules = server.getServerModules();
 		Artifact owaModule = new Artifact("owa-omod", "1.0.0");
-		for (Artifact module : serverModules) {
-			if (owaModule.getArtifactId().equals(module.getArtifactId())) {
-				installOwaModule = false;
-				break;
-			}
-		}
+		boolean installOwaModule = server.getServerModules().stream()
+				.anyMatch(module -> owaModule.getArtifactId().equals(module.getArtifactId()));
 
 		if (installOwaModule) {
 			wizard.showMessage("No installation of OWA module found on this server, will install latest version");

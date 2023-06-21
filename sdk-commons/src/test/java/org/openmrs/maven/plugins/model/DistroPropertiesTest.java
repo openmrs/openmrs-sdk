@@ -58,13 +58,11 @@ public class DistroPropertiesTest {
         distro.resolvePlaceholders(getProjectProperties());
     }
 
-    private static Artifact findArtifactByArtifactId(List<Artifact> artifacts, String artifactId){
-        for(Artifact artifact : artifacts){
-            if(artifact.getArtifactId().equals(artifactId)){
-                return artifact;
-            }
-        }
-        return null;
+    private static Artifact findArtifactByArtifactId(List<Artifact> artifacts, String artifactId) {
+        return artifacts.stream()
+                .filter(artifact -> artifact.getArtifactId().equals(artifactId))
+                .findFirst()
+                .orElse(null);
     }
 
     public static Matcher<Artifact> hasVersion(final String version) {

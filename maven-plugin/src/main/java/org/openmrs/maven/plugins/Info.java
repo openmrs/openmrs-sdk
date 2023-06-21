@@ -6,6 +6,7 @@ import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.model.Project;
 
 import java.util.Set;
+import java.util.stream.IntStream;
 
 @Mojo(name = "info", requiresProject = false)
 public class Info extends AbstractServerTask {

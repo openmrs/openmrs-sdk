@@ -36,21 +36,11 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Properties;
-import java.util.Set;
-import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * Class for attribute helper functions
@@ -602,11 +592,7 @@ public class DefaultWizard implements Wizard {
 		if (interactiveMode) {
 			String jdkHomeProperty = sdkProperties.getProperty(SDKConstants.OPENMRS_SDK_PROPERTIES_JAVA_HOME_OPTIONS);
 			if (jdkHomeProperty != null) {
-				for (String path : jdkHomeProperty.split("\\s*,\\s*")) {
-					if (isJavaHomeValid(path)) {
-						result.add(path);
-					}
-				}
+				Arrays.stream(jdkHomeProperty.split("\\s*,\\s*")).filter(this::isJavaHomeValid).forEach(result::add);
 
 				// Save properties
 				Collections.sort(result);
@@ -718,8 +704,8 @@ public class DefaultWizard implements Wizard {
 
 	public String promptForO3RefAppVersion(VersionsHelper versionsHelper, String customMessage)
 			throws MojoExecutionException {
-		Map<String, String> optionsMap = getO3VersionsOptionsMap(versionsHelper, REFAPP_OPTION_TMPL,
-				O3_ARTIFACT_TMPL);
+		Map<String, String> optionsMap = getO3VersionsOptionsMap(versionsHelper
+		);
 		return promptForO3Version(optionsMap, customMessage);
 	}
 
@@ -754,36 +740,34 @@ public class DefaultWizard implements Wizard {
 
 	private Map<String, String> getDistroVersionsOptionsMap(Set<String> versions, VersionsHelper versionsHelper,
 			String optionTemplate, String artifactTemplate) {
-		Map<String, String> optionsMap = new LinkedHashMap<>();
 
-		List<ArtifactVersion> artifactVersions = new ArrayList<>();
-		for (String version : versions) {
-			artifactVersions.add(new DefaultArtifactVersion(version));
-		}
-		for (String version : versionsHelper.getSuggestedVersions(artifactVersions, MAX_OPTIONS_SIZE)) {
-			optionsMap.put(String.format(optionTemplate, version), String.format(artifactTemplate, version));
-			if (optionsMap.size() == MAX_OPTIONS_SIZE)
-				break;
-		}
-		return optionsMap;
+		List<ArtifactVersion> artifactVersions = versions.stream().map(DefaultArtifactVersion::new).collect(Collectors.toList());
+
+		return versionsHelper.getSuggestedVersions(artifactVersions, MAX_OPTIONS_SIZE).stream()
+				.limit(MAX_OPTIONS_SIZE)
+				.collect(Collectors.toMap(
+						version -> String.format(optionTemplate, versions),
+						version -> String.format(artifactTemplate, version),
+						(a, b) -> a, LinkedHashMap::new
+						));
+
 	}
 
 	/**
 	 * Returns a map of options based on the versions of O3
 	 *
-	 * @param versionsHelper   The VersionsHelper object to retrieve the artifact versions from.
-	 * @param optionTemplate   The template for generating option keys in the map.
-	 * @param artifactTemplate The template for generating artifact values in the map.
+	 * @param versionsHelper The VersionsHelper object to retrieve the artifact versions from.
 	 * @return A LinkedHashMap containing the generated options map.
 	 */
-	private Map<String, String> getO3VersionsOptionsMap(VersionsHelper versionsHelper,
-			String optionTemplate, String artifactTemplate) {
-		Map<String, String> optionsMap = new LinkedHashMap<>();
-		Artifact artifact = new Artifact("referenceapplication-distro", "3.0.0-SNAPSHOT", "org.openmrs.distro", "zip");
-		for (ArtifactVersion version : versionsHelper.getAllVersions(artifact, MAX_OPTIONS_SIZE)) {
-			optionsMap.put(String.format(optionTemplate, version.toString()), String.format(artifactTemplate, version));
-		}
-		return optionsMap;
+	private Map<String, String> getO3VersionsOptionsMap(VersionsHelper versionsHelper) {
+		return versionsHelper.getAllVersions(new Artifact("referenceapplication-distro", "3.0.0-SNAPSHOT", "org.openmrs.distro", "zip"),
+						MAX_OPTIONS_SIZE).stream()
+				.limit(MAX_OPTIONS_SIZE)
+				.collect(Collectors.toMap(
+						version -> String.format(DefaultWizard.REFAPP_OPTION_TMPL, version.toString()),
+						version -> String.format(DefaultWizard.O3_ARTIFACT_TMPL, version),
+						(a, b) -> a, LinkedHashMap::new
+				));
 	}
 
 	@Override
@@ -1064,13 +1048,7 @@ public class DefaultWizard implements Wizard {
 	public List<String> getListOfServers() throws MojoExecutionException {
 		Path openMRS = Server.getServersPath();
 		Map<Long, String> sortedMap = new TreeMap<>(Collections.reverseOrder());
-		try (DirectoryStream<Path> subDirectories = Files.newDirectoryStream(openMRS, new DirectoryStream.Filter<Path>() {
-
-			@Override
-			public boolean accept(Path entry) {
-				return entry.toFile().isDirectory();
-			}
-		})) {
+		try (DirectoryStream<Path> subDirectories = Files.newDirectoryStream(openMRS, entry -> entry.toFile().isDirectory())) {
 			for (Path dir : subDirectories) {
 				if (Server.hasServerConfig(dir)) {
 					sortedMap.put(dir.toFile().lastModified(), dir.getFileName().toString());

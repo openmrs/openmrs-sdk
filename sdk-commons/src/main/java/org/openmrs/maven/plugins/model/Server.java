@@ -1,7 +1,5 @@
 package org.openmrs.maven.plugins.model;
 
-import static org.openmrs.maven.plugins.utility.PropertiesUtils.loadPropertiesFromFile;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
@@ -13,7 +11,6 @@ import org.openmrs.maven.plugins.utility.SDKConstants;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.Writer;
 import java.nio.file.Files;
@@ -22,13 +19,16 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
+import java.util.stream.Collectors;
+
+import static org.openmrs.maven.plugins.utility.PropertiesUtils.loadPropertiesFromFile;
 
 /**
  * Class for Server model
@@ -359,19 +359,12 @@ public class Server extends BaseSdkProperties {
     }
 
     public List<Project> getWatchedProjectsToBuild() throws MojoExecutionException {
-        List<Project> projects = new ArrayList<>();
         Model reactorProject = createModel();
-        for (Project project: getWatchedProjects()) {
+        List<Project> projects = getWatchedProjects().stream().peek(project -> {
             if (linkProject(project)) {
-                //Add to reactor project successfully linked projects.
-                //They will be built in the order determined by maven based on dependencies between projects.
                 reactorProject.getModules().add(project.getArtifactId());
-            } else {
-                //Add to simple build list without examining dependencies between projects.
-                projects.add(project);
             }
-        }
-
+        }).collect(Collectors.toList());
         File pomFile = new File(getWatchedProjectsDirectory(), "pom.xml");
         try {
             Writer writer = new FileWriter(pomFile);
@@ -413,12 +406,11 @@ public class Server extends BaseSdkProperties {
     }
 
     private void setWatchedProjects(Set<Project> watchedProjects) {
-        List<String> list = new ArrayList<>();
-        for (Project watchedProject : watchedProjects) {
-            list.add(String.format("%s,%s,%s", watchedProject.getGroupId(),
-                    watchedProject.getArtifactId(), watchedProject.getPath()));
-        }
-        properties.setProperty("watched.projects", StringUtils.join(list.iterator(), ";"));
+        List<String> list = watchedProjects.stream()
+                .map(watchedProject -> String.format("%s,%s,%s", watchedProject.getGroupId(),
+                        watchedProject.getArtifactId(), watchedProject.getPath()))
+                .collect(Collectors.toList());
+        properties.setProperty("watched.projects", String.join(";", list));
     }
 
     public void clearWatchedProjects() {
@@ -429,20 +421,17 @@ public class Server extends BaseSdkProperties {
         Set<Project> watchedProjects = getWatchedProjects();
         if (watchedProjects.remove(project)) {
             unlinkProject(project);
-
             return project;
         } else {
-            for (Iterator<Project> it = watchedProjects.iterator(); it.hasNext();) {
-                Project candidate = it.next();
-                if (candidate.matches(project)) {
-                    it.remove();
-
-                    unlinkProject(candidate);
-
-                    setWatchedProjects(watchedProjects);
-
-                    return candidate;
-                }
+            Optional<Project> optionalProject = watchedProjects.stream()
+                    .filter(candidate -> candidate.matches(project))
+                    .findFirst();
+            if (optionalProject.isPresent()) {
+                Project candidate = optionalProject.get();
+                watchedProjects.remove(candidate);
+                unlinkProject(candidate);
+                setWatchedProjects(watchedProjects);
+                return candidate;
             }
             return null;
         }
@@ -462,18 +451,12 @@ public class Server extends BaseSdkProperties {
         if (StringUtils.isBlank(watchedProjectsProperty)) {
             return new LinkedHashSet<>();
         }
-
-        Set<Project> watchedProjects = new LinkedHashSet<>();
-        for (String watchedProjectProperty : watchedProjectsProperty.split(";")) {
-            if (StringUtils.isBlank(watchedProjectProperty)) {
-                continue;
-            }
-
-            String[] watchedProject = watchedProjectProperty.split(",");
-            Project project = new Project(watchedProject[0], watchedProject[1], null, watchedProject[2]);
-            watchedProjects.add(project);
-        }
-        return watchedProjects;
+        return Arrays.stream(watchedProjectsProperty.split(";"))
+                .filter(StringUtils::isNotBlank)
+                .map(property -> {
+                    String[] watchedProject = property.split(",");
+                    return new Project(watchedProject[0], watchedProject[1], null, watchedProject[2]);
+                }).collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     public boolean hasWatchedProjects() {
@@ -505,9 +488,7 @@ public class Server extends BaseSdkProperties {
 
     public void setUserModules(Collection<Artifact> artifacts) {
         properties.remove(Server.PROPERTY_USER_MODULES);
-        for(Artifact artifact : artifacts){
-            saveUserModule(artifact);
-        }
+        artifacts.forEach(this::saveUserModule);
     }
 
     public List<Artifact> getUserModules() throws MojoExecutionException {
@@ -550,9 +531,9 @@ public class Server extends BaseSdkProperties {
      */
     static List<Artifact> mergeArtifactLists(List<Artifact> baseArtifacts, List<Artifact> updateArtifacts) {
         List<Artifact> updatedList = new ArrayList<>(baseArtifacts);
-        for(Artifact updateArtifact : updateArtifacts){
+        for (Artifact updateArtifact : updateArtifacts){
             boolean notFound = true;
-            for(Artifact baseArtifact : baseArtifacts){
+            for (Artifact baseArtifact : baseArtifacts) {
                 boolean equalArtifactId = updateArtifact.getArtifactId().equals(baseArtifact.getArtifactId());
                 boolean equalGroupId = updateArtifact.getGroupId().equals(baseArtifact.getGroupId());
                 if(equalArtifactId && equalGroupId){
@@ -605,21 +586,13 @@ public class Server extends BaseSdkProperties {
 
     public void setUserOWAs(List<OwaId> ids){
         properties.remove(PROPERTY_USER_OWAS);
-        for(OwaId id : ids){
-            saveUserOWA(id.getName(), id.getVersion());
-        }
+        ids.forEach(id -> saveUserOWA(id.getName(), id.getVersion()));
     }
     public List<OwaId> getUserOWAs(){
         String[] items = getParam(PROPERTY_USER_OWAS).split(COMMA);
-        List<OwaId> owas = new ArrayList<>();
-        for(String item : items){
-            String name = item.split(SLASH)[0];
-            String version = item.split(SLASH)[1];
-            if(name != null && version != null){
-                owas.add(new OwaId(name, version));
-            }
-        }
-        return owas;
+        return Arrays.stream(items).map(item -> item.split(SLASH))
+                .filter(array -> array.length == 2 && array[0] != null && array[1] != null)
+                .map(array -> new OwaId(array[0], array[1])).collect(Collectors.toList());
     }
 
     /**
@@ -645,9 +618,8 @@ public class Server extends BaseSdkProperties {
             beforeValue = value;
         else {
             List<String> values = new ArrayList<>(Arrays.asList(beforeValue.split(COMMA)));
-            for (String val : values) {
-                if (val.equals(value))
-                    return;
+            if(values.stream().anyMatch(val -> val.equals(value))) {
+                return;
             }
             values.add(value);
             beforeValue = StringUtils.join(values.toArray(), COMMA);
@@ -665,16 +637,14 @@ public class Server extends BaseSdkProperties {
         String beforeValue = properties.getProperty(key);
         if (beforeValue != null) {
             List<String> values = new ArrayList<>(Arrays.asList(beforeValue.split(COMMA)));
-            int indx = -1;
-            for (String val : values) {
-                String[] params = val.split(SLASH);
-                if (params[1].equals(artifactId)) {
-                    indx = values.indexOf(val);
-                    break;
-                }
+            values.removeIf(val -> val.split(SLASH)[1].equals(artifactId));
+            if(values.isEmpty()) {
+                properties.remove(key);
             }
-            if (indx != -1)
-                values.remove(indx);
+            else {
+                beforeValue = StringUtils.join(values.toArray(), COMMA);
+                properties.setProperty(key, beforeValue);
+            }
             if (values.size() == 0)
                 properties.remove(key);
             else {
@@ -871,12 +841,7 @@ public class Server extends BaseSdkProperties {
     }
 
     public String getWebappVersionFromFilesystem() throws MojoExecutionException {
-        File[] files = serverDirectory.listFiles(new FilenameFilter() {
-            @Override
-            public boolean accept(File dir, String name) {
-                return name.contains(".war");
-            }
-        });
+        File[] files = serverDirectory.listFiles((dir, name) -> name.contains(".war"));
         if(files.length != 1){
             throw new MojoExecutionException("Server "+getServerId()+" has none or more than one installed OpenMRS webapp copies");
         } else {
@@ -892,26 +857,24 @@ public class Server extends BaseSdkProperties {
     }
 
     public Map<String, String> getCustomProperties(){
-        Map<String, String> customProperties = new LinkedHashMap<>();
-        for(Object key: properties.keySet()){
-            if(key.toString().startsWith("property.")){
-                String newKey = removePropertyStringFromKey(key.toString());
-                customProperties.put(newKey, properties.getProperty(key.toString()));
-            }
-        }
-        return customProperties;
+        return properties.keySet().stream()
+                .filter(key -> key.toString().startsWith("property."))
+                .collect(Collectors.toMap(
+                        key -> removePropertyStringFromKey(key.toString()),
+                        key -> properties.getProperty(key.toString()),
+                        (oldValue, newValue) -> newValue,
+                        LinkedHashMap::new
+                ));
     }
 
     public Map<String, String> getServerProperty(String propertyName){
-        Map<String, String> customProperties = new LinkedHashMap<>();
-        for(Object key: properties.keySet()){
-            if(key.toString().equals(propertyName)){
-                String newKey = removePropertyStringFromKey(key.toString());
-                customProperties.put(newKey, properties.getProperty(key.toString()));
-                return customProperties;
-            }
-        }
-        return null;
+        return properties.keySet().stream().filter(key -> key.toString().equals(propertyName)).findFirst()
+                .map(key -> {
+                    Map<String, String> customProperties = new LinkedHashMap<>();
+                    String newKey = removePropertyStringFromKey(key.toString());
+                    customProperties.put(newKey, properties.getProperty(key.toString()));
+                    return customProperties;
+                }).orElse(null);
     }
 
     private String removePropertyStringFromKey(String key) {

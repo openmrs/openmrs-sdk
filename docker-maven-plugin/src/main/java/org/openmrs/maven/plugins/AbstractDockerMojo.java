@@ -93,21 +93,19 @@ abstract class AbstractDockerMojo extends AbstractMojo {
     protected Container findContainer(String id){
         List<Container> containers = docker.listContainersCmd().withShowAll(true).exec();
 
-        for (Container container : containers) {
-            if (container.getId().equals(id)) {
-                return container;
-            } else {
-                List<String> containerNames = Arrays.asList(container.getNames());
-                // on Linux name is prepended with '/'
-                if (containerNames.contains(id) || containerNames.contains("/" + id)) {
-                    return container;
-                } else if (container.getLabels().containsKey(id)) {
-                    return container;
-                }
-            }
-        }
+        return containers.stream().filter(container -> container.getId().equals(id)).findFirst().orElseGet(() -> containers.stream()
+                        .filter(container -> {
+                            List<String> containerNames = Arrays.asList(container.getNames());
+                            return containerNames.contains(id) || containerNames.contains("/" + id);
+                        })
+                        .findFirst()
+                        .orElseGet(() -> containers.stream()
+                                .filter(container -> container.getLabels().containsKey(id))
+                                .findFirst()
+                                .orElse(null)
+                        )
+                );
 
-        return null;
     }
 
     protected void showMessage(String message) {
