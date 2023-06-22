@@ -779,7 +779,7 @@ public class DefaultWizard implements Wizard {
 	private Map<String, String> getO3VersionsOptionsMap(VersionsHelper versionsHelper,
 			String optionTemplate, String artifactTemplate) {
 		Map<String, String> optionsMap = new LinkedHashMap<>();
-		Artifact artifact = new Artifact("referenceapplication-distro", "3.0.0-SNAPSHOT", "org.openmrs.distro", "zip");
+		Artifact artifact = new Artifact("referenceapplication-distro", null, "org.openmrs.distro", "zip");
 		for (ArtifactVersion version : versionsHelper.getAllVersions(artifact, MAX_OPTIONS_SIZE)) {
 			optionsMap.put(String.format(optionTemplate, version.toString()), String.format(artifactTemplate, version));
 		}

@@ -283,7 +283,7 @@ public class Setup extends AbstractServerTask {
 			distroHelper.savePropertiesToServer(distroProperties, server);
 			setServerVersionsFromDistroProperties(server, distroProperties);
 			moduleInstaller.installModulesForDistro(server, distroProperties, distroHelper);
-			setConfigFolder(server, distroProperties);
+			setConfigurationFolder(server, distroProperties);
 			if (spaInstaller != null) {
 				spaInstaller.installFromDistroProperties(server.getServerDirectory(), distroProperties);
 			}
@@ -355,31 +355,36 @@ public class Setup extends AbstractServerTask {
 	 * @param server           The server for which to set the configuration folder.
 	 * @param distroProperties The distro properties containing the configuration information.
 	 */
-	private void setConfigFolder(Server server, DistroProperties distroProperties) throws MojoExecutionException {
+	private void setConfigurationFolder(Server server, DistroProperties distroProperties) throws MojoExecutionException {
 		if(distroProperties.getConfigArtifacts().isEmpty()) {
 			return;
 		}
 		File configDir = new File(server.getServerDirectory(), SDKConstants.OPENMRS_SERVER_CONFIGURATION);
 		configDir.mkdir();
-		downloadConfigs(distroProperties, configDir);
-		File referenceApplicationFile = new File(configDir, "referenceapplication-distro.owa");
-		if (!referenceApplicationFile.exists()) {
-			return;
-		}
-		try {
-			ZipFile zipFile = new ZipFile(referenceApplicationFile);
-			zipFile.extractAll(configDir.getPath());
-			for (File file : Objects.requireNonNull(configDir.listFiles())) {
-				if (file.getName().equals("openmrs_config")) {
-					FileUtils.copyDirectory(file, configDir);
-				}
-				FileUtils.deleteQuietly(file);
+		downloadConfigurations(distroProperties, configDir);
+		for(Artifact artifact : distroProperties.getConfigArtifacts()) {
+			String configurationFileName = artifact.getArtifactId() + "-" + artifact.getVersion() + ".zip";
+			File referenceApplicationFile = new File(configDir, configurationFileName);
+			if (!referenceApplicationFile.exists()) {
+				return;
 			}
-			FileUtils.deleteQuietly(referenceApplicationFile);
+			try {
+				ZipFile zipFile = new ZipFile(referenceApplicationFile);
+				zipFile.extractAll(configDir.getPath());
+				for (File file : Objects.requireNonNull(configDir.listFiles())) {
+					if (file.getName().equals("openmrs_config")) {
+						FileUtils.copyDirectory(file, configDir);
+					}
+					FileUtils.deleteQuietly(file);
+				}
+				FileUtils.deleteQuietly(referenceApplicationFile);
+			}
+			catch (ZipException | IOException e) {
+				throw new RuntimeException(e);
+			}
+
 		}
-		catch (ZipException | IOException e) {
-			throw new RuntimeException(e);
-		}
+
 	}
 
 	/**
@@ -389,13 +394,13 @@ public class Setup extends AbstractServerTask {
 	 * @param configDir        The directory where the configuration files will be saved.
 	 * @throws MojoExecutionException If an error occurs while downloading the configuration files.
 	 */
-	private void downloadConfigs(DistroProperties distroProperties, File configDir) throws MojoExecutionException {
+	private void downloadConfigurations(DistroProperties distroProperties, File configDir) throws MojoExecutionException {
 		List<Artifact> configs = distroProperties.getConfigArtifacts();
 		wizard.showMessage("Downloading Configs...\n");
 		if (!configs.isEmpty()) {
 			for (Artifact config : configs) {
 				wizard.showMessage("Downloading Config: " + config);
-				owaHelper.downloadOwa(configDir, config, moduleInstaller);
+				moduleInstaller.installModule(config, configDir.getPath());
 			}
 		}
 	}
