@@ -16,6 +16,8 @@ import org.eclipse.jgit.api.RemoteRemoveCommand;
 import org.eclipse.jgit.api.ResetCommand;
 import org.eclipse.jgit.api.RevertCommand;
 import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.api.errors.InvalidRemoteException;
+import org.eclipse.jgit.api.errors.TransportException;
 import org.eclipse.jgit.diff.DiffEntry;
 import org.eclipse.jgit.errors.IllegalTodoFileModification;
 import org.eclipse.jgit.errors.IncorrectObjectTypeException;
@@ -41,6 +43,7 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import static org.openmrs.maven.plugins.Clone.GITHUB_COM;
 
@@ -340,25 +343,23 @@ public class DefaultGitHelper implements GitHelper {
 	 */
 	@Override
 	public boolean deleteTag(Git git, String tag, String username, String password) throws MojoExecutionException {
-		Ref tagRef = git.getRepository().getTags().get(tag);
-		if (tagRef != null) {
-			try {
-				//delete remote tag, if
-				UsernamePasswordCredentialsProvider credentialsProvider = new UsernamePasswordCredentialsProvider(username,
-						password);
-				git.push()
-						.setCredentialsProvider(credentialsProvider)
-						.add(":" + tagRef)
-						.setRemote("upstream")
-						.call();
-				git.tagDelete().setTags(tagRef.getName()).call();
-				return true;
-			}
-			catch (GitAPIException e) {
-				throw new MojoExecutionException("Failed to delete tag \"" + tag + "\" " + e.getMessage(), e);
-			}
-		} else {
+		Optional<Ref> tagRef = Optional.ofNullable(git.getRepository().getTags().get(tag));
+		if(tagRef.isEmpty()) {
 			return false;
+		}
+		try {
+			//delete remote tag, if
+			UsernamePasswordCredentialsProvider credentialsProvider = new UsernamePasswordCredentialsProvider(username,
+					password);
+			git.push()
+					.setCredentialsProvider(credentialsProvider)
+					.add(":" + tagRef.get())
+					.setRemote("upstream")
+					.call();
+			git.tagDelete().setTags(tagRef.get().getName()).call();
+			return true;
+		} catch (GitAPIException e) {
+			throw new MojoExecutionException("Failed to delete tag \"" + tag + "\" " + e.getMessage(), e);
 		}
 	}
 
@@ -412,16 +413,25 @@ public class DefaultGitHelper implements GitHelper {
 		String scmOwnerUrlPart = "/" + scmOwner + "/";
 		String originUrl = scmUrl.replace(scmOwnerUrlPart, "/" + username + "/");
 
-		RemoteConfig origin = getRemote(git, originName);
-		if (origin != null) {
-			if (!hasUri(origin, originUrl)) {
-				removeRemote(git, originName);
-				addRemote(git, originName, originUrl);
-			}
-		} else {
-			addRemote(git, originName, originUrl);
-		}
-
+		Optional.ofNullable(getRemote(git, originName)).ifPresentOrElse(
+				origin -> {
+					try {
+						if(hasUri(origin, originUrl)) {
+							removeRemote(git, originName);
+							addRemote(git, originName, originUrl);
+						}
+					} catch (MojoExecutionException e) {
+						throw new RuntimeException(e);
+					}
+				},
+				() -> {
+					try {
+						addRemote(git, originName, originUrl);
+					} catch (MojoExecutionException e) {
+						throw new RuntimeException(e);
+					}
+				}
+		);
 		return originUrl;
 	}
 

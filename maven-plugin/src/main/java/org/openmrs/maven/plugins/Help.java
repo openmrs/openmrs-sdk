@@ -12,6 +12,7 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Mojo(name = "help", requiresProject = false)
 public class Help extends AbstractTask {
@@ -31,7 +32,8 @@ public class Help extends AbstractTask {
             @SuppressWarnings("unchecked")
             Map<String, Object> keys = (Map<String, Object>) dec.readObject();
             @SuppressWarnings("unchecked")
-            List<Map<String, Object>> l = (List<Map<String, Object>>) keys.get("help");
+            List<Map<String, Object>> l = Optional.ofNullable((List<Map<String, Object>>) keys.get("help"))
+                    .orElseThrow(() -> new MojoExecutionException("Error during reading help data"));
             String printVersion = String.format(INFO, keys.get("version"));
             String printWikiLink = "For more info, see SDK documentation: " + WIKI;
             PrintWriter writer = new PrintWriter(System.out);
@@ -43,17 +45,14 @@ public class Help extends AbstractTask {
             writer.println();
             writer.println();
             writer.flush();
-            if (l == null) {
-                throw new MojoExecutionException("Error during reading help data");
-            }
             for (Map<String, Object> o: l) {
                 Options options = new Options();
                 @SuppressWarnings("unchecked")
-                List<Map<String, Object>> params = (List<Map<String, Object>>) o.get("options");
+                Optional<List<Map<String, Object>>> params = Optional.ofNullable((List<Map<String, Object>>) o.get("options"));
                 String header = (o.get("desc") != null) ? o.get("desc").toString() : "None";
                 header = DESC_MESSAGE.concat(header);
-                if (params != null) {
-                    for (Map<String, Object> x: params) {
+                if (params.isPresent()) {
+                    for (Map<String, Object> x: params.get()) {
                         String name = x.get("name").toString();
                         String desc = x.get("desc").toString();
                         if ((name == null) || (desc == null)) throw new MojoExecutionException("Error in help file structure");

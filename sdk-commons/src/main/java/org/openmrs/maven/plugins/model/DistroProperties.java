@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 
@@ -122,11 +123,14 @@ public class DistroProperties extends BaseSdkProperties {
         List<Artifact> childArtifacts = getModuleArtifacts();
         List<Artifact> parentArtifacts = new ArrayList<>();
 
-        Artifact artifact = getDistroArtifact();
-        if (artifact != null) {
-            DistroProperties distroProperties = distroHelper.downloadDistroProperties(directory, artifact);
-            parentArtifacts.addAll(distroProperties.getModuleArtifacts(distroHelper, directory));
-        }
+        Optional.ofNullable(getDistroArtifact()).ifPresent(artifact -> {
+            try {
+                DistroProperties distroProperties = distroHelper.downloadDistroProperties(directory, artifact);
+                parentArtifacts.addAll(distroProperties.getModuleArtifacts(distroHelper, directory));
+            } catch (MojoExecutionException e) {
+                throw new RuntimeException(e);
+            }
+        });
         return mergeArtifactLists(childArtifacts, parentArtifacts);
     }
 
@@ -134,22 +138,28 @@ public class DistroProperties extends BaseSdkProperties {
         List<Artifact> childArtifacts = getOwaArtifacts();
         List<Artifact> parentArtifacts = new ArrayList<>();
 
-        Artifact artifact = getDistroArtifact();
-        if (artifact != null) {
-            DistroProperties distroProperties = distroHelper.downloadDistroProperties(directory, artifact);
-            parentArtifacts.addAll(distroProperties.getOwaArtifacts(distroHelper, directory));
-        }
+        Optional.ofNullable(getDistroArtifact()).ifPresent(artifact -> {
+            try {
+                DistroProperties distroProperties = distroHelper.downloadDistroProperties(directory, artifact);
+                parentArtifacts.addAll(distroProperties.getOwaArtifacts(distroHelper, directory));
+            } catch (MojoExecutionException e) {
+                throw new RuntimeException(e);
+            }
+        });
         return mergeArtifactLists(childArtifacts, parentArtifacts);
     }
 
     public Map<String, String> getSpaProperties(DistroHelper distroHelper, File directory) throws MojoExecutionException {
         Map<String, String> spaProperties = getSpaProperties();
 
-        Artifact artifact = getDistroArtifact();
-        if (artifact != null) {
-            DistroProperties distroProperties = distroHelper.downloadDistroProperties(directory, artifact);
-            spaProperties.putAll(distroProperties.getSpaProperties(distroHelper, directory));
-        }
+        Optional.ofNullable(getDistroArtifact()).ifPresent(artifact -> {
+            try {
+                DistroProperties distroProperties = distroHelper.downloadDistroProperties(directory, artifact);
+                spaProperties.putAll(distroProperties.getSpaProperties(distroHelper, directory));
+            } catch (MojoExecutionException e) {
+                throw new RuntimeException(e);
+            }
+        });
         return spaProperties;
     }
 
@@ -157,21 +167,21 @@ public class DistroProperties extends BaseSdkProperties {
         List<Artifact> childArtifacts = getWarArtifacts();
         List<Artifact> parentArtifacts = new ArrayList<>();
 
-        Artifact artifact = getDistroArtifact();
-        if (artifact != null) {
-            DistroProperties distroProperties = distroHelper.downloadDistroProperties(directory, artifact);
-            parentArtifacts.addAll(distroProperties.getWarArtifacts(distroHelper, directory));
-        }
+        Optional.ofNullable(getDistroArtifact()).ifPresent(artifact -> {
+            try {
+                DistroProperties distroProperties = distroHelper.downloadDistroProperties(directory, artifact);
+                parentArtifacts.addAll(distroProperties.getWarArtifacts(distroHelper, directory));
+            } catch (MojoExecutionException e) {
+                throw new RuntimeException(e);
+            }
+        });
         return mergeArtifactLists(childArtifacts, parentArtifacts);
     }
 
     public String getPlatformVersion(DistroHelper distroHelper, File directory) throws MojoExecutionException{
         Artifact artifact = getDistroArtifact();
-        if (artifact != null) {
-            DistroProperties distroProperties = distroHelper.downloadDistroProperties(directory, artifact);
-            return distroProperties.getPlatformVersion(distroHelper, directory);
-        }
-        return getPlatformVersion();
+        return artifact != null ?
+                distroHelper.downloadDistroProperties(directory, artifact).getPlatformVersion(distroHelper, directory) : getPlatformVersion();
     }
 
     private List<Artifact> mergeArtifactLists(List<Artifact> childArtifacts, List<Artifact> parentArtifacts) {
@@ -214,14 +224,11 @@ public class DistroProperties extends BaseSdkProperties {
         for(Map.Entry<Object, Object> property: properties.entrySet()){
             if(hasPlaceholder(property.getValue())){
                 try{
-                    Object placeholderValue = projectProperties.get(getPlaceholderKey((String)property.getValue()));
-                    if(placeholderValue == null){
-                        throw new MojoExecutionException(
-                                "Failed to resolve property placeholders in distro file, no property for key \"" +
-                                        property.getKey() + "\"");
-                    } else {
-                        property.setValue(putInPlaceholder((String)property.getValue(), (String)placeholderValue));
-                    }
+                  Optional.ofNullable(projectProperties.get(getPlaceholderKey((String) property.getValue())))
+                          .map(placeholderValue ->  property.setValue(putInPlaceholder((String)property.getValue(), (String)placeholderValue)))
+                            .orElseThrow(() -> new MojoExecutionException(
+                            "Failed to resolve property placeholders in distro file, no property for key \"" +
+                                    property.getKey() + "\""));
                 } catch (ClassCastException e){
                     throw new MojoExecutionException("Property with key \"" + property.getKey() + "\" and value \"" +
                             property.getValue() + "\" is not placeholder.");

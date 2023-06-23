@@ -18,6 +18,7 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 
@@ -67,19 +68,19 @@ public class Build extends AbstractServerTask {
 				//check if there's maven project in current dir
 				File userDir = new File(System.getProperty("user.dir"));
 				if (Project.hasProject(userDir)) {
-					Project project = Project.loadProject(userDir);
-					String artifactId = project.getArtifactId();
-					String groupId = project.getGroupId();
-					String version = project.getVersion();
-					if ((artifactId != null) && (groupId != null) && version != null) {
+					Optional<Project> project = Optional.of(Project.loadProject(userDir));
+					Optional<String> artifactId = project.map(Project::getArtifactId);
+					Optional<String> groupId = project.map(Project::getGroupId);
+					Optional<String> version = project.map(Project::getVersion);
+					if ((artifactId.isPresent()) && (groupId.isPresent()) && version.isPresent()) {
 						projectDetected = true;
 						boolean buildMavenProject = wizard.promptYesNo(String.format(
 								"Maven artifact %s:%s:%s detected in this directory, would you like to build it?",
-								groupId, artifactId, version)
+								groupId.get(), artifactId.get(), version.get())
 						);
 						if (buildMavenProject) {
 							try {
-								buildProject(project);
+								buildProject(project.get());
 								buildExecuted = true;
 							}
 							catch (Exception e) {
