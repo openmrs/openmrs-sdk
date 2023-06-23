@@ -19,7 +19,9 @@ import java.nio.file.Path;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.Properties;
 import java.util.UUID;
 
@@ -34,7 +36,7 @@ public class SdkStatistics {
 
     private Properties statistics = new Properties();
 
-    private final DateFormat dateFormat = new SimpleDateFormat(DATE_FORMAT);
+    private final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(DATE_FORMAT);
 
     public SdkStatistics createSdkStatsFile(boolean agree) throws MojoExecutionException {
         loadStatsFromResource(SDK_STATS_FILE_NAME);
@@ -85,17 +87,11 @@ public class SdkStatistics {
      * @return
      */
     private boolean checkIfOneWeekFromLastReport(){
-        Date lastReport;
-        try {
-            lastReport = getLastReported();
-        } catch (ParseException e) {
-            lastReport = null;
-        }
-
-        Date currentDate = new Date();
+        LocalDate lastReport = getLastReported();
+        LocalDate currentDate = LocalDate.now();
 
         if (lastReport != null) {
-            return  (currentDate.getTime() - lastReport.getTime()) / (60 * 60 * 1000 * 24) % 60 > 7;
+            return ChronoUnit.DAYS.between(lastReport, currentDate) > 7;
         } else {
             return true;
         }
@@ -226,13 +222,12 @@ public class SdkStatistics {
      * Get last date  that statistics were reported
      * @return
      */
-    private Date getLastReported() throws ParseException {
+    private LocalDate getLastReported() {
         String statsLastReported = statistics.getProperty("statsLastReported");
         if (StringUtils.isBlank(statsLastReported)){
             return null;
         }
-
-        return dateFormat.parse(statsLastReported);
+        return LocalDate.parse(statsLastReported, dateTimeFormatter);
     }
 
     public int getGoalCalls(String goal) {
@@ -243,9 +238,9 @@ public class SdkStatistics {
      * Get last date that sdk was used
      * @return
      */
-    private Date getLastUsed() throws ParseException {
+    private LocalDate getLastUsed() throws ParseException {
         String statsLastUsed = statistics.getProperty("statsLastUsed");
-        return dateFormat.parse(statsLastUsed);
+        return LocalDate.parse(statsLastUsed, dateTimeFormatter);
     }
 
     /**
@@ -253,7 +248,7 @@ public class SdkStatistics {
      * @return String
      */
     private String getDate() {
-        return dateFormat.format(new Date());
+        return LocalDate.now().format(dateTimeFormatter);
     }
 
     /**
