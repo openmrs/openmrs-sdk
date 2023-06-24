@@ -1,8 +1,5 @@
 package org.openmrs.maven.plugins.model;
 
-import static org.openmrs.maven.plugins.utility.PropertiesUtils.loadPropertiesFromFile;
-import static org.openmrs.maven.plugins.utility.PropertiesUtils.loadPropertiesFromResource;
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -16,14 +13,15 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.text.DateFormat;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.Properties;
 import java.util.UUID;
+
+import static org.openmrs.maven.plugins.utility.PropertiesUtils.loadPropertiesFromFile;
+import static org.openmrs.maven.plugins.utility.PropertiesUtils.loadPropertiesFromResource;
 
 /**
  *
