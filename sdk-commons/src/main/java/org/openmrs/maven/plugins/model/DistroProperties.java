@@ -177,11 +177,23 @@ public class DistroProperties extends BaseSdkProperties {
     }
 
     private List<Artifact> mergeArtifactLists(List<Artifact> childArtifacts, List<Artifact> parentArtifacts) {
-        return Stream.concat(childArtifacts.stream(), parentArtifacts.stream())
-                .filter(parentArtifact -> childArtifacts.stream()
-                        .noneMatch(childArtifact -> childArtifact.getGroupId()
-                                .equals(parentArtifact.getGroupId()) && childArtifact.getArtifactId().equals(parentArtifact.getArtifactId()) && childArtifact.getType()
-                                .equals(parentArtifact.getType()))).collect(Collectors.toList());
+        List<Artifact> artifactList = new ArrayList<>(childArtifacts);
+        for (Artifact parentArtifact : parentArtifacts) {
+            boolean found = false;
+            for (Artifact childArtifact : childArtifacts) {
+                boolean isGroupIdMatch = childArtifact.getGroupId().equals(parentArtifact.getGroupId());
+                boolean isArtifactIdMatch = childArtifact.getArtifactId().equals(parentArtifact.getArtifactId());
+                boolean isTypeMatch = childArtifact.getType().equals(parentArtifact.getType());
+                if (isGroupIdMatch && isArtifactIdMatch && isTypeMatch) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                artifactList.add(parentArtifact);
+            }
+        }
+        return artifactList;
     }
 
     public void saveTo(File path) throws MojoExecutionException {

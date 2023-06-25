@@ -24,6 +24,7 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileWriter;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -334,7 +335,6 @@ public class BuildDistro extends AbstractTask {
 	 */
 	private void cleanupSqlFiles(File targetDirectory) {
 		File[] sqlFiles = targetDirectory.listFiles((dir, name) -> name.endsWith(".sql"));
-		assert sqlFiles != null;
 		Arrays.stream(sqlFiles).forEach(FileUtils::deleteQuietly);
 	}
 
@@ -454,6 +454,7 @@ public class BuildDistro extends AbstractTask {
 
 	private void renameWebApp(File targetDirectory) throws MojoExecutionException {
 		File[] warFiles = targetDirectory.listFiles((dir, name) -> name.endsWith(".war"));
+
 		if (warFiles != null) {
 			Arrays.stream(warFiles).forEach(file -> wizard.showMessage("file:" + file.getAbsolutePath()));
 			wizard.showMessage("target:" + targetDirectory);
