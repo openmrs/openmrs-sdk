@@ -64,7 +64,7 @@ public class SdkStatistics {
     }
 
     /**
-     * Checks if there is more then 7 days since last sendReport. If yes, send statistics
+     * Checks if there is more than 7 days since last sendReport. If yes, send statistics
      * @throws MojoExecutionException
      */
     public void sendReport(Wizard wizard) throws MojoExecutionException {
@@ -85,12 +85,14 @@ public class SdkStatistics {
      * @return
      */
     private boolean checkIfOneWeekFromLastReport(){
-        LocalDate lastReport = getLastReported();
-        LocalDate currentDate = LocalDate.now();
+        return checkIfOneWeekApart(getLastReported());
+    }
 
-        if (lastReport != null) {
-            return ChronoUnit.DAYS.between(lastReport, currentDate) > 7;
-        } else {
+    public boolean checkIfOneWeekApart(LocalDate lastDate) {
+        if(lastDate != null) {
+            return ChronoUnit.DAYS.between(lastDate, LocalDate.now()) > 7;
+        }
+        else {
             return true;
         }
     }

@@ -1,12 +1,17 @@
 package org.openmrs.maven.plugins.model;
 
+import org.apache.commons.lang.time.DateUtils;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
+import java.time.LocalDate;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.openmrs.maven.plugins.model.SdkStatistics.SDK_STATS_FILE_NAME;
 
 /**
  *
@@ -36,5 +41,21 @@ public class SdkStatisticsTest {
 
         assertThat(sdkStatistics.getStatsEnabled(), is(true));
     }
+
+    @Test
+    public void testCheckIfOneWeekApart_LessThanOneWeekApart() {
+        assertFalse(sdkStatistics.checkIfOneWeekApart(LocalDate.now().minusDays(6)));
+    }
+
+    @Test
+    public void testCheckIfOneWeekApart_MoreThanOneWeekApart() {
+        assertTrue(sdkStatistics.checkIfOneWeekApart(LocalDate.now().minusDays(8)));
+    }
+
+    @Test
+    public void testCheckIfOneWeekApart_OneWeekApart() {
+        assertFalse(sdkStatistics.checkIfOneWeekApart(LocalDate.now().minusDays(7)) );
+    }
+
 
 }
