@@ -13,6 +13,7 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.settings.Settings;
 import org.openmrs.maven.plugins.model.Server;
+import org.openmrs.maven.plugins.utility.ConfigurationInstaller;
 import org.openmrs.maven.plugins.utility.DefaultJira;
 import org.openmrs.maven.plugins.utility.DistroHelper;
 import org.openmrs.maven.plugins.git.DefaultGitHelper;
@@ -134,6 +135,11 @@ public abstract class AbstractTask extends AbstractMojo {
 	 */
 	DockerHelper dockerHelper;
 
+	/**
+	 * Installs configurations
+	 */
+	ConfigurationInstaller configurationInstaller;
+
 	public AbstractTask() {
 	}
 
@@ -156,6 +162,7 @@ public abstract class AbstractTask extends AbstractMojo {
 		this.testMode = other.testMode;
 		this.openMRSPath = other.openMRSPath;
 		this.stats = other.stats;
+		this.configurationInstaller = other.configurationInstaller;
 		initTask();
 	}
 
@@ -183,6 +190,9 @@ public abstract class AbstractTask extends AbstractMojo {
 		}
 		if (dockerHelper == null) {
 			dockerHelper = new DockerHelper(mavenProject, mavenSession, pluginManager, wizard);
+		}
+		if(configurationInstaller == null) {
+			configurationInstaller = new ConfigurationInstaller(wizard, moduleInstaller);
 		}
 		if (StringUtils.isNotBlank(openMRSPath)) {
 			Server.setServersPath(openMRSPath);
