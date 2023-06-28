@@ -1,23 +1,28 @@
 package org.openmrs.maven.plugins.model;
 
-import org.apache.commons.lang.time.DateUtils;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.Properties;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.openmrs.maven.plugins.model.SdkStatistics.SDK_STATS_FILE_NAME;
 
 /**
  *
  */
 public class SdkStatisticsTest {
 
+    private static final String DATE_FORMAT = "dd-M-yyyy";
+    private final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(DATE_FORMAT);
     private SdkStatistics sdkStatistics;
 
     @Before
@@ -36,25 +41,45 @@ public class SdkStatisticsTest {
     }
 
     @Test
-    public void shouldSetStatsEnabledMode(){
+    public void shouldSetStatsEnabledMode() {
         sdkStatistics.setStatsEnabled(true);
 
         assertThat(sdkStatistics.getStatsEnabled(), is(true));
     }
 
     @Test
-    public void testCheckIfOneWeekApart_LessThanOneWeekApart() {
-        assertFalse(sdkStatistics.checkIfOneWeekApart(LocalDate.now().minusDays(6)));
+    public void checkIfOneWeekApart_LessThanOneWeekApart() throws NoSuchFieldException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
+        Field statisticsField = sdkStatistics.getClass().getDeclaredField("statistics");
+        statisticsField.setAccessible(true);
+        Properties statistics = (Properties) statisticsField.get(sdkStatistics);
+        statistics.setProperty("statsLastReported", LocalDate.now().minusDays(6).format(dateTimeFormatter));
+        Method checkIfOneWeekFromLastReportMethod = sdkStatistics.getClass().getDeclaredMethod("checkIfOneWeekFromLastReport");
+        checkIfOneWeekFromLastReportMethod.setAccessible(true);
+        assertFalse((Boolean) checkIfOneWeekFromLastReportMethod.invoke(sdkStatistics));
+
+    }
+
+
+    @Test
+    public void checkIfOneWeekApart_MoreThanOneWeekApart() throws NoSuchFieldException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
+        Field statisticsField = sdkStatistics.getClass().getDeclaredField("statistics");
+        statisticsField.setAccessible(true);
+        Properties statistics = (Properties) statisticsField.get(sdkStatistics);
+        statistics.setProperty("statsLastReported", LocalDate.now().minusDays(8).format(dateTimeFormatter));
+        Method checkIfOneWeekFromLastReportMethod = sdkStatistics.getClass().getDeclaredMethod("checkIfOneWeekFromLastReport");
+        checkIfOneWeekFromLastReportMethod.setAccessible(true);
+        assertTrue((Boolean) checkIfOneWeekFromLastReportMethod.invoke(sdkStatistics));
     }
 
     @Test
-    public void testCheckIfOneWeekApart_MoreThanOneWeekApart() {
-        assertTrue(sdkStatistics.checkIfOneWeekApart(LocalDate.now().minusDays(8)));
-    }
-
-    @Test
-    public void testCheckIfOneWeekApart_OneWeekApart() {
-        assertFalse(sdkStatistics.checkIfOneWeekApart(LocalDate.now().minusDays(7)) );
+    public void checkIfOneWeekApart_OneWeekApart() throws NoSuchFieldException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
+        Field statisticsField = sdkStatistics.getClass().getDeclaredField("statistics");
+        statisticsField.setAccessible(true);
+        Properties statistics = (Properties) statisticsField.get(sdkStatistics);
+        statistics.setProperty("statsLastReported", LocalDate.now().minusDays(7).format(dateTimeFormatter));
+        Method checkIfOneWeekFromLastReportMethod = sdkStatistics.getClass().getDeclaredMethod("checkIfOneWeekFromLastReport");
+        checkIfOneWeekFromLastReportMethod.setAccessible(true);
+        assertFalse((Boolean) checkIfOneWeekFromLastReportMethod.invoke(sdkStatistics));
     }
 
 

@@ -85,14 +85,12 @@ public class SdkStatistics {
      * @return
      */
     private boolean checkIfOneWeekFromLastReport(){
-        return checkIfOneWeekApart(getLastReported());
-    }
+        LocalDate lastReport = getLastReported();
+        LocalDate currentDate = LocalDate.now();
 
-    public boolean checkIfOneWeekApart(LocalDate lastDate) {
-        if(lastDate != null) {
-            return ChronoUnit.DAYS.between(lastDate, LocalDate.now()) > 7;
-        }
-        else {
+        if (lastReport != null) {
+            return ChronoUnit.DAYS.between(lastReport, currentDate) > 7;
+        } else {
             return true;
         }
     }
