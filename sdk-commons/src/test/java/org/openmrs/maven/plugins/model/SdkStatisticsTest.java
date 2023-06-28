@@ -21,14 +21,20 @@ import static org.junit.Assert.assertTrue;
  */
 public class SdkStatisticsTest {
 
-    private static final String DATE_FORMAT = "dd-M-yyyy";
-    private final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(DATE_FORMAT);
+    private final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("dd-M-yyyy");
     private SdkStatistics sdkStatistics;
+    private Properties statistics;
+    private Method checkIfOneWeekFromLastReportMethod;
 
     @Before
-    public void loadStatsFile() throws Exception {
+    public void before() throws Exception {
         ClassLoader classLoader = getClass().getClassLoader();
         sdkStatistics = new SdkStatistics(new File(classLoader.getResource("sdk-stats.properties").getFile()));
+        Field statisticsField = sdkStatistics.getClass().getDeclaredField("statistics");
+        statisticsField.setAccessible(true);
+        statistics = (Properties) statisticsField.get(sdkStatistics);
+        checkIfOneWeekFromLastReportMethod = sdkStatistics.getClass().getDeclaredMethod("checkIfOneWeekFromLastReport");
+        checkIfOneWeekFromLastReportMethod.setAccessible(true);
     }
 
     @Test
@@ -48,37 +54,21 @@ public class SdkStatisticsTest {
     }
 
     @Test
-    public void checkIfOneWeekApart_LessThanOneWeekApart() throws NoSuchFieldException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
-        Field statisticsField = sdkStatistics.getClass().getDeclaredField("statistics");
-        statisticsField.setAccessible(true);
-        Properties statistics = (Properties) statisticsField.get(sdkStatistics);
+    public void checkIfOneWeekApart_LessThanOneWeekApart() throws IllegalAccessException, InvocationTargetException {
         statistics.setProperty("statsLastReported", LocalDate.now().minusDays(6).format(dateTimeFormatter));
-        Method checkIfOneWeekFromLastReportMethod = sdkStatistics.getClass().getDeclaredMethod("checkIfOneWeekFromLastReport");
-        checkIfOneWeekFromLastReportMethod.setAccessible(true);
         assertFalse((Boolean) checkIfOneWeekFromLastReportMethod.invoke(sdkStatistics));
-
     }
 
 
     @Test
-    public void checkIfOneWeekApart_MoreThanOneWeekApart() throws NoSuchFieldException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
-        Field statisticsField = sdkStatistics.getClass().getDeclaredField("statistics");
-        statisticsField.setAccessible(true);
-        Properties statistics = (Properties) statisticsField.get(sdkStatistics);
+    public void checkIfOneWeekApart_MoreThanOneWeekApart() throws IllegalAccessException, InvocationTargetException {
         statistics.setProperty("statsLastReported", LocalDate.now().minusDays(8).format(dateTimeFormatter));
-        Method checkIfOneWeekFromLastReportMethod = sdkStatistics.getClass().getDeclaredMethod("checkIfOneWeekFromLastReport");
-        checkIfOneWeekFromLastReportMethod.setAccessible(true);
         assertTrue((Boolean) checkIfOneWeekFromLastReportMethod.invoke(sdkStatistics));
     }
 
     @Test
-    public void checkIfOneWeekApart_OneWeekApart() throws NoSuchFieldException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
-        Field statisticsField = sdkStatistics.getClass().getDeclaredField("statistics");
-        statisticsField.setAccessible(true);
-        Properties statistics = (Properties) statisticsField.get(sdkStatistics);
+    public void checkIfOneWeekApart_OneWeekApart() throws IllegalAccessException, InvocationTargetException {
         statistics.setProperty("statsLastReported", LocalDate.now().minusDays(7).format(dateTimeFormatter));
-        Method checkIfOneWeekFromLastReportMethod = sdkStatistics.getClass().getDeclaredMethod("checkIfOneWeekFromLastReport");
-        checkIfOneWeekFromLastReportMethod.setAccessible(true);
         assertFalse((Boolean) checkIfOneWeekFromLastReportMethod.invoke(sdkStatistics));
     }
 
