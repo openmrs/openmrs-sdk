@@ -32,6 +32,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 import static org.twdata.maven.mojoexecutor.MojoExecutor.artifactId;
 import static org.twdata.maven.mojoexecutor.MojoExecutor.configuration;
@@ -291,29 +292,14 @@ public class OwaHelper {
 		Process process = null;
 		List<String> lines = null;
 		try {
-			if (params != null) {
-				process = new ProcessBuilder(command, params).redirectErrorStream(true).start();
-			}
-			else {
-				process = new ProcessBuilder(command).redirectErrorStream(true).start();
-			}
+			process = params != null ?  new ProcessBuilder(command, params).redirectErrorStream(true).start():new ProcessBuilder(command).redirectErrorStream(true).start();
 			lines = IOUtils.readLines(process.getInputStream(), StandardCharsets.UTF_8);
 			process.waitFor();
 		} catch (InterruptedException | IOException e) {
 			System.out.println(e.getMessage());
 		}
 
-		if (process != null && process.exitValue() == 0) {
-			if (lines != null) {
-				return lines.get(0);
-			}
-			else {
-				return null;
-			}
-		}
-		else {
-			return null;
-		}
+		return (process != null && process.exitValue() == 0) ? (lines != null ? lines.get(0) : null) : null;
 	}
 
 	public void resolveExactVersions(SemVersion node, SemVersion npm) throws MojoExecutionException {
@@ -374,11 +360,7 @@ public class OwaHelper {
 		}
 
 		public static SemVersion valueOf(String version) {
-			if (StringUtils.isBlank(version)) {
-				return null;
-			}
-
-			return new SemVersion(version);
+			return StringUtils.isBlank(version) ? null : new SemVersion(version);
 		}
 
 		public boolean isExact() {
@@ -431,28 +413,17 @@ public class OwaHelper {
 
 	public SemVersion getProjectNpmFromPackageJson() throws MojoExecutionException {
 		PackageJson packageJson = getPackageJson(PACKAGE_JSON_FILENAME);
-		if (packageJson != null && packageJson.getEngines() != null) {
-			return SemVersion.valueOf(packageJson.getEngines().get(NPM_VERSION_KEY));
-		}
-		return null;
+		return (packageJson != null && packageJson.getEngines() != null) ? SemVersion.valueOf(packageJson.getEngines().get(NPM_VERSION_KEY)): null;
 	}
 
 	public SemVersion getProjectNodeFromPackageJson() throws MojoExecutionException {
 		PackageJson packageJson = getPackageJson(PACKAGE_JSON_FILENAME);
-		if (packageJson != null && packageJson.getEngines() != null) {
-			return SemVersion.valueOf(packageJson.getEngines().get(NODE_VERSION_KEY));
-		}
-		return null;
+		return (packageJson != null && packageJson.getEngines() != null)? SemVersion.valueOf(packageJson.getEngines().get(NODE_VERSION_KEY)): null;
 	}
 
 	public PackageJson getPackageJson(String jsonFilename) throws MojoExecutionException {
 		Reader reader = null;
-		File json;
-		if (mavenProject == null) {
-			json = new File(jsonFilename);
-		} else {
-			json = new File(mavenProject.getBasedir(), jsonFilename);
-		}
+		File json = mavenProject == null ? new File(jsonFilename) : new File(mavenProject.getBasedir(), jsonFilename);
 
 		try {
 			if (json.exists()) {
@@ -524,13 +495,7 @@ public class OwaHelper {
 	}
 
 	private String getNpmSystemExecutable() {
-		String npm;
-		if (SystemUtils.IS_OS_WINDOWS) {
-			npm = "npm.cmd";
-		} else {
-			npm = "npm";
-		}
-		return npm;
+		return SystemUtils.IS_OS_WINDOWS ? "npm.cmd" : "npm";
 	}
 
 	public boolean resolveNodeAndNpm(String nodeVersion, String npmVersion, String projectDir) throws MojoExecutionException {
