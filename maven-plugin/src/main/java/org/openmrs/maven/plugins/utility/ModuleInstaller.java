@@ -12,6 +12,7 @@ import org.twdata.maven.mojoexecutor.MojoExecutor;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import static org.twdata.maven.mojoexecutor.MojoExecutor.Element;
 import static org.twdata.maven.mojoexecutor.MojoExecutor.artifactId;
@@ -51,20 +52,14 @@ public class ModuleInstaller {
 
     public void installDefaultModules(Server server) throws MojoExecutionException {
         boolean isPlatform = server.getVersion() == null;  // this might be always true, in which case `getCoreModules` can be simplified
-        List<Artifact> coreModules = SDKConstants.getCoreModules(server.getPlatformVersion(), isPlatform);
-        if (coreModules == null) {
-            throw new MojoExecutionException(String.format("Invalid version: '%s'", server.getPlatformVersion()));
-        }
+        List<Artifact> coreModules =Optional.ofNullable(SDKConstants.getCoreModules(server.getPlatformVersion(), isPlatform))
+                .orElseThrow(() -> new MojoExecutionException(String.format("Invalid version: '%s'", server.getPlatformVersion())));
         installModules(coreModules, server.getServerDirectory().getPath());
     }
 
     public void installModulesForDistro(Server server, DistroProperties properties, DistroHelper distroHelper) throws MojoExecutionException {
-        List<Artifact> coreModules;
-        // install other modules
-        coreModules = properties.getWarArtifacts(distroHelper, server.getServerDirectory());
-        if (coreModules == null) {
-            throw new MojoExecutionException(String.format("Invalid version: '%s'", server.getVersion()));
-        }
+        List<Artifact> coreModules = Optional.ofNullable(properties.getWarArtifacts(distroHelper, server.getServerDirectory()))
+                .orElseThrow(() -> new MojoExecutionException(String.format("Invalid version: '%s'", server.getVersion())));
         installModules(coreModules, server.getServerDirectory().getPath());
         File modules = new File(server.getServerDirectory(), SDKConstants.OPENMRS_SERVER_MODULES);
         modules.mkdirs();
