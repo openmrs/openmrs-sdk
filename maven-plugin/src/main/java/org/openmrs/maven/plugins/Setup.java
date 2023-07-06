@@ -142,6 +142,9 @@ public class Setup extends AbstractServerTask {
 	@Parameter(defaultValue = "false", property = "run")
 	private boolean run;
 
+	@Parameter(property = "spaCoreVersion")
+	private String spaCoreVersion;
+
 	private ServerHelper serverHelper;
 
 	public Setup() {
@@ -211,6 +214,9 @@ public class Setup extends AbstractServerTask {
 					File file = distroHelper.downloadDistro(server.getServerDirectory(), artifact);
 					Properties backendProperties = PropertiesUtils.getDistroProperties(file);
 					Properties spaModuleProperty = PropertiesUtils.getModuleProperty("https://raw.githubusercontent.com/openmrs/openmrs-module-spa/master/pom.xml");
+					if(spaCoreVersion != null) {
+						frontendProperties.setProperty("spa.core", spaCoreVersion);
+					}
 					Properties allProperties = new Properties();
 					allProperties.putAll(backendProperties);
 					allProperties.putAll(spaModuleProperty);

@@ -56,7 +56,7 @@ public class SpaInstaller {
 		// Three of these properties are not passed to the build tool, but are used to specify the build execution itself
 		String coreVersion = spaProperties.remove("core");
 		if (coreVersion == null) {
-			coreVersion = "latest";
+			coreVersion = "next";
 		}
 		String nodeVersion = spaProperties.remove("node");
 		if (nodeVersion == null) {
