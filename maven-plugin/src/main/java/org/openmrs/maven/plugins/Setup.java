@@ -166,7 +166,7 @@ public class Setup extends AbstractServerTask {
 	 * file will be created after the database is initialized. Setup should proceed to install
 	 * modules based on the OpenMRS WAR file for the given platform version.
 	 * As of this writing, this function can return null only in platform mode.
-	 *
+	 openmrs-sdk [org.openmrs.maven.plugins:openmrs-sdk-maven-plugin:5.0.0-SNAPSHOT:setup]*
 	 * @param server An initialized Server instance
 	 * @return distro properties instantiated by DistroHelper
 	 * @throws MojoExecutionException
@@ -213,6 +213,10 @@ public class Setup extends AbstractServerTask {
 								"https://raw.githubusercontent.com/openmrs/openmrs-distro-referenceapplication/"+ server.getVersion() +"/frontend/spa-build-config.json");
 					}
 					distroProperties.addProperties(frontendProperties);
+					distroProperties.addProperties(PropertiesUtils.getModuleProperty("https://raw.githubusercontent.com/openmrs/openmrs-module-spa/master/pom.xml"));
+					if(spaCoreVersion != null) {
+						distroProperties.addProperty("spa.core", spaCoreVersion);
+					}
 					platformMode = false;
 					break;
 
