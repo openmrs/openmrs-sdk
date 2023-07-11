@@ -34,7 +34,7 @@ help:
         desc: "Port number for enabling remote debugging (defaults to '1044')."
       - name: "Drun"
         desc: "If 'true' run the server after the setup (defaults to 'false')."
-      - name: "DspaCoreVersion"
+      - name: "DappShellVersion"
         desc: "Override the OpenMRS SPA core version (defaults to 'next')."
 
   - name: "deploy"
