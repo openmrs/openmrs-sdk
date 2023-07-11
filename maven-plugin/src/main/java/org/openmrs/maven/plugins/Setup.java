@@ -145,6 +145,9 @@ public class Setup extends AbstractServerTask {
 	@Parameter(property = "appShellVersion")
 	private String appShellVersion;
 
+	@Parameter(property = "ignorePeerDependencies", defaultValue = "false")
+	private boolean ignorePeerDependencies;
+
 	private ServerHelper serverHelper;
 
 	public Setup() {
@@ -285,7 +288,7 @@ public class Setup extends AbstractServerTask {
 			moduleInstaller.installModulesForDistro(server, distroProperties, distroHelper);
 			setConfigFolder(server, distroProperties);
 			if (spaInstaller != null) {
-				spaInstaller.installFromDistroProperties(server.getServerDirectory(), distroProperties);
+				spaInstaller.installFromDistroProperties(server.getServerDirectory(), distroProperties, ignorePeerDependencies);
 			}
 			installOWAs(server, distroProperties);
 		} else {
