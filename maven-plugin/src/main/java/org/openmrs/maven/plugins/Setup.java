@@ -142,8 +142,11 @@ public class Setup extends AbstractServerTask {
 	@Parameter(defaultValue = "false", property = "run")
 	private boolean run;
 
-	@Parameter(property = "spaCoreVersion")
-	private String spaCoreVersion;
+	@Parameter(property = "appShellVersion")
+	private String appShellVersion;
+
+	@Parameter(property = "ignorePeerDependencies", defaultValue = "false")
+	private boolean ignorePeerDependencies;
 
 	private ServerHelper serverHelper;
 
@@ -212,10 +215,12 @@ public class Setup extends AbstractServerTask {
 						frontendProperties = PropertiesUtils.getFrontendPropertiesFromSpaConfigUrl(
 								"https://raw.githubusercontent.com/openmrs/openmrs-distro-referenceapplication/"+ server.getVersion() +"/frontend/spa-build-config.json");
 					}
-					distroProperties.addProperties(frontendProperties);
-					distroProperties.addProperties(PropertiesUtils.getModuleProperty("https://raw.githubusercontent.com/openmrs/openmrs-module-spa/master/pom.xml"));
-					if(spaCoreVersion != null) {
-						distroProperties.addProperty("spa.core", spaCoreVersion);
+					Properties configurationProperties = PropertiesUtils.getConfigurationProperty(artifact);
+					File file = distroHelper.downloadDistro(server.getServerDirectory(), artifact);
+					Properties backendProperties = PropertiesUtils.getDistroProperties(file);
+					Properties spaModuleProperty = PropertiesUtils.getModuleProperty("https://raw.githubusercontent.com/openmrs/openmrs-module-spa/master/pom.xml");
+					if(appShellVersion != null) {
+						frontendProperties.setProperty("spa.core", appShellVersion);
 					}
 					platformMode = false;
 					break;
@@ -279,7 +284,7 @@ public class Setup extends AbstractServerTask {
 			moduleInstaller.installModulesForDistro(server, distroProperties, distroHelper);
 			configurationInstaller.setConfigurationFolder(server, distroProperties);
 			if (spaInstaller != null) {
-				spaInstaller.installFromDistroProperties(server.getServerDirectory(), distroProperties);
+				spaInstaller.installFromDistroProperties(server.getServerDirectory(), distroProperties, ignorePeerDependencies);
 			}
 			installOWAs(server, distroProperties);
 		} else {
