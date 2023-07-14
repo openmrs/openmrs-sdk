@@ -168,7 +168,6 @@ public class Run extends AbstractServerTask {
 		}
 
 		mavenOpts = adjustXmxToAtLeast(mavenOpts, 768);
-		mavenOpts = adjustMaxPermSizeToAtLeast(mavenOpts, 512);
 
 		if (server.hasWatchedProjects() && isWatchApi()) {
 			mavenOpts +=
@@ -176,7 +175,7 @@ public class Run extends AbstractServerTask {
 		}
 
 		mavenOpts = setDebugPort(mavenOpts, server);
-		
+
 		Properties properties = new Properties();
 		properties.put("serverId", server.getServerId());
 		if (port != null) {
