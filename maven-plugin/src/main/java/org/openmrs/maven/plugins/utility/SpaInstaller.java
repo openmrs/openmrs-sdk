@@ -48,6 +48,12 @@ public class SpaInstaller {
 	public void installFromDistroProperties(File appDataDir, DistroProperties distroProperties)
 			throws MojoExecutionException {
 
+		installFromDistroProperties(appDataDir, distroProperties, false);
+	}
+
+	public void installFromDistroProperties(File appDataDir, DistroProperties distroProperties, boolean ignorePeerDependencies)
+			throws MojoExecutionException {
+
 		// We find all the lines in distro properties beginning with `spa` and convert these
 		// into a JSON structure. This is passed to the frontend build tool.
 		// If no SPA elements are present in the distro properties, the SPA is not installed.
@@ -75,14 +81,15 @@ public class SpaInstaller {
 
 			nodeHelper.installNodeAndNpm(nodeVersion, npmVersion);
 			File buildTargetDir = new File(appDataDir, BUILD_TARGET_DIR);
-			
+
 			String program = "openmrs@" + coreVersion;
+			String legacyPeerDeps = ignorePeerDependencies ? "--legacy-peer-deps" : "";
 			// print frontend tool version number
-			nodeHelper.runNpx(String.format("%s --version", program));
+			nodeHelper.runNpx(String.format("%s --version", program), legacyPeerDeps);
 			nodeHelper.runNpx(
-					String.format("%s build --target %s --build-config %s", program, buildTargetDir, spaConfigFile));
+					String.format("%s build --target %s --build-config %s", program, buildTargetDir, spaConfigFile), legacyPeerDeps);
 			nodeHelper.runNpx(
-					String.format("%s assemble --target %s --mode config --config %s", program, buildTargetDir, spaConfigFile));
+					String.format("%s assemble --target %s --mode config --config %s", program, buildTargetDir, spaConfigFile), legacyPeerDeps);
 		}
 	}
 	

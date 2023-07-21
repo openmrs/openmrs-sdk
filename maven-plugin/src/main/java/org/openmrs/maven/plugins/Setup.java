@@ -142,8 +142,11 @@ public class Setup extends AbstractServerTask {
 	@Parameter(defaultValue = "false", property = "run")
 	private boolean run;
 
-	@Parameter(property = "spaCoreVersion")
-	private String spaCoreVersion;
+	@Parameter(property = "appShellVersion")
+	private String appShellVersion;
+
+	@Parameter(property = "ignorePeerDependencies", defaultValue = "false")
+	private boolean ignorePeerDependencies;
 
 	private ServerHelper serverHelper;
 
@@ -214,8 +217,8 @@ public class Setup extends AbstractServerTask {
 					File file = distroHelper.downloadDistro(server.getServerDirectory(), artifact);
 					Properties backendProperties = PropertiesUtils.getDistroProperties(file);
 					Properties spaModuleProperty = PropertiesUtils.getModuleProperty("https://raw.githubusercontent.com/openmrs/openmrs-module-spa/master/pom.xml");
-					if(spaCoreVersion != null) {
-						frontendProperties.setProperty("spa.core", spaCoreVersion);
+					if(appShellVersion != null) {
+						frontendProperties.setProperty("spa.core", appShellVersion);
 					}
 					Properties allProperties = new Properties();
 					allProperties.putAll(backendProperties);
@@ -285,7 +288,7 @@ public class Setup extends AbstractServerTask {
 			moduleInstaller.installModulesForDistro(server, distroProperties, distroHelper);
 			setConfigFolder(server, distroProperties);
 			if (spaInstaller != null) {
-				spaInstaller.installFromDistroProperties(server.getServerDirectory(), distroProperties);
+				spaInstaller.installFromDistroProperties(server.getServerDirectory(), distroProperties, ignorePeerDependencies);
 			}
 			installOWAs(server, distroProperties);
 		} else {

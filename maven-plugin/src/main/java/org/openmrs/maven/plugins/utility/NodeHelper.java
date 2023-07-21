@@ -59,23 +59,27 @@ public class NodeHelper {
 	}
 	
 	public void runNpx(String arguments) throws MojoExecutionException {
-		String npmExec = "exec -- " + arguments;
-		
+		runNpx(arguments, "");
+	}
+
+	public void runNpx(String arguments, String legacyPeerDeps) throws MojoExecutionException {
+		String npmExec = legacyPeerDeps + " exec -- " + arguments;
+
 		// it's a little weird to use a custom NPM cache for this; however, it seems to be necessary to get things working on Bamboo
 		// hack added in December 2021; it's use probably should be re-evaluated at some point
 		// additional hack: we do not use --cache on macs due to https://github.com/npm/cli/issues/3256
 		if (mavenProject != null && mavenProject.getBuild() != null && !SystemUtils.IS_OS_MAC_OSX) {
 			npmExec =
-					" --cache=" + tempDir.resolve("npm-cache").toAbsolutePath() + " exec -- " + arguments;
+					 legacyPeerDeps + " --cache=" + tempDir.resolve("npm-cache").toAbsolutePath() + " exec -- " + arguments;
 		}
-		
+
 		List<MojoExecutor.Element> configuration = new ArrayList<>(3);
 		configuration.add(element("arguments", npmExec));
-		
+
 		if (mavenProject != null && mavenProject.getBuild() != null) {
 			configuration.add(element("installDirectory", tempDir.toAbsolutePath().toString()));
 		}
-		
+
 		runFrontendMavenPlugin("npm", configuration);
 	}
 	
