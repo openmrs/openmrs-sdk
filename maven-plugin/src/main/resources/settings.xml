@@ -34,6 +34,11 @@
                     <name>OpenMRS Thirdparty Nexus Repository</name>
                     <url>https://mavenrepo.openmrs.org/thirdparty</url>
                 </repository>
+                <repository>
+                    <id>mks-nexus-public</id>
+                    <name>Mekom Repository</name>
+                    <url>https://nexus.mekomsolutions.net/repository/maven-public</url>
+                </repository>
             </repositories>
             <pluginRepositories>
                 <pluginRepository>
