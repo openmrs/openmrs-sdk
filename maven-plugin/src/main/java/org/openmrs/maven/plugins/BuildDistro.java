@@ -122,7 +122,7 @@ public class BuildDistro extends AbstractTask {
 			distroProperties = Optional.ofNullable(distroHelper.resolveDistroPropertiesForStringSpecifier(distro, versionsHelper));
 		}
 
-		if (distroProperties.isEmpty()) {
+		if (!distroProperties.isPresent()) {
 			Server server = new Server.ServerBuilder().build();
 
 			wizard.promptForRefAppVersionIfMissing(server, versionsHelper, DISTRIBUTION_VERSION_PROMPT);

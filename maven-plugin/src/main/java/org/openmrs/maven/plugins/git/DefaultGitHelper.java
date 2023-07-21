@@ -344,7 +344,7 @@ public class DefaultGitHelper implements GitHelper {
 	@Override
 	public boolean deleteTag(Git git, String tag, String username, String password) throws MojoExecutionException {
 		Optional<Ref> tagRef = Optional.ofNullable(git.getRepository().getTags().get(tag));
-		if(tagRef.isEmpty()) {
+		if(!tagRef.isPresent()) {
 			return false;
 		}
 		try {
@@ -413,25 +413,16 @@ public class DefaultGitHelper implements GitHelper {
 		String scmOwnerUrlPart = "/" + scmOwner + "/";
 		String originUrl = scmUrl.replace(scmOwnerUrlPart, "/" + username + "/");
 
-		Optional.ofNullable(getRemote(git, originName)).ifPresentOrElse(
-				origin -> {
-					try {
-						if(hasUri(origin, originUrl)) {
-							removeRemote(git, originName);
-							addRemote(git, originName, originUrl);
-						}
-					} catch (MojoExecutionException e) {
-						throw new RuntimeException(e);
-					}
-				},
-				() -> {
-					try {
-						addRemote(git, originName, originUrl);
-					} catch (MojoExecutionException e) {
-						throw new RuntimeException(e);
-					}
-				}
-		);
+		RemoteConfig origin = getRemote(git, originName);
+		if (origin != null) {
+			if (!hasUri(origin, originUrl)) {
+				removeRemote(git, originName);
+				addRemote(git, originName, originUrl);
+			}
+		} else {
+			addRemote(git, originName, originUrl);
+		}
+
 		return originUrl;
 	}
 
