@@ -145,7 +145,7 @@ public class Setup extends AbstractServerTask {
 	@Parameter(property = "appShellVersion")
 	private String appShellVersion;
 
-	@Parameter(property = "ignorePeerDependencies", defaultValue = "false")
+	@Parameter(property = "ignorePeerDependencies", defaultValue = "true")
 	private boolean ignorePeerDependencies;
 
 	private ServerHelper serverHelper;
