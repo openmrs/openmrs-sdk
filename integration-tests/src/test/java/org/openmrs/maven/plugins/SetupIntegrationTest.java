@@ -118,6 +118,7 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
 
         addTaskParam("distro", testDirectory.getAbsolutePath() + File.separator + "openmrs-distro.properties");
         addTaskParam("debug", "1044");
+        addTaskParam("ignorePeerDependencies", "false");
         addMockDbSettings();
 
         addAnswer(serverId);
@@ -146,6 +147,7 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
         String serverId = UUID.randomUUID().toString();
         addTaskParam("serverId", serverId);
         addTaskParam("debug", "1044");
+        addTaskParam("ignorePeerDependencies", "false");
         addMockDbSettings();
 
         addAnswer("OpenMRS Concepts OWA server 1.0 from current directory");
@@ -182,6 +184,7 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
     public void setup_shouldInstallServerWithDefaultJavaHome() throws Exception{
         String serverId = UUID.randomUUID().toString();
         addTaskParam("debug", "1044");
+        addTaskParam("ignorePeerDependencies", "false");
 
         addMockDbSettings();
 
@@ -325,6 +328,7 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
 		String serverId = UUID.randomUUID().toString();
 
         addTaskParam("javaHome", customJavaHome);
+        addTaskParam("ignorePeerDependencies", "false");
 
         addAnswer(serverId);
         addAnswer("Distribution");
