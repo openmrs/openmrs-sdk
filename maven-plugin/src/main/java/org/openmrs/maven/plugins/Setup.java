@@ -681,6 +681,10 @@ public class Setup extends AbstractServerTask {
 			throw new MojoExecutionException(
 					"Cannot create server: directory with name " + serverDir.getName() + " already exists");
 		}
+		else if (serverDir.getAbsolutePath().contains(" ")) {
+			throw new MojoExecutionException("Cannot create server: The server path " + serverDir.getAbsolutePath() +
+					" contains a space. Please make sure your server path does not include any spaces.");
+		}
 
 		server.setServerDirectory(serverDir);
 		serverDir.mkdir();
