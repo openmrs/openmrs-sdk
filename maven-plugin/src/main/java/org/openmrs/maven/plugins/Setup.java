@@ -56,7 +56,7 @@ public class Setup extends AbstractServerTask {
 
 	private static final String PLATFORM = "Platform";
 
-	private static final String O3_Distribution = "03 Distribution";
+	private static final String O3_Distribution = "O3 Distribution";
 
 	private static final String CLASSPATH_SCRIPT_PREFIX = "classpath://";
 
