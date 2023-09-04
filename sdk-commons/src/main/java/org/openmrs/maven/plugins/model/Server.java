@@ -27,6 +27,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 
@@ -313,15 +314,17 @@ public class Server extends BaseSdkProperties {
             setParam(Server.PROPERTY_DB_URI, dbUri);
         }
     }
-    public void addWatchedProject(Project project) {
-        linkProject(project);
-
+    public void addWatchedProject(Project project) throws MojoExecutionException {
         Set<Project> watchedProjects = getWatchedProjects();
+        Optional<Project> existingSameModule = watchedProjects.stream().filter(existingProject -> existingProject.getArtifactId().equals(project.getArtifactId())).findFirst();
+        if (existingSameModule.isPresent()) {
+            throw new MojoExecutionException("Module " + project.getArtifactId()  + " already being watched in a different location: " +  existingSameModule.get().getPath());
+        }
+        linkProject(project);
         if (watchedProjects.add(project)) {
             setWatchedProjects(watchedProjects);
         }
     }
-
     private boolean linkProject(Project project) {
         File link = getWatchedProjectLink(project);
         Path linkPath = Paths.get(link.getAbsolutePath());
