@@ -304,7 +304,7 @@ public class OwaHelper {
 			lines = IOUtils.readLines(process.getInputStream(), StandardCharsets.UTF_8);
 			process.waitFor();
 		} catch (InterruptedException | IOException e) {
-			logger.error("Exception: ", e);
+			logger.error(e.getMessage());
 		}
 
 		if (process != null && process.exitValue() == 0) {
