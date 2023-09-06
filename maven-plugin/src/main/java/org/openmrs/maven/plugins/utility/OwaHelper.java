@@ -65,7 +65,7 @@ public class OwaHelper {
 
 	private Wizard wizard;
 
-	private final Logger logger = LoggerFactory.getLogger(OwaHelper.class);
+	private static final Logger logger = LoggerFactory.getLogger(OwaHelper.class);
 
 	//enable chaining
 	public OwaHelper setInstallationDir(File installationDir) {

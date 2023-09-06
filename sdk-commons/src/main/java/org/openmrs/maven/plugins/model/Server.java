@@ -78,7 +78,7 @@ public class Server extends BaseSdkProperties {
 
     private boolean interactiveMode;
 
-    private final Logger logger = LoggerFactory.getLogger(Server.class);
+    private static final Logger logger = LoggerFactory.getLogger(Server.class);
 
     public static class ServerBuilder {
         private final Server server = new Server();
