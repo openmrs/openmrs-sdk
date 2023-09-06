@@ -344,7 +344,6 @@ public class Server extends BaseSdkProperties {
                     }
                 } catch (IOException e) {
                     logger.error(CANNOT_CREATE_LINK_MSG, link.getAbsolutePath(), e.getMessage());
-
                     return false;
                 }
             } else {
