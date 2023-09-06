@@ -9,6 +9,8 @@ import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Writer;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.openmrs.maven.plugins.utility.SDKConstants;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -54,7 +56,7 @@ public class Server extends BaseSdkProperties {
     private static final String OLD_PROPERTIES_FILENAME = "backup.properties";
     public static final String OWA_DIRECTORY = "owa";
 
-    private static final String CANNOT_CREATE_LINK_MSG = "\nCannot create a link at %s due to:\n%s\n" +
+    private static final String CANNOT_CREATE_LINK_MSG = "\nCannot create a link at {} due to:\n{}\n" +
             "The project will be built in random order.\n" +
             "Please try running the command as an administrator.\n";
 
@@ -75,6 +77,8 @@ public class Server extends BaseSdkProperties {
     private File serverDirectory;
 
     private boolean interactiveMode;
+
+    private final Logger logger = LoggerFactory.getLogger(Server.class);
 
     public static class ServerBuilder {
         private final Server server = new Server();
@@ -333,18 +337,18 @@ public class Server extends BaseSdkProperties {
             if (Files.isSymbolicLink(linkPath)) {
                 try {
                     if (!Files.isSameFile(Paths.get(project.getPath()), linkPath)) {
-                        System.out.println("\nDeleting a link at " + link.getAbsolutePath() + " as it points to a different location.");
+                        logger.info("\nDeleting a link at {} as it points to a different location.", link.getAbsolutePath());
                         Files.delete(linkPath);
                     } else {
                         return true;
                     }
                 } catch (IOException e) {
-                    System.out.printf((CANNOT_CREATE_LINK_MSG) + "%n", link.getAbsolutePath(), e.getMessage());
+                    logger.error(CANNOT_CREATE_LINK_MSG, link.getAbsolutePath(), e.getMessage());
+
                     return false;
                 }
             } else {
-                System.out.printf((CANNOT_CREATE_LINK_MSG) + "%n", link.getAbsolutePath(),
-                        "The file or directory already exists!\nPlease delete it manually and try again.");
+                logger.error(CANNOT_CREATE_LINK_MSG, link.getAbsolutePath(), "The file or directory already exists!\nPlease delete it manually and try again.");
                 return false;
             }
         }
@@ -353,7 +357,7 @@ public class Server extends BaseSdkProperties {
             try {
                 Files.createSymbolicLink(linkPath, Paths.get(project.getPath()));
             } catch (IOException e) {
-                System.out.printf((CANNOT_CREATE_LINK_MSG) + "%n", link.getAbsolutePath(), e.getMessage());
+                logger.error(CANNOT_CREATE_LINK_MSG, link.getAbsolutePath(), e.getMessage());
                 return false;
             }
         }
@@ -456,7 +460,7 @@ public class Server extends BaseSdkProperties {
         try {
 			Files.deleteIfExists(Paths.get(link.getAbsolutePath()));
 		} catch (IOException e) {
-			System.out.println("\nCould not delete link at " + link.getAbsolutePath());
+			logger.error("\nCould not delete link at {}", link.getAbsolutePath());
 		}
     }
 
@@ -868,7 +872,7 @@ public class Server extends BaseSdkProperties {
             try {
                 FileUtils.deleteDirectory(tmpDirectory);
             } catch (IOException e) {
-                System.out.println("Could not delete tmp directory");
+                logger.error("Could not delete tmp directory");
             }
         }
     }

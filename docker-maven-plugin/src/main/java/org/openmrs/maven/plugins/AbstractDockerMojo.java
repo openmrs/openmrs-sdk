@@ -10,6 +10,8 @@ import org.apache.commons.lang.SystemUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URI;
@@ -25,6 +27,7 @@ abstract class AbstractDockerMojo extends AbstractMojo {
     protected static final String MYSQL_5_6 = "mysql:5.6";
     protected static final String DEFAULT_MYSQL_DB_URI = "jdbc:mysql://localhost:" + DEFAULT_MYSQL_EXPOSED_PORT + "/";
     protected static final String API_VERSION = "1.18";
+    private final Logger logger = LoggerFactory.getLogger(AbstractDockerMojo.class);
 
     private static final String NOT_LINUX_UNABLE_TO_CONNECT_MESSAGE = "\n\n\nCould not connect to Docker at " +
             "%s\n\n Please make sure Docker is running.\n\n If you are using 'Docker Toolbox', " +
@@ -111,7 +114,7 @@ abstract class AbstractDockerMojo extends AbstractMojo {
     }
 
     protected void showMessage(String message) {
-        System.out.println("\n" + message);
+        logger.info("\n{}", message);
     }
 }
 
