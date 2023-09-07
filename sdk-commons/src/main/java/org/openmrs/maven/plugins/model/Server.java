@@ -871,7 +871,7 @@ public class Server extends BaseSdkProperties {
             try {
                 FileUtils.deleteDirectory(tmpDirectory);
             } catch (IOException e) {
-                logger.error("Could not delete tmp directory");
+                logger.error("Could not delete tmp directory", e);
             }
         }
     }
