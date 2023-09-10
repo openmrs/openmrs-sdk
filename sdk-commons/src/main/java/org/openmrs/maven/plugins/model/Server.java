@@ -343,7 +343,7 @@ public class Server extends BaseSdkProperties {
                         return true;
                     }
                 } catch (IOException e) {
-                    logger.error(CANNOT_CREATE_LINK_MSG, link.getAbsolutePath(), e.getMessage());
+                    logger.error(CANNOT_CREATE_LINK_MSG, link.getAbsolutePath(), e.getMessage(), e);
                     return false;
                 }
             } else {
@@ -356,7 +356,7 @@ public class Server extends BaseSdkProperties {
             try {
                 Files.createSymbolicLink(linkPath, Paths.get(project.getPath()));
             } catch (IOException e) {
-                logger.error(CANNOT_CREATE_LINK_MSG, link.getAbsolutePath(), e.getMessage());
+                logger.error(CANNOT_CREATE_LINK_MSG, link.getAbsolutePath(), e.getMessage(), e);
                 return false;
             }
         }
@@ -459,7 +459,7 @@ public class Server extends BaseSdkProperties {
         try {
 			Files.deleteIfExists(Paths.get(link.getAbsolutePath()));
 		} catch (IOException e) {
-			logger.error("\nCould not delete link at {}", link.getAbsolutePath());
+			logger.error("\nCould not delete link at {}", link.getAbsolutePath(), e);
 		}
     }
 
