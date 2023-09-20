@@ -5,6 +5,7 @@ import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
+import org.openmrs.maven.plugins.model.Server;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.twdata.maven.mojoexecutor.MojoExecutor;
@@ -15,9 +16,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Properties;
 
-import static org.openmrs.maven.plugins.utility.PropertiesUtils.getSdkProperties;
 import static org.twdata.maven.mojoexecutor.MojoExecutor.artifactId;
 import static org.twdata.maven.mojoexecutor.MojoExecutor.configuration;
 import static org.twdata.maven.mojoexecutor.MojoExecutor.element;
@@ -29,50 +28,50 @@ import static org.twdata.maven.mojoexecutor.MojoExecutor.plugin;
 import static org.twdata.maven.mojoexecutor.MojoExecutor.version;
 
 public class NodeHelper {
-	
+
+	public static Path tempDir;
+
 	private final MavenSession mavenSession;
-	
+
 	private final MavenProject mavenProject;
-	
+
 	private final BuildPluginManager pluginManager;
 
-	private final Path tempDir;
 
 	private static final Logger logger = LoggerFactory.getLogger(NodeHelper.class);
 
-	public Path getTempDir() {
-		return tempDir;
-	}
+	private static final String OPENMRS_SDK_NODE = "openmrs-sdk-node";
+
+	private static final String _OPENMRS_SDK_NODE_CACHE = "_openmrs_sdk_node_cache";
 
 	public NodeHelper(MavenProject mavenProject, MavenSession mavenSession, BuildPluginManager pluginManager) {
 		this.mavenProject = mavenProject;
 		this.mavenSession = mavenSession;
 		this.pluginManager = pluginManager;
+	}
+
+	private static File getNodeCache() {
+		File cacheDirectory = new File(Server.getServersPath().toString(), _OPENMRS_SDK_NODE_CACHE);
+		if (cacheDirectory.exists()) {
+			return cacheDirectory;
+		}
+		cacheDirectory.mkdir();
+		return cacheDirectory;
+	}
+
+	public void installNodeAndNpm(String nodeVersion, String npmVersion, boolean reuseNodeCache) throws MojoExecutionException {
 		try {
-			Properties sdkProperties = getSdkProperties();
-			boolean isDataSavingMode = Boolean.parseBoolean(sdkProperties.getProperty("enableDataSaving"));
-			String cacheName = "openmrs-sdk-node";
-			if (isDataSavingMode) {
-				logger.info("OpenMRS SDK is running on data saving mode");
-				File nodeCache = getExistingCache();
-				if (nodeCache != null) {
-					this.tempDir = nodeCache.toPath();
-				} else {
-					this.tempDir = Files.createTempDirectory(cacheName);
-				}
+			if (reuseNodeCache) {
+				logger.info("OpenMRS SDK will reuse the Node cache. Run openmrs-sdk:setup-sdk -DreuseNodeCache=false to disable it.");
+				tempDir = getNodeCache().toPath();
 			} else {
-				this.tempDir = Files.createTempDirectory(cacheName);
-				this.tempDir.toFile().deleteOnExit();
+				tempDir = Files.createTempDirectory(OPENMRS_SDK_NODE);
+				tempDir.toFile().deleteOnExit();
 			}
 		} catch (IOException e) {
-			throw new IllegalStateException("Exception while trying to create temporary directory for node", e);
-		} catch (MojoExecutionException e) {
-			throw new RuntimeException(e);
-		}
-	}
-	
-	public void installNodeAndNpm(String nodeVersion, String npmVersion) throws MojoExecutionException {
-		List<MojoExecutor.Element> configuration = new ArrayList<>(3);
+            throw new RuntimeException(e);
+        }
+        List<MojoExecutor.Element> configuration = new ArrayList<>(3);
 		configuration.add(element("nodeVersion", "v" + nodeVersion));
 		configuration.add(element("npmVersion", npmVersion));
 		configuration.add(element("installDirectory",  tempDir.toAbsolutePath().toString()));
@@ -80,7 +79,7 @@ public class NodeHelper {
 		new File(tempDir.toFile(), "lib").mkdirs();
 		runFrontendMavenPlugin("install-node-and-npm", configuration);
 	}
-	
+
 	public void runNpx(String arguments) throws MojoExecutionException {
 		runNpx(arguments, "");
 	}
@@ -105,7 +104,7 @@ public class NodeHelper {
 
 		runFrontendMavenPlugin("npm", configuration);
 	}
-	
+
 	private void runFrontendMavenPlugin(String goal, List<MojoExecutor.Element> configuration)
 			throws MojoExecutionException {
 		// the proxy already works for installing node and npm; however, it does not work when running npm or npx
@@ -113,7 +112,7 @@ public class NodeHelper {
 			NodeProxyHelper.ProxyContext proxyContext = NodeProxyHelper.setupProxyContext(mavenSession);
 			proxyContext.applyProxyContext(configuration);
 		}
-		
+
 		executeMojo(
 				plugin(
 						groupId(SDKConstants.FRONTEND_PLUGIN_GROUP_ID),
@@ -125,18 +124,4 @@ public class NodeHelper {
 				executionEnvironment(mavenProject, mavenSession, pluginManager)
 		);
 	}
-
-	private File getExistingCache() {
-		String tempDirPath = System.getProperty("java.io.tmpdir");
-		File tempDir = new File(tempDirPath);
-		if(tempDir.exists() && tempDir.isDirectory()) {
-			File[] cache = tempDir.listFiles(file -> file.isDirectory() && file.getName().startsWith("openmrs-sdk-node"));
-			if(cache == null) return null;
-			if(cache.length > 0) {
-				return cache[0];
-			}
-		}
-		return null;
-	}
-	
 }

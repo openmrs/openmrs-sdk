@@ -248,6 +248,8 @@ help:
     options:
       - name: "DserverId"
         desc: "Unique id of a server."
+      - name: "DreuseNodeCache"
+        desc: "Controls whether the SDK reuse the NPM cache after the setup. (defaults to 'false')"
 
   - name: "watch-owa"
     desc: "Watch OWA"

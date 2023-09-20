@@ -148,6 +148,9 @@ public class Setup extends AbstractServerTask {
 	@Parameter(property = "ignorePeerDependencies", defaultValue = "true")
 	private boolean ignorePeerDependencies;
 
+	@Parameter(property = "reuseNodeCache")
+	public Boolean overrideReuseNodeCache;
+
 	private ServerHelper serverHelper;
 
 	public Setup() {
@@ -288,7 +291,7 @@ public class Setup extends AbstractServerTask {
 			moduleInstaller.installModulesForDistro(server, distroProperties, distroHelper);
 			setConfigFolder(server, distroProperties);
 			if (spaInstaller != null) {
-				spaInstaller.installFromDistroProperties(server.getServerDirectory(), distroProperties, ignorePeerDependencies);
+				spaInstaller.installFromDistroProperties(server.getServerDirectory(), distroProperties, ignorePeerDependencies, overrideReuseNodeCache);
 			}
 			installOWAs(server, distroProperties);
 		} else {

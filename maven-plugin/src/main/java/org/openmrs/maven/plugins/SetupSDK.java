@@ -22,8 +22,13 @@ import static org.openmrs.maven.plugins.utility.PropertiesUtils.savePropertiesCh
 @Mojo(name = "setup-sdk", requiresProject = false)
 public class SetupSDK extends AbstractTask {
 
-	@Parameter(defaultValue = "false", property = "enableDataSaving")
-	private boolean enableDataSaving;
+	/**
+	 * Controls whether the SDK reuse the Node cache after the setup.
+	 * By default, this is set to 'false' to save storage space.
+	 * If set to 'true', the SDK will reuse the existing NPM cache
+	 */
+	@Parameter(defaultValue = "false", property = "reuseNodeCache")
+	private boolean reuseNodeCache;
 
 	private static final String SUCCESS_TEMPLATE = "SDK installed successfully, settings file: %s";
 
@@ -56,7 +61,7 @@ public class SetupSDK extends AbstractTask {
 		}
 		Properties sdkProperties = getSdkProperties();
 		File sdkPropertiesFile = Server.getServersPath().resolve(SDKConstants.OPENMRS_SDK_PROPERTIES).toFile();
-		sdkProperties.put("enableDataSaving", String.valueOf(enableDataSaving));
+		sdkProperties.put("reuseNodeCache", String.valueOf(reuseNodeCache));
 		savePropertiesChangesToFile(sdkProperties, sdkPropertiesFile);
 	}
 

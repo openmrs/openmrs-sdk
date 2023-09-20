@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -56,10 +57,10 @@ public class SpaInstaller {
 	public void installFromDistroProperties(File appDataDir, DistroProperties distroProperties)
 			throws MojoExecutionException {
 
-		installFromDistroProperties(appDataDir, distroProperties, false);
+		installFromDistroProperties(appDataDir, distroProperties, false, null);
 	}
 
-	public void installFromDistroProperties(File appDataDir, DistroProperties distroProperties, boolean ignorePeerDependencies)
+	public void installFromDistroProperties(File appDataDir, DistroProperties distroProperties, boolean ignorePeerDependencies, Boolean overrideReuseNodeCache)
 			throws MojoExecutionException {
 
 		// We find all the lines in distro properties beginning with `spa` and convert these
@@ -87,7 +88,9 @@ public class SpaInstaller {
 			File spaConfigFile = new File(appDataDir, "spa-build-config.json");
 			writeJSONObject(spaConfigFile, spaConfigJson);
 
-			nodeHelper.installNodeAndNpm(nodeVersion, npmVersion);
+			Properties sdkProperties = getSdkProperties();
+			boolean reuseNodeCache = (overrideReuseNodeCache != null) ? overrideReuseNodeCache : Boolean.parseBoolean(sdkProperties.getProperty("reuseNodeCache"));
+			nodeHelper.installNodeAndNpm(nodeVersion, npmVersion, reuseNodeCache);
 			File buildTargetDir = new File(appDataDir, BUILD_TARGET_DIR);
 
 			String program = "openmrs@" + coreVersion;
@@ -99,12 +102,11 @@ public class SpaInstaller {
 			nodeHelper.runNpx(
 					String.format("%s assemble --target %s --mode config --config %s", program, buildTargetDir, spaConfigFile), legacyPeerDeps);
 
-			Properties sdkProperties = getSdkProperties();
-			boolean isDataSavingMode = Boolean.parseBoolean(sdkProperties.getProperty("enableDataSaving"));
-			if (!isDataSavingMode) {
+			Path nodeCache = NodeHelper.tempDir;
+			if (!reuseNodeCache) {
 				try {
-					if (nodeHelper.getTempDir() != null && nodeHelper.getTempDir().toFile().exists()) {
-						MoreFiles.deleteRecursively(nodeHelper.getTempDir(), RecursiveDeleteOption.ALLOW_INSECURE);
+					if (nodeCache != null && nodeCache.toFile().exists()) {
+						MoreFiles.deleteRecursively(nodeCache, RecursiveDeleteOption.ALLOW_INSECURE);
 					}
 				} catch (IOException e) {
 					logger.error("Couldn't delete the temp file", e);
