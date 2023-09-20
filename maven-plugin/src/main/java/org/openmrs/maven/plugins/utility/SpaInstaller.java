@@ -1,9 +1,13 @@
 package org.openmrs.maven.plugins.utility;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.io.MoreFiles;
+import com.google.common.io.RecursiveDeleteOption;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.openmrs.maven.plugins.model.DistroProperties;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -11,7 +15,10 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
+
+import static org.openmrs.maven.plugins.utility.PropertiesUtils.getSdkProperties;
 
 public class SpaInstaller {
 	
@@ -30,6 +37,8 @@ public class SpaInstaller {
 	private final NodeHelper nodeHelper;
 	
 	private final DistroHelper distroHelper;
+
+	private static final Logger logger = LoggerFactory.getLogger(SpaInstaller.class);
 	
 	public SpaInstaller(DistroHelper distroHelper,
 			NodeHelper nodeHelper) {
@@ -89,6 +98,18 @@ public class SpaInstaller {
 					String.format("%s build --target %s --build-config %s", program, buildTargetDir, spaConfigFile), legacyPeerDeps);
 			nodeHelper.runNpx(
 					String.format("%s assemble --target %s --mode config --config %s", program, buildTargetDir, spaConfigFile), legacyPeerDeps);
+
+			Properties sdkProperties = getSdkProperties();
+			boolean isDataSavingMode = Boolean.parseBoolean(sdkProperties.getProperty("enableDataSaving"));
+			if (!isDataSavingMode) {
+				try {
+					if(nodeHelper.getTempDir() != null && nodeHelper.getTempDir().toFile().exists()) {
+						MoreFiles.deleteRecursively(nodeHelper.getTempDir(), RecursiveDeleteOption.ALLOW_INSECURE);
+					}
+				} catch (IOException e) {
+					logger.error("Couldn't delete the temp file", e);
+				}
+			}
 		}
 	}
 	

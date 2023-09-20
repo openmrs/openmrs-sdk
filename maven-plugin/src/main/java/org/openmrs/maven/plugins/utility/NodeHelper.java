@@ -5,6 +5,8 @@ import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.twdata.maven.mojoexecutor.MojoExecutor;
 
 import java.io.File;
@@ -13,7 +15,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 
+import static org.openmrs.maven.plugins.utility.PropertiesUtils.getSdkProperties;
 import static org.twdata.maven.mojoexecutor.MojoExecutor.artifactId;
 import static org.twdata.maven.mojoexecutor.MojoExecutor.configuration;
 import static org.twdata.maven.mojoexecutor.MojoExecutor.element;
@@ -32,19 +36,38 @@ public class NodeHelper {
 	
 	private final BuildPluginManager pluginManager;
 
-	private Path tempDir;
-	
-	public NodeHelper(MavenProject mavenProject,
-			MavenSession mavenSession,
-			BuildPluginManager pluginManager) {
+	private final Path tempDir;
+
+	private static final Logger logger = LoggerFactory.getLogger(NodeHelper.class);
+
+	public Path getTempDir() {
+		return tempDir;
+	}
+
+	public NodeHelper(MavenProject mavenProject, MavenSession mavenSession, BuildPluginManager pluginManager) {
 		this.mavenProject = mavenProject;
 		this.mavenSession = mavenSession;
 		this.pluginManager = pluginManager;
 		try {
-			this.tempDir = Files.createTempDirectory("openmrs-sdk-node");
-			this.tempDir.toFile().deleteOnExit();
+			Properties sdkProperties = getSdkProperties();
+			boolean isDataSavingMode = Boolean.parseBoolean(sdkProperties.getProperty("enableDataSaving"));
+			String cacheName = "openmrs-sdk-node";
+			if (isDataSavingMode) {
+				logger.info("OpenMRS SDK is running on data saving mode");
+				File nodeCache = getExistingCache();
+				if (nodeCache != null) {
+					this.tempDir = nodeCache.toPath();
+				} else {
+					this.tempDir = Files.createTempDirectory(cacheName);
+				}
+			} else {
+				this.tempDir = Files.createTempDirectory(cacheName);
+				this.tempDir.toFile().deleteOnExit();
+			}
 		} catch (IOException e) {
 			throw new IllegalStateException("Exception while trying to create temporary directory for node", e);
+		} catch (MojoExecutionException e) {
+			throw new RuntimeException(e);
 		}
 	}
 	
@@ -101,6 +124,19 @@ public class NodeHelper {
 				configuration(configuration.toArray(new MojoExecutor.Element[0])),
 				executionEnvironment(mavenProject, mavenSession, pluginManager)
 		);
+	}
+
+	private File getExistingCache() {
+		String tempDirPath = System.getProperty("java.io.tmpdir");
+		File tempDir = new File(tempDirPath);
+		if(tempDir.exists() && tempDir.isDirectory()) {
+			File[] cache = tempDir.listFiles(file -> file.isDirectory() && file.getName().startsWith("openmrs-sdk-node"));
+			if(cache == null) return null;
+			if(cache.length > 0) {
+				return cache[0];
+			}
+		}
+		return null;
 	}
 	
 }
