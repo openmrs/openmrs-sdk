@@ -203,7 +203,7 @@
                 <groupId>org.codehaus.plexus</groupId>
                 <artifactId>plexus-utils</artifactId>
                 <!-- pinned to version for Maven 3.3.9 -->
-                <version>3.0.22</version>
+                <version>3.0.24</version>
             </dependency>
             <dependency>
                 <groupId>org.codehaus.plexus</groupId>
