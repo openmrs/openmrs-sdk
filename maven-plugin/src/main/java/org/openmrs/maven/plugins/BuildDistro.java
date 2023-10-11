@@ -75,6 +75,12 @@ public class BuildDistro extends AbstractTask {
 	@Parameter(property = "dbSql")
 	private String dbSql;
 
+	@Parameter(property = "ignorePeerDependencies", defaultValue = "true")
+	private boolean ignorePeerDependencies;
+
+	@Parameter(property = "reuseNodeCache")
+	public Boolean overrideReuseNodeCache;
+
 	/**
 	 * Instead of creating a `modules` folder in the distro directory, will put modules inside
 	 * the war file in `/webapp/src/main/webapp/WEB-INF/bundledModules`
@@ -249,7 +255,7 @@ public class BuildDistro extends AbstractTask {
 			moduleInstaller.installModules(distroProperties.getModuleArtifacts(distroHelper, targetDirectory),
 					modulesDir.getAbsolutePath());
 
-			spaInstaller.installFromDistroProperties(web, distroProperties);
+			spaInstaller.installFromDistroProperties(web, distroProperties, ignorePeerDependencies, overrideReuseNodeCache);
 
 			File owasDir = new File(web, "owa");
 			owasDir.mkdir();

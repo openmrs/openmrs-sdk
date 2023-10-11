@@ -36,6 +36,10 @@ help:
         desc: "If 'true' run the server after the setup (defaults to 'false')."
       - name: "DappShellVersion"
         desc: "Override the OpenMRS SPA core version (defaults to 'next')."
+      - name: "DignorePeerDependencies"
+        desc: "Causes npm to completely ignore peerDependencies (defaults to 'true')."
+      - name: "DreuseNodeCache"
+        desc: "Override the reuseNodeCache property that controls whether the SDK reuse the NPM cache after the setup."
 
   - name: "deploy"
     desc: "Deploy a module/distribution/platform to a server. It can be used for deploying a new artifact or upgrading/downgrading an artifact, which was previously deployed."
@@ -52,6 +56,10 @@ help:
         desc: "OpenMRS Distribution to set up in the format 'groupId:artifactId:version'. You can skip groupId, if it is 'org.openmrs.distro'. You can also give Path to distro.properties file"
       - name: "Dowa"
         desc: "Owa property in the format 'owa-name:version'"
+      - name: "DignorePeerDependencies"
+        desc: "Causes npm to completely ignore peerDependencies (defaults to 'true')."
+      - name: "DreuseNodeCache"
+        desc: "Override the reuseNodeCache property that controls whether the SDK reuse the NPM cache after the setup."
 
   - name: "undeploy"
     desc: "Undeploy a module from a server."
@@ -148,6 +156,10 @@ help:
         desc: "Flag to indicate whether to put modules inside the war file in '/webapp/src/main/webapp/WEB-INF/bundledModules'. (defaults to 'false')"
       - name: "reset"
         desc: "Flag to indicate whether to delete the target directory or not. (defaults to 'false')"
+      - name: "DignorePeerDependencies"
+        desc: "Causes npm to completely ignore peerDependencies (defaults to 'true')."
+      - name: "DreuseNodeCache"
+        desc: "Override the reuseNodeCache property that controls whether the SDK reuse the NPM cache after the setup."
 
   - name: "clone"
     desc: "Clone any OpenMRS module repository"

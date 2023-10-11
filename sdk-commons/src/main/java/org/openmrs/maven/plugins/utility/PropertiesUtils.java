@@ -36,7 +36,7 @@ import org.xml.sax.SAXException;
 public class PropertiesUtils {
 
 	private static final Logger log = LoggerFactory.getLogger(PropertiesUtils.class);
-	private static final String SDK_PROPERTIES_FILE = "SDK Properties file";
+	private static final String SDK_PROPERTIES_COMMENT = "SDK Properties file";
 
 	/**
 	 * Loads properties from a given file
@@ -264,7 +264,7 @@ public class PropertiesUtils {
 	public static void savePropertiesChangesToFile(Properties properties, File file)
 			throws MojoExecutionException {
 		try (OutputStream fos = new FileOutputStream(file)) {
-			properties.store(fos, SDK_PROPERTIES_FILE + ":");
+			properties.store(fos, SDK_PROPERTIES_COMMENT);
 		}
 		catch (IOException e) {
 			throw new MojoExecutionException(
