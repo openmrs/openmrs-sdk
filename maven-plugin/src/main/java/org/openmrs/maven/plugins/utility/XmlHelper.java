@@ -13,6 +13,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
+import java.util.Optional;
 
 public final class XmlHelper {
 
@@ -56,10 +57,8 @@ public final class XmlHelper {
 			if ("true".equals(copy)) {
 				addModification(targetRoot, modificationElement);
 			} else {
-				Element targetElement = targetRoot.element(modificationElement.getName());
-				if (targetElement == null) {
-					targetElement = targetRoot.addElement(modificationElement.getName());
-				}
+				Element targetElement = Optional.ofNullable(targetRoot.element(modificationElement.getName()))
+						.orElseGet(() -> targetRoot.addElement(modificationElement.getName()));
 				applyModifications(modificationElement, targetElement);
 			}
 		}

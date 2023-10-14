@@ -20,6 +20,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
 
@@ -93,12 +94,12 @@ public class Deploy extends AbstractServerTask {
 		ServerUpgrader serverUpgrader = new ServerUpgrader(this);
 
 		if ((platform == null && distro == null && owa == null) && artifactId == null) {
-			Artifact artifact = checkCurrentDirectoryForOpenmrsWebappUpdate(server);
-			DistroProperties distroProperties = checkCurrentDirectoryForDistroProperties();
-			if (artifact != null) {
-				deployOpenmrsFromDir(server, artifact);
-			} else if (distroProperties != null) {
-				serverUpgrader.upgradeToDistro(server, distroProperties);
+			Optional<Artifact> artifact = Optional.ofNullable(checkCurrentDirectoryForOpenmrsWebappUpdate(server));
+			Optional<DistroProperties> distroProperties = Optional.ofNullable(checkCurrentDirectoryForDistroProperties());
+			if (artifact.isPresent()) {
+				deployOpenmrsFromDir(server, artifact.get());
+			} else if (distroProperties.isPresent()) {
+				serverUpgrader.upgradeToDistro(server, distroProperties.get());
 			} else if (checkCurrentDirForModuleProject()) {
 				deployModule(groupId, artifactId, version, server);
 			} else {
@@ -445,21 +446,21 @@ public class Deploy extends AbstractServerTask {
 		return null;
 	}
 
-	private DistroProperties checkCurrentDirectoryForDistroProperties() throws MojoExecutionException {
-		DistroProperties distroProperties = DistroHelper.getDistroPropertiesFromDir();
-		if (distroProperties != null) {
-			String message = String.format(
-					"Would you like to deploy %s %s from the current directory?",
-					distroProperties.getName(),
-					distroProperties.getVersion());
-
-			boolean agree = wizard.promptYesNo(message);
-			if (agree) {
-				return distroProperties;
-			}
-		}
-
-		return null;
+	private DistroProperties checkCurrentDirectoryForDistroProperties() {
+		return Optional.ofNullable(DistroHelper.getDistroPropertiesFromDir())
+				.map(distroProperties -> {
+					String message = String.format(
+							"Would you like to deploy %s %s from the current directory?",
+							distroProperties.getName(),
+							distroProperties.getVersion());
+					try {
+						boolean agree = wizard.promptYesNo(message);
+						return agree ? distroProperties : null;
+					} catch (MojoExecutionException e) {
+						throw new RuntimeException(e);
+					}
+				})
+				.orElse(null);
 	}
 
 	/**
@@ -477,19 +478,17 @@ public class Deploy extends AbstractServerTask {
 		String moduleVersion;
 
 		File userDir = new File(System.getProperty("user.dir"));
-		Project project = null;
-		if (Project.hasProject(userDir)) {
-			project = Project.loadProject(userDir);
-		}
-		if (artifactId == null && project != null && project.isOpenmrsModule()) {
-			if (project.getParent() != null && !"org.openmrs.maven.parents".equals(project.getParent().getGroupId())) {
-				moduleGroupId = project.getParent().getGroupId();
-				moduleArtifactId = project.getParent().getArtifactId() + "-omod";
-				moduleVersion = (version != null) ? version : project.getParent().getVersion();
+		Optional<Project> project = Project.hasProject(userDir) ? Optional.of(Project.loadProject(userDir)) : Optional.empty();
+
+		if (artifactId == null && project.isPresent() && project.get().isOpenmrsModule()) {
+			if (project.get().getParent() != null && !"org.openmrs.maven.parents".equals(project.get().getParent().getGroupId())) {
+				moduleGroupId = project.get().getParent().getGroupId();
+				moduleArtifactId = project.get().getParent().getArtifactId() + "-omod";
+				moduleVersion = (version != null) ? version : project.get().getParent().getVersion();
 			} else {
-				moduleGroupId = project.getGroupId();
-				moduleArtifactId = project.getArtifactId() + "-omod";
-				moduleVersion = (version != null) ? version : project.getVersion();
+				moduleGroupId = project.get().getGroupId();
+				moduleArtifactId = project.get().getArtifactId() + "-omod";
+				moduleVersion = (version != null) ? version : project.get().getVersion();
 			}
 		} else {
 			moduleGroupId = wizard.promptForValueIfMissingWithDefault(null, groupId, "groupId", Artifact.GROUP_MODULE);
@@ -508,14 +507,12 @@ public class Deploy extends AbstractServerTask {
 
 	public boolean checkCurrentDirForModuleProject() throws MojoExecutionException {
 		File dir = new File(System.getProperty("user.dir"));
-		Project project = null;
-		if (Project.hasProject(dir)) {
-			project = Project.loadProject(dir);
-		}
-		boolean hasProject = (project != null && project.isOpenmrsModule());
+		Optional<Project> project = Project.hasProject(dir) ? Optional.of(Project.loadProject(dir)) : Optional.empty();
+
+		boolean hasProject = project.map(Project::isOpenmrsModule).orElse(false);
 		if (hasProject) {
 			hasProject = wizard.promptYesNo(String.format("Would you like to deploy %s %s from the current directory?",
-					project.getArtifactId(), project.getVersion()));
+					project.get().getArtifactId(), project.get().getVersion()));
 		}
 		return hasProject;
 	}
