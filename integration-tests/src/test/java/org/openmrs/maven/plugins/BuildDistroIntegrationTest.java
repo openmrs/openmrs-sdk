@@ -7,6 +7,7 @@ public class BuildDistroIntegrationTest extends AbstractSdkIntegrationTest {
     @Test
     public void testBuildDistroFromDistroFile() throws Exception {
         addTaskParam("dir", "target");
+        addTaskParam("ignorePeerDependencies", "false");
         executeTask("build-distro");
 
         assertFilePresent("target/docker-compose.yml");
@@ -29,6 +30,7 @@ public class BuildDistroIntegrationTest extends AbstractSdkIntegrationTest {
     public void testBuildDistroRefApp23() throws Exception {
         addTaskParam("distro", "referenceapplication:2.3.1");
         addTaskParam("dir", "referenceapplication");
+        addTaskParam("ignorePeerDependencies", "false");
         executeTask("build-distro");
 
         assertFilePresent("referenceapplication/docker-compose.yml");
@@ -50,6 +52,7 @@ public class BuildDistroIntegrationTest extends AbstractSdkIntegrationTest {
         addTaskParam("distro", "referenceapplication:2.3.1");
         addTaskParam("dir", "referenceapplication-bundled");
         addTaskParam("bundled", "true");
+        addTaskParam("ignorePeerDependencies", "false");
         executeTask("build-distro");
 
         assertFilePresent("referenceapplication-bundled/web/Dockerfile");

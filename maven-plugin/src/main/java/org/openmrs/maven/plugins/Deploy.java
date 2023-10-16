@@ -66,6 +66,12 @@ public class Deploy extends AbstractServerTask {
 	@Parameter(property = "owa")
 	private String owa;
 
+	@Parameter(property = "ignorePeerDependencies", defaultValue = "true")
+	private boolean ignorePeerDependencies;
+
+	@Parameter(property = "reuseNodeCache")
+	public Boolean overrideReuseNodeCache;
+
 	public Deploy() {
 	}
 
@@ -98,7 +104,7 @@ public class Deploy extends AbstractServerTask {
 			if (artifact != null) {
 				deployOpenmrsFromDir(server, artifact);
 			} else if (distroProperties != null) {
-				serverUpgrader.upgradeToDistro(server, distroProperties);
+				serverUpgrader.upgradeToDistro(server, distroProperties, ignorePeerDependencies, overrideReuseNodeCache);
 			} else if (checkCurrentDirForModuleProject()) {
 				deployModule(groupId, artifactId, version, server);
 			} else {
@@ -107,7 +113,7 @@ public class Deploy extends AbstractServerTask {
 		} else if (distro != null) {
 			DistroProperties distroProperties = distroHelper
 					.resolveDistroPropertiesForStringSpecifier(distro, versionsHelper);
-			serverUpgrader.upgradeToDistro(server, distroProperties);
+			serverUpgrader.upgradeToDistro(server, distroProperties, ignorePeerDependencies, overrideReuseNodeCache);
 		} else if (platform != null) {
 			deployOpenmrs(server, platform);
 		} else if (owa != null) {
@@ -154,7 +160,7 @@ public class Deploy extends AbstractServerTask {
 							server.getVersion(), server.getName(), versionsHelper);
 				}
 				distroProperties = distroHelper.resolveDistroPropertiesForStringSpecifier(distro, versionsHelper);
-				upgrader.upgradeToDistro(server, distroProperties);
+				upgrader.upgradeToDistro(server, distroProperties, ignorePeerDependencies, overrideReuseNodeCache);
 				break;
 			}
 			case (DEPLOY_PLATFORM_OPTION): {
@@ -294,7 +300,7 @@ public class Deploy extends AbstractServerTask {
 		serverDistroProperties.setArtifacts(warArtifacts, moduleArtifacts);
 		serverDistroProperties.saveTo(server.getServerDirectory());
 		ServerUpgrader serverUpgrader = new ServerUpgrader(this);
-		serverUpgrader.upgradeToDistro(server, serverDistroProperties);
+		serverUpgrader.upgradeToDistro(server, serverDistroProperties, ignorePeerDependencies, overrideReuseNodeCache);
 	}
 
 	/**

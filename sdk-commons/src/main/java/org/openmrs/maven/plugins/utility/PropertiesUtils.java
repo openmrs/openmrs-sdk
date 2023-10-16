@@ -5,8 +5,10 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Enumeration;
 import java.util.Iterator;
@@ -25,6 +27,7 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.openmrs.maven.plugins.model.Artifact;
+import org.openmrs.maven.plugins.model.Server;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -33,6 +36,7 @@ import org.xml.sax.SAXException;
 public class PropertiesUtils {
 
 	private static final Logger log = LoggerFactory.getLogger(PropertiesUtils.class);
+	private static final String SDK_PROPERTIES_COMMENT = "SDK Properties file";
 
 	/**
 	 * Loads properties from a given file
@@ -235,6 +239,40 @@ public class PropertiesUtils {
 	}
 
 	/**
+	 * Retrieves the OpenMRS SDK properties from sdk.properties file
+	 *
+	 * @return A {@link Properties} object containing the OpenMRS SDK properties, or an empty {@link Properties} object
+	 *         if the SDK properties file does not exist.
+	 * @throws MojoExecutionException If there is an error during the execution of this method, such as file I/O errors.
+	 */
+	public static Properties getSdkProperties() throws MojoExecutionException {
+		File sdkFile = Server.getServersPath().resolve(SDKConstants.OPENMRS_SDK_PROPERTIES).toFile();
+		if (sdkFile.exists()){
+			return loadPropertiesFromFile(sdkFile);
+		}
+		return new Properties();
+	}
+
+	/**
+	 * Saves the provided properties to a file.
+	 *
+	 * @param properties The {@link Properties} to be saved to the file.
+	 * @param file       The {@link File} where the properties will be saved.
+	 * @throws MojoExecutionException If an {@link IOException} occurs during the file writing process,
+	 *                               or if there is an issue with the provided properties or file.
+	 */
+	public static void savePropertiesChangesToFile(Properties properties, File file)
+			throws MojoExecutionException {
+		try (OutputStream fos = new FileOutputStream(file)) {
+			properties.store(fos, SDK_PROPERTIES_COMMENT);
+		}
+		catch (IOException e) {
+			throw new MojoExecutionException(
+					"An exception occurred while saving properties to " + file.getAbsolutePath() + " " + e.getMessage(), e);
+		}
+	}
+
+	/**
 	 * Parses an XML document from the specified URL and returns the corresponding Document object.
 	 *
 	 * @param url The URL of the XML document.
@@ -250,5 +288,4 @@ public class PropertiesUtils {
 		document.getDocumentElement().normalize();
 		return document;
 	}
-
 }

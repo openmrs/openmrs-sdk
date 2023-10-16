@@ -34,7 +34,7 @@ public class ServerUpgrader {
         parentTask.getLog().info(String.format("Server %s has been successfully upgraded to %s", server.getServerId(), version));
     }
 
-	public void upgradeToDistro(Server server, DistroProperties distroProperties) throws MojoExecutionException {
+	public void upgradeToDistro(Server server, DistroProperties distroProperties, boolean ignorePeerDependencies, Boolean overrideReuseNodeCache) throws MojoExecutionException {
         UpgradeDifferential upgradeDifferential = DistroHelper.calculateUpdateDifferential(parentTask.distroHelper, server, distroProperties);
         boolean confirmed = parentTask.wizard.promptForConfirmDistroUpgrade(upgradeDifferential, server, distroProperties);
 		if(confirmed){
