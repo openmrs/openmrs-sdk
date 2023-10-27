@@ -172,7 +172,7 @@ public class Setup extends AbstractServerTask {
 	 * file will be created after the database is initialized. Setup should proceed to install
 	 * modules based on the OpenMRS WAR file for the given platform version.
 	 * As of this writing, this function can return null only in platform mode.
-	 *
+	 openmrs-sdk [org.openmrs.maven.plugins:openmrs-sdk-maven-plugin:5.0.0-SNAPSHOT:setup]*
 	 * @param server An initialized Server instance
 	 * @return distro properties instantiated by DistroHelper
 	 * @throws MojoExecutionException
@@ -208,6 +208,8 @@ public class Setup extends AbstractServerTask {
 					wizard.promptForO3RefAppVersionIfMissing(server, versionsHelper);
 					Artifact artifact = new Artifact(server.getDistroArtifactId(), server.getVersion(),
 							server.getDistroGroupId(), "zip");
+					distroProperties = distroHelper.downloadDistroProperties(server.getServerDirectory(), server, "zip");
+					distroProperties.addProperties(PropertiesUtils.getConfigurationProperty(artifact));
 					Properties frontendProperties;
 					if (server.getVersion().equals(versionsHelper.getLatestSnapshotVersion(artifact))) {
 						frontendProperties = PropertiesUtils.getFrontendPropertiesFromSpaConfigUrl(
@@ -223,12 +225,6 @@ public class Setup extends AbstractServerTask {
 					if(appShellVersion != null) {
 						frontendProperties.setProperty("spa.core", appShellVersion);
 					}
-					Properties allProperties = new Properties();
-					allProperties.putAll(backendProperties);
-					allProperties.putAll(spaModuleProperty);
-					allProperties.putAll(frontendProperties);
-					allProperties.putAll(configurationProperties);
-					distroProperties = new DistroProperties(allProperties);
 					platformMode = false;
 					break;
 
@@ -289,7 +285,7 @@ public class Setup extends AbstractServerTask {
 			distroHelper.savePropertiesToServer(distroProperties, server);
 			setServerVersionsFromDistroProperties(server, distroProperties);
 			moduleInstaller.installModulesForDistro(server, distroProperties, distroHelper);
-			setConfigFolder(server, distroProperties);
+			configurationInstaller.setConfigurationFolder(server, distroProperties);
 			if (spaInstaller != null) {
 				spaInstaller.installFromDistroProperties(server.getServerDirectory(), distroProperties, ignorePeerDependencies, overrideReuseNodeCache);
 			}
@@ -351,57 +347,6 @@ public class Setup extends AbstractServerTask {
 			for (Artifact owa : owas) {
 				wizard.showMessage("Downloading OWA: " + owa);
 				owaHelper.downloadOwa(owasDir, owa, moduleInstaller);
-			}
-		}
-	}
-
-	/**
-	 * Sets the configuration folder for the specified server using the provided distro properties.
-	 *
-	 * @param server           The server for which to set the configuration folder.
-	 * @param distroProperties The distro properties containing the configuration information.
-	 */
-	private void setConfigFolder(Server server, DistroProperties distroProperties) throws MojoExecutionException {
-		if(distroProperties.getConfigArtifacts().isEmpty()) {
-			return;
-		}
-		File configDir = new File(server.getServerDirectory(), SDKConstants.OPENMRS_SERVER_CONFIGURATION);
-		configDir.mkdir();
-		downloadConfigs(distroProperties, configDir);
-		File referenceApplicationFile = new File(configDir, "referenceapplication-distro.owa");
-		if (!referenceApplicationFile.exists()) {
-			return;
-		}
-		try {
-			ZipFile zipFile = new ZipFile(referenceApplicationFile);
-			zipFile.extractAll(configDir.getPath());
-			for (File file : Objects.requireNonNull(configDir.listFiles())) {
-				if (file.getName().equals("openmrs_config")) {
-					FileUtils.copyDirectory(file, configDir);
-				}
-				FileUtils.deleteQuietly(file);
-			}
-			FileUtils.deleteQuietly(referenceApplicationFile);
-		}
-		catch (ZipException | IOException e) {
-			throw new RuntimeException(e);
-		}
-	}
-
-	/**
-	 * Downloads the configuration artifact specified in the distro properties and saves them in the provided config directory.
-	 *
-	 * @param distroProperties The distro properties containing the configuration artifacts to download.
-	 * @param configDir        The directory where the configuration files will be saved.
-	 * @throws MojoExecutionException If an error occurs while downloading the configuration files.
-	 */
-	private void downloadConfigs(DistroProperties distroProperties, File configDir) throws MojoExecutionException {
-		List<Artifact> configs = distroProperties.getConfigArtifacts();
-		wizard.showMessage("Downloading Configs...\n");
-		if (!configs.isEmpty()) {
-			for (Artifact config : configs) {
-				wizard.showMessage("Downloading Config: " + config);
-				owaHelper.downloadOwa(configDir, config, moduleInstaller);
 			}
 		}
 	}

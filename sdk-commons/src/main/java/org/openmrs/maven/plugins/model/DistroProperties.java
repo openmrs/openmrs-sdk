@@ -230,6 +230,14 @@ public class DistroProperties extends BaseSdkProperties {
         }
     }
 
+    public void addProperties(Properties properties) {
+        this.properties.putAll(properties);
+    }
+
+    public void addProperty(String name, String value) {
+        this.properties.setProperty(name, value);
+    }
+
     private String getPlaceholderKey(String string){
         int startIndex = string.indexOf("${")+2;
         int endIndex = string.indexOf("}", startIndex);

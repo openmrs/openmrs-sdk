@@ -260,11 +260,44 @@ public class DistroHelper {
 		return distroProperties;
 	}
 
+	public DistroProperties downloadDistroProperties(File path, Artifact artifact, String distroPropertiesFileName) throws MojoExecutionException {
+		File file = downloadDistro(path, artifact);
+		DistroProperties distroProperties = null;
+		try (ZipFile zipFile = new ZipFile(file)) {
+			Enumeration<? extends ZipEntry> entries = zipFile.entries();
+			while (entries.hasMoreElements()) {
+				ZipEntry zipEntry = entries.nextElement();
+				if (distroPropertiesFileName.equals(zipEntry.getName())) {
+					Properties properties = new Properties();
+					properties.load(zipFile.getInputStream(zipEntry));
+					distroProperties = new DistroProperties(properties);
+				}
+			}
+		}
+		catch (IOException e) {
+			throw new MojoExecutionException("Could not read \"" + file.getAbsolutePath() + "\" " + e.getMessage(), e);
+		}
+		finally {
+			file.delete();
+		}
+		return distroProperties;
+	}
+
 	public DistroProperties downloadDistroProperties(File serverPath, Server server) throws MojoExecutionException {
 		Artifact artifact = new Artifact(server.getDistroArtifactId(), server.getVersion(), server.getDistroGroupId(),
 				"jar");
 		if (StringUtils.isNotBlank(artifact.getArtifactId())) {
 			return downloadDistroProperties(serverPath, artifact);
+		} else {
+			return null;
+		}
+	}
+
+	public DistroProperties downloadDistroProperties(File serverPath, Server server, String fileType) throws MojoExecutionException {
+		Artifact artifact = new Artifact(server.getDistroArtifactId(), server.getVersion(), server.getDistroGroupId(),
+				fileType);
+		if (StringUtils.isNotBlank(artifact.getArtifactId())) {
+			return downloadDistroProperties(serverPath, artifact, "distro.properties");
 		} else {
 			return null;
 		}
