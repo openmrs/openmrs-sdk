@@ -242,9 +242,7 @@ public class DefaultGitHelper implements GitHelper {
 			throws MojoExecutionException {
 		Iterable<RevCommit> commits = getCommitDifferential(git, baseRef, headRef);
 		List<String> messages = new ArrayList<>();
-		for (RevCommit commit : commits) {
-			messages.add(commit.getShortMessage());
-		}
+		commits.forEach(commit -> messages.add(commit.getShortMessage()));
 		return messages;
 	}
 
@@ -290,16 +288,11 @@ public class DefaultGitHelper implements GitHelper {
 			openmrs = repositoryService.getRepository(OPENMRS_USER, repository);
 			PullRequestService pullRequestService = new PullRequestService();
 			List<PullRequest> openPRs = pullRequestService.getPullRequests(openmrs, "open");
-			for (PullRequest openPR : openPRs) {
-				if (matchPullRequest(base, head, openPR)) {
-					return openPR;
-				}
-			}
+			return openPRs.stream().filter(openPR -> matchPullRequest(base, head, openPR)).findFirst().orElse(null);
 		}
 		catch (IOException e) {
 			throw new MojoExecutionException("Failed to access remote repository data " + e.getMessage(), e);
 		}
-		return null;
 	}
 
 	private boolean matchPullRequest(String base, String head, PullRequest openPR) {
@@ -369,9 +362,7 @@ public class DefaultGitHelper implements GitHelper {
 	public void revertCommits(Git git, Iterable<RevCommit> commits) throws MojoExecutionException {
 		try {
 			RevertCommand revert = git.revert();
-			for (RevCommit commit : commits) {
-				revert.include(commit.getId());
-			}
+			commits.forEach(commit -> revert.include(commit.getId()));
 			revert.call();
 		}
 		catch (GitAPIException e) {
@@ -464,13 +455,7 @@ public class DefaultGitHelper implements GitHelper {
 			throw new MojoExecutionException("Exception occurred while trying to list remotes " + e.getMessage(), e);
 		}
 
-		for (RemoteConfig remote : remotes) {
-			if (remote.getName().equals(name)) {
-				return remote;
-			}
-		}
-
-		return null;
+		return remotes.stream().filter(remote -> remote.getName().equals(name)).findFirst().orElse(null);
 	}
 
 	private boolean hasUri(RemoteConfig remote, String uri) {
@@ -481,14 +466,8 @@ public class DefaultGitHelper implements GitHelper {
 		if (remoteUris.isEmpty()) {
 			return false;
 		}
-
-		for (URIish remoteUri : remoteUris) {
-			if (!remoteUri.toString().equals(uri)) {
-				return false;
-			}
-		}
-
-		return true;
+		return remoteUris.stream()
+				.allMatch(remoteUri -> remoteUri.toString().equals(uri));
 	}
 
 	/**

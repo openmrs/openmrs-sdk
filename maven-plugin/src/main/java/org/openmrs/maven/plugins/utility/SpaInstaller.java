@@ -18,6 +18,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.stream.IntStream;
 
 import static org.openmrs.maven.plugins.utility.PropertiesUtils.getSdkProperties;
 
@@ -118,13 +119,12 @@ public class SpaInstaller {
 	private Map<String, Object> convertPropertiesToJSON(Map<String, String> properties) throws MojoExecutionException {
 		Set<String> foundPropertySetKeys = new HashSet<>();
 		Map<String, Object> result = new LinkedHashMap<>();
-		for (String dotDelimitedKeys : properties.keySet()) {
+
+		properties.keySet().forEach(dotDelimitedKeys -> {
 			String[] keys = dotDelimitedKeys.split("\\.");
-			for (int i = 0; i < keys.length - 1; i++) {
-				foundPropertySetKeys.add(StringUtils.join(Arrays.copyOfRange(keys, 0, i), "."));
-			}
-		}
-		
+			IntStream.range(0, keys.length - 1).forEach(i -> foundPropertySetKeys.add(StringUtils.join(Arrays.copyOfRange(keys, 0, i), ".")));
+		});
+
 		for (String dotDelimitedKeys : properties.keySet()) {
 			if (foundPropertySetKeys.contains(dotDelimitedKeys)) {
 				String badLine = "spa." + dotDelimitedKeys + "=" + properties.get(dotDelimitedKeys);

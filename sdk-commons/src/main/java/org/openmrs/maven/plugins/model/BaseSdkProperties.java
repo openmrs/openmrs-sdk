@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -32,7 +33,7 @@ public abstract class BaseSdkProperties {
 
     public Properties getModuleAndWarProperties(List<Artifact> warArtifacts, List<Artifact> moduleArtifacts) {
         Properties properties = new Properties();
-        for (Artifact artifact : warArtifacts) {
+        warArtifacts.forEach(artifact ->  {
 
             stripArtifactId(artifact);
 
@@ -45,22 +46,20 @@ public abstract class BaseSdkProperties {
             }
 
             properties.setProperty(TYPE_WAR + "." + artifact.getArtifactId(), artifact.getVersion());
-        }
+        });
 
-        for (Artifact artifact : moduleArtifacts) {
-
+        moduleArtifacts.forEach(artifact -> {
             stripArtifactId(artifact);
-
             if (!artifact.getType().equals(TYPE_JAR)) {
-                properties.setProperty(TYPE_OMOD + "." + artifact.getArtifactId() + "." + TYPE, artifact.getType());
+                    properties.setProperty(TYPE_OMOD + "." + artifact.getArtifactId() + "." + TYPE, artifact.getType());
             }
             if (!artifact.getGroupId().equals(Artifact.GROUP_MODULE)) {
                 properties.setProperty(TYPE_OMOD + "." + artifact.getArtifactId() + "." + GROUP_ID, artifact.getGroupId());
             }
-
             properties.setProperty(TYPE_OMOD + "." + artifact.getArtifactId(), artifact.getVersion());
 
-        }
+        });
+
         return properties;
     }
 
@@ -89,64 +88,37 @@ public abstract class BaseSdkProperties {
     }
 
     public List<Artifact> getModuleArtifacts(){
-        List<Artifact> artifactList = new ArrayList<>();
-        for (Object keyObject: getAllKeys()) {
-            String key = keyObject.toString();
-            String artifactType = getArtifactType(key);
-            if(artifactType.equals(TYPE_OMOD)) {
-                artifactList.add(new Artifact(checkIfOverwritten(key, ARTIFACT_ID), getParam(key), checkIfOverwritten(key, GROUP_ID), checkIfOverwritten(key, TYPE), "omod"));
-            }
-        }
-        return  artifactList;
+        return getAllKeys().stream().map(Object::toString).filter(key -> getArtifactType(key).equals(TYPE_OMOD))
+                .map(key -> new Artifact(checkIfOverwritten(key, ARTIFACT_ID), getParam(key), checkIfOverwritten(key, GROUP_ID), checkIfOverwritten(key, TYPE), "omod"))
+                .collect(Collectors.toList());
     }
 
     public List<Artifact> getOwaArtifacts() {
-        List<Artifact> artifacts = new ArrayList<>();
-        for (Object keyObject: getAllKeys()) {
-            String key = keyObject.toString();
-            if (key.startsWith(TYPE_OWA + ".")) {
-                String artifactId = key.substring(TYPE_OWA.length() + 1);
-                artifacts.add(new Artifact(artifactId, getParam(key), Artifact.GROUP_OWA, Artifact.TYPE_ZIP));
-            }
-        }
-        return artifacts;
+        return getAllKeys().stream().map(Object::toString).filter(key -> key.startsWith(TYPE_OWA + "."))
+                .map(key -> new Artifact(key.substring(TYPE_OWA.length() + 1), getParam(key), Artifact.GROUP_OWA, Artifact.TYPE_ZIP))
+                .collect(Collectors.toList());
     }
 
     public Map<String, String> getSpaProperties() {
-        Map<String, String> spaProperties = new HashMap<>();
-        for (Object keyObject: getAllKeys()) {
-            String key = keyObject.toString();
-            if (key.startsWith(TYPE_SPA + ".")) {
-                spaProperties.put(key.substring(TYPE_SPA.length() + 1), getParam(key));
-            }
-        }
-        return spaProperties;
+        return getAllKeys().stream().map(Object::toString).filter(key -> key.startsWith(TYPE_SPA + "."))
+                .collect(Collectors.toMap(
+                        key -> key.substring(TYPE_SPA.length() + 1),
+                        this::getParam,
+                        (oldValue, newValue) -> newValue,
+                        HashMap::new
+                ));
     }
 
-    public List<Artifact> getWarArtifacts(){
-        List<Artifact> artifactList = new ArrayList<>();
-        for (Object keyObject: getAllKeys()) {
-            String key = keyObject.toString();
-            String artifactType = getArtifactType(key);
-            if(artifactType.equals(TYPE_WAR)) {
-                artifactList.add(new Artifact(checkIfOverwritten(key, ARTIFACT_ID), getParam(key), checkIfOverwritten(key, GROUP_ID), checkIfOverwritten(key, TYPE)));
-            }
-        }
-        return  artifactList;
+    public List<Artifact> getWarArtifacts() {
+        return getAllKeys().stream().map(Object::toString).filter(key -> getArtifactType(key).equals(TYPE_WAR))
+                .map(key -> new Artifact(checkIfOverwritten(key, ARTIFACT_ID), getParam(key), checkIfOverwritten(key, GROUP_ID), checkIfOverwritten(key, TYPE)))
+                .collect(Collectors.toList());
     }
 
 	public List<Artifact> getConfigArtifacts() {
-		List<Artifact> artifactList = new ArrayList<>();
-		for (Object keyObject : getAllKeys()) {
-			String key = keyObject.toString();
-			String artifactType = getArtifactType(key);
-			if (artifactType.equals(TYPE_CONFIG)) {
-				artifactList.add(
-						new Artifact(checkIfOverwritten(key, ARTIFACT_ID), getParam(key), checkIfOverwritten(key, GROUP_ID),
-								checkIfOverwritten(key, TYPE)));
-			}
-		}
-		return artifactList;
+        return getAllKeys().stream().map(Object::toString).filter(key -> getArtifactType(key).equals(TYPE_CONFIG))
+                .map(key -> new Artifact(checkIfOverwritten(key, ARTIFACT_ID), getParam(key), checkIfOverwritten(key, GROUP_ID), checkIfOverwritten(key, TYPE)))
+                .collect(Collectors.toList());
 	}
 
 	protected Set<Object> getAllKeys() {
@@ -257,19 +229,13 @@ public abstract class BaseSdkProperties {
 
     public void removeModuleProperties(Artifact artifact) {
         artifact = stripArtifactId(artifact);
-        if (getModuleArtifact(artifact.getArtifactId()) != null) {
+        String artifactId = artifact.getArtifactId();
+        if (getModuleArtifact(artifactId) != null) {
             Properties newProperties = new Properties();
             newProperties.putAll(properties);
-            for(Object keyObject: properties.keySet()){
-                String key = keyObject.toString();
-                if(key.equals(TYPE_OMOD+"."+artifact.getArtifactId())){
-                    newProperties.remove(key);
-                } else if(key.equals(TYPE_OMOD+"."+artifact.getArtifactId()+"."+TYPE)){
-                    newProperties.remove(key);
-                } else if(key.equals(TYPE_OMOD+"."+artifact.getArtifactId()+"."+GROUP_ID)){
-                    newProperties.remove(key);
-                }
-            }
+            properties.keySet().stream().map(Object::toString)
+                    .filter(key -> key.equals(TYPE_OMOD + "." + artifactId) || key.equals(TYPE_OMOD + "." + artifactId + "." + TYPE) || key.equals(TYPE_OMOD + "." + artifactId + "." + GROUP_ID))
+                    .forEach(newProperties::remove);
             properties = newProperties;
         }
     }
@@ -301,18 +267,14 @@ public abstract class BaseSdkProperties {
     }
 
     public void synchronize(BaseSdkProperties other){
-        for(Object key: getAllKeys()){
-            if (isBaseSdkProperty(key.toString())) {
-                other.properties.put(key, properties.get(key));
-            }
-        }
-        for(Object key: new ArrayList<>(other.getAllKeys())){
-            if(isBaseSdkProperty(key.toString())){
-                if(StringUtils.isBlank(getParam(key.toString()))){
-                    other.properties.remove(key);
-                }
-            }
-        }
+        getAllKeys().stream()
+                .filter(key -> isBaseSdkProperty(key.toString()))
+                .forEach(key -> other.properties.put(key, properties.get(key)));
+
+        new ArrayList<>(other.getAllKeys()).stream()
+                .filter(key -> isBaseSdkProperty(key.toString()))
+                .filter(key -> StringUtils.isBlank(getParam(key.toString())))
+                .forEach(key -> other.properties.remove(key));
     }
 
     private boolean isBaseSdkProperty(String key) {
@@ -320,13 +282,9 @@ public abstract class BaseSdkProperties {
     }
 
 
-    public void setArtifacts(List<Artifact> warArtifacts, List<Artifact> moduleArtifacts){
-        for (Artifact moduleArtifact : moduleArtifacts) {
-            this.setModuleProperties(moduleArtifact);
-        }
-        for (Artifact warArtifact : warArtifacts) {
-            this.setPlatformVersion(warArtifact.getVersion());
-        }
+    public void setArtifacts(List<Artifact> warArtifacts, List<Artifact> moduleArtifacts) {
+        moduleArtifacts.forEach(this::setModuleProperties);
+        warArtifacts.forEach(warArtifact -> this.setPlatformVersion(warArtifact.getVersion()));
     }
 
 }

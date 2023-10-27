@@ -30,10 +30,8 @@ import org.openmrs.maven.plugins.utility.Wizard;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.IntStream;
 
 @Mojo(name = "run-tomcat", requiresProject = false)
 public class RunTomcat extends AbstractMojo {
@@ -135,11 +133,12 @@ public class RunTomcat extends AbstractMojo {
 
 		String warFile = "openmrs.war";
 		File serverPath = server.getServerDirectory();
-		for (File file : serverPath.listFiles()) {
-			if ((file.getName().endsWith(".war"))) {
-				warFile = file.getName();
-				break;
-			}
+		Optional<File> warFileOptional = Arrays.stream(Objects.requireNonNull(serverPath.listFiles()))
+				.filter(file -> file.getName().endsWith(".war"))
+				.findFirst();
+
+		if (warFileOptional.isPresent()) {
+			warFile = warFileOptional.get().getName();
 		}
 
 		if (StringUtils.isNotBlank(server.getContainerId())) {
@@ -201,9 +200,7 @@ public class RunTomcat extends AbstractMojo {
 
 	private void setServerCustomProperties(Server server) {
 		Map<String, String> customProperties = server.getCustomProperties();
-		for (String key : customProperties.keySet()) {
-			System.setProperty(key, customProperties.get(key));
-		}
+		customProperties.keySet().forEach(key -> System.setProperty(key, customProperties.get(key)));
 	}
 
 	protected ClassRealm newTomcatClassLoader() throws MojoExecutionException {
@@ -218,25 +215,22 @@ public class RunTomcat extends AbstractMojo {
 	}
 
 	private void setSystemPropertiesForWatchedProjects(Server server) {
-		Set<Project> watchedProjects = server.getWatchedProjects();
+		List<Project> watchedProjects = new ArrayList<>(server.getWatchedProjects());
 		if (!watchedProjects.isEmpty()) {
 			if (isWatchApi()) {
 				wizard.showMessage("Hot redeployment of API classes and UI framework changes enabled for:");
 			} else {
 				wizard.showMessage("Hot redeployment of UI framework changes enabled for:");
 			}
-			int i = 1;
 			List<String> list = new ArrayList<>();
-			for (Project project : watchedProjects) {
+			IntStream.range(0, watchedProjects.size()).forEach(i -> {
+				Project project = watchedProjects.get(i);
 				System.setProperty("uiFramework.development." + project.getArtifactId(), project.getPath());
-
 				if (isWatchApi()) {
 					System.setProperty(project.getArtifactId() + ".development.directory", project.getPath());
 				}
-				list.add(String.format("%d) %s:%s at %s", i, project.getGroupId(), project.getArtifactId(),
-						project.getPath()));
-				i++;
-			}
+				list.add(String.format("%d) %s:%s at %s", i + 1, project.getGroupId(), project.getArtifactId(), project.getPath()));
+			});
 			wizard.showMessage(StringUtils.join(list.iterator(), "\n"));
 			wizard.showMessage("");
 		}
