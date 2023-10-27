@@ -243,7 +243,7 @@ public class DistroHelper {
 
 			while (entries.hasMoreElements()) {
 				ZipEntry zipEntry = entries.nextElement();
-				if ("openmrs-distro.properties".equals(zipEntry.getName())) {
+				if ("openmrs-distro.properties".equals(zipEntry.getName()) || "distro.properties".equals(zipEntry.getName())) {
 					Properties properties = new Properties();
 					properties.load(zipFile.getInputStream(zipEntry));
 					distroProperties = new DistroProperties(properties);
@@ -260,14 +260,18 @@ public class DistroHelper {
 		return distroProperties;
 	}
 
-	public DistroProperties downloadDistroProperties(File serverPath, Server server) throws MojoExecutionException {
+	public DistroProperties downloadDistroProperties(File serverPath, Server server, String fileType) throws MojoExecutionException {
 		Artifact artifact = new Artifact(server.getDistroArtifactId(), server.getVersion(), server.getDistroGroupId(),
-				"jar");
+				fileType);
 		if (StringUtils.isNotBlank(artifact.getArtifactId())) {
 			return downloadDistroProperties(serverPath, artifact);
 		} else {
 			return null;
 		}
+	}
+
+	public DistroProperties downloadDistroProperties(File serverPath, Server server) throws MojoExecutionException {
+		return downloadDistroProperties(serverPath, server, "jar");
 	}
 
 	/**
