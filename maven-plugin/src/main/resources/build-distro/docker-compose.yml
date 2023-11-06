@@ -1,37 +1,39 @@
-# Generated automatically by openmrs SDK
-version: '2'
+version: "3.7"
 
 services:
   db:
-    image: mysql:5.6
+    image: mariadb:10.8.2
     command: "mysqld --character-set-server=utf8 --collation-server=utf8_general_ci"
     environment:
       MYSQL_DATABASE: openmrs
-      MYSQL_ROOT_PASSWORD: Admin123
-      MYSQL_USER: openmrs
-      MYSQL_PASSWORD: Admin123
+      MYSQL_USER: ${OPENMRS_DB_USER:-openmrs}
+      MYSQL_PASSWORD: ${OPENMRS_DB_PASSWORD:-openmrs}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-openmrs}
     volumes:
-      - ./dbdump:/docker-entrypoint-initdb.d
       - db-data:/var/lib/mysql
 
   web:
+    image: openmrs/openmrs-referenceapplication:${TAG:-nightly}
     build: web
-    image: <distro>:<tag>
     depends_on:
       - db
+    ports:
+      - "8080:8080"
     environment:
-      DB_DATABASE: openmrs
-      DB_HOST: db
-      DB_USERNAME: openmrs
-      DB_PASSWORD: Admin123
-      DB_CREATE_TABLES: 'false'  # change to 'true' if using an empty database
-      DB_AUTO_UPDATE: 'false'    # change to 'true' if using an empty database
-      MODULE_WEB_ADMIN: 'true'   # allow web admin on OpenMRS
+      OMRS_CONFIG_MODULE_WEB_ADMIN: "true"
+      OMRS_CONFIG_AUTO_UPDATE_DATABASE: "true"
+      OMRS_CONFIG_CREATE_TABLES: "true"
+      OMRS_CONFIG_CONNECTION_SERVER: db
+      OMRS_CONFIG_CONNECTION_URL: ${OPENMRS_DB_URL:-jdbc:mysql://localhost:3306/openmrs}
+      OMRS_CONFIG_CONNECTION_DATABASE: ${OPENMRS_DB_NAME:-openmrs}
+      OMRS_CONFIG_CONNECTION_USERNAME: ${OPENMRS_DB_USER:-openmrs}
+      OMRS_CONFIG_CONNECTION_PASSWORD: ${OPENMRS_DB_PASSWORD:-openmrs}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/openmrs"]
+      timeout: 5s
     volumes:
-      - web-data:/usr/local/tomcat/.OpenMRS
-      - /usr/local/tomcat/.OpenMRS/modules/ # used to mount persistent docker volume for modules
-      - /usr/local/tomcat/.OpenMRS/owa/     # used to mount persistent docker volume for owa
+      - openmrs-data:/openmrs/data/
 
 volumes:
   db-data:
-  web-data:
+  openmrs-data:
