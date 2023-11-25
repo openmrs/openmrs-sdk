@@ -174,6 +174,10 @@ public class Run extends AbstractServerTask {
 					" -javaagent:\"" + Server.getServersPath().resolve("springloaded.jar").toAbsolutePath() + "\" -noverify";
 		}
 
+		if(Integer.parseInt(System.getProperty("java.version").split("\\.")[0]) >= 17) {
+			mavenOpts += " --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED";
+		}
+
 		mavenOpts = setDebugPort(mavenOpts, server);
 
 		Properties properties = new Properties();
