@@ -234,6 +234,11 @@
                         <groupId>com.google.code.google-collections</groupId>
                         <artifactId>google-collect</artifactId>
                     </exclusion>
+
+                    <exclusion>
+                        <groupId>com.google.collections</groupId>
+                        <artifactId>google-collections</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
             <dependency>
