@@ -68,6 +68,10 @@ public class Run extends AbstractServerTask {
 	@Parameter(property = "runGoal")
 	private String runGoal;
 
+	@Parameter(property = "jvmArgs")
+	private String jvmArgs;
+
+
 	private ServerHelper serverHelper;
 
 	public void executeTask() throws MojoExecutionException, MojoFailureException {
@@ -175,6 +179,10 @@ public class Run extends AbstractServerTask {
 		}
 
 		mavenOpts = setDebugPort(mavenOpts, server);
+
+		if (StringUtils.isNotBlank(jvmArgs)) {
+			mavenOpts += " " + jvmArgs + " ";
+		}
 
 		Properties properties = new Properties();
 		properties.put("serverId", server.getServerId());
