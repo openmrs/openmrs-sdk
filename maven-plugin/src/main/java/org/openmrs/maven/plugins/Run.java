@@ -68,6 +68,11 @@ public class Run extends AbstractServerTask {
 	@Parameter(property = "runGoal")
 	private String runGoal;
 
+
+	/**
+		Pass JVM arguments to the run command
+	 	example: --add-opens java.base/java.lang=ALL-UNNAMED
+	 */
 	@Parameter(property = "jvmArgs")
 	private String jvmArgs;
 
