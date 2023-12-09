@@ -99,7 +99,7 @@ help:
       - name: "runGoal"
         desc: "Goal to execute when running the server. (defaults to 'org.openmrs.maven.plugins:openmrs-sdk-tomcat9-maven-plugin:{$version}')"
       - name: "DjvmArgs"
-        desc: "Pass JVM arguments to the run command. (example : '--add-opens java.base/java.lang=ALL-UNNAMED')"
+        desc: "Pass JVM arguments to the run command. (example : -DjvmArgs='--add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED')"
 
   - name: "watch"
     desc: "Add a module from the current directory to the list of watched projects. It enables the live-reloading feature for a module."
