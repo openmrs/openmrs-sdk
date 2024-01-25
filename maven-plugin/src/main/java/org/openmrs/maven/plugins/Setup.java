@@ -211,8 +211,13 @@ public class Setup extends AbstractServerTask {
 					Properties frontendProperties;
 					if (server.getVersion().equals(versionsHelper.getLatestSnapshotVersion(artifact))) {
 						frontendProperties = PropertiesUtils.getFrontendPropertiesFromSpaConfigUrl(
-								"https://raw.githubusercontent.com/openmrs/openmrs-distro-referenceapplication/main/frontend/spa-build-config.json");
-					} else {
+								"https://raw.githubusercontent.com/openmrs/openmrs-distro-referenceapplication/main/frontend/spa-assemble-config.json");
+					}
+					else if (new Version(server.getVersion()).higher(new Version("3.0.0-beta.16"))) {
+						frontendProperties = PropertiesUtils.getFrontendPropertiesFromSpaConfigUrl(
+								"https://raw.githubusercontent.com/openmrs/openmrs-distro-referenceapplication/" + server.getVersion() +"/frontend/spa-assemble-config.json");
+					}
+					else {
 						frontendProperties = PropertiesUtils.getFrontendPropertiesFromSpaConfigUrl(
 								"https://raw.githubusercontent.com/openmrs/openmrs-distro-referenceapplication/"+ server.getVersion() +"/frontend/spa-build-config.json");
 					}
