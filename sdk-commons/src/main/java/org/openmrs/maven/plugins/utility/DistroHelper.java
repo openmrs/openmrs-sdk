@@ -11,6 +11,7 @@ import org.twdata.maven.mojoexecutor.MojoExecutor;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -188,7 +189,11 @@ public class DistroHelper {
 	}
 
 	public File downloadDistro(File path, Artifact artifact) throws MojoExecutionException {
-		artifact.setDestFileName("openmrs-distro.jar");
+		return downloadDistro(path, artifact, "openmrs-distro.jar");
+	}
+
+	public File downloadDistro(File path, Artifact artifact, String fileName) throws MojoExecutionException {
+		artifact.setDestFileName(fileName);
 		List<MojoExecutor.Element> artifactItems = new ArrayList<>();
 		MojoExecutor.Element element = artifact.toElement(path.toString());
 		artifactItems.add(element);
@@ -440,6 +445,30 @@ public class DistroHelper {
 				|| previous.getArtifactId() == null || next.getArtifactId() == null
 				|| previous.getVersion() == null || next.getVersion() == null
 				|| !isSameArtifact(previous, next);
+	}
+
+	public Properties getFrontendProperties(Server server) throws MojoExecutionException {
+		Artifact artifact = new Artifact("referenceapplication-frontend", server.getVersion(), server.getDistroGroupId(), "zip");
+		File frontendDistroFile = downloadDistro(server.getServerDirectory(), artifact, "frontend.zip");
+		Properties frontendProperties = new Properties();
+		try (ZipFile zipFile = new ZipFile(frontendDistroFile)) {
+			Enumeration<? extends ZipEntry> entries = zipFile.entries();
+			while (entries.hasMoreElements()) {
+				ZipEntry zipEntry = entries.nextElement();
+				if ("spa-assemble-config.json".equals(zipEntry.getName())) {
+					try (InputStream inputStream = zipFile.getInputStream(zipEntry)){
+						frontendProperties = PropertiesUtils.extractFrontendProperties(inputStream);
+					}
+                }
+			}
+		}
+		catch (IOException e) {
+			throw new MojoExecutionException("Could not read \"" + frontendDistroFile.getAbsolutePath() + "\" " + e.getMessage(), e);
+		}
+		finally {
+			frontendDistroFile.delete();
+		}
+		return frontendProperties;
 	}
 
 }
