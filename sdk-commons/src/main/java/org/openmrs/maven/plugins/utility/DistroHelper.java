@@ -1,6 +1,7 @@
 package org.openmrs.maven.plugins.utility;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.BuildPluginManager;
@@ -12,6 +13,7 @@ import org.twdata.maven.mojoexecutor.MojoExecutor;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -457,7 +459,7 @@ public class DistroHelper {
 				ZipEntry zipEntry = entries.nextElement();
 				if ("spa-assemble-config.json".equals(zipEntry.getName())) {
 					try (InputStream inputStream = zipFile.getInputStream(zipEntry)){
-						frontendProperties = PropertiesUtils.extractFrontendProperties(inputStream);
+						frontendProperties = PropertiesUtils.getFrontendPropertiesFromJson(inputStream);
 					}
                 }
 			}

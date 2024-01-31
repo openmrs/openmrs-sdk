@@ -155,7 +155,7 @@ public class PropertiesUtils {
 			HttpResponse response = httpClient.execute(request);
 			HttpEntity entity = response.getEntity();
 			try (InputStream inputStream = entity.getContent()) {
-				properties = extractFrontendProperties(inputStream);
+				properties = getFrontendPropertiesFromJson(inputStream);
 			}
 			catch (IOException e) {
 				log.error(e.getMessage(), e);
@@ -167,12 +167,14 @@ public class PropertiesUtils {
 		return properties;
 	}
 
-	public static Properties extractFrontendProperties(InputStream inputStream) throws IOException {
-		Properties properties = new Properties();
+	public static Properties getFrontendPropertiesFromJson(InputStream inputStream) throws IOException {
 		String jsonData = IOUtils.toString(inputStream, StandardCharsets.UTF_8);
+		Properties properties = new Properties();
 		ObjectMapper objectMapper = new ObjectMapper();
 		JsonNode jsonNode = objectMapper.readTree(jsonData);
-		properties.setProperty("spa.core", jsonNode.get("coreVersion").asText("next"));
+		if (jsonNode.has("coreVersion")) {
+			properties.setProperty("spa.core", jsonNode.get("coreVersion").asText());
+		}
 		JsonNode frontendModules = jsonNode.get("frontendModules");
 		Iterator<Map.Entry<String, JsonNode>> modulesIterator = frontendModules.fields();
 		while (modulesIterator.hasNext()) {
