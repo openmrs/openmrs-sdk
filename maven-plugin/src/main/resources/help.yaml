@@ -276,5 +276,5 @@ help:
     options:
       - name: "DserverId"
         desc: "Unique id of a server."
-      - name: "output"
+      - name: "Doutput"
         desc: "Specify the location where the file should be saved. (defaults to '. (current location)')"
