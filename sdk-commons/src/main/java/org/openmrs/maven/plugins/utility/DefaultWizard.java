@@ -668,8 +668,13 @@ public class DefaultWizard implements Wizard {
 	@Override
 	public void promptForO3RefAppVersionIfMissing(Server server, VersionsHelper versionsHelper)
 			throws MojoExecutionException {
+		promptForO3RefAppVersionIfMissing(server, versionsHelper, null);
+	}
+
+	public void promptForO3RefAppVersionIfMissing(Server server, VersionsHelper versionsHelper, String customMessage)
+			throws MojoExecutionException {
 		if (server.getVersion() == null) {
-			String choice = promptForO3Version(versionsHelper);
+			String choice = promptForO3Version(versionsHelper, customMessage);
 			Artifact distro = DistroHelper.parseDistroArtifact(choice, versionsHelper);
 			server.setVersion(distro.getVersion());
 			server.setDistroArtifactId(distro.getArtifactId());
@@ -681,8 +686,12 @@ public class DefaultWizard implements Wizard {
 		return promptForRefAppVersion(versionsHelper, null);
 	}
 
+	public String promptForO3Version(VersionsHelper versionsHelper, String customMessage) throws MojoExecutionException {
+		return promptForO3RefAppVersion(versionsHelper, customMessage);
+	}
+
 	public String promptForO3Version(VersionsHelper versionsHelper) throws MojoExecutionException {
-		return promptForO3RefAppVersion(versionsHelper, null);
+		return promptForO3Version(versionsHelper, null);
 	}
 
 	@Override
