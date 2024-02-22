@@ -10,7 +10,7 @@
 <!--- Want a new feature or change? Discuss it in an issue first! -->
 <!--- Found a bug? Point us to the issue/or create one, so we can reproduce it! -->
 <!--- Just add the issue number at the end: -->
-see https://issues.openmrs.org/browse/SDK-
+see https://openmrs.atlassian.net/browse/SDK-
 
 ## Checklist: I completed these to help reviewers :)
 <!--- Put an `x` in the box if you did the task -->
