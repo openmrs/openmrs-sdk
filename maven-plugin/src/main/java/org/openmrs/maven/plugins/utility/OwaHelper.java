@@ -18,6 +18,8 @@ import org.apache.maven.project.MavenProject;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.NodeDistro;
 import org.openmrs.maven.plugins.model.PackageJson;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.twdata.maven.mojoexecutor.MojoExecutor;
 
 import java.io.File;
@@ -62,6 +64,8 @@ public class OwaHelper {
 	private BuildPluginManager pluginManager;
 
 	private Wizard wizard;
+
+	private static final Logger logger = LoggerFactory.getLogger(OwaHelper.class);
 
 	//enable chaining
 	public OwaHelper setInstallationDir(File installationDir) {
@@ -300,7 +304,7 @@ public class OwaHelper {
 			lines = IOUtils.readLines(process.getInputStream(), StandardCharsets.UTF_8);
 			process.waitFor();
 		} catch (InterruptedException | IOException e) {
-			System.out.println(e.getMessage());
+			logger.error(e.getMessage(), e);
 		}
 
 		if (process != null && process.exitValue() == 0) {

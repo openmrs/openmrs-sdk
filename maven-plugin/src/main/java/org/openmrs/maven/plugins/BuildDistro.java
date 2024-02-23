@@ -8,8 +8,11 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.eclipse.jgit.api.errors.GitAPIException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
+import org.eclipse.jgit.api.CloneCommand;
+import org.eclipse.jgit.api.Git;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.Server;
@@ -29,8 +32,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Create docker configuration for distributions.
+ */
 @Mojo(name = "build-distro", requiresProject = false)
 public class BuildDistro extends AbstractTask {
 
@@ -64,16 +71,41 @@ public class BuildDistro extends AbstractTask {
 
 	private static final String DOCKER_COMPOSE_OVERRIDE_YML = "docker-compose.override.yml";
 
+	private static final String O2_DISTRIBUTION = "2.x Distribution";
+
+	private static final String O3_DISTRIBUTION = "O3 Distribution";
+
 	private static final Logger log = LoggerFactory.getLogger(BuildDistro.class);
 
+	/**
+	 * Path to the openmrs-distro.properties file.
+	 */
 	@Parameter(property = "distro")
 	private String distro;
 
+	/**
+	 * Directory for generated files. (default to 'docker')
+	 */
 	@Parameter(property = "dir")
 	private String dir;
 
+	/**
+	 * SQL script for database configuration.
+	 */
 	@Parameter(property = "dbSql")
 	private String dbSql;
+
+	/**
+	 * Causes npm to completely ignore peerDependencies
+	 */
+	@Parameter(property = "ignorePeerDependencies", defaultValue = "true")
+	private boolean ignorePeerDependencies;
+
+	/**
+	 * Override the reuseNodeCache property that controls whether the SDK reuse the NPM cache after the setup
+	 */
+	@Parameter(property = "reuseNodeCache")
+	public Boolean overrideReuseNodeCache;
 
 	/**
 	 * Instead of creating a `modules` folder in the distro directory, will put modules inside
@@ -82,6 +114,9 @@ public class BuildDistro extends AbstractTask {
 	@Parameter(defaultValue = "false", property = "bundled")
 	private boolean bundled;
 
+	/**
+	 * Flag to indicate whether to delete the target directory or not.
+	 */
 	@Parameter(defaultValue = "false", property = "reset")
 	private boolean reset;
 
@@ -123,14 +158,42 @@ public class BuildDistro extends AbstractTask {
 		if (distroProperties == null) {
 			Server server = new Server.ServerBuilder().build();
 
-			wizard.promptForRefAppVersionIfMissing(server, versionsHelper, DISTRIBUTION_VERSION_PROMPT);
-			if (DistroHelper.isRefapp2_3_1orLower(server.getDistroArtifactId(), server.getVersion())) {
-				distroProperties = new DistroProperties(server.getVersion());
-			} else {
-				distroProperties = distroHelper.downloadDistroProperties(buildDirectory, server);
-				distroArtifact = new Artifact(server.getDistroArtifactId(), server.getVersion(), server.getDistroGroupId(),
-						"jar");
+			List<String> options = new ArrayList<>();
+			options.add(O2_DISTRIBUTION);
+			options.add(O3_DISTRIBUTION);
+
+			String choice = wizard.promptForMissingValueWithOptions("You can setup following servers", null, null, options);
+			switch (choice) {
+				case O2_DISTRIBUTION:
+					wizard.promptForRefAppVersionIfMissing(server, versionsHelper, DISTRIBUTION_VERSION_PROMPT);
+					if (DistroHelper.isRefapp2_3_1orLower(server.getDistroArtifactId(), server.getVersion())) {
+						distroProperties = new DistroProperties(server.getVersion());
+					} else {
+						distroProperties = distroHelper.downloadDistroProperties(buildDirectory, server);
+						distroArtifact = new Artifact(server.getDistroArtifactId(), server.getVersion(), server.getDistroGroupId(),
+								"jar");
+					}
+					break;
+				case O3_DISTRIBUTION:
+					wizard.promptForO3RefAppVersionIfMissing(server, versionsHelper);
+					Artifact artifact = new Artifact(server.getDistroArtifactId(), server.getVersion(), server.getDistroGroupId(), "zip");
+					try {
+						String gitHubUrl = "https://github.com/openmrs/openmrs-distro-referenceapplication";
+						CloneCommand cloneCommand = Git.cloneRepository().setURI(gitHubUrl)
+								.setDirectory(new File(dir));
+						if (!server.getVersion().equals(versionsHelper.getLatestSnapshotVersion(artifact))) {
+							cloneCommand.setBranch(server.getVersion());
+						}
+						wizard.showMessage("Cloning from " + gitHubUrl);
+						cloneCommand.call();
+					} catch (GitAPIException e) {
+						throw new RuntimeException(e);
+					}
+					wizard.showMessage("The '"+ artifact.getArtifactId() +" " + artifact.getVersion() +
+							"' distribution created! To start up the server run 'docker-compose up' from" + buildDirectory.getAbsolutePath());
+					return;
 			}
+
 		}
 
 		if (distroProperties == null) {
@@ -249,7 +312,7 @@ public class BuildDistro extends AbstractTask {
 			moduleInstaller.installModules(distroProperties.getModuleArtifacts(distroHelper, targetDirectory),
 					modulesDir.getAbsolutePath());
 
-			spaInstaller.installFromDistroProperties(web, distroProperties);
+			spaInstaller.installFromDistroProperties(web, distroProperties, ignorePeerDependencies, overrideReuseNodeCache);
 
 			File owasDir = new File(web, "owa");
 			owasDir.mkdir();
@@ -258,8 +321,8 @@ public class BuildDistro extends AbstractTask {
 
 		wizard.showMessage("Creating Docker Compose configuration...\n");
 		String distroVersion = adjustImageName(distroProperties.getVersion());
-		writeDockerCompose(targetDirectory, distroName, distroVersion);
-		writeReadme(targetDirectory, distroName, distroVersion);
+		writeDockerCompose(targetDirectory, distroVersion);
+		writeReadme(targetDirectory, distroVersion);
 		copyBuildDistroResource("setenv.sh", new File(web, "setenv.sh"));
 		copyBuildDistroResource("startup.sh", new File(web, "startup.sh"));
 		copyBuildDistroResource("wait-for-it.sh", new File(web, "wait-for-it.sh"));
@@ -345,18 +408,17 @@ public class BuildDistro extends AbstractTask {
 		}
 	}
 
-	private void writeDockerCompose(File targetDirectory, String distro, String version) throws MojoExecutionException {
-		writeTemplatedFile(targetDirectory, distro, version, DOCKER_COMPOSE_PATH, DOCKER_COMPOSE_YML);
-		writeTemplatedFile(targetDirectory, distro, version, DOCKER_COMPOSE_OVERRIDE_PATH, DOCKER_COMPOSE_OVERRIDE_YML);
-		writeTemplatedFile(targetDirectory, distro, version, DOCKER_COMPOSE_PROD_PATH, DOCKER_COMPOSE_PROD_YML);
+	private void writeDockerCompose(File targetDirectory, String version) throws MojoExecutionException {
+		writeTemplatedFile(targetDirectory, version, DOCKER_COMPOSE_PATH, DOCKER_COMPOSE_YML);
+		writeTemplatedFile(targetDirectory, version, DOCKER_COMPOSE_OVERRIDE_PATH, DOCKER_COMPOSE_OVERRIDE_YML);
+		writeTemplatedFile(targetDirectory, version, DOCKER_COMPOSE_PROD_PATH, DOCKER_COMPOSE_PROD_YML);
 	}
 
-	private void writeReadme(File targetDirectory, String distro, String version) throws MojoExecutionException {
-		writeTemplatedFile(targetDirectory, distro, version, README_PATH, "README.md");
+	private void writeReadme(File targetDirectory, String version) throws MojoExecutionException {
+		writeTemplatedFile(targetDirectory, version, README_PATH, "README.md");
 	}
 
-	private void writeTemplatedFile(File targetDirectory, String distro, String version,
-			String path, String filename) throws MojoExecutionException {
+	private void writeTemplatedFile(File targetDirectory, String version, String path, String filename) throws MojoExecutionException {
 		URL composeUrl = getClass().getClassLoader().getResource(path);
 		if (composeUrl == null) {
 			throw new MojoExecutionException("Failed to find file '" + path + "' in classpath");
@@ -365,8 +427,7 @@ public class BuildDistro extends AbstractTask {
 		if (!compose.exists()) {
 			try (InputStream inputStream = composeUrl.openStream(); FileWriter composeWriter = new FileWriter(compose)) {
 				String content = IOUtils.toString(inputStream, StandardCharsets.UTF_8);
-				content = content.replaceAll("<distro>", distro);
-				content = content.replaceAll("<tag>", version);
+				content = content.replaceAll("\\$\\{TAG:-nightly}", version);
 				composeWriter.write(content);
 			}
 			catch (IOException e) {

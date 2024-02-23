@@ -8,7 +8,7 @@ import java.net.ServerSocket;
 
 public class ServerHelper {
     private final Wizard wizard;
-    private final Logger log = LoggerFactory.getLogger(ServerHelper.class);
+    private static final Logger log = LoggerFactory.getLogger(ServerHelper.class);
 
     private static final int MAX_USHORT_VALUE = 65535;
 

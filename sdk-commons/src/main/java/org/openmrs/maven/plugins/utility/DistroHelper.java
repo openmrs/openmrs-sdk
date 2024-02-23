@@ -1,6 +1,7 @@
 package org.openmrs.maven.plugins.utility;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.BuildPluginManager;
@@ -11,6 +12,8 @@ import org.twdata.maven.mojoexecutor.MojoExecutor;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -188,7 +191,11 @@ public class DistroHelper {
 	}
 
 	public File downloadDistro(File path, Artifact artifact) throws MojoExecutionException {
-		artifact.setDestFileName("openmrs-distro.jar");
+		return downloadDistro(path, artifact, "openmrs-distro.jar");
+	}
+
+	public File downloadDistro(File path, Artifact artifact, String fileName) throws MojoExecutionException {
+		artifact.setDestFileName(fileName);
 		List<MojoExecutor.Element> artifactItems = new ArrayList<>();
 		MojoExecutor.Element element = artifact.toElement(path.toString());
 		artifactItems.add(element);
@@ -243,7 +250,7 @@ public class DistroHelper {
 
 			while (entries.hasMoreElements()) {
 				ZipEntry zipEntry = entries.nextElement();
-				if ("openmrs-distro.properties".equals(zipEntry.getName())) {
+				if ("openmrs-distro.properties".equals(zipEntry.getName()) || "distro.properties".equals(zipEntry.getName())) {
 					Properties properties = new Properties();
 					properties.load(zipFile.getInputStream(zipEntry));
 					distroProperties = new DistroProperties(properties);
@@ -260,14 +267,18 @@ public class DistroHelper {
 		return distroProperties;
 	}
 
-	public DistroProperties downloadDistroProperties(File serverPath, Server server) throws MojoExecutionException {
+	public DistroProperties downloadDistroProperties(File serverPath, Server server, String fileType) throws MojoExecutionException {
 		Artifact artifact = new Artifact(server.getDistroArtifactId(), server.getVersion(), server.getDistroGroupId(),
-				"jar");
+				fileType);
 		if (StringUtils.isNotBlank(artifact.getArtifactId())) {
 			return downloadDistroProperties(serverPath, artifact);
 		} else {
 			return null;
 		}
+	}
+
+	public DistroProperties downloadDistroProperties(File serverPath, Server server) throws MojoExecutionException {
+		return downloadDistroProperties(serverPath, server, "jar");
 	}
 
 	/**
@@ -436,6 +447,30 @@ public class DistroHelper {
 				|| previous.getArtifactId() == null || next.getArtifactId() == null
 				|| previous.getVersion() == null || next.getVersion() == null
 				|| !isSameArtifact(previous, next);
+	}
+
+	public Properties getFrontendProperties(Server server) throws MojoExecutionException {
+		Artifact artifact = new Artifact("referenceapplication-frontend", server.getVersion(), server.getDistroGroupId(), "zip");
+		File frontendDistroFile = downloadDistro(server.getServerDirectory(), artifact, "frontend.zip");
+		Properties frontendProperties = new Properties();
+		try (ZipFile zipFile = new ZipFile(frontendDistroFile)) {
+			Enumeration<? extends ZipEntry> entries = zipFile.entries();
+			while (entries.hasMoreElements()) {
+				ZipEntry zipEntry = entries.nextElement();
+				if ("spa-assemble-config.json".equals(zipEntry.getName())) {
+					try (InputStream inputStream = zipFile.getInputStream(zipEntry)){
+						frontendProperties = PropertiesUtils.getFrontendPropertiesFromJson(inputStream);
+					}
+                }
+			}
+		}
+		catch (IOException e) {
+			throw new MojoExecutionException("Could not read \"" + frontendDistroFile.getAbsolutePath() + "\" " + e.getMessage(), e);
+		}
+		finally {
+			frontendDistroFile.delete();
+		}
+		return frontendProperties;
 	}
 
 }

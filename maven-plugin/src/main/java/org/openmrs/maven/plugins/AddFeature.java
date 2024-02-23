@@ -23,6 +23,9 @@ import static org.twdata.maven.mojoexecutor.MojoExecutor.groupId;
 import static org.twdata.maven.mojoexecutor.MojoExecutor.plugin;
 import static org.twdata.maven.mojoexecutor.MojoExecutor.version;
 
+/**
+ * Enhance an existing module by adding a feature
+ */
 @Mojo(name = "add-feature", requiresProject = false)
 public class AddFeature extends AbstractTask {
 

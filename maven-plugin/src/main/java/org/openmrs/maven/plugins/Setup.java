@@ -41,6 +41,9 @@ import org.openmrs.maven.plugins.utility.PropertiesUtils;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 import org.openmrs.maven.plugins.utility.ServerHelper;
 
+/**
+ * Set up a new instance of OpenMRS server. It can be used for setting up a platform or a distribution. It prompts for any missing, but required parameters.
+ */
 @Mojo(name = "setup", requiresProject = false)
 public class Setup extends AbstractServerTask {
 
@@ -148,6 +151,9 @@ public class Setup extends AbstractServerTask {
 	@Parameter(property = "ignorePeerDependencies", defaultValue = "true")
 	private boolean ignorePeerDependencies;
 
+	@Parameter(property = "reuseNodeCache")
+	public Boolean overrideReuseNodeCache;
+
 	private ServerHelper serverHelper;
 
 	public Setup() {
@@ -206,10 +212,10 @@ public class Setup extends AbstractServerTask {
 					Artifact artifact = new Artifact(server.getDistroArtifactId(), server.getVersion(),
 							server.getDistroGroupId(), "zip");
 					Properties frontendProperties;
-					if (server.getVersion().equals(versionsHelper.getLatestSnapshotVersion(artifact))) {
-						frontendProperties = PropertiesUtils.getFrontendPropertiesFromSpaConfigUrl(
-								"https://raw.githubusercontent.com/openmrs/openmrs-distro-referenceapplication/main/frontend/spa-build-config.json");
-					} else {
+					if (new Version(server.getVersion()).higher(new Version("3.0.0-beta.16"))) {
+						frontendProperties = distroHelper.getFrontendProperties(server);
+					}
+					else {
 						frontendProperties = PropertiesUtils.getFrontendPropertiesFromSpaConfigUrl(
 								"https://raw.githubusercontent.com/openmrs/openmrs-distro-referenceapplication/"+ server.getVersion() +"/frontend/spa-build-config.json");
 					}
@@ -288,7 +294,7 @@ public class Setup extends AbstractServerTask {
 			moduleInstaller.installModulesForDistro(server, distroProperties, distroHelper);
 			setConfigFolder(server, distroProperties);
 			if (spaInstaller != null) {
-				spaInstaller.installFromDistroProperties(server.getServerDirectory(), distroProperties, ignorePeerDependencies);
+				spaInstaller.installFromDistroProperties(server.getServerDirectory(), distroProperties, ignorePeerDependencies, overrideReuseNodeCache);
 			}
 			installOWAs(server, distroProperties);
 		} else {

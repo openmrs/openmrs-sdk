@@ -36,6 +36,10 @@ help:
         desc: "If 'true' run the server after the setup (defaults to 'false')."
       - name: "DappShellVersion"
         desc: "Override the OpenMRS SPA core version (defaults to 'next')."
+      - name: "DignorePeerDependencies"
+        desc: "Causes npm to completely ignore peerDependencies (defaults to 'true')."
+      - name: "DreuseNodeCache"
+        desc: "Override the reuseNodeCache property that controls whether the SDK reuse the NPM cache after the setup."
 
   - name: "deploy"
     desc: "Deploy a module/distribution/platform to a server. It can be used for deploying a new artifact or upgrading/downgrading an artifact, which was previously deployed."
@@ -52,6 +56,10 @@ help:
         desc: "OpenMRS Distribution to set up in the format 'groupId:artifactId:version'. You can skip groupId, if it is 'org.openmrs.distro'. You can also give Path to distro.properties file"
       - name: "Dowa"
         desc: "Owa property in the format 'owa-name:version'"
+      - name: "DignorePeerDependencies"
+        desc: "Causes npm to completely ignore peerDependencies (defaults to 'true')."
+      - name: "DreuseNodeCache"
+        desc: "Override the reuseNodeCache property that controls whether the SDK reuse the NPM cache after the setup."
 
   - name: "undeploy"
     desc: "Undeploy a module from a server."
@@ -90,6 +98,8 @@ help:
         desc: "Flag to indicate whether to build server's watched projects, OWA projects, or node projects. (defaults to 'false')"
       - name: "runGoal"
         desc: "Goal to execute when running the server. (defaults to 'org.openmrs.maven.plugins:openmrs-sdk-tomcat9-maven-plugin:{$version}')"
+      - name: "DjvmArgs"
+        desc: "Pass JVM arguments to the run command. (example : -DjvmArgs='--add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED')"
 
   - name: "watch"
     desc: "Add a module from the current directory to the list of watched projects. It enables the live-reloading feature for a module."
@@ -148,6 +158,10 @@ help:
         desc: "Flag to indicate whether to put modules inside the war file in '/webapp/src/main/webapp/WEB-INF/bundledModules'. (defaults to 'false')"
       - name: "reset"
         desc: "Flag to indicate whether to delete the target directory or not. (defaults to 'false')"
+      - name: "DignorePeerDependencies"
+        desc: "Causes npm to completely ignore peerDependencies (defaults to 'true')."
+      - name: "DreuseNodeCache"
+        desc: "Override the reuseNodeCache property that controls whether the SDK reuse the NPM cache after the setup."
 
   - name: "clone"
     desc: "Clone any OpenMRS module repository"
@@ -248,9 +262,19 @@ help:
     options:
       - name: "DserverId"
         desc: "Unique id of a server."
+      - name: "DreuseNodeCache"
+        desc: "Controls whether the SDK reuse the NPM cache after the setup. (defaults to 'false')"
 
   - name: "watch-owa"
     desc: "Watch OWA"
     options:
       - name: "DserverId"
         desc: "Unique id of a server."
+
+  - name: "generate-distro"
+    desc: "Generates an openmrs-distro.properties file for a specific version of OpenMRS Distro"
+    options:
+      - name: "DserverId"
+        desc: "Unique id of a server."
+      - name: "Doutput"
+        desc: "Specify the location where the file should be saved. (defaults to '. (current location)')"

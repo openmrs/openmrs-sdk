@@ -101,6 +101,9 @@ public class CreateProject extends AbstractTask {
 	@Parameter(defaultValue = "org.openmrs.maven.archetypes:", property = "filter")
 	private String filter;
 
+	/**
+	 * The output directory.
+	 */
 	@Parameter(defaultValue = "${project.basedir}", property = "outputDirectory")
 	private File outputDirectory;
 

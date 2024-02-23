@@ -9,10 +9,17 @@ import org.openmrs.maven.plugins.model.Project;
 
 import java.io.File;
 
+/**
+ * Add a module from the current directory to the list of watched projects.
+ * It enables the live-reloading feature for a module.
+ */
 @Mojo(name = "watch", requiresProject = false)
 public class Watch extends AbstractServerTask {
 
-	@Parameter(property = "serverId")
+    /**
+     * Unique id of a server.
+     */
+    @Parameter(property = "serverId")
     private String serverId;
 
 	@Override

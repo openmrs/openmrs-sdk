@@ -9,6 +9,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Watch OWA
+ */
 @Mojo(name = "watch-owa", requiresProject = false)
 public class WatchOwa extends AbstractServerTask {
 

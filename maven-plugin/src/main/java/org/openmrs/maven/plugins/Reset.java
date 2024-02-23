@@ -15,6 +15,9 @@ import org.openmrs.maven.plugins.utility.SDKConstants;
 import java.io.IOException;
 import java.sql.SQLException;
 
+/**
+ * Reset the server and its database to the initial state.
+ */
 @Mojo(name = "reset", requiresProject = false)
 public class Reset extends AbstractServerTask {
 

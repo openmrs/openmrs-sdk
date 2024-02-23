@@ -7,6 +7,9 @@ import org.openmrs.maven.plugins.model.Project;
 
 import java.util.Set;
 
+/**
+ * Display server details including the list of watched modules.
+ */
 @Mojo(name = "info", requiresProject = false)
 public class Info extends AbstractServerTask {
 

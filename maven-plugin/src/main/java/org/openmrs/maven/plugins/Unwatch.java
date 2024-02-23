@@ -9,12 +9,21 @@ import org.openmrs.maven.plugins.model.Project;
 
 import java.io.File;
 
+/**
+ * Remove a module from the list of watched projects. It disabled the live-reloading feature for a module.
+ */
 @Mojo(name = "unwatch", requiresProject = false)
 public class Unwatch extends AbstractServerTask {
 
-    @Parameter(property = "artifactId")
+	/**
+	 * Artifact id of a module to unwatch.
+	 */
+	@Parameter(property = "artifactId")
     private String artifactId;
 
+	/**
+	 * Group id of a module to unwatch. It is optional if artifact id is unambiguous.
+	 */
     @Parameter(property = "groupId")
     private String groupId;
 

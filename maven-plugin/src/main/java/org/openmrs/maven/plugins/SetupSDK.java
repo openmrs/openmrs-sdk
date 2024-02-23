@@ -2,6 +2,7 @@ package org.openmrs.maven.plugins;
 
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
 import org.openmrs.maven.plugins.model.SdkStatistics;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.utility.SDKConstants;
@@ -13,9 +14,24 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Path;
+import java.util.Properties;
 
+import static org.openmrs.maven.plugins.utility.PropertiesUtils.getSdkProperties;
+import static org.openmrs.maven.plugins.utility.PropertiesUtils.savePropertiesChangesToFile;
+
+/**
+ * Setup the OpenMRS SDK
+ */
 @Mojo(name = "setup-sdk", requiresProject = false)
 public class SetupSDK extends AbstractTask {
+
+	/**
+	 * Controls whether the SDK reuse the Node cache after the setup.
+	 * By default, this is set to 'false' to save storage space.
+	 * If set to 'true', the SDK will reuse the existing NPM cache
+	 */
+	@Parameter(defaultValue = "false", property = "reuseNodeCache")
+	private boolean reuseNodeCache;
 
 	private static final String SUCCESS_TEMPLATE = "SDK installed successfully, settings file: %s";
 
@@ -46,6 +62,10 @@ public class SetupSDK extends AbstractTask {
 		catch (IOException e) {
 			throw new MojoExecutionException(e.getMessage());
 		}
+		Properties sdkProperties = getSdkProperties();
+		File sdkPropertiesFile = Server.getServersPath().resolve(SDKConstants.OPENMRS_SDK_PROPERTIES).toFile();
+		sdkProperties.put("reuseNodeCache", String.valueOf(reuseNodeCache));
+		savePropertiesChangesToFile(sdkProperties, sdkPropertiesFile);
 	}
 
 	private void initSdkStatsFile() throws MojoExecutionException {

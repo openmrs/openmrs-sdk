@@ -5,8 +5,10 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Enumeration;
 import java.util.Iterator;
@@ -25,6 +27,7 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.openmrs.maven.plugins.model.Artifact;
+import org.openmrs.maven.plugins.model.Server;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -152,17 +155,7 @@ public class PropertiesUtils {
 			HttpResponse response = httpClient.execute(request);
 			HttpEntity entity = response.getEntity();
 			try (InputStream inputStream = entity.getContent()) {
-				String jsonData = IOUtils.toString(inputStream, StandardCharsets.UTF_8);
-				ObjectMapper objectMapper = new ObjectMapper();
-				JsonNode jsonNode = objectMapper.readTree(jsonData);
-				JsonNode frontendModules = jsonNode.get("frontendModules");
-				Iterator<Map.Entry<String, JsonNode>> modulesIterator = frontendModules.fields();
-				while (modulesIterator.hasNext()) {
-					Map.Entry<String, JsonNode> moduleEntry = modulesIterator.next();
-					String moduleName = moduleEntry.getKey();
-					String moduleVersion = moduleEntry.getValue().asText();
-					properties.setProperty("spa.frontendModules." + moduleName, moduleVersion);
-				}
+				properties = getFrontendPropertiesFromJson(inputStream);
 			}
 			catch (IOException e) {
 				log.error(e.getMessage(), e);
@@ -170,6 +163,25 @@ public class PropertiesUtils {
 		}
 		catch (IOException e) {
 			log.error(e.getMessage(), e);
+		}
+		return properties;
+	}
+
+	public static Properties getFrontendPropertiesFromJson(InputStream inputStream) throws IOException {
+		String jsonData = IOUtils.toString(inputStream, StandardCharsets.UTF_8);
+		Properties properties = new Properties();
+		ObjectMapper objectMapper = new ObjectMapper();
+		JsonNode jsonNode = objectMapper.readTree(jsonData);
+		if (jsonNode.has("coreVersion")) {
+			properties.setProperty("spa.core", jsonNode.get("coreVersion").asText());
+		}
+		JsonNode frontendModules = jsonNode.get("frontendModules");
+		Iterator<Map.Entry<String, JsonNode>> modulesIterator = frontendModules.fields();
+		while (modulesIterator.hasNext()) {
+			Map.Entry<String, JsonNode> moduleEntry = modulesIterator.next();
+			String moduleName = moduleEntry.getKey();
+			String moduleVersion = moduleEntry.getValue().asText();
+			properties.setProperty("spa.frontendModules." + moduleName, moduleVersion);
 		}
 		return properties;
 	}
@@ -235,6 +247,40 @@ public class PropertiesUtils {
 	}
 
 	/**
+	 * Retrieves the OpenMRS SDK properties from sdk.properties file
+	 *
+	 * @return A {@link Properties} object containing the OpenMRS SDK properties, or an empty {@link Properties} object
+	 *         if the SDK properties file does not exist.
+	 * @throws MojoExecutionException If there is an error during the execution of this method, such as file I/O errors.
+	 */
+	public static Properties getSdkProperties() throws MojoExecutionException {
+		File sdkFile = Server.getServersPath().resolve(SDKConstants.OPENMRS_SDK_PROPERTIES).toFile();
+		if (sdkFile.exists()){
+			return loadPropertiesFromFile(sdkFile);
+		}
+		return new Properties();
+	}
+
+	/**
+	 * Saves the provided properties to a file.
+	 *
+	 * @param properties The {@link Properties} to be saved to the file.
+	 * @param file       The {@link File} where the properties will be saved.
+	 * @throws MojoExecutionException If an {@link IOException} occurs during the file writing process,
+	 *                               or if there is an issue with the provided properties or file.
+	 */
+	public static void savePropertiesChangesToFile(Properties properties, File file)
+			throws MojoExecutionException {
+		try (OutputStream fos = new FileOutputStream(file)) {
+			properties.store(fos, "SDK Properties file");
+		}
+		catch (IOException e) {
+			throw new MojoExecutionException(
+					"An exception occurred while saving properties to " + file.getAbsolutePath() + " " + e.getMessage(), e);
+		}
+	}
+
+	/**
 	 * Parses an XML document from the specified URL and returns the corresponding Document object.
 	 *
 	 * @param url The URL of the XML document.
@@ -250,5 +296,4 @@ public class PropertiesUtils {
 		document.getDocumentElement().normalize();
 		return document;
 	}
-
 }

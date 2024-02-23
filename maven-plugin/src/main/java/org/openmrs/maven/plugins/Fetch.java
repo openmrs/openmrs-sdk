@@ -24,6 +24,9 @@ import static org.twdata.maven.mojoexecutor.MojoExecutor.name;
 import static org.twdata.maven.mojoexecutor.MojoExecutor.plugin;
 import static org.twdata.maven.mojoexecutor.MojoExecutor.version;
 
+/**
+ * Fetch any OpenMRS module or OWA.
+ */
 @Mojo(name = "fetch", requiresProject = false)
 public class Fetch extends AbstractTask {
 
@@ -35,18 +38,33 @@ public class Fetch extends AbstractTask {
 
 	private static final String DEFAULT_GROUP_ID = "org.openmrs.module";
 
+	/**
+	 * artifactId of the module you want to fetch.
+	 */
 	@Parameter(property = "artifactId")
 	private String artifactId;
 
+	/**
+	 * groupId of the module you want to fetch.
+	 */
 	@Parameter(property = "groupId")
 	private String groupId;
 
+	/**
+	 * version of the module you want to fetch.
+	 */
 	@Parameter(property = "version")
 	private String version;
 
+	/**
+	 * OWA you want to fetch.
+	 */
 	@Parameter(property = "owa")
 	private String owa;
 
+	/**
+	 * The Directory the file should be fetched into. (Default to the current directory)"
+	 */
 	@Parameter(property = "dir")
 	private String dir;
 
