@@ -10,12 +10,21 @@ import org.openmrs.maven.plugins.utility.SDKConstants;
 
 import java.io.File;
 
+/**
+ * Undeploy a module from a server.
+ */
 @Mojo(name = "undeploy", requiresProject = false)
 public class Undeploy extends AbstractServerTask {
 
+    /**
+     * Artifact id of a module, which you want to undeploy.
+     */
     @Parameter(property = "artifactId")
     private String artifactId;
 
+    /**
+     * Group id of a module, which you want to undeploy
+     */
     @Parameter(defaultValue = "org.openmrs.module", property = "groupId")
     private String groupId;
 

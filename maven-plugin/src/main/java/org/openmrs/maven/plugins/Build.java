@@ -21,15 +21,27 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
+/**
+ * Build server's watched projects, OWA projects or node projects.
+ */
 @Mojo(name = "build", requiresProject = false)
 public class Build extends AbstractServerTask {
 
+	/**
+	 * Flag to indicate whether to build OWA projects.
+	 */
 	@Parameter(property = "buildOwa", defaultValue = "true")
 	private boolean buildOwa;
 
+	/**
+	 * Version of npm to use for building node projects.
+	 */
 	@Parameter(property = "npmVersion")
 	protected String npmVersion;
 
+	/**
+	 * Version of Node.js to use for building node projects.
+	 */
 	@Parameter(property = "nodeVersion")
 	protected String nodeVersion;
 

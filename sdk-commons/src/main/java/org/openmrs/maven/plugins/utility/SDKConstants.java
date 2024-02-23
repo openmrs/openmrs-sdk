@@ -23,6 +23,10 @@ public class SDKConstants {
     public static final String ARCHETYPE_PLUGIN_GROUP_ID = "org.apache.maven.plugins";
     public static final String ARCHETYPE_PLUGIN_ARTIFACT_ID = "maven-archetype-plugin";
     public static final String ARCHETYPE_PLUGIN_VERSION = "3.2.0";
+    //help plugin
+    public static final String HELP_PLUGIN_GROUP_ID = "org.apache.maven.plugins";
+    public static final String HELP_PLUGIN_ARTIFACT_ID = "maven-help-plugin";
+    public static final String HELP_PLUGIN_VERSION = "3.2.0";
     //docker plugin
     public static final String PLUGIN_DOCKER_ARTIFACT_ID = "openmrs-sdk-docker-maven-plugin";
     // frontend plugin

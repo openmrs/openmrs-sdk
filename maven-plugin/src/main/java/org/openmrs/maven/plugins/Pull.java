@@ -26,6 +26,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * Pull changes from upstream for all watched projects or for any project if executed in its directory.
+ */
 @Mojo(name = "pull", requiresProject = false)
 public class Pull extends AbstractServerTask {
 
@@ -64,6 +67,9 @@ public class Pull extends AbstractServerTask {
 
 	private static final String TEMP_BRANCH = "tempBranch";
 
+	/**
+	 * Branch that is needed be pulled. (Default to 'master')
+	 */
 	@Parameter(property = "branch")
 	private String branch;
 

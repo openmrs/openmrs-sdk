@@ -21,6 +21,9 @@ import java.util.List;
 
 import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
 
+/**
+ * Clone any OpenMRS module repository
+ */
 @Mojo(name = "clone", requiresProject = false)
 public class Clone extends AbstractTask {
 
@@ -28,15 +31,27 @@ public class Clone extends AbstractTask {
 
 	public static final String GITHUB_BASE_URL = "https://github.com/";
 
+	/**
+	 * groupId of the module you want to clone.
+	 */
 	@Parameter(property = "groupId")
 	private String groupId;
 
+	/**
+	 * artifactId of module You want to clone.
+	 */
 	@Parameter(property = "artifactId")
 	private String artifactId;
 
+	/**
+	 * Github username
+	 */
 	@Parameter(property = "githubUsername")
 	private String username;
 
+	/**
+	 * GitHub password or personal access token.
+	 */
 	@Parameter(property = "githubPassword", alias = "personalAccessToken")
 	private String personalAccessToken;
 

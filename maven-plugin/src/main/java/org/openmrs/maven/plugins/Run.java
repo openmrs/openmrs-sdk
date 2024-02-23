@@ -36,6 +36,9 @@ import static org.twdata.maven.mojoexecutor.MojoExecutor.name;
 import static org.twdata.maven.mojoexecutor.MojoExecutor.plugin;
 import static org.twdata.maven.mojoexecutor.MojoExecutor.version;
 
+/**
+ * Start a server. If it is run from a module/distro/platform project, the project will be redeployed before launching.
+ */
 @Mojo(name = "run", requiresProject = false)
 public class Run extends AbstractServerTask {
 	
@@ -53,18 +56,34 @@ public class Run extends AbstractServerTask {
 		this.serverId = serverId;
 	}
 
+	/**
+	 * Port to use for running the server (defaults to '8080')
+	 */
 	@Parameter(property = "port")
 	private Integer port;
 
+	/**
+	 * Enable remote debugging on the given port (defaults to '1044' if empty)
+	 */
 	@Parameter(property = "debug")
 	private String debug;
 
+	/**
+	 * Flag to indicate whether to redeploy API classes
+	 */
 	@Parameter(property = "watchApi")
 	private Boolean watchApi;
 
+	/**
+	 * Flag to indicate whether to build server's watched projects, OWA projects, or node projects.
+	 */
 	@Parameter(defaultValue = "false", property = "skipBuild")
 	private boolean skipBuild;
-	
+
+	/**
+	 * Goal to execute when running the server."Goal to execute when running the server
+	 * (Defaults to 'org.openmrs.maven.plugins:openmrs-sdk-tomcat9-maven-plugin:{$version}')
+	 */
 	@Parameter(property = "runGoal")
 	private String runGoal;
 

@@ -35,6 +35,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Create docker configuration for distributions.
+ */
 @Mojo(name = "build-distro", requiresProject = false)
 public class BuildDistro extends AbstractTask {
 
@@ -74,18 +77,33 @@ public class BuildDistro extends AbstractTask {
 
 	private static final Logger log = LoggerFactory.getLogger(BuildDistro.class);
 
+	/**
+	 * Path to the openmrs-distro.properties file.
+	 */
 	@Parameter(property = "distro")
 	private String distro;
 
+	/**
+	 * Directory for generated files. (default to 'docker')
+	 */
 	@Parameter(property = "dir")
 	private String dir;
 
+	/**
+	 * SQL script for database configuration.
+	 */
 	@Parameter(property = "dbSql")
 	private String dbSql;
 
+	/**
+	 * Causes npm to completely ignore peerDependencies
+	 */
 	@Parameter(property = "ignorePeerDependencies", defaultValue = "true")
 	private boolean ignorePeerDependencies;
 
+	/**
+	 * Override the reuseNodeCache property that controls whether the SDK reuse the NPM cache after the setup
+	 */
 	@Parameter(property = "reuseNodeCache")
 	public Boolean overrideReuseNodeCache;
 
@@ -96,6 +114,9 @@ public class BuildDistro extends AbstractTask {
 	@Parameter(defaultValue = "false", property = "bundled")
 	private boolean bundled;
 
+	/**
+	 * Flag to indicate whether to delete the target directory or not.
+	 */
 	@Parameter(defaultValue = "false", property = "reset")
 	private boolean reset;
 

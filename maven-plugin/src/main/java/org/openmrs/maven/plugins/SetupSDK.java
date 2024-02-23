@@ -19,6 +19,9 @@ import java.util.Properties;
 import static org.openmrs.maven.plugins.utility.PropertiesUtils.getSdkProperties;
 import static org.openmrs.maven.plugins.utility.PropertiesUtils.savePropertiesChangesToFile;
 
+/**
+ * Setup the OpenMRS SDK
+ */
 @Mojo(name = "setup-sdk", requiresProject = false)
 public class SetupSDK extends AbstractTask {
 

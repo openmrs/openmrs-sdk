@@ -41,6 +41,9 @@ import org.openmrs.maven.plugins.utility.PropertiesUtils;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 import org.openmrs.maven.plugins.utility.ServerHelper;
 
+/**
+ * Set up a new instance of OpenMRS server. It can be used for setting up a platform or a distribution. It prompts for any missing, but required parameters.
+ */
 @Mojo(name = "setup", requiresProject = false)
 public class Setup extends AbstractServerTask {
 

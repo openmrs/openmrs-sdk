@@ -1,74 +1,32 @@
 package org.openmrs.maven.plugins;
 
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Option;
-import org.apache.commons.cli.Options;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
-import org.ho.yaml.YamlDecoder;
+import org.openmrs.maven.plugins.utility.SDKConstants;
+import org.twdata.maven.mojoexecutor.MojoExecutor;
 
-import java.io.EOFException;
-import java.io.InputStream;
-import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
+
+import static org.twdata.maven.mojoexecutor.MojoExecutor.artifactId;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.configuration;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.element;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.executeMojo;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.executionEnvironment;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.goal;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.groupId;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.plugin;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.version;
 
 @Mojo(name = "help", requiresProject = false)
 public class Help extends AbstractTask {
 
-    private static final String HELP_FILE = "help.yaml";
-    private static final String DESC_MESSAGE = "Description: ";
-    private static final String INFO = "OpenMRS SDK %s";
-    private static final String WIKI = "https://wiki.openmrs.org/display/docs/OpenMRS+SDK";
-
     public void executeTask() throws MojoExecutionException {
-        InputStream stream = getClass().getClassLoader().getResourceAsStream(HELP_FILE);
-        YamlDecoder dec = new YamlDecoder(stream);
-        HelpFormatter formatter = new HelpFormatter();
-        formatter.setLeftPadding(4);
-        formatter.setDescPadding(8);
-        try {
-            @SuppressWarnings("unchecked")
-            Map<String, Object> keys = (Map<String, Object>) dec.readObject();
-            @SuppressWarnings("unchecked")
-            List<Map<String, Object>> l = (List<Map<String, Object>>) keys.get("help");
-            String printVersion = String.format(INFO, keys.get("version"));
-            String printWikiLink = "For more info, see SDK documentation: " + WIKI;
-            PrintWriter writer = new PrintWriter(System.out);
-            writer.println();
-            writer.println();
-            writer.println(printVersion);
-            writer.println();
-            writer.println(printWikiLink);
-            writer.println();
-            writer.println();
-            writer.flush();
-            if (l == null) {
-                throw new MojoExecutionException("Error during reading help data");
-            }
-            for (Map<String, Object> o: l) {
-                Options options = new Options();
-                @SuppressWarnings("unchecked")
-                List<Map<String, Object>> params = (List<Map<String, Object>>) o.get("options");
-                String header = (o.get("desc") != null) ? o.get("desc").toString() : "None";
-                header = DESC_MESSAGE.concat(header);
-                if (params != null) {
-                    for (Map<String, Object> x: params) {
-                        String name = x.get("name").toString();
-                        String desc = x.get("desc").toString();
-                        if ((name == null) || (desc == null)) throw new MojoExecutionException("Error in help file structure");
-                        options.addOption(new Option(name, desc));
-                    }
-                }
-                formatter.printHelp(o.get("name").toString(), header, options, "");
-                writer.println();
-                writer.flush();
-            }
-            writer.flush();
-        } catch (EOFException e) {
-            throw new MojoExecutionException(e.getMessage());
-        } finally {
-            dec.close();
-        }
+        List<MojoExecutor.Element> configuration = new ArrayList<>(3);
+        configuration.add(element("groupId", "org.openmrs.maven.plugins"));
+        configuration.add(element("artifactId", "openmrs-sdk-maven-plugin"));
+        configuration.add(element("version", mavenProject.getVersion()));
+        configuration.add(element("detail", "true"));
+        executeMojo(plugin(groupId(SDKConstants.HELP_PLUGIN_GROUP_ID), artifactId(SDKConstants.HELP_PLUGIN_ARTIFACT_ID), version(SDKConstants.HELP_PLUGIN_VERSION)), goal("describe"), configuration(configuration.toArray(new MojoExecutor.Element[0])), executionEnvironment(mavenProject, mavenSession, pluginManager));
     }
 }

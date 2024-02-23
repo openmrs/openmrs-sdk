@@ -48,21 +48,40 @@ public class Deploy extends AbstractServerTask {
 
 	private static final String DEPLOY_PLATFORM_OPTION = "Platform";
 
+	/**
+	 * Artifact id of an artifact, which you want to deploy.
+	 */
 	@Parameter(property = "artifactId")
 	private String artifactId;
 
+	/**
+	 * Group id of an artifact, which you want to deploy
+	 */
 	@Parameter(property = "groupId")
 	private String groupId;
 
+	/**
+	 * Version of an artifact, which you want to deploy.
+	 */
 	@Parameter(property = "version")
 	private String version;
 
+	/**
+	 * OpenMRS Distribution to set up in the format 'groupId:artifactId:version'.
+	 * You can skip groupId, if it is 'org.openmrs.distro'. You can also give Path to distro.properties file
+	 */
 	@Parameter(property = "distro")
 	private String distro;
 
+	/**
+	 * OpenMRS platform version.
+	 */
 	@Parameter(property = "platform")
 	private String platform;
 
+	/**
+	 * Owa property in the format 'owa-name:version'
+	 */
 	@Parameter(property = "owa")
 	private String owa;
 

@@ -16,12 +16,14 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Create or update pull request to any OpenMRS repository.
+ */
 @Mojo(name = "pr", requiresProject = false)
 public class PullRequest extends AbstractTask {
 
-	/**
-	 * Interactive mode flag, set for 'false' allows automatic testing in batch mode,
-	 * as it makes all 'yes/no' prompts return 'yes'
+    /**
+	 * The branch to create the pull request.
 	 */
 	@Parameter(defaultValue = "master", property = "branch")
 	String branch;

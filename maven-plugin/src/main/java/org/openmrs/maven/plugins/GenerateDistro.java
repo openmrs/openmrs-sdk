@@ -20,6 +20,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
+/**
+ * Generates an openmrs-distro.properties file for a specific version of OpenMRS Distro
+ */
 @Mojo(name = "generate-distro", requiresProject = false)
 public class GenerateDistro extends AbstractTask {
 
@@ -33,6 +36,9 @@ public class GenerateDistro extends AbstractTask {
 
     private static final Logger logger = LoggerFactory.getLogger(GenerateDistro.class);
 
+    /**
+     * Specify the location where the file should be saved. (Default to current location)
+     */
     @Parameter(property = "output")
     private String outputLocation;
 
