@@ -370,7 +370,7 @@ public class BuildDistro extends AbstractTask {
 				copyBuildDistroResource("Dockerfile-jre7", new File(targetDirectory, "Dockerfile"));
 			}
 		} else {
-			if (isPlatform2point5AndAbove(platformVersion)) {
+			if(isBetweenPlatform2point0and2point3(platformVersion)) {
 				if (bundled) {
 					copyBuildDistroResource("Dockerfile-tomcat8-bundled", new File(targetDirectory, "Dockerfile"));
 				} else {
@@ -379,9 +379,9 @@ public class BuildDistro extends AbstractTask {
 			}
 			else {
 				if (bundled) {
-					copyBuildDistroResource("Dockerfile-jre8-bundled", new File(targetDirectory, "Dockerfile"));
+					copyBuildDistroResource("Dockerfile-tomcat8-jre11-bundled", new File(targetDirectory, "Dockerfile"));
 				} else {
-					copyBuildDistroResource("Dockerfile-jre8", new File(targetDirectory, "Dockerfile"));
+					copyBuildDistroResource("Dockerfile-tomcat8-jre11", new File(targetDirectory, "Dockerfile"));
 				}
 			}
 		}
@@ -390,6 +390,10 @@ public class BuildDistro extends AbstractTask {
 	private boolean isPlatform2point5AndAbove(Version platformVersion) {
 		return platformVersion.getMajorVersion() > 2
 				|| (platformVersion.getMajorVersion() == 2 && platformVersion.getMinorVersion() >= 5);
+	}
+
+	private boolean isBetweenPlatform2point0and2point3(Version platformVersion) {
+		return platformVersion.getMajorVersion() == 2 && (platformVersion.getMinorVersion() >= 0 && platformVersion.getMinorVersion() <= 3);
 	}
 
 	/**
