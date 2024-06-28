@@ -517,25 +517,10 @@ public class Setup extends AbstractServerTask {
 				if (dbSql != null) {
 					importDb(server, dbSql);
 					resetSearchIndex(server);
-				} else {
-					String initialSql = null;
-
-					if (server.isMySqlDb()) {
-						initialSql = Server.CLASSPATH_SCRIPT_PREFIX + "openmrs-platform.sql";
-					} else if (server.isPostgreSqlDb()) {
-						initialSql = Server.CLASSPATH_SCRIPT_PREFIX + "openmrs-platform-postgres.sql";
-					} else {
-						moduleInstaller.installModule(SDKConstants.H2_ARTIFACT, server.getServerDirectory().getPath());
-						wizard.showMessage("The specified database " + server.getDbName()
-								+ " does not exist and it will be created when OpenMRS starts.");
-					}
-
-					if (initialSql != null && server.getPlatformVersion() != null) {
-						if (new Version(server.getPlatformVersion()).higher(new Version("1.9.7"))) {
-							importDb(server, initialSql);
-							resetSearchIndex(server);
-						}
-					}
+				} else if (!server.isMySqlDb() && !server.isPostgreSqlDb()) {
+					moduleInstaller.installModule(SDKConstants.H2_ARTIFACT, server.getServerDirectory().getPath());
+					wizard.showMessage("The specified database " + server.getDbName()
+							+ " does not exist and it will be created when OpenMRS starts.");
 				}
 			} else if (!dbReset) {
 				resetSearchIndex(server);
