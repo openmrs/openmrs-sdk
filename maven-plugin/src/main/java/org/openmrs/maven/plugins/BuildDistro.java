@@ -475,8 +475,7 @@ public class BuildDistro extends AbstractTask {
 		InputStream stream = null;
 
 		if (sqlScriptPath == null) {
-			//import default dump if no sql script specified
-			sqlScriptPath = DEFAULT_SQL_DUMP;
+			return null;
 		}
 
 		try {
