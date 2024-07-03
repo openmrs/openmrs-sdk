@@ -32,6 +32,7 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.openmrs.maven.plugins.model.Artifact;
+import org.openmrs.maven.plugins.model.BaseSdkProperties;
 import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.model.Version;
@@ -40,6 +41,9 @@ import org.openmrs.maven.plugins.utility.DistroHelper;
 import org.openmrs.maven.plugins.utility.PropertiesUtils;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 import org.openmrs.maven.plugins.utility.ServerHelper;
+
+import static org.openmrs.maven.plugins.model.BaseSdkProperties.PROPERTY_DISTRO_ARTIFACT_ID;
+import static org.openmrs.maven.plugins.model.BaseSdkProperties.PROPERTY_DISTRO_GROUP_ID;
 
 /**
  * Set up a new instance of OpenMRS server. It can be used for setting up a platform or a distribution. It prompts for any missing, but required parameters.
@@ -55,11 +59,11 @@ public class Setup extends AbstractServerTask {
 			"If you want to enable remote debugging by default when running the server, "
 					+ "\nspecify the %s here (e.g. 1044). Leave blank to disable debugging. \n(Do not do this on a production server)";
 
-	private static final String O2_Distribution = "2.x Distribution";
+	private static final String O2_DISTRIBUTION = "2.x Distribution";
 
 	private static final String PLATFORM = "Platform";
 
-	private static final String O3_Distribution = "O3 Distribution";
+	private static final String O3_DISTRIBUTION = "O3 Distribution";
 
 	private static final String CLASSPATH_SCRIPT_PREFIX = "classpath://";
 
@@ -189,16 +193,17 @@ public class Setup extends AbstractServerTask {
 			if (distroProperties != null) {
 				options.add(distroProperties.getName() + " " + distroProperties.getVersion() + " from current directory");
 			}
-			options.add(O2_Distribution);
+
+			options.add(O3_DISTRIBUTION);
+			options.add(O2_DISTRIBUTION);
 			options.add(PLATFORM);
-			options.add(O3_Distribution);
 			String choice = wizard.promptForMissingValueWithOptions(SETUP_SERVERS_PROMPT, null, null, options);
 
 			switch (choice) {
 				case PLATFORM:
 					platformMode = true;
 					break;
-				case O2_Distribution:
+				case O2_DISTRIBUTION:
 					wizard.promptForRefAppVersionIfMissing(server, versionsHelper);
 					if (DistroHelper.isRefapp2_3_1orLower(server.getDistroArtifactId(), server.getVersion())) {
 						distroProperties = new DistroProperties(server.getVersion());
@@ -207,30 +212,34 @@ public class Setup extends AbstractServerTask {
 					}
 					platformMode = false;
 					break;
-				case O3_Distribution:
+				case O3_DISTRIBUTION:
 					wizard.promptForO3RefAppVersionIfMissing(server, versionsHelper);
 					Artifact artifact = new Artifact(server.getDistroArtifactId(), server.getVersion(),
 							server.getDistroGroupId(), "zip");
 					Properties frontendProperties;
 					if (new Version(server.getVersion()).higher(new Version("3.0.0-beta.16"))) {
 						frontendProperties = distroHelper.getFrontendProperties(server);
-					}
-					else {
+					} else {
 						frontendProperties = PropertiesUtils.getFrontendPropertiesFromSpaConfigUrl(
 								"https://raw.githubusercontent.com/openmrs/openmrs-distro-referenceapplication/"+ server.getVersion() +"/frontend/spa-build-config.json");
 					}
+
 					Properties configurationProperties = PropertiesUtils.getConfigurationProperty(artifact);
 					File file = distroHelper.downloadDistro(server.getServerDirectory(), artifact);
 					Properties backendProperties = PropertiesUtils.getDistroProperties(file);
 					Properties spaModuleProperty = PropertiesUtils.getModuleProperty("https://raw.githubusercontent.com/openmrs/openmrs-module-spa/master/pom.xml");
+
 					if(appShellVersion != null) {
 						frontendProperties.setProperty("spa.core", appShellVersion);
 					}
+
 					Properties allProperties = new Properties();
 					allProperties.putAll(backendProperties);
 					allProperties.putAll(spaModuleProperty);
 					allProperties.putAll(frontendProperties);
 					allProperties.putAll(configurationProperties);
+					allProperties.put(PROPERTY_DISTRO_GROUP_ID, artifact.getGroupId());
+					allProperties.put(PROPERTY_DISTRO_ARTIFACT_ID, artifact.getArtifactId());
 					distroProperties = new DistroProperties(allProperties);
 					platformMode = false;
 					break;
@@ -368,26 +377,31 @@ public class Setup extends AbstractServerTask {
 		if(distroProperties.getConfigArtifacts().isEmpty()) {
 			return;
 		}
+
 		File configDir = new File(server.getServerDirectory(), SDKConstants.OPENMRS_SERVER_CONFIGURATION);
 		configDir.mkdir();
+
 		downloadConfigs(distroProperties, configDir);
-		File referenceApplicationFile = new File(configDir, "referenceapplication-distro.owa");
-		if (!referenceApplicationFile.exists()) {
-			return;
-		}
-		try {
-			ZipFile zipFile = new ZipFile(referenceApplicationFile);
-			zipFile.extractAll(configDir.getPath());
-			for (File file : Objects.requireNonNull(configDir.listFiles())) {
-				if (file.getName().equals("openmrs_config")) {
-					FileUtils.copyDirectory(file, configDir);
-				}
-				FileUtils.deleteQuietly(file);
+
+		// Handle O2 configuration
+		if (Artifact.GROUP_DISTRO.equals(server.getDistroGroupId()) && "referenceapplication-distro".equals(server.getDistroArtifactId())) {
+			File referenceApplicationFile = new File(configDir, "referenceapplication-distro.owa");
+			if (!referenceApplicationFile.exists()) {
+				return;
 			}
-			FileUtils.deleteQuietly(referenceApplicationFile);
-		}
-		catch (ZipException | IOException e) {
-			throw new RuntimeException(e);
+			try {
+				ZipFile zipFile = new ZipFile(referenceApplicationFile);
+				zipFile.extractAll(configDir.getPath());
+				for (File file : Objects.requireNonNull(configDir.listFiles())) {
+					if (file.getName().equals("openmrs_config")) {
+						FileUtils.copyDirectory(file, configDir);
+					}
+					FileUtils.deleteQuietly(file);
+				}
+				FileUtils.deleteQuietly(referenceApplicationFile);
+			} catch (ZipException | IOException e) {
+				throw new RuntimeException(e);
+			}
 		}
 	}
 
@@ -402,10 +416,7 @@ public class Setup extends AbstractServerTask {
 		List<Artifact> configs = distroProperties.getConfigArtifacts();
 		wizard.showMessage("Downloading Configs...\n");
 		if (!configs.isEmpty()) {
-			for (Artifact config : configs) {
-				wizard.showMessage("Downloading Config: " + config);
-				owaHelper.downloadOwa(configDir, config, moduleInstaller);
-			}
+			moduleInstaller.installModules(configs, configDir.getAbsolutePath());
 		}
 	}
 

@@ -51,8 +51,6 @@ public class Server extends BaseSdkProperties {
     public static final String PROPERTY_USER_MODULES = "user_modules";
     public static final String PROPERTY_USER_OWAS = "user_owas";
     public static final String PROPERTY_DEMO_DATA = "add_demo_data";
-    public static final String PROPERTY_DISTRO_ARTIFACT_ID = "distro.artifactId";
-    public static final String PROPERTY_DISTRO_GROUP_ID = "distro.groupId";
     private static final String OLD_PROPERTIES_FILENAME = "backup.properties";
     public static final String OWA_DIRECTORY = "owa";
 

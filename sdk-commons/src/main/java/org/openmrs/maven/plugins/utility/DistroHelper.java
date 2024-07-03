@@ -1,19 +1,21 @@
 package org.openmrs.maven.plugins.utility;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
-import org.openmrs.maven.plugins.model.*;
+import org.openmrs.maven.plugins.model.Artifact;
+import org.openmrs.maven.plugins.model.DistroProperties;
+import org.openmrs.maven.plugins.model.Server;
+import org.openmrs.maven.plugins.model.UpgradeDifferential;
+import org.openmrs.maven.plugins.model.Version;
 import org.twdata.maven.mojoexecutor.MojoExecutor;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -212,6 +214,7 @@ public class DistroHelper {
 				),
 				executionEnvironment(mavenProject, mavenSession, pluginManager)
 		);
+
 		return new File(path, artifact.getDestFileName());
 	}
 
@@ -332,7 +335,7 @@ public class DistroHelper {
 	 * - add modules which are not installed on server yet
 	 */
 	public static UpgradeDifferential calculateUpdateDifferential(DistroHelper distroHelper, Server server,
-			DistroProperties distroProperties) throws MojoExecutionException {
+																  DistroProperties distroProperties) throws MojoExecutionException {
 		List<Artifact> newList = new ArrayList<>(
 				distroProperties.getWarArtifacts(distroHelper, server.getServerDirectory()));
 		newList.addAll(distroProperties.getModuleArtifacts(distroHelper, server.getServerDirectory()));
@@ -450,9 +453,18 @@ public class DistroHelper {
 	}
 
 	public Properties getFrontendProperties(Server server) throws MojoExecutionException {
-		Artifact artifact = new Artifact("referenceapplication-frontend", server.getVersion(), server.getDistroGroupId(), "zip");
+		com.github.zafarkhaja.semver.Version v = com.github.zafarkhaja.semver.Version.parse(server.getVersion());
+
+		Artifact artifact;
+		if (v.satisfies(">=3.0.0")) {
+			artifact = new Artifact("distro-emr-frontend", server.getVersion(), server.getDistroGroupId(), "zip");
+		} else {
+			artifact = new Artifact("referenceapplication-frontend", server.getVersion(), server.getDistroGroupId(), "zip");
+		}
+
 		File frontendDistroFile = downloadDistro(server.getServerDirectory(), artifact, "frontend.zip");
 		Properties frontendProperties = new Properties();
+
 		try (ZipFile zipFile = new ZipFile(frontendDistroFile)) {
 			Enumeration<? extends ZipEntry> entries = zipFile.entries();
 			while (entries.hasMoreElements()) {
@@ -461,6 +473,7 @@ public class DistroHelper {
 					try (InputStream inputStream = zipFile.getInputStream(zipEntry)){
 						frontendProperties = PropertiesUtils.getFrontendPropertiesFromJson(inputStream);
 					}
+					break;
                 }
 			}
 		}
@@ -468,7 +481,9 @@ public class DistroHelper {
 			throw new MojoExecutionException("Could not read \"" + frontendDistroFile.getAbsolutePath() + "\" " + e.getMessage(), e);
 		}
 		finally {
-			frontendDistroFile.delete();
+			if (frontendDistroFile != null && frontendDistroFile.exists()) {
+				frontendDistroFile.delete();
+			}
 		}
 		return frontendProperties;
 	}

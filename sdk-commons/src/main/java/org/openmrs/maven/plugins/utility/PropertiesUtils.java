@@ -24,6 +24,7 @@ import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.openmrs.maven.plugins.model.Artifact;
@@ -147,12 +148,16 @@ public class PropertiesUtils {
 	 * @param url The URL to retrieve the frontend properties from.
 	 * @return A Properties object containing the retrieved frontend properties.
 	 */
-	public static Properties getFrontendPropertiesFromSpaConfigUrl(String url) {
+	public static Properties getFrontendPropertiesFromSpaConfigUrl(String url) throws MojoExecutionException {
 		Properties properties = new Properties();
-		try {
-			HttpClient httpClient = HttpClientBuilder.create().build();
+		try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
 			HttpGet request = new HttpGet(url);
 			HttpResponse response = httpClient.execute(request);
+
+			if (response.getStatusLine().getStatusCode() < 200 || response.getStatusLine().getStatusCode() > 299) {
+				throw new MojoExecutionException("Could not load frontend properties from: " + url);
+			}
+
 			HttpEntity entity = response.getEntity();
 			try (InputStream inputStream = entity.getContent()) {
 				properties = getFrontendPropertiesFromJson(inputStream);
