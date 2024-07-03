@@ -84,15 +84,13 @@ public class DefaultWizard implements Wizard {
 
 	private static final String REFERENCEAPPLICATION_2_4 = "org.openmrs.distro:referenceapplication-package:2.4";
 
-	private static final String REFERENCEAPPLICATION_O3 = "org.openmrs.distro:referenceapplication-distro:3.0.0";
+	private static final String REFERENCEAPPLICATION_O3 = "org.openmrs:emr-distro-configuration:3.0.0";
 
 	private static final String SDK_PROPERTIES_FILE = "SDK Properties file";
 
 	private static final String REFAPP_OPTION_TMPL = "Reference Application %s";
 
 	private static final String REFAPP_ARTIFACT_TMPL = "org.openmrs.distro:referenceapplication-package:%s";
-
-	private static final String O3_ARTIFACT_TMPL = "org.openmrs.distro:referenceapplication-distro:%s";
 
 	private static final String JDK_ERROR_TMPL = "\nThe JDK %s is not compatible with OpenMRS Platform %s. " +
 			"Please use %s to run this server.\n\nIf you are running " +
@@ -727,8 +725,7 @@ public class DefaultWizard implements Wizard {
 
 	public String promptForO3RefAppVersion(VersionsHelper versionsHelper, String customMessage)
 			throws MojoExecutionException {
-		Map<String, String> optionsMap = getO3VersionsOptionsMap(versionsHelper, REFAPP_OPTION_TMPL,
-				O3_ARTIFACT_TMPL);
+		Map<String, String> optionsMap = getO3VersionsOptionsMap(versionsHelper, REFAPP_OPTION_TMPL);
 		return promptForO3Version(optionsMap, customMessage);
 	}
 
@@ -782,16 +779,31 @@ public class DefaultWizard implements Wizard {
 	 *
 	 * @param versionsHelper   The VersionsHelper object to retrieve the artifact versions from.
 	 * @param optionTemplate   The template for generating option keys in the map.
-	 * @param artifactTemplate The template for generating artifact values in the map.
 	 * @return A LinkedHashMap containing the generated options map.
 	 */
 	private Map<String, String> getO3VersionsOptionsMap(VersionsHelper versionsHelper,
-			String optionTemplate, String artifactTemplate) {
+			String optionTemplate) {
 		Map<String, String> optionsMap = new LinkedHashMap<>();
-		Artifact artifact = new Artifact("referenceapplication-distro", "3.0.0-SNAPSHOT", "org.openmrs.distro", "zip");
-		for (ArtifactVersion version : versionsHelper.getAllVersions(artifact, MAX_OPTIONS_SIZE)) {
-			optionsMap.put(String.format(optionTemplate, version.toString()), String.format(artifactTemplate, version));
+
+		{
+			Artifact artifact = new Artifact("distro-emr-configuration", "3.0.0-SNAPSHOT", "org.openmrs", "zip");
+			for (ArtifactVersion version : versionsHelper.getAllVersions(artifact, MAX_OPTIONS_SIZE)) {
+				optionsMap.put(String.format(optionTemplate, version.toString()), artifact.getGroupId() + ":" + artifact.getArtifactId() + ":" + version);
+			}
 		}
+
+		if (optionsMap.size() == MAX_OPTIONS_SIZE) {
+			return optionsMap;
+		}
+
+		{
+			Artifact artifact = new Artifact("referenceapplication-distro", "3.0.0-SNAPSHOT", "org.openmrs.distro", "zip");
+			for (ArtifactVersion version : versionsHelper.getAllVersions(artifact, MAX_OPTIONS_SIZE)) {
+				optionsMap.put(String.format(optionTemplate, version.toString()), artifact.getGroupId() + ":" + artifact.getArtifactId() + ":" + version);
+
+			}
+		}
+
 		return optionsMap;
 	}
 

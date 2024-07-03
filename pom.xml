@@ -399,7 +399,7 @@
             <dependency>
                 <groupId>com.github.zafarkhaja</groupId>
                 <artifactId>java-semver</artifactId>
-                <version>0.9.0</version>
+                <version>0.10.2</version>
             </dependency>
 
             <!-- console input and output -->

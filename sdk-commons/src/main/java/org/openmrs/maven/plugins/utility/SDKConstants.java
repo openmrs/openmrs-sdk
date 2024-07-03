@@ -117,12 +117,6 @@ public class SDKConstants {
         return artifact;
     }
 
-    public static Artifact getO3Distro(String version) {
-        Artifact artifact = new Artifact("referenceapplication-distro", version, Artifact.GROUP_DISTRO, Artifact.TYPE_ZIP);
-        artifact.setClassifier("distro");
-        return artifact;
-    }
-
     public static Artifact getDistroModule(String groupId, String artifactId, String version) {
         return new Artifact(artifactId, version, groupId);
     }

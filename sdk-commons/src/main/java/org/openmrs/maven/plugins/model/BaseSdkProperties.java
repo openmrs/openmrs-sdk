@@ -14,6 +14,8 @@ import java.util.Set;
  */
 public abstract class BaseSdkProperties {
 
+    public static final String PROPERTY_DISTRO_ARTIFACT_ID = "distro.artifactId";
+    public static final String PROPERTY_DISTRO_GROUP_ID = "distro.groupId";
     protected static final String ARTIFACT_ID = "artifactId";
     protected static final String TYPE = "type";
     protected static final String GROUP_ID = "groupId";
@@ -48,7 +50,6 @@ public abstract class BaseSdkProperties {
         }
 
         for (Artifact artifact : moduleArtifacts) {
-
             stripArtifactId(artifact);
 
             if (!artifact.getType().equals(TYPE_JAR)) {
@@ -59,7 +60,6 @@ public abstract class BaseSdkProperties {
             }
 
             properties.setProperty(TYPE_OMOD + "." + artifact.getArtifactId(), artifact.getVersion());
-
         }
         return properties;
     }
@@ -174,6 +174,7 @@ public abstract class BaseSdkProperties {
                 setting = setting.concat("-");
                 setting = setting.concat("package");
             }
+
             return setting;
         } else {
 	        switch (param) {
@@ -187,7 +188,7 @@ public abstract class BaseSdkProperties {
                             return Artifact.GROUP_MODULE;
                         case TYPE_DISTRO:
 	                    case TYPE_CONFIG:
-                            return Artifact.GROUP_DISTRO;
+                            return properties.getProperty(PROPERTY_DISTRO_GROUP_ID, Artifact.GROUP_DISTRO);
                         default:
                             return "";
                     }
@@ -210,7 +211,7 @@ public abstract class BaseSdkProperties {
         }
     }
 
-    private String extractArtifactId(String key){
+    protected String extractArtifactId(String key){
         String type = getArtifactType(key);
         StringBuilder stringBuilder = new StringBuilder(key.substring(key.indexOf(".") + 1));
         if(type.equals(TYPE_OMOD)) {

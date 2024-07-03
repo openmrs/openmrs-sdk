@@ -29,6 +29,11 @@
             <artifactId>commons-io</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>com.github.zafarkhaja</groupId>
+            <artifactId>java-semver</artifactId>
+        </dependency>
+
         <!-- TODO: Get rid of this... just using for URLBuilder -->
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
