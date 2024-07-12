@@ -374,7 +374,7 @@ public class Setup extends AbstractServerTask {
 	 * @param distroProperties The distro properties containing the configuration information.
 	 */
 	private void setConfigFolder(Server server, DistroProperties distroProperties) throws MojoExecutionException {
-		if(distroProperties.getConfigArtifacts().isEmpty()) {
+		if (distroProperties.getConfigArtifacts().isEmpty()) {
 			return;
 		}
 
@@ -383,25 +383,30 @@ public class Setup extends AbstractServerTask {
 
 		downloadConfigs(distroProperties, configDir);
 
+		File refappConfigFile = new File(configDir, server.getDistroArtifactId() + "-" + server.getVersion() + ".zip");
+
 		// Handle O2 configuration
-		if (Artifact.GROUP_DISTRO.equals(server.getDistroGroupId()) && "referenceapplication-distro".equals(server.getDistroArtifactId())) {
-			File referenceApplicationFile = new File(configDir, "referenceapplication-distro.owa");
-			if (!referenceApplicationFile.exists()) {
-				return;
-			}
-			try {
-				ZipFile zipFile = new ZipFile(referenceApplicationFile);
-				zipFile.extractAll(configDir.getPath());
-				for (File file : Objects.requireNonNull(configDir.listFiles())) {
-					if (file.getName().equals("openmrs_config")) {
-						FileUtils.copyDirectory(file, configDir);
-					}
-					FileUtils.deleteQuietly(file);
+		if (!refappConfigFile.exists() && Artifact.GROUP_DISTRO.equals(server.getDistroGroupId()) && "referenceapplication-distro".equals(server.getDistroArtifactId())) {
+			refappConfigFile = new File(configDir, "referenceapplication-distro.owa");
+		}
+
+		if (!refappConfigFile.exists()) {
+			wizard.showError("No Configuration file found at " + refappConfigFile.getAbsolutePath());
+			return;
+		}
+
+		try {
+			ZipFile zipFile = new ZipFile(refappConfigFile);
+			zipFile.extractAll(configDir.getPath());
+			for (File file : Objects.requireNonNull(configDir.listFiles())) {
+				if (file.getName().equals("openmrs_config")) {
+					FileUtils.copyDirectory(file, configDir);
 				}
-				FileUtils.deleteQuietly(referenceApplicationFile);
-			} catch (ZipException | IOException e) {
-				throw new RuntimeException(e);
+				FileUtils.deleteQuietly(file);
 			}
+			FileUtils.deleteQuietly(refappConfigFile);
+		} catch (ZipException | IOException e) {
+			throw new RuntimeException(e);
 		}
 	}
 
