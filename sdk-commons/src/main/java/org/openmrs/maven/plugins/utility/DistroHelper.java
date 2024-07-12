@@ -20,6 +20,8 @@ import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import static org.openmrs.maven.plugins.model.BaseSdkProperties.PROPERTY_DISTRO_ARTIFACT_ID;
+import static org.openmrs.maven.plugins.model.BaseSdkProperties.PROPERTY_DISTRO_GROUP_ID;
 import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
 
 public class DistroHelper {
@@ -44,12 +46,15 @@ public class DistroHelper {
 	 */
 	final Wizard wizard;
 
+	final VersionsHelper versionHelper;
+
 	public DistroHelper(MavenProject mavenProject, MavenSession mavenSession, BuildPluginManager pluginManager,
-			Wizard wizard) {
+						Wizard wizard, VersionsHelper versionHelper) {
 		this.mavenProject = mavenProject;
 		this.mavenSession = mavenSession;
 		this.pluginManager = pluginManager;
 		this.wizard = wizard;
+		this.versionHelper = versionHelper;
 	}
 
 	/**
@@ -486,6 +491,30 @@ public class DistroHelper {
 			}
 		}
 		return frontendProperties;
+	}
+
+    public Properties getFrontendPropertiesForServer(Server server) throws MojoExecutionException {
+        if (new Version(server.getVersion()).higher(new Version("3.0.0-beta.16"))) {
+            return getFrontendProperties(server);
+        } else {
+            return PropertiesUtils.getFrontendPropertiesFromSpaConfigUrl(
+                    "https://raw.githubusercontent.com/openmrs/openmrs-distro-referenceapplication/" + server.getVersion() + "/frontend/spa-build-config.json");
+        }
+    }
+
+	public Properties getArtifactProperties(Artifact artifact, Server server, String appShellVersion) throws MojoExecutionException {
+		File file = downloadDistro(server.getServerDirectory(), artifact);
+		Properties properties = new Properties();
+		properties.putAll(PropertiesUtils.getDistroProperties(file));
+		properties.putAll(getFrontendPropertiesForServer(server));
+		properties.putAll(PropertiesUtils.getConfigurationProperty(artifact));
+		properties.put(PROPERTY_DISTRO_GROUP_ID, artifact.getGroupId());
+		properties.put(PROPERTY_DISTRO_ARTIFACT_ID, artifact.getArtifactId());
+		if(appShellVersion != null) {
+			properties.setProperty("spa.core", appShellVersion);
+		}
+		properties.setProperty("omod.spa", versionHelper.getLatestSnapshotVersion(new Artifact("spa", "latest")));
+		return properties;
 	}
 
 }
