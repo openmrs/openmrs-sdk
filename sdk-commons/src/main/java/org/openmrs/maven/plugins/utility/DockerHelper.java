@@ -26,7 +26,7 @@ import static org.twdata.maven.mojoexecutor.MojoExecutor.version;
 
 public class DockerHelper {
 
-    public static final String DOCKER_DEFAULT_CONTAINER_ID = "openmrs-sdk-mysql-v3-2";
+    public static final String DOCKER_DEFAULT_CONTAINER_ID = "openmrs-sdk-mysql-v8-4-1";
     public static final String DOCKER_MYSQL_PORT = "3308";
     public static final String DOCKER_MYSQL_USERNAME = "root";
     public static final String DOCKER_MYSQL_PASSWORD = "Admin123";

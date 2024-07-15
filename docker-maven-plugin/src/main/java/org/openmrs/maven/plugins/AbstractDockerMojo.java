@@ -21,10 +21,10 @@ import java.util.List;
 
 abstract class AbstractDockerMojo extends AbstractMojo {
 
-    protected static final String DEFAULT_MYSQL_CONTAINER = "openmrs-sdk-mysql-v3-2";
+    protected static final String DEFAULT_MYSQL_CONTAINER = "openmrs-sdk-mysql-v8-4-1";
     protected static final String DEFAULT_MYSQL_EXPOSED_PORT = "3308";
     protected static final String DEFAULT_MYSQL_PASSWORD = "Admin123";
-    protected static final String MYSQL_5_6 = "mysql:5.6";
+    protected static final String MYSQL_8_4_1 = "mysql:8.4.1";
     protected static final String DEFAULT_MYSQL_DB_URI = "jdbc:mysql://localhost:" + DEFAULT_MYSQL_EXPOSED_PORT + "/";
     private static final Logger logger = LoggerFactory.getLogger(AbstractDockerMojo.class);
 
