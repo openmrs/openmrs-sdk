@@ -49,7 +49,7 @@ To build the plugin run:
 
 To run a SNAPSHOT version of SDK, you need to specify groupId:artifactId:version for all SDK commands, e.g.
 
-`mvn org.openmrs.maven.plugins:openmrs-sdk-maven-plugin:4.0.1-SNAPSHOT:setup`
+`mvn org.openmrs.maven.plugins:openmrs-sdk-maven-plugin:5.14.0-SNAPSHOT:setup`
 
 You can also debug commands by creating maven run configurations for the SNAPSHOT version in your IDE 
 and starting them in the debug mode.
