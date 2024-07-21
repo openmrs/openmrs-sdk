@@ -62,7 +62,7 @@ public class CreateMySql extends AbstractDockerMojo {
     }
 
     private boolean noMySqlImage(DockerClient docker) {
-        List<Image> mysql = docker.listImagesCmd().withImageNameFilter(MYSQL_5_6).exec();
+        List<Image> mysql = docker.listImagesCmd().withImageNameFilter(MYSQL_8_4_1).exec();
         return mysql.size() == 0;
     }
 
@@ -81,7 +81,7 @@ public class CreateMySql extends AbstractDockerMojo {
                 .withPortBindings(portBinding)
                 .withBinds(boundVolume);
 
-        docker.createContainerCmd(MYSQL_5_6)
+        docker.createContainerCmd(MYSQL_8_4_1)
                 .withHostConfig(hostConfig)
                 .withName(container)
                 .withEnv("MYSQL_ROOT_PASSWORD="+rootPassword)
@@ -93,11 +93,11 @@ public class CreateMySql extends AbstractDockerMojo {
     private void pullMySqlImage(DockerClient docker) throws MojoExecutionException {
         final CountDownLatch latch = new CountDownLatch(1);
         docker.pullImageCmd("mysql")
-                .withTag("5.6")
+                .withTag("8.4.1")
                 .exec(new ResultCallback<PullResponseItem>() {
                     @Override
                     public void onStart(Closeable closeable) {
-                        showMessage("Started downloading mysql:5.6 image ...");
+                        showMessage("Started downloading mysql:8.4.1 image ...");
                     }
 
                     @Override
@@ -107,7 +107,7 @@ public class CreateMySql extends AbstractDockerMojo {
 
                     @Override
                     public void onError(Throwable throwable) {
-
+                        showMessage("Error downloading mysql:8.4.1 image : " + throwable.getMessage());
                     }
 
                     @Override

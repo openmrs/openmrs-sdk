@@ -118,7 +118,7 @@ public class DefaultWizard implements Wizard {
 
 	public static final String DB_OPTION_MYSQL = "MySQL 5.6 and above (requires pre-installed MySQL 5.6 and above)";
 
-	public static final String DB_OPTION_SDK_DOCKER_MYSQL = "MySQL 5.6 and above in SDK docker container (requires pre-installed Docker)";
+	public static final String DB_OPTION_SDK_DOCKER_MYSQL = "MySQL 8.4.1 and above in SDK docker container (requires pre-installed Docker)";
 
 	public static final String DB_OPTION_DOCKER_MYSQL = "Existing docker container (requires pre-installed Docker)";
 

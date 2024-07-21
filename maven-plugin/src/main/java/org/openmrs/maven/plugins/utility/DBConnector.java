@@ -15,7 +15,15 @@ public class DBConnector implements AutoCloseable {
 
 	public DBConnector(String url, String user, String pass, String dbName) throws SQLException {
 		DriverManager.setLoginTimeout(60);
-		this.connection = DriverManager.getConnection(url, user, pass);
+		/*
+		 * Connection attempts to a database in a newly created Docker container might fail on the first try due to the container not being fully ready
+		 * This is to mitigate such errors.
+		 */
+		try {
+			this.connection = DriverManager.getConnection(url, user, pass);
+		} catch (SQLException e) {
+			this.connection = DriverManager.getConnection(url, user, pass);
+		}
 		this.dbName = dbName;
 	}
 
