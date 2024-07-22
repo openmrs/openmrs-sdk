@@ -32,18 +32,14 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.openmrs.maven.plugins.model.Artifact;
-import org.openmrs.maven.plugins.model.BaseSdkProperties;
 import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.model.Version;
 import org.openmrs.maven.plugins.utility.DBConnector;
 import org.openmrs.maven.plugins.utility.DistroHelper;
-import org.openmrs.maven.plugins.utility.PropertiesUtils;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 import org.openmrs.maven.plugins.utility.ServerHelper;
 
-import static org.openmrs.maven.plugins.model.BaseSdkProperties.PROPERTY_DISTRO_ARTIFACT_ID;
-import static org.openmrs.maven.plugins.model.BaseSdkProperties.PROPERTY_DISTRO_GROUP_ID;
 
 /**
  * Set up a new instance of OpenMRS server. It can be used for setting up a platform or a distribution. It prompts for any missing, but required parameters.
@@ -216,38 +212,27 @@ public class Setup extends AbstractServerTask {
 					wizard.promptForO3RefAppVersionIfMissing(server, versionsHelper);
 					Artifact artifact = new Artifact(server.getDistroArtifactId(), server.getVersion(),
 							server.getDistroGroupId(), "zip");
-					Properties frontendProperties;
-					if (new Version(server.getVersion()).higher(new Version("3.0.0-beta.16"))) {
-						frontendProperties = distroHelper.getFrontendProperties(server);
-					} else {
-						frontendProperties = PropertiesUtils.getFrontendPropertiesFromSpaConfigUrl(
-								"https://raw.githubusercontent.com/openmrs/openmrs-distro-referenceapplication/"+ server.getVersion() +"/frontend/spa-build-config.json");
-					}
-
-					Properties configurationProperties = PropertiesUtils.getConfigurationProperty(artifact);
-					File file = distroHelper.downloadDistro(server.getServerDirectory(), artifact);
-					Properties backendProperties = PropertiesUtils.getDistroProperties(file);
-					Properties spaModuleProperty = PropertiesUtils.getModuleProperty("https://raw.githubusercontent.com/openmrs/openmrs-module-spa/master/pom.xml");
-
-					if(appShellVersion != null) {
-						frontendProperties.setProperty("spa.core", appShellVersion);
-					}
-
-					Properties allProperties = new Properties();
-					allProperties.putAll(backendProperties);
-					allProperties.putAll(spaModuleProperty);
-					allProperties.putAll(frontendProperties);
-					allProperties.putAll(configurationProperties);
-					allProperties.put(PROPERTY_DISTRO_GROUP_ID, artifact.getGroupId());
-					allProperties.put(PROPERTY_DISTRO_ARTIFACT_ID, artifact.getArtifactId());
-					distroProperties = new DistroProperties(allProperties);
+					distroProperties = new DistroProperties(distroHelper.getArtifactProperties(artifact, server, appShellVersion));
 					platformMode = false;
 					break;
 
 				default:  // distro properties from current directory
-					server.setPlatformVersion(
-							distroProperties.getPlatformVersion(distroHelper, server.getServerTmpDirectory()));
-					server.setVersion(distroProperties.getVersion());
+					Artifact distroArtifact = distroProperties.getParentArtifact();
+					if (StringUtils.isNotBlank(distroArtifact.getArtifactId()) && StringUtils.isNotBlank(distroArtifact.getGroupId()) && StringUtils.isNotBlank(distroArtifact.getVersion())) {
+						server.setDistroArtifactId(distroArtifact.getArtifactId());
+						server.setDistroGroupId(distroArtifact.getGroupId());
+						server.setVersion(distroArtifact.getVersion());
+						Properties properties = distroHelper.getArtifactProperties(distroArtifact, server, appShellVersion);
+						for (Object key : distroProperties.getAllKeys()) {
+							String keyStr = (String) key;
+							properties.setProperty(keyStr, distroProperties.getParam(keyStr));
+						}
+						distroProperties = new DistroProperties(properties);
+					} else {
+						server.setPlatformVersion(
+								distroProperties.getPlatformVersion(distroHelper, server.getServerTmpDirectory()));
+						server.setVersion(distroProperties.getVersion());
+					}
 					platformMode = false;
 			}
 		} else if (platform != null) {

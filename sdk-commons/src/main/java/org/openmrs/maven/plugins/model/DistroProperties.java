@@ -4,6 +4,7 @@ import static org.openmrs.maven.plugins.utility.PropertiesUtils.loadPropertiesFr
 import static org.openmrs.maven.plugins.utility.PropertiesUtils.loadPropertiesFromResource;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.openmrs.maven.plugins.utility.DistroHelper;
 import org.slf4j.Logger;
@@ -118,6 +119,33 @@ public class DistroProperties extends BaseSdkProperties {
         return null;
     }
 
+    public Artifact getParentArtifact() {
+        String parentArtifactId = getParam("parent.artifactId");
+        String parentGroupId = getParam("parent.groupId");
+        String parentVersion = getParam("parent.version");
+
+        int missingCount = 0;
+        if (StringUtils.isBlank(parentArtifactId)) {
+            log.warn("parent.artifactId  missing");
+            missingCount++;
+        }
+        if (StringUtils.isBlank(parentGroupId)) {
+            log.warn("parent.groupId is missing");
+            missingCount++;
+        }
+        if (StringUtils.isBlank(parentVersion)) {
+            log.warn("parent.version is missing");
+            missingCount++;
+        }
+
+        // We are only going to throw an error if only one or two parameters are missing
+        if (missingCount > 0 && missingCount < 3) {
+            throw new IllegalArgumentException("Missing arguments for the parent");
+        }
+
+        return new Artifact(parentArtifactId, parentVersion, parentGroupId, "zip");
+    }
+
     public List<Artifact> getModuleArtifacts(DistroHelper distroHelper, File directory) throws MojoExecutionException {
         List<Artifact> childArtifacts = getModuleArtifacts();
         List<Artifact> parentArtifacts = new ArrayList<>();
@@ -228,6 +256,10 @@ public class DistroProperties extends BaseSdkProperties {
                 }
             }
         }
+    }
+
+    public Set<Object> getAllKeys() {
+        return properties.keySet();
     }
 
     private String getPlaceholderKey(String string){
