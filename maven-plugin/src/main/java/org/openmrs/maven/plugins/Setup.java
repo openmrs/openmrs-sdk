@@ -227,6 +227,11 @@ public class Setup extends AbstractServerTask {
 							String keyStr = (String) key;
 							properties.setProperty(keyStr, distroProperties.getParam(keyStr));
 						}
+						List<String> exclusions = distroProperties.getExclusions();
+
+						for (String exclusion : exclusions) {
+							properties.remove(exclusion);
+						}
 						distroProperties = new DistroProperties(properties);
 					} else {
 						server.setPlatformVersion(

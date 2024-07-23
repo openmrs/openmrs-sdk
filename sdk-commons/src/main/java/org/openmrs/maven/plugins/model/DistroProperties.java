@@ -14,6 +14,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -260,6 +261,14 @@ public class DistroProperties extends BaseSdkProperties {
 
     public Set<Object> getAllKeys() {
         return properties.keySet();
+    }
+
+    public List<String> getExclusions() {
+        String exclusions = getParam("exclusions");
+        if(exclusions == null) {
+            return new ArrayList<>();
+        }
+        return Arrays.asList(exclusions.split(","));
     }
 
     private String getPlaceholderKey(String string){
