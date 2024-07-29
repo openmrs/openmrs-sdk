@@ -1,5 +1,7 @@
 package org.openmrs.maven.plugins;
 
+import com.vdurmont.semver4j.Semver;
+import com.vdurmont.semver4j.SemverException;
 import net.lingala.zip4j.core.ZipFile;
 import net.lingala.zip4j.exception.ZipException;
 import net.lingala.zip4j.model.ZipParameters;
@@ -8,11 +10,8 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
-import org.eclipse.jgit.api.errors.GitAPIException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
-import org.eclipse.jgit.api.CloneCommand;
-import org.eclipse.jgit.api.Git;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.Server;
@@ -27,6 +26,8 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileWriter;
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -35,6 +36,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Properties;
 
 /**
  * Create docker configuration for distributions.
@@ -47,6 +49,8 @@ public class BuildDistro extends AbstractTask {
 	private static final String OPENMRS_WAR = "openmrs.war";
 
 	private static final String OPENMRS_DISTRO_PROPERTIES = "openmrs-distro.properties";
+
+	private static final String CONTENT_PROPERTIES = "content.properties";
 
 	private static final String DOCKER_COMPOSE_PATH = "build-distro/docker-compose.yml";
 
@@ -78,7 +82,7 @@ public class BuildDistro extends AbstractTask {
 
 	private static final Logger log = LoggerFactory.getLogger(BuildDistro.class);
 
-	/**
+    /**
 	 * Path to the openmrs-distro.properties file.
 	 */
 	@Parameter(property = "distro")
@@ -195,6 +199,7 @@ public class BuildDistro extends AbstractTask {
 			throw new MojoExecutionException("The distro you specified, '" + distro + "' could not be retrieved");
 		}
 
+		parseContentProperties(userDir, distroProperties);
 		String distroName = buildDistro(buildDirectory, distroArtifact, distroProperties);
 
 		wizard.showMessage(
@@ -510,7 +515,7 @@ public class BuildDistro extends AbstractTask {
 		}
 
 		try (FileWriter writer = new FileWriter(dbDump);
-		     BufferedInputStream bis = new BufferedInputStream(stream)) {
+			 BufferedInputStream bis = new BufferedInputStream(stream)) {
 			writer.write(DUMP_PREFIX);
 
 			int c;
@@ -603,5 +608,88 @@ public class BuildDistro extends AbstractTask {
 				throw new MojoExecutionException("Distro should contain only single war file");
 			}
 		}
+	}
+
+	/**
+	 * Reads the content.properties file.
+	 * <p> For dependencies defined in both content.properties and distro.properties, this ensures the version specified in distro.properties 
+	 * matches the range defined in content.properties; otherwise, we output an error to the user to fix this.</p>
+	 * For dependencies not defined in distro.properties but defined in content.properties, the SDK should locate the latest matching version and add that to the OMODs and ESMs used by the distro.
+	 * 
+	 * @param userDir
+	 * @param distroProperties
+	 * @throws MojoExecutionException
+	 */
+	private void parseContentProperties(File userDir, DistroProperties distroProperties) throws MojoExecutionException {
+		File contentFile = new File(userDir, CONTENT_PROPERTIES);
+		if (!contentFile.exists()) {
+			log.info("No content.properties file found in the user directory.");
+			return;
+		}
+
+		Properties contentProperties = new Properties();
+		try (BufferedReader reader = new BufferedReader(new FileReader(contentFile))) {
+			contentProperties.load(reader);
+		} catch (IOException e) {
+			throw new MojoExecutionException("Failed to read content.properties file", e);
+		}
+
+		for (String dependency : contentProperties.stringPropertyNames()) {
+			String versionRange = contentProperties.getProperty(dependency);
+			String distroVersion = distroProperties.get(dependency);
+
+			if (distroVersion == null) {
+				String latestVersion = findLatestMatchingVersion(dependency, versionRange);
+				if (latestVersion == null) {
+					throw new MojoExecutionException("No matching version found for dependency " + dependency);
+				}
+
+				distroProperties.add(dependency, latestVersion);
+			} else {
+				checkVersionInRange(dependency, versionRange, distroVersion);
+			}
+		}
+	}
+
+	/**
+     * Checks if the version from distro.properties satisfies the range specified in content.properties.
+     * Throws an exception if there is a mismatch.
+     *
+     * @param contentDependencyKey       the dependency key
+     * @param contentDependencyVersionRange the version range from content.properties
+     * @param distroPropertyVersion      the version from distro.properties
+     * @throws MojoExecutionException if there is a version mismatch
+     */
+	private void checkVersionInRange(String contentDependencyKey, String contentDependencyVersionRange, String distroPropertyVersion) throws MojoExecutionException {
+		Semver semverVersion = new Semver(distroPropertyVersion, Semver.SemverType.NPM);
+		String[] ranges = contentDependencyVersionRange.split(",");
+		boolean inRange = false;
+
+		for (String range : ranges) {
+			range = range.trim();
+			try {
+				if (range.startsWith("^") || range.startsWith("~")) {
+					inRange = semverVersion.satisfies(range);
+				} else {
+					Semver rangeVersion = new Semver(range, Semver.SemverType.NPM);
+					inRange = semverVersion.diff(rangeVersion) == Semver.VersionDiff.NONE;
+				}
+				if (inRange) break;
+			} catch (SemverException e) {
+				throw new MojoExecutionException("Invalid version range format for " + contentDependencyKey + ": " + contentDependencyVersionRange, e);
+			}
+		}
+
+		if (!inRange) {
+			throw new MojoExecutionException(
+					"Incompatible version for " + contentDependencyKey + ". Specified range: " + contentDependencyVersionRange
+							+ ", found in distribution: " + distroPropertyVersion);
+		}
+	}
+
+	private String findLatestMatchingVersion(String dependency, String versionRange) {
+		// TODO
+		// Implement logic to find the latest version matching the versionRange
+		return null;
 	}
 }
