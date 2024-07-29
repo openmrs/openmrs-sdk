@@ -291,4 +291,26 @@ public class DistroProperties extends BaseSdkProperties {
         int index = asString.indexOf("{");
         return index != -1 && asString.substring(index).contains("}");
     }
+
+    public boolean contains(String propertyName) {
+        return properties.containsKey(propertyName);
+    }
+
+    /**
+     * Adds a dependency with the specified version to the properties.
+     *
+     * @param dependency The name of the dependency.
+     * @param version The version of the dependency.
+     */
+    public void add(String dependency, String version) {
+        if (StringUtils.isBlank(dependency) || StringUtils.isBlank(version)) {
+            log.error("Dependency name or version cannot be blank");
+            return;
+        }
+
+        if (dependency.startsWith("omod") || dependency.startsWith("war")) {
+            properties.setProperty(dependency, version);
+            log.info("Added dependency: {} with version: {}", dependency, version);
+        }
+    }
 }

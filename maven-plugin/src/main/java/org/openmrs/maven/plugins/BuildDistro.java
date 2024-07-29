@@ -1,5 +1,8 @@
 package org.openmrs.maven.plugins;
 
+import com.github.zafarkhaja.semver.Parser;
+import com.github.zafarkhaja.semver.expr.Expression;
+import com.github.zafarkhaja.semver.expr.ExpressionParser;
 import net.lingala.zip4j.core.ZipFile;
 import net.lingala.zip4j.exception.ZipException;
 import net.lingala.zip4j.model.ZipParameters;
@@ -23,17 +26,13 @@ import org.openmrs.maven.plugins.utility.SDKConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileWriter;
-import java.io.FilenameFilter;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 /**
  * Create docker configuration for distributions.
@@ -46,6 +45,8 @@ public class BuildDistro extends AbstractTask {
 	private static final String OPENMRS_WAR = "openmrs.war";
 
 	private static final String OPENMRS_DISTRO_PROPERTIES = "openmrs-distro.properties";
+
+	private static final String CONTENT_PROPERTIES = "content.properties";
 
 	private static final String DOCKER_COMPOSE_PATH = "build-distro/docker-compose.yml";
 
@@ -198,6 +199,12 @@ public class BuildDistro extends AbstractTask {
 
 		if (distroProperties == null) {
 			throw new MojoExecutionException("The distro you specified, '" + distro + "' could not be retrieved");
+		}
+
+		File contentFile = new File(userDir, CONTENT_PROPERTIES);
+		if (contentFile.exists()) {
+			Map<String, String> contentDependencies = parseContentProperties(contentFile);
+			ensureDependencies(distroProperties, contentDependencies);
 		}
 
 		String distroName = buildDistro(buildDirectory, distroArtifact, distroProperties);
@@ -451,7 +458,7 @@ public class BuildDistro extends AbstractTask {
 		}
 
 		try (FileWriter writer = new FileWriter(dbDump);
-		     BufferedInputStream bis = new BufferedInputStream(stream)) {
+			 BufferedInputStream bis = new BufferedInputStream(stream)) {
 			writer.write(DUMP_PREFIX);
 
 			int c;
@@ -544,5 +551,68 @@ public class BuildDistro extends AbstractTask {
 				throw new MojoExecutionException("Distro should contain only single war file");
 			}
 		}
+	}
+
+	private void ensureDependencies(DistroProperties distroProperties, Map<String, String> contentDependencies) throws MojoExecutionException {
+		for (Map.Entry<String, String> entry : contentDependencies.entrySet()) {
+			String dependency = entry.getKey();
+			String versionRange = entry.getValue();
+
+			if (distroProperties.contains(dependency)) {
+				String distroVersion = distroProperties.getVersion();
+				if (!isVersionCompatible(distroVersion, versionRange)) {
+					throw new MojoExecutionException("Dependency version mismatch for " + dependency + ". " +
+							"Distro version: " + distroVersion + ", Content version range: " + versionRange);
+				}
+			} else {
+				// Add the dependency to the distro properties
+				String latestVersion = findLatestVersion(dependency, versionRange);
+				distroProperties.add(dependency, latestVersion);
+			}
+		}
+	}
+
+	private boolean isVersionCompatible(String version, String range) {
+		try {
+			Version ver = Version.valueOf(version);
+			Parser<Expression> parser = ExpressionParser.newInstance();
+			Expression expr = parser.parse(range);
+
+			return ver.satisfies(expr);
+		} catch (Exception e) {
+			// Handle parsing exceptions if necessary
+			e.printStackTrace();
+			return false;
+		}
+	}
+
+	private String findLatestVersion(String dependency, String range) {
+		return "latestVersion";
+	}
+
+
+	private Map<String, String> parseContentProperties(File contentFile) throws MojoExecutionException {
+		Map<String, String> dependencies = new HashMap<>();
+
+		try (BufferedReader reader = new BufferedReader(new FileReader(contentFile))) {
+			String line;
+			while ((line = reader.readLine()) != null) {
+				line = line.trim();
+				if (line.startsWith("#") || line.isEmpty()) {
+					continue;
+				}
+
+				String[] parts = line.split("=");
+				if (parts.length == 2) {
+					String key = parts[0].trim();
+					String value = parts[1].trim();
+					dependencies.put(key, value);
+				}
+			}
+		} catch (IOException e) {
+			throw new MojoExecutionException("Failed to read content.properties file", e);
+		}
+
+		return dependencies;
 	}
 }
