@@ -5,6 +5,8 @@ FROM tomcat:8-jre8
 COPY openmrs.war  /usr/local/tomcat/webapps/openmrs.war
 COPY modules /usr/local/tomcat/.OpenMRS/modules
 COPY owa /usr/local/tomcat/.OpenMRS/owa
+COPY frontend /usr/local/tomcat/.OpenMRS/frontend
+COPY configuration /usr/local/tomcat/.OpenMRS/configuration
 
 COPY setenv.sh /usr/local/tomcat/bin/setenv.sh
 
