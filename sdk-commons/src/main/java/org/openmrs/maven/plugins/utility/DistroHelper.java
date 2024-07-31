@@ -517,4 +517,21 @@ public class DistroHelper {
 		return properties;
 	}
 
+	public DistroProperties resolveParentArtifact(Artifact parentArtifact, Server server, DistroProperties distroProperties, String appShellVersion) throws MojoExecutionException {
+		server.setDistroArtifactId(parentArtifact.getArtifactId());
+		server.setDistroGroupId(parentArtifact.getGroupId());
+		server.setVersion(parentArtifact.getVersion());
+		Properties properties = getArtifactProperties(parentArtifact, server, appShellVersion);
+		for (Object key : distroProperties.getAllKeys()) {
+			String keyStr = (String) key;
+			properties.setProperty(keyStr, distroProperties.getParam(keyStr));
+		}
+		List<String> exclusions = distroProperties.getExclusions();
+
+		for (String exclusion : exclusions) {
+			properties.remove(exclusion);
+		}
+		return new DistroProperties(properties);
+	}
+
 }
