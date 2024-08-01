@@ -651,6 +651,10 @@ public class BuildDistro extends AbstractTask {
 		}
 	}
 
+	private String findLatestMatchingVersion(String dependency, String versionRange) throws MojoExecutionException {
+		return distroHelper.findLatestMatchingVersion(dependency, versionRange);
+	}
+
 	/**
      * Checks if the version from distro.properties satisfies the range specified in content.properties.
      * Throws an exception if there is a mismatch.
@@ -685,11 +689,5 @@ public class BuildDistro extends AbstractTask {
 					"Incompatible version for " + contentDependencyKey + ". Specified range: " + contentDependencyVersionRange
 							+ ", found in distribution: " + distroPropertyVersion);
 		}
-	}
-
-	private String findLatestMatchingVersion(String dependency, String versionRange) {
-		// TODO
-		// Implement logic to find the latest version matching the versionRange
-		return null;
 	}
 }

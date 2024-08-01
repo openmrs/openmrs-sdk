@@ -12,6 +12,7 @@ import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.model.UpgradeDifferential;
 import org.openmrs.maven.plugins.model.Version;
 import org.twdata.maven.mojoexecutor.MojoExecutor;
+import org.twdata.maven.mojoexecutor.MojoExecutor.Element;
 
 import java.io.File;
 import java.io.IOException;
@@ -553,4 +554,11 @@ public class DistroHelper {
 		return resolveParentArtifact(parentArtifact, server.getServerDirectory(), distroProperties, appShellVersion);
 	}
 
+	public String findLatestMatchingVersion(String dependency, String versionRange) throws MojoExecutionException {
+		if (dependency.startsWith("omod") || dependency.startsWith("owa") || dependency.startsWith("spa.frontend")) {
+			Properties properties = new Properties();
+			properties.setProperty(dependency, versionHelper.getLatestReleasedVersion(new Artifact(dependency, "latest")));
+		}
+		throw new MojoExecutionException("Unsupported dependency type: " + dependency);
+	}
 }
