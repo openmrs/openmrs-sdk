@@ -554,11 +554,16 @@ public class DistroHelper {
 		return resolveParentArtifact(parentArtifact, server.getServerDirectory(), distroProperties, appShellVersion);
 	}
 
-	public String findLatestMatchingVersion(String dependency, String versionRange) throws MojoExecutionException {
-		if (dependency.startsWith("omod") || dependency.startsWith("owa") || dependency.startsWith("spa.frontend")) {
-			Properties properties = new Properties();
-			properties.setProperty(dependency, versionHelper.getLatestReleasedVersion(new Artifact(dependency, "latest")));
+	public String findLatestMatchingVersion(String dependency) throws MojoExecutionException {
+		if (dependency.startsWith("omod") || dependency.startsWith("owa") || dependency.startsWith("spa.frontendModule") ||
+				dependency.startsWith("content.") || dependency.startsWith("war.")) {
+			try {
+				return versionHelper.getLatestReleasedVersion(new Artifact(dependency, "latest"));
+			} catch (Exception e) {
+				throw new MojoExecutionException("Error retrieving latest version for dependency: " + dependency, e);
+			}
 		}
 		throw new MojoExecutionException("Unsupported dependency type: " + dependency);
 	}
+
 }
