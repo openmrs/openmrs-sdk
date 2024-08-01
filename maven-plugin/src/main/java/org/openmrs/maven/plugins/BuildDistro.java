@@ -1,7 +1,6 @@
 package org.openmrs.maven.plugins;
 
-import com.vdurmont.semver4j.Semver;
-import com.vdurmont.semver4j.SemverException;
+import com.github.zafarkhaja.semver.ParseException;
 import net.lingala.zip4j.core.ZipFile;
 import net.lingala.zip4j.exception.ZipException;
 import net.lingala.zip4j.model.ZipParameters;
@@ -612,13 +611,15 @@ public class BuildDistro extends AbstractTask {
 
 	/**
 	 * Reads the content.properties file.
-	 * <p> For dependencies defined in both content.properties and distro.properties, this ensures the version specified in distro.properties 
+	 * <p> For dependencies defined in both content.properties and distro.properties, this ensures the version specified in distro.properties
 	 * matches the range defined in content.properties; otherwise, we output an error to the user to fix this.</p>
-	 * For dependencies not defined in distro.properties but defined in content.properties, the SDK should locate the latest matching version and add that to the OMODs and ESMs used by the distro.
-	 * 
-	 * @param userDir
-	 * @param distroProperties
-	 * @throws MojoExecutionException
+	 * For dependencies not defined in distro.properties but defined in content.properties, the SDK should locate the latest matching version
+	 * and add that to the OMODs and ESMs used by the distro.
+	 *
+	 * @param userDir           The directory where the distro.properties or content.properties file is located. This is typically the user's working directory.
+	 * @param distroProperties  An object representing the properties defined in distro.properties. This includes versions of various dependencies
+	 *                          currently used in the distribution.
+	 * @throws MojoExecutionException if there is an error reading the content.properties file or if a version conflict is detected.
 	 */
 	private void parseContentProperties(File userDir, DistroProperties distroProperties) throws MojoExecutionException {
 		File contentFile = new File(userDir, CONTENT_PROPERTIES);
@@ -628,66 +629,69 @@ public class BuildDistro extends AbstractTask {
 		}
 
 		Properties contentProperties = new Properties();
+		String contentPackageName = null;
+		String contentPackageVersion = null;
+
 		try (BufferedReader reader = new BufferedReader(new FileReader(contentFile))) {
 			contentProperties.load(reader);
+			contentPackageName = contentProperties.getProperty("name");
+			contentPackageVersion = contentProperties.getProperty("version");
+
+			if (contentPackageName == null || contentPackageVersion == null) {
+				throw new MojoExecutionException("Content package name or version not specified in content.properties");
+			}
 		} catch (IOException e) {
 			throw new MojoExecutionException("Failed to read content.properties file", e);
 		}
 
 		for (String dependency : contentProperties.stringPropertyNames()) {
-			String versionRange = contentProperties.getProperty(dependency);
-			String distroVersion = distroProperties.get(dependency);
+			if (dependency.startsWith("omod.") || dependency.startsWith("owa.") || dependency.startsWith("war")
+					|| dependency.startsWith("spa.frontendModule") || dependency.startsWith("content.")) {
+				String versionRange = contentProperties.getProperty(dependency);
+				String distroVersion = distroProperties.get(dependency);
 
-			if (distroVersion == null) {
-				String latestVersion = findLatestMatchingVersion(dependency, versionRange);
-				if (latestVersion == null) {
-					throw new MojoExecutionException("No matching version found for dependency " + dependency);
+				if (distroVersion == null) {
+					String latestVersion = findLatestMatchingVersion(dependency);
+					if (latestVersion == null) {
+						throw new MojoExecutionException("No matching version found for dependency " + dependency);
+					}
+					distroProperties.add(dependency, latestVersion);
+				} else {
+					checkVersionInRange(dependency, versionRange, distroVersion, contentPackageName);
 				}
-
-				distroProperties.add(dependency, latestVersion);
-			} else {
-				checkVersionInRange(dependency, versionRange, distroVersion);
 			}
 		}
 	}
 
-	private String findLatestMatchingVersion(String dependency, String versionRange) throws MojoExecutionException {
-		return distroHelper.findLatestMatchingVersion(dependency, versionRange);
+
+	private String findLatestMatchingVersion(String dependency) throws MojoExecutionException {
+		return distroHelper.findLatestMatchingVersion(dependency);
 	}
 
 	/**
-     * Checks if the version from distro.properties satisfies the range specified in content.properties.
-     * Throws an exception if there is a mismatch.
-     *
-     * @param contentDependencyKey       the dependency key
-     * @param contentDependencyVersionRange the version range from content.properties
-     * @param distroPropertyVersion      the version from distro.properties
-     * @throws MojoExecutionException if there is a version mismatch
-     */
-	private void checkVersionInRange(String contentDependencyKey, String contentDependencyVersionRange, String distroPropertyVersion) throws MojoExecutionException {
-		Semver semverVersion = new Semver(distroPropertyVersion, Semver.SemverType.NPM);
-		String[] ranges = contentDependencyVersionRange.split(",");
-		boolean inRange = false;
+	 * Checks if the version from distro.properties satisfies the range specified in content.properties.
+	 * Throws an exception if there is a mismatch.
+	 *
+	 * @param contentDependencyKey          The key of the content dependency.
+	 * @param contentDependencyVersionRange The version range specified in content.properties.
+	 * @param distroPropertyVersion         The version specified in distro.properties.
+	 * @param contentPackageName            The name of the content package.
+	 * @throws MojoExecutionException If the version does not fall within the specified range or if the range format is invalid.
+	 */
+	private void checkVersionInRange(String contentDependencyKey, String contentDependencyVersionRange, String distroPropertyVersion, String contentPackageName) throws MojoExecutionException {
+		com.github.zafarkhaja.semver.Version semverVersion = com.github.zafarkhaja.semver.Version.parse(distroPropertyVersion);
 
-		for (String range : ranges) {
-			range = range.trim();
-			try {
-				if (range.startsWith("^") || range.startsWith("~")) {
-					inRange = semverVersion.satisfies(range);
-				} else {
-					Semver rangeVersion = new Semver(range, Semver.SemverType.NPM);
-					inRange = semverVersion.diff(rangeVersion) == Semver.VersionDiff.NONE;
-				}
-				if (inRange) break;
-			} catch (SemverException e) {
-				throw new MojoExecutionException("Invalid version range format for " + contentDependencyKey + ": " + contentDependencyVersionRange, e);
+		try {
+			boolean inRange = semverVersion.satisfies(contentDependencyVersionRange.trim());
+			if (!inRange) {
+				throw new MojoExecutionException(
+						"Incompatible version for " + contentDependencyKey + " in content package " + contentPackageName + ". Specified range: " + contentDependencyVersionRange
+								+ ", found in distribution: " + distroPropertyVersion);
 			}
-		}
-
-		if (!inRange) {
-			throw new MojoExecutionException(
-					"Incompatible version for " + contentDependencyKey + ". Specified range: " + contentDependencyVersionRange
-							+ ", found in distribution: " + distroPropertyVersion);
+		} catch (ParseException e) {
+			throw new MojoExecutionException("Invalid version range format for " + contentDependencyKey + " in content package " + contentPackageName + ": " + contentDependencyVersionRange, e);
 		}
 	}
+
+
 }
