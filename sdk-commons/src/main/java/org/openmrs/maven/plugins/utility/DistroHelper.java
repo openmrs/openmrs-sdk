@@ -50,18 +50,17 @@ public class DistroHelper {
 
 	final VersionsHelper versionHelper;
 
-	final NpmVersionHelper npmVersionHelper;
+	NpmVersionHelper npmVersionHelper;
 
 	PackageJson packageJson;
 
 	public DistroHelper(MavenProject mavenProject, MavenSession mavenSession, BuildPluginManager pluginManager,
-                        Wizard wizard, VersionsHelper versionHelper, NpmVersionHelper npmVersionHelper) {
+                        Wizard wizard, VersionsHelper versionHelper) {
 		this.mavenProject = mavenProject;
 		this.mavenSession = mavenSession;
 		this.pluginManager = pluginManager;
 		this.wizard = wizard;
 		this.versionHelper = versionHelper;
-        this.npmVersionHelper = npmVersionHelper;
     }
 
 	/**
