@@ -664,7 +664,7 @@ public class BuildDistro extends AbstractTask {
 	}
 
 
-	private String findLatestMatchingVersion(String dependency) throws MojoExecutionException {
+	private String findLatestMatchingVersion(String dependency) {
 		return distroHelper.findLatestMatchingVersion(dependency);
 	}
 
