@@ -297,6 +297,12 @@ public class BuildDistro extends AbstractTask {
 				owasDir.mkdir();
 				downloadOWAs(targetDirectory, distroProperties, owasDir);
 
+				spaInstaller.installFromDistroProperties(tempDir, distroProperties, ignorePeerDependencies, overrideReuseNodeCache);
+				File frontendDir = new File(tempDir, "frontend");
+				if(frontendDir.exists()) {
+					frontendDir.renameTo(new File(tempDir, "bundledFrontend"));
+				}
+
 				warfile.addFolder(tempDir, new ZipParameters());
 				try {
 					FileUtils.deleteDirectory(tempDir);
