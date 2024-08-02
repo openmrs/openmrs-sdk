@@ -457,17 +457,17 @@ public class DistroHelper {
 				|| !isSameArtifact(previous, next);
 	}
 
-	public Properties getFrontendProperties(Server server) throws MojoExecutionException {
-		com.github.zafarkhaja.semver.Version v = com.github.zafarkhaja.semver.Version.parse(server.getVersion());
+	public Properties getFrontendProperties(Artifact distroArtifact, File directory) throws MojoExecutionException {
+		com.github.zafarkhaja.semver.Version v = com.github.zafarkhaja.semver.Version.parse(distroArtifact.getVersion());
 
 		Artifact artifact;
 		if (v.satisfies(">=3.0.0")) {
-			artifact = new Artifact("distro-emr-frontend", server.getVersion(), server.getDistroGroupId(), "zip");
+			artifact = new Artifact("distro-emr-frontend", distroArtifact.getVersion(), distroArtifact.getGroupId(), "zip");
 		} else {
-			artifact = new Artifact("referenceapplication-frontend", server.getVersion(), server.getDistroGroupId(), "zip");
+			artifact = new Artifact("referenceapplication-frontend", distroArtifact.getVersion(), distroArtifact.getGroupId(), "zip");
 		}
 
-		File frontendDistroFile = downloadDistro(server.getServerDirectory(), artifact, "frontend.zip");
+		File frontendDistroFile = downloadDistro(directory, artifact, "frontend.zip");
 		Properties frontendProperties = new Properties();
 
 		try (ZipFile zipFile = new ZipFile(frontendDistroFile)) {
@@ -479,7 +479,7 @@ public class DistroHelper {
 						frontendProperties = PropertiesUtils.getFrontendPropertiesFromJson(inputStream);
 					}
 					break;
-                }
+				}
 			}
 		}
 		catch (IOException e) {
@@ -493,20 +493,30 @@ public class DistroHelper {
 		return frontendProperties;
 	}
 
+	public Properties getFrontendProperties(Server server) throws MojoExecutionException {
+		Artifact artifact = new Artifact(server.getDistroArtifactId(), server.getVersion(), server.getDistroGroupId());
+		return getFrontendProperties(artifact, server.getServerDirectory());
+	}
+
+	public Properties getFrontendPropertiesForServer(Artifact artifact, File directory) throws MojoExecutionException {
+		if (new Version(artifact.getVersion()).higher(new Version("3.0.0-beta.16"))) {
+			return getFrontendProperties(artifact, directory);
+		} else {
+			return PropertiesUtils.getFrontendPropertiesFromSpaConfigUrl(
+					"https://raw.githubusercontent.com/openmrs/openmrs-distro-referenceapplication/" + artifact.getVersion() + "/frontend/spa-build-config.json");
+		}
+	}
+
     public Properties getFrontendPropertiesForServer(Server server) throws MojoExecutionException {
-        if (new Version(server.getVersion()).higher(new Version("3.0.0-beta.16"))) {
-            return getFrontendProperties(server);
-        } else {
-            return PropertiesUtils.getFrontendPropertiesFromSpaConfigUrl(
-                    "https://raw.githubusercontent.com/openmrs/openmrs-distro-referenceapplication/" + server.getVersion() + "/frontend/spa-build-config.json");
-        }
+		Artifact artifact = new Artifact(server.getDistroArtifactId(), server.getVersion(), server.getDistroGroupId());
+  		return getFrontendPropertiesForServer(artifact, server.getServerDirectory());
     }
 
-	public Properties getArtifactProperties(Artifact artifact, Server server, String appShellVersion) throws MojoExecutionException {
-		File file = downloadDistro(server.getServerDirectory(), artifact);
+	public Properties getArtifactProperties(Artifact artifact, File directory, String appShellVersion) throws MojoExecutionException {
+		File file = downloadDistro(directory, artifact);
 		Properties properties = new Properties();
 		properties.putAll(PropertiesUtils.getDistroProperties(file));
-		properties.putAll(getFrontendPropertiesForServer(server));
+		properties.putAll(getFrontendPropertiesForServer(artifact, directory));
 		properties.putAll(PropertiesUtils.getConfigurationProperty(artifact));
 		properties.put(PROPERTY_DISTRO_GROUP_ID, artifact.getGroupId());
 		properties.put(PROPERTY_DISTRO_ARTIFACT_ID, artifact.getArtifactId());
@@ -515,6 +525,32 @@ public class DistroHelper {
 		}
 		properties.setProperty("omod.spa", versionHelper.getLatestSnapshotVersion(new Artifact("spa", "latest")));
 		return properties;
+	}
+
+
+	public Properties getArtifactProperties(Artifact artifact, Server server, String appShellVersion) throws MojoExecutionException {
+		return getArtifactProperties(artifact, server.getServerDirectory(), appShellVersion);
+	}
+
+	public DistroProperties resolveParentArtifact(Artifact parentArtifact, File directory, DistroProperties distroProperties, String appShellVersion) throws MojoExecutionException {
+		Properties properties = getArtifactProperties(parentArtifact, directory, appShellVersion);
+		for (Object key : distroProperties.getAllKeys()) {
+			String keyStr = (String) key;
+			properties.setProperty(keyStr, distroProperties.getParam(keyStr));
+		}
+		List<String> exclusions = distroProperties.getExclusions();
+
+		for (String exclusion : exclusions) {
+			properties.remove(exclusion);
+		}
+		return new DistroProperties(properties);
+	}
+
+	public DistroProperties resolveParentArtifact(Artifact parentArtifact, Server server, DistroProperties distroProperties, String appShellVersion) throws MojoExecutionException {
+		server.setDistroArtifactId(parentArtifact.getArtifactId());
+		server.setDistroGroupId(parentArtifact.getGroupId());
+		server.setVersion(parentArtifact.getVersion());
+		return resolveParentArtifact(parentArtifact, server.getServerDirectory(), distroProperties, appShellVersion);
 	}
 
 }

@@ -138,6 +138,8 @@ public class BuildDistro extends AbstractTask {
 			if (distroFile.exists()) {
 				wizard.showMessage("Building distribution from the distro file at " + distroFile + "...\n");
 				distroProperties = new DistroProperties(distroFile);
+				distroArtifact = distroProperties.getParentArtifact();
+				distroProperties = handleParentDistroProperties(distroArtifact, buildDirectory, distroProperties);
 			} else if (Project.hasProject(userDir)) {
 				Project config = Project.loadProject(userDir);
 				distroArtifact = DistroHelper
@@ -157,6 +159,8 @@ public class BuildDistro extends AbstractTask {
 			}
 		} else if (StringUtils.isNotBlank(distro)) {
 			distroProperties = distroHelper.resolveDistroPropertiesForStringSpecifier(distro, versionsHelper);
+			distroArtifact = distroProperties.getParentArtifact();
+			distroProperties = handleParentDistroProperties(distroArtifact, buildDirectory, distroProperties);
 		}
 
 		if (distroProperties == null) {
@@ -196,6 +200,13 @@ public class BuildDistro extends AbstractTask {
 		wizard.showMessage(
 				"The '" + distroName + "' distribution created! To start up the server run 'docker-compose up' from "
 						+ buildDirectory.getAbsolutePath() + "\n");
+	}
+
+	private DistroProperties handleParentDistroProperties(Artifact distroArtifact, File buildDirectory, DistroProperties distroProperties) throws MojoExecutionException {
+		if (StringUtils.isNotBlank(distroArtifact.getArtifactId()) && StringUtils.isNotBlank(distroArtifact.getGroupId()) && StringUtils.isNotBlank(distroArtifact.getVersion())) {
+			distroProperties = distroHelper.resolveParentArtifact(distroArtifact, buildDirectory, distroProperties, appShellVersion);
+		}
+		return distroProperties;
 	}
 
 	private File getBuildDirectory() throws MojoExecutionException {

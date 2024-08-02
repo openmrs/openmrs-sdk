@@ -19,7 +19,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.Properties;
 
 import net.lingala.zip4j.core.ZipFile;
 import net.lingala.zip4j.exception.ZipException;
@@ -219,20 +218,7 @@ public class Setup extends AbstractServerTask {
 				default:  // distro properties from current directory
 					Artifact distroArtifact = distroProperties.getParentArtifact();
 					if (StringUtils.isNotBlank(distroArtifact.getArtifactId()) && StringUtils.isNotBlank(distroArtifact.getGroupId()) && StringUtils.isNotBlank(distroArtifact.getVersion())) {
-						server.setDistroArtifactId(distroArtifact.getArtifactId());
-						server.setDistroGroupId(distroArtifact.getGroupId());
-						server.setVersion(distroArtifact.getVersion());
-						Properties properties = distroHelper.getArtifactProperties(distroArtifact, server, appShellVersion);
-						for (Object key : distroProperties.getAllKeys()) {
-							String keyStr = (String) key;
-							properties.setProperty(keyStr, distroProperties.getParam(keyStr));
-						}
-						List<String> exclusions = distroProperties.getExclusions();
-
-						for (String exclusion : exclusions) {
-							properties.remove(exclusion);
-						}
-						distroProperties = new DistroProperties(properties);
+						distroProperties = distroHelper.resolveParentArtifact(distroArtifact, server, distroProperties, appShellVersion);
 					} else {
 						server.setPlatformVersion(
 								distroProperties.getPlatformVersion(distroHelper, server.getServerTmpDirectory()));
