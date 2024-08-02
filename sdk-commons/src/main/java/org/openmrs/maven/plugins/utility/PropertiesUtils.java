@@ -3,9 +3,11 @@ package org.openmrs.maven.plugins.utility;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -19,6 +21,7 @@ import java.util.zip.ZipFile;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.zafarkhaja.semver.ParseException;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -28,6 +31,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.openmrs.maven.plugins.model.Artifact;
+import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.Server;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,6 +39,10 @@ import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 public class PropertiesUtils {
+
+	private static final String CONTENT_PROPERTIES = "content.properties";
+
+	static DistroHelper distroHelper;
 
 	private static final Logger log = LoggerFactory.getLogger(PropertiesUtils.class);
 
@@ -300,5 +308,88 @@ public class PropertiesUtils {
 		Document document = builder.parse(url);
 		document.getDocumentElement().normalize();
 		return document;
+	}
+
+	/**
+	 * Reads the content.properties file.
+	 * <p> For dependencies defined in both content.properties and distro.properties, this ensures the version specified in distro.properties
+	 * matches the range defined in content.properties; otherwise, we output an error to the user to fix this.</p>
+	 * For dependencies not defined in distro.properties but defined in content.properties, the SDK should locate the latest matching version
+	 * and add that to the OMODs and ESMs used by the distro.
+	 *
+	 * @param userDir           The directory where the distro.properties or content.properties file is located. This is typically the user's working directory.
+	 * @param distroProperties  An object representing the properties defined in distro.properties. This includes versions of various dependencies
+	 *                          currently used in the distribution.
+	 * @throws MojoExecutionException if there is an error reading the content.properties file or if a version conflict is detected.
+	 */
+	public static void parseContentProperties(File userDir, DistroProperties distroProperties) throws MojoExecutionException {
+		File contentFile = new File(userDir, CONTENT_PROPERTIES);
+		if (!contentFile.exists()) {
+			log.info("No content.properties file found in the user directory.");
+			return;
+		}
+
+		Properties contentProperties = new Properties();
+		String contentPackageName = null;
+		String contentPackageVersion = null;
+
+		try (BufferedReader reader = new BufferedReader(new FileReader(contentFile))) {
+			contentProperties.load(reader);
+			contentPackageName = contentProperties.getProperty("name");
+			contentPackageVersion = contentProperties.getProperty("version");
+
+			if (contentPackageName == null || contentPackageVersion == null) {
+				throw new MojoExecutionException("Content package name or version not specified in content.properties");
+			}
+		} catch (IOException e) {
+			throw new MojoExecutionException("Failed to read content.properties file", e);
+		}
+
+		for (String dependency : contentProperties.stringPropertyNames()) {
+			if (dependency.startsWith("omod.") || dependency.startsWith("owa.") || dependency.startsWith("war")
+					|| dependency.startsWith("spa.frontendModule") || dependency.startsWith("content.")) {
+				String versionRange = contentProperties.getProperty(dependency);
+				String distroVersion = distroProperties.get(dependency);
+
+				if (distroVersion == null) {
+					String latestVersion = findLatestMatchingVersion(dependency);
+					if (latestVersion == null) {
+						throw new MojoExecutionException("No matching version found for dependency " + dependency);
+					}
+					distroProperties.add(dependency, latestVersion);
+				} else {
+					checkVersionInRange(dependency, versionRange, distroVersion, contentPackageName);
+				}
+			}
+		}
+	}
+
+	private static String findLatestMatchingVersion(String dependency) {
+		return distroHelper.findLatestMatchingVersion(dependency);
+	}
+
+	/**
+	 * Checks if the version from distro.properties satisfies the range specified in content.properties.
+	 * Throws an exception if there is a mismatch.
+	 *
+	 * @param contentDependencyKey          The key of the content dependency.
+	 * @param contentDependencyVersionRange The version range specified in content.properties.
+	 * @param distroPropertyVersion         The version specified in distro.properties.
+	 * @param contentPackageName            The name of the content package.
+	 * @throws MojoExecutionException If the version does not fall within the specified range or if the range format is invalid.
+	 */
+	private static void checkVersionInRange(String contentDependencyKey, String contentDependencyVersionRange, String distroPropertyVersion, String contentPackageName) throws MojoExecutionException {
+		com.github.zafarkhaja.semver.Version semverVersion = com.github.zafarkhaja.semver.Version.parse(distroPropertyVersion);
+
+		try {
+			boolean inRange = semverVersion.satisfies(contentDependencyVersionRange.trim());
+			if (!inRange) {
+				throw new MojoExecutionException(
+						"Incompatible version for " + contentDependencyKey + " in content package " + contentPackageName + ". Specified range: " + contentDependencyVersionRange
+								+ ", found in distribution: " + distroPropertyVersion);
+			}
+		} catch (ParseException e) {
+			throw new MojoExecutionException("Invalid version range format for " + contentDependencyKey + " in content package " + contentPackageName + ": " + contentDependencyVersionRange, e);
+		}
 	}
 }
