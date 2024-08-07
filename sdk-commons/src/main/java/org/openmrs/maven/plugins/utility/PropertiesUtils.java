@@ -22,10 +22,10 @@ import java.util.zip.ZipFile;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.zafarkhaja.semver.ParseException;
+import com.vdurmont.semver4j.Semver;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
@@ -352,7 +352,7 @@ public class PropertiesUtils {
 				String distroVersion = distroProperties.get(dependency);
 
 				if (distroVersion == null) {
-					String latestVersion = findLatestMatchingVersion(dependency);
+					String latestVersion = findLatestMatchingVersion(dependency, versionRange);
 					if (latestVersion == null) {
 						throw new MojoExecutionException("No matching version found for dependency " + dependency);
 					}
@@ -364,8 +364,8 @@ public class PropertiesUtils {
 		}
 	}
 
-	private static String findLatestMatchingVersion(String dependency) {
-		return distroHelper.findLatestMatchingVersion(dependency);
+	private static String findLatestMatchingVersion(String dependency, String versionRange) {
+		return distroHelper.findLatestMatchingVersion(dependency, versionRange);
 	}
 
 	/**
@@ -379,7 +379,7 @@ public class PropertiesUtils {
 	 * @throws MojoExecutionException If the version does not fall within the specified range or if the range format is invalid.
 	 */
 	private static void checkVersionInRange(String contentDependencyKey, String contentDependencyVersionRange, String distroPropertyVersion, String contentPackageName) throws MojoExecutionException {
-		com.github.zafarkhaja.semver.Version semverVersion = com.github.zafarkhaja.semver.Version.parse(distroPropertyVersion);
+		Semver semverVersion = new Semver(distroPropertyVersion, Semver.SemverType.NPM);
 
 		try {
 			boolean inRange = semverVersion.satisfies(contentDependencyVersionRange.trim());
