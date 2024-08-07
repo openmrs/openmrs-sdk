@@ -8,10 +8,12 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.DistroProperties;
+import org.openmrs.maven.plugins.model.PackageJson;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.model.UpgradeDifferential;
 import org.openmrs.maven.plugins.model.Version;
 import org.twdata.maven.mojoexecutor.MojoExecutor;
+import org.twdata.maven.mojoexecutor.MojoExecutor.Element;
 
 import java.io.File;
 import java.io.IOException;
@@ -48,14 +50,18 @@ public class DistroHelper {
 
 	final VersionsHelper versionHelper;
 
+	NpmVersionHelper npmVersionHelper;
+
+	PackageJson packageJson;
+
 	public DistroHelper(MavenProject mavenProject, MavenSession mavenSession, BuildPluginManager pluginManager,
-						Wizard wizard, VersionsHelper versionHelper) {
+                        Wizard wizard, VersionsHelper versionHelper) {
 		this.mavenProject = mavenProject;
 		this.mavenSession = mavenSession;
 		this.pluginManager = pluginManager;
 		this.wizard = wizard;
 		this.versionHelper = versionHelper;
-	}
+    }
 
 	/**
 	 * @return distro properties from openmrs-distro.properties file in current directory or null if not exist
@@ -553,4 +559,13 @@ public class DistroHelper {
 		return resolveParentArtifact(parentArtifact, server.getServerDirectory(), distroProperties, appShellVersion);
 	}
 
+	public String findLatestMatchingVersion(String dependency, String versionRange) {
+		if (dependency.startsWith("omod") || dependency.startsWith("owa") || dependency.startsWith("content.") || dependency.startsWith("war.")) {
+			return versionHelper.getLatestReleasedVersion(new Artifact(dependency, "latest"));
+		} else if (dependency.startsWith("spa.frontendModule")) {
+			packageJson.setName(dependency.substring("spa.frontendModules.".length()));
+			return npmVersionHelper.getLatestReleasedVersionFromNpmRegistry(packageJson, versionRange);
+		}
+		throw new IllegalArgumentException("Unsupported dependency type: " + dependency);
+	}
 }
