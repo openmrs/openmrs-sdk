@@ -559,12 +559,12 @@ public class DistroHelper {
 		return resolveParentArtifact(parentArtifact, server.getServerDirectory(), distroProperties, appShellVersion);
 	}
 
-	public String findLatestMatchingVersion(String dependency) {
+	public String findLatestMatchingVersion(String dependency, String versionRange) {
 		if (dependency.startsWith("omod") || dependency.startsWith("owa") || dependency.startsWith("content.") || dependency.startsWith("war.")) {
 			return versionHelper.getLatestReleasedVersion(new Artifact(dependency, "latest"));
 		} else if (dependency.startsWith("spa.frontendModule")) {
 			packageJson.setName(dependency.substring("spa.frontendModules.".length()));
-			return npmVersionHelper.getLatestReleasedVersionFromNpmRegistry(packageJson);
+			return npmVersionHelper.getLatestReleasedVersionFromNpmRegistry(packageJson, versionRange);
 		}
 		throw new IllegalArgumentException("Unsupported dependency type: " + dependency);
 	}
