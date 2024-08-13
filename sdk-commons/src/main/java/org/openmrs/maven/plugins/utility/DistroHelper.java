@@ -564,7 +564,7 @@ public class DistroHelper {
 			return versionHelper.getLatestReleasedVersion(new Artifact(dependency, "latest"));
 		} else if (dependency.startsWith("spa.frontendModule")) {
 			packageJson.setName(dependency.substring("spa.frontendModules.".length()));
-			return npmVersionHelper.getLatestReleasedVersionFromNpmRegistry(packageJson, versionRange);
+			return npmVersionHelper.getResolvedVersionFromNpmRegistry(packageJson, versionRange);
 		}
 		throw new IllegalArgumentException("Unsupported dependency type: " + dependency);
 	}

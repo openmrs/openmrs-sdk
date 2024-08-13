@@ -24,7 +24,7 @@ public class NpmVersionHelper {
      * @return              The resolved version of the package that satisfies the semver range.
      * @throws RuntimeException if the command fails or the resolved version cannot be determined.
      */
-    public String getLatestReleasedVersionFromNpmRegistry(PackageJson packageJson, String versionRange) {
+    public String getResolvedVersionFromNpmRegistry(PackageJson packageJson, String versionRange) {
         try {
             String packageName = packageJson.getName();
             JSONArray jsonArray = getJsonArray(versionRange, packageName);

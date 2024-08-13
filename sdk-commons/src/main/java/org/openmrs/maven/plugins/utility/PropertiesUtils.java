@@ -21,8 +21,8 @@ import java.util.zip.ZipFile;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.zafarkhaja.semver.ParseException;
-import com.vdurmont.semver4j.Semver;
+import org.semver4j.Semver;
+import org.semver4j.SemverException;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -311,38 +311,45 @@ public class PropertiesUtils {
 	}
 
 	/**
-	 * Reads the content.properties file.
+	 * <p>The distro.properties should have entries like: <code>content.hiv=1.0.0-SNAPSHOT</code>.
+	 * This should correspond to a Zip file stored in a Maven repository and the content.properties file is in that Zip file</p>
+	 *
+	 * <p> So this should be able to read the underlying content.properties file and then.</p>
 	 * <p> For dependencies defined in both content.properties and distro.properties, this ensures the version specified in distro.properties
 	 * matches the range defined in content.properties; otherwise, we output an error to the user to fix this.</p>
-	 * For dependencies not defined in distro.properties but defined in content.properties, the SDK should locate the latest matching version
-	 * and add that to the OMODs and ESMs used by the distro.
+	 * <p>For dependencies not defined in distro.properties but defined in content.properties, the SDK should locate the latest matching version
+	 * and add that to the OMODs and ESMs used by the distro.</p>
 	 *
-	 * @param userDir           The directory where the distro.properties or content.properties file is located. This is typically the user's working directory.
+	 * @param file           The directory where the distro.properties or content.properties file is located. This is typically the user's working directory.
 	 * @param distroProperties  An object representing the properties defined in distro.properties. This includes versions of various dependencies
 	 *                          currently used in the distribution.
 	 * @throws MojoExecutionException if there is an error reading the content.properties file or if a version conflict is detected.
 	 */
-	public static void parseContentProperties(File userDir, DistroProperties distroProperties) throws MojoExecutionException {
-		File contentFile = new File(userDir, CONTENT_PROPERTIES);
-		if (!contentFile.exists()) {
-			log.info("No content.properties file found in the user directory.");
-			return;
-		}
-
+	public static void parseContentProperties(File file, DistroProperties distroProperties) throws MojoExecutionException {
 		Properties contentProperties = new Properties();
-		String contentPackageName = null;
-		String contentPackageVersion = null;
+		boolean found = false;
 
-		try (BufferedReader reader = new BufferedReader(new FileReader(contentFile))) {
-			contentProperties.load(reader);
-			contentPackageName = contentProperties.getProperty("name");
-			contentPackageVersion = contentProperties.getProperty("version");
+		try (ZipFile zipFile = new ZipFile(file)) {
+			Enumeration<? extends ZipEntry> entries = zipFile.entries();
+			while (entries.hasMoreElements()) {
+				ZipEntry zipEntry = entries.nextElement();
+				if (CONTENT_PROPERTIES.equals(zipEntry.getName())) {
+					try (InputStream inputStream = zipFile.getInputStream(zipEntry)) {
+						contentProperties.load(inputStream);
+						found = true;
+						log.info("content.properties file found and parsed successfully.");
 
-			if (contentPackageName == null || contentPackageVersion == null) {
-				throw new MojoExecutionException("Content package name or version not specified in content.properties");
+						if (contentProperties.getProperty("name") == null || contentProperties.getProperty("version") == null) {
+							throw new MojoExecutionException("Content package name or version not specified in content.properties");
+						}
+					}
+				}
+			}
+			if (!found) {
+				throw new MojoExecutionException("content.properties file not found in ZIP file");
 			}
 		} catch (IOException e) {
-			throw new MojoExecutionException("Failed to read content.properties file", e);
+			throw new MojoExecutionException("Error reading content.properties from ZIP file: " + e.getMessage(), e);
 		}
 
 		for (String dependency : contentProperties.stringPropertyNames()) {
@@ -358,7 +365,7 @@ public class PropertiesUtils {
 					}
 					distroProperties.add(dependency, latestVersion);
 				} else {
-					checkVersionInRange(dependency, versionRange, distroVersion, contentPackageName);
+					checkVersionInRange(dependency, versionRange, distroVersion, contentProperties.getProperty("name"));
 				}
 			}
 		}
@@ -379,7 +386,7 @@ public class PropertiesUtils {
 	 * @throws MojoExecutionException If the version does not fall within the specified range or if the range format is invalid.
 	 */
 	private static void checkVersionInRange(String contentDependencyKey, String contentDependencyVersionRange, String distroPropertyVersion, String contentPackageName) throws MojoExecutionException {
-		Semver semverVersion = new Semver(distroPropertyVersion, Semver.SemverType.NPM);
+		Semver semverVersion = new Semver(distroPropertyVersion);
 
 		try {
 			boolean inRange = semverVersion.satisfies(contentDependencyVersionRange.trim());
@@ -388,7 +395,7 @@ public class PropertiesUtils {
 						"Incompatible version for " + contentDependencyKey + " in content package " + contentPackageName + ". Specified range: " + contentDependencyVersionRange
 								+ ", found in distribution: " + distroPropertyVersion);
 			}
-		} catch (ParseException e) {
+		} catch (SemverException e) {
 			throw new MojoExecutionException("Invalid version range format for " + contentDependencyKey + " in content package " + contentPackageName + ": " + contentDependencyVersionRange, e);
 		}
 	}

@@ -34,6 +34,11 @@
             <artifactId>java-semver</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>org.semver4j</groupId>
+            <artifactId>semver4j</artifactId>
+        </dependency>
+
         <!-- TODO: Get rid of this... just using for URLBuilder -->
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
@@ -85,12 +90,6 @@
             <groupId>org.json</groupId>
             <artifactId>json</artifactId>
             <version>20230618</version>
-        </dependency>
-        <dependency>
-            <groupId>com.vdurmont</groupId>
-            <artifactId>semver4j</artifactId>
-            <version>3.1.0</version>
-            <scope>compile</scope>
         </dependency>
     </dependencies>
 
