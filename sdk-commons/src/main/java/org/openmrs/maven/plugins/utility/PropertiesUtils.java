@@ -312,46 +312,66 @@ public class PropertiesUtils {
 
 	/**
 	 * <p>The distro.properties should have entries like: <code>content.hiv=1.0.0-SNAPSHOT</code>.
-	 * This should correspond to a Zip file stored in a Maven repository and the content.properties file is in that Zip file</p>
+	 * This should correspond to a Zip file stored in a Maven repository, and the content.properties file is in that Zip file.</p>
 	 *
-	 * <p> So this should be able to read the underlying content.properties file and then.</p>
-	 * <p> For dependencies defined in both content.properties and distro.properties, this ensures the version specified in distro.properties
-	 * matches the range defined in content.properties; otherwise, we output an error to the user to fix this.</p>
+	 * <p>This method reads all underlying content.properties files and checks dependencies against distro.properties.</p>
+	 * <p>For dependencies defined in both content.properties and distro.properties, this ensures the version specified in distro.properties
+	 * matches the range defined in content.properties; otherwise, it outputs an error for the user to fix.</p>
 	 * <p>For dependencies not defined in distro.properties but defined in content.properties, the SDK should locate the latest matching version
 	 * and add that to the OMODs and ESMs used by the distro.</p>
 	 *
-	 * @param file           The directory where the distro.properties or content.properties file is located. This is typically the user's working directory.
+	 * @param directory         The directory where the distro.properties file is located. This is typically the user's working directory.
 	 * @param distroProperties  An object representing the properties defined in distro.properties. This includes versions of various dependencies
 	 *                          currently used in the distribution.
 	 * @throws MojoExecutionException if there is an error reading the content.properties file or if a version conflict is detected.
 	 */
-	public static void parseContentProperties(File file, DistroProperties distroProperties) throws MojoExecutionException {
-		Properties contentProperties = new Properties();
-		boolean found = false;
+	public static void parseContentProperties(File directory, DistroProperties distroProperties) throws MojoExecutionException {
+		File[] zipFiles = directory.listFiles((dir, name) -> name.endsWith(".zip"));
 
-		try (ZipFile zipFile = new ZipFile(file)) {
-			Enumeration<? extends ZipEntry> entries = zipFile.entries();
-			while (entries.hasMoreElements()) {
-				ZipEntry zipEntry = entries.nextElement();
-				if (CONTENT_PROPERTIES.equals(zipEntry.getName())) {
-					try (InputStream inputStream = zipFile.getInputStream(zipEntry)) {
-						contentProperties.load(inputStream);
-						found = true;
-						log.info("content.properties file found and parsed successfully.");
-
-						if (contentProperties.getProperty("name") == null || contentProperties.getProperty("version") == null) {
-							throw new MojoExecutionException("Content package name or version not specified in content.properties");
-						}
-					}
-				}
-			}
-			if (!found) {
-				throw new MojoExecutionException("content.properties file not found in ZIP file");
-			}
-		} catch (IOException e) {
-			throw new MojoExecutionException("Error reading content.properties from ZIP file: " + e.getMessage(), e);
+		if (zipFiles == null || zipFiles.length == 0) {
+            log.info("No ZIP files found in directory: {}", directory.getAbsolutePath());
+			return;
 		}
 
+		boolean foundAny = false;
+
+		for (File zipFile : zipFiles) {
+			Properties contentProperties = new Properties();
+			boolean found = false;
+
+			try (ZipFile zip = new ZipFile(zipFile)) {
+				Enumeration<? extends ZipEntry> entries = zip.entries();
+				while (entries.hasMoreElements()) {
+					ZipEntry zipEntry = entries.nextElement();
+					if (CONTENT_PROPERTIES.equals(zipEntry.getName())) {
+						try (InputStream inputStream = zip.getInputStream(zipEntry)) {
+							contentProperties.load(inputStream);
+							found = true;
+							foundAny = true;
+                            log.info("content.properties file found in {} and parsed successfully.", zipFile.getName());
+
+							if (contentProperties.getProperty("name") == null || contentProperties.getProperty("version") == null) {
+								throw new MojoExecutionException("Content package name or version not specified in content.properties in " + zipFile.getName());
+							}
+						}
+						break;
+					}
+				}
+			} catch (IOException e) {
+				throw new MojoExecutionException("Error reading content.properties from ZIP file: " + zipFile.getName() + ": " + e.getMessage(), e);
+			}
+
+			if (found) {
+				processContentProperties(contentProperties, distroProperties, zipFile.getName());
+			}
+		}
+
+		if (!foundAny) {
+            log.info("No content.properties file found in any ZIP file in directory: {}", directory.getAbsolutePath());
+        }
+	}
+
+	private static void processContentProperties(Properties contentProperties, DistroProperties distroProperties, String zipFileName) throws MojoExecutionException {
 		for (String dependency : contentProperties.stringPropertyNames()) {
 			if (dependency.startsWith("omod.") || dependency.startsWith("owa.") || dependency.startsWith("war")
 					|| dependency.startsWith("spa.frontendModule") || dependency.startsWith("content.")) {
@@ -361,7 +381,7 @@ public class PropertiesUtils {
 				if (distroVersion == null) {
 					String latestVersion = findLatestMatchingVersion(dependency, versionRange);
 					if (latestVersion == null) {
-						throw new MojoExecutionException("No matching version found for dependency " + dependency);
+						throw new MojoExecutionException("No matching version found for dependency " + dependency + " in " + zipFileName);
 					}
 					distroProperties.add(dependency, latestVersion);
 				} else {
