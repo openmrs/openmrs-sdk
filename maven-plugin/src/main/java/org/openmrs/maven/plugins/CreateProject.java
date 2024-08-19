@@ -38,11 +38,15 @@ public class CreateProject extends AbstractTask {
 
 	private static final String TYPE_OWA = "owa-project";
 
+	private static final String TYPE_CONTENT_PACKAGE = "content-package";
+
 	private static final String OPTION_PLATFORM = "Platform module";
 
 	public static final String OPTION_REFAPP = "Reference Application module";
 
 	private static final String OPTION_OWA = "Open Web App";
+
+	private static final String OPTION_CONTENT_PACKAGES = "Content Package";
 
 	private static final String MODULE_ID_INFO =
 			"Module id uniquely identifies your module in the OpenMRS world.\n\n" +
@@ -168,6 +172,12 @@ public class CreateProject extends AbstractTask {
 	private String platform;
 
 	/**
+	 * The generated project's Openmrs Content Package Version.
+	 */
+	@Parameter(property = "contentpackage")
+	private String contentpackage;
+
+	/**
 	 * The generated project's Openmrs Reference Application Version.
 	 */
 	@Parameter(property = "refapp")
@@ -199,7 +209,7 @@ public class CreateProject extends AbstractTask {
 
 	private void setProjectType() throws MojoExecutionException {
 		String choice = wizard.promptForMissingValueWithOptions(MODULE_TYPE_PROMPT, type, null,
-				Arrays.asList(OPTION_PLATFORM, OPTION_REFAPP, OPTION_OWA));
+				Arrays.asList(OPTION_PLATFORM, OPTION_REFAPP, OPTION_OWA, OPTION_CONTENT_PACKAGES));
 
 		if (OPTION_PLATFORM.equals(choice)) {
 			type = TYPE_PLATFORM;
@@ -207,6 +217,8 @@ public class CreateProject extends AbstractTask {
 			type = TYPE_REFAPP;
 		} else if (OPTION_OWA.equals(choice)) {
 			type = TYPE_OWA;
+		} else if (OPTION_CONTENT_PACKAGES.equals(choice)) {
+			type = TYPE_CONTENT_PACKAGE;
 		}
 	}
 
@@ -269,6 +281,10 @@ public class CreateProject extends AbstractTask {
 					"What is the lowest version of the Reference Application (-D%s) you want to support?", refapp, "refapp",
 					"2.4");
 			archetypeArtifactId = SDKConstants.REFAPP_ARCH_ARTIFACT_ID;
+		} else if (TYPE_CONTENT_PACKAGE.equals(type)) {
+			contentpackage = wizard.promptForValueIfMissingWithDefault("What is the lowest version of the content package (-D%s) you want to support?", contentpackage, "contentpackage",
+					"1.0.0-SNAPSHOT");
+			archetypeArtifactId = SDKConstants.CONTENT_PACKAGE_ARCH_ARTIFACT_ID;
 		} else {
 			throw new MojoExecutionException("Invalid project type");
 		}
@@ -288,6 +304,8 @@ public class CreateProject extends AbstractTask {
 			properties.setProperty("openmrsPlatformVersion", platform);
 		} else if (refapp != null) {
 			properties.setProperty("openmrsRefappVersion", refapp);
+		} else if (contentpackage != null) {
+			properties.setProperty("openmrsContentPackageVersion", contentpackage);
 		}
 		properties.setProperty("package", packageName);
 		mavenSession.getUserProperties().putAll(properties);

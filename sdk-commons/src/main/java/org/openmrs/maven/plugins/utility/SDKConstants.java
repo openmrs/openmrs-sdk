@@ -40,6 +40,7 @@ public class SDKConstants {
     //archetypes artifactId
     public static final String REFAPP_ARCH_ARTIFACT_ID = "openmrs-sdk-archetype-module-refapp";
     public static final String PLATFORM_ARCH_ARTIFACT_ID = "openmrs-sdk-archetype-module-platform";
+    public static final String CONTENT_PACKAGE_ARCH_ARTIFACT_ID = "openmrs-sdk-archetype-module-content";
     // tomcat plugin
     public static final String OPENMRS_TOMCAT_PLUGIN_GROUP_ID = "org.openmrs.maven.plugins";
     public static final String OPENMRS_TOMCAT7_PLUGIN_ARTIFACT_ID = "openmrs-sdk-tomcat7-maven-plugin";

@@ -15,6 +15,7 @@
     <modules>
         <module>archetype-module-refapp</module>
         <module>archetype-module-platform</module>
+        <module>archetype-module-content</module>
         <module>archetype-submodule-owa</module>
         <module>sdk-commons</module>
         <module>docker-maven-plugin</module>
