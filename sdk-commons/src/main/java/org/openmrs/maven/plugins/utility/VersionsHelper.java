@@ -2,6 +2,7 @@ package org.openmrs.maven.plugins.utility;
 
 import org.apache.maven.artifact.factory.ArtifactFactory;
 import org.apache.maven.artifact.versioning.ArtifactVersion;
+import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.repository.legacy.metadata.ArtifactMetadataRetrievalException;
@@ -68,14 +69,14 @@ public class VersionsHelper {
 
     public List<ArtifactVersion> getAllVersions(Artifact artifact, int maxSize) {
         List<ArtifactVersion> versions = getVersions(artifact);
+        versions.removeIf(version -> "3.1.0-SNAPSHOT".equals(version.toString()));
+        versions.removeIf(version -> "3.0.0-SNAPSHOT".equals(version.toString()));
         sortDescending(versions);
         return versions.subList(0, Math.min(versions.size(), maxSize));
     }
 
-    @SuppressWarnings("unchecked")
     private void sortDescending(List<ArtifactVersion> versions){
-        Collections.sort(versions);
-        Collections.reverse(versions);
+        Collections.sort(versions, (v1, v2) -> new ComparableVersion(v2.toString()).compareTo(new ComparableVersion(v1.toString())));
     }
 
     /**

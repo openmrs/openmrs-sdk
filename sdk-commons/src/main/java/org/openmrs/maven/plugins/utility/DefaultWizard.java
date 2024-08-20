@@ -786,9 +786,13 @@ public class DefaultWizard implements Wizard {
 		Map<String, String> optionsMap = new LinkedHashMap<>();
 
 		{
-			Artifact artifact = new Artifact("distro-emr-configuration", "3.0.0-SNAPSHOT", "org.openmrs", "zip");
-			for (ArtifactVersion version : versionsHelper.getAllVersions(artifact, MAX_OPTIONS_SIZE)) {
-				optionsMap.put(String.format(optionTemplate, version.toString()), artifact.getGroupId() + ":" + artifact.getArtifactId() + ":" + version);
+			Artifact artifact = new Artifact("distro-emr-configuration", "3.0.0-beta.21", "org.openmrs", "zip");
+			List<ArtifactVersion> versionList = versionsHelper.getAllVersions(artifact, MAX_OPTIONS_SIZE);
+			for (ArtifactVersion version : versionList) {
+				if (optionsMap.size() < MAX_OPTIONS_SIZE) {
+					optionsMap.put(String.format(optionTemplate, version.toString()),
+							artifact.getGroupId() + ":" + artifact.getArtifactId() + ":" + version);
+				}
 			}
 		}
 
@@ -797,10 +801,15 @@ public class DefaultWizard implements Wizard {
 		}
 
 		{
-			Artifact artifact = new Artifact("referenceapplication-distro", "3.0.0-SNAPSHOT", "org.openmrs.distro", "zip");
-			for (ArtifactVersion version : versionsHelper.getAllVersions(artifact, MAX_OPTIONS_SIZE)) {
-				optionsMap.put(String.format(optionTemplate, version.toString()), artifact.getGroupId() + ":" + artifact.getArtifactId() + ":" + version);
-
+			Artifact artifact = new Artifact("referenceapplication-distro", "3.0.0-beta.21", "org.openmrs.distro", "zip");
+			List<ArtifactVersion> versionList = versionsHelper.getAllVersions(artifact, MAX_OPTIONS_SIZE);
+			for (ArtifactVersion version : versionList) {
+				if (optionsMap.size() < MAX_OPTIONS_SIZE) {
+					optionsMap.put(String.format(optionTemplate, version.toString()),
+							artifact.getGroupId() + ":" + artifact.getArtifactId() + ":" + version);
+				} else {
+					break;
+				}
 			}
 		}
 
