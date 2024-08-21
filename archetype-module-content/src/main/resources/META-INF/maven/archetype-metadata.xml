@@ -5,21 +5,14 @@
                       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <requiredProperties>
         <requiredProperty key="groupId">
-            <defaultValue>org.openmrs.module</defaultValue>
+            <defaultValue>org.openmrs.content</defaultValue>
         </requiredProperty>
         <requiredProperty key="artifactId" />
-        <requiredProperty key="version">
-            <defaultValue>1.0.0-SNAPSHOT</defaultValue>
-        </requiredProperty>
         <requiredProperty key="package">
             <defaultValue>${groupId}.${artifactId}</defaultValue>
         </requiredProperty>
         <requiredProperty key="moduleName" />
         <requiredProperty key="moduleDescription"/>
-        <requiredProperty key="moduleAuthor">
-            <defaultValue>mherman22</defaultValue>
-        </requiredProperty>
-        <requiredProperty key="moduleClassnamePrefix" />
         <requiredProperty key="openmrsContentPackageVersion"/>
     </requiredProperties>
 

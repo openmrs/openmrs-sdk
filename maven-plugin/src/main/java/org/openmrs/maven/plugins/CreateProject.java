@@ -273,17 +273,14 @@ public class CreateProject extends AbstractTask {
 
 		if (TYPE_PLATFORM.equals(type)) {
 			platform = wizard.promptForValueIfMissingWithDefault(
-					"What is the lowest version of the platform (-D%s) you want to support?", platform, "platform",
-					"1.11.6");
+			    "What is the lowest version of the platform (-D%s) you want to support?", platform, "platform", "1.11.6");
 			archetypeArtifactId = SDKConstants.PLATFORM_ARCH_ARTIFACT_ID;
 		} else if (TYPE_REFAPP.equals(type)) {
 			refapp = wizard.promptForValueIfMissingWithDefault(
-					"What is the lowest version of the Reference Application (-D%s) you want to support?", refapp, "refapp",
-					"2.4");
+			    "What is the lowest version of the Reference Application (-D%s) you want to support?", refapp, "refapp",
+			    "2.4");
 			archetypeArtifactId = SDKConstants.REFAPP_ARCH_ARTIFACT_ID;
 		} else if (TYPE_CONTENT_PACKAGE.equals(type)) {
-			contentpackage = wizard.promptForValueIfMissingWithDefault("What is the lowest version of the content package (-D%s) you want to support?", contentpackage, "contentpackage",
-					"1.0.0-SNAPSHOT");
 			archetypeArtifactId = SDKConstants.CONTENT_PACKAGE_ARCH_ARTIFACT_ID;
 		} else {
 			throw new MojoExecutionException("Invalid project type");
@@ -296,14 +293,15 @@ public class CreateProject extends AbstractTask {
 		properties.setProperty("artifactId", artifactId);
 		properties.setProperty("groupId", groupId);
 		properties.setProperty("version", version);
-		properties.setProperty("moduleClassnamePrefix", moduleClassnamePrefix);
 		properties.setProperty("moduleName", moduleName);
 		properties.setProperty("moduleDescription", moduleDescription);
 		properties.setProperty("moduleAuthor", moduleAuthor);
 		if (platform != null) {
 			properties.setProperty("openmrsPlatformVersion", platform);
+			properties.setProperty("moduleClassnamePrefix", moduleClassnamePrefix);
 		} else if (refapp != null) {
 			properties.setProperty("openmrsRefappVersion", refapp);
+			properties.setProperty("moduleClassnamePrefix", moduleClassnamePrefix);
 		} else if (contentpackage != null) {
 			properties.setProperty("openmrsContentPackageVersion", contentpackage);
 		}
