@@ -1,20 +1,22 @@
 package org.openmrs.maven.plugins.utility;
 
-import org.json.JSONArray;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.openmrs.maven.plugins.model.PackageJson;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 
-import org.json.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 public class NpmVersionHelper {
 	
 	private static final Logger log = LoggerFactory.getLogger(NpmVersionHelper.class);
 	
+	private static final ObjectMapper objectMapper = new ObjectMapper();
+
 	/**
 	 * Retrieves the resolved version of an NPM package based on the supplied semver range.
 	 * <p>
@@ -29,21 +31,21 @@ public class NpmVersionHelper {
 	public String getResolvedVersionFromNpmRegistry(PackageJson packageJson, String versionRange) {
 		try {
 			String packageName = packageJson.getName();
-			JSONArray jsonArray = getJsonArray(versionRange, packageName);
+			JsonNode jsonArray = getPackageMetadata(versionRange, packageName);
 			if (jsonArray.isEmpty()) {
 				throw new RuntimeException("No versions found for the specified range: " + versionRange);
 			}
 			
-			JSONObject jsonObject = jsonArray.getJSONObject(0);
-			return jsonObject.getString("version");
+			JsonNode jsonObject = jsonArray.get(0);
+			return jsonObject.get("version").asText();
 		}
 		catch (IOException | InterruptedException e) {
-			log.error(e.getMessage());
+			log.error(e.getMessage(), e);
 			throw new RuntimeException("Error retrieving resolved version from NPM", e);
 		}
 	}
 	
-	private static JSONArray getJsonArray(String versionRange, String packageName) throws IOException, InterruptedException {
+	private static JsonNode getPackageMetadata(String versionRange, String packageName) throws IOException, InterruptedException {
 		if (packageName == null || packageName.isEmpty()) {
 			throw new IllegalArgumentException("Package name cannot be null or empty");
 		}
@@ -68,6 +70,7 @@ public class NpmVersionHelper {
 			throw new RuntimeException(
 			        "npm pack --dry-run --json command failed with exit code " + exitCode + ". Output: " + outputBuilder);
 		}
-		return new JSONArray(outputBuilder.toString());
+		
+		return objectMapper.readTree(outputBuilder.toString());
 	}
 }

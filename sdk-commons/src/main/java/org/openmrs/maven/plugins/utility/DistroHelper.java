@@ -18,13 +18,26 @@ import org.twdata.maven.mojoexecutor.MojoExecutor.Element;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.List;
+import java.util.Properties;
+import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import static org.openmrs.maven.plugins.model.BaseSdkProperties.PROPERTY_DISTRO_ARTIFACT_ID;
 import static org.openmrs.maven.plugins.model.BaseSdkProperties.PROPERTY_DISTRO_GROUP_ID;
-import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.artifactId;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.configuration;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.element;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.executeMojo;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.executionEnvironment;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.goal;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.groupId;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.name;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.plugin;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.version;
 
 public class DistroHelper {
 
@@ -50,18 +63,14 @@ public class DistroHelper {
 
 	final VersionsHelper versionHelper;
 
-	NpmVersionHelper npmVersionHelper;
-
-	PackageJson packageJson;
-
 	public DistroHelper(MavenProject mavenProject, MavenSession mavenSession, BuildPluginManager pluginManager,
-                        Wizard wizard, VersionsHelper versionHelper) {
+	    Wizard wizard, VersionsHelper versionHelper) {
 		this.mavenProject = mavenProject;
 		this.mavenSession = mavenSession;
 		this.pluginManager = pluginManager;
 		this.wizard = wizard;
 		this.versionHelper = versionHelper;
-    }
+	}
 
 	/**
 	 * @return distro properties from openmrs-distro.properties file in current directory or null if not exist
@@ -563,9 +572,20 @@ public class DistroHelper {
 		if (dependency.startsWith("omod") || dependency.startsWith("owa") || dependency.startsWith("content.") || dependency.startsWith("war.")) {
 			return versionHelper.getLatestReleasedVersion(new Artifact(dependency, "latest"));
 		} else if (dependency.startsWith("spa.frontendModule")) {
-			packageJson.setName(dependency.substring("spa.frontendModules.".length()));
-			return npmVersionHelper.getResolvedVersionFromNpmRegistry(packageJson, versionRange);
+			PackageJson packageJson = createPackageJson(dependency);
+			return getResolvedVersionFromNpmRegistry(packageJson, versionRange);
 		}
 		throw new IllegalArgumentException("Unsupported dependency type: " + dependency);
+	}
+
+	private PackageJson createPackageJson(String dependency) {
+		PackageJson packageJson = new PackageJson();
+		packageJson.setName(dependency.substring("spa.frontendModules.".length()));
+		return packageJson;
+	}
+
+	private String getResolvedVersionFromNpmRegistry(PackageJson packageJson, String versionRange) {
+		NpmVersionHelper npmVersionHelper = new NpmVersionHelper();
+		return npmVersionHelper.getResolvedVersionFromNpmRegistry(packageJson, versionRange);
 	}
 }
