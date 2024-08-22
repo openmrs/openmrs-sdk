@@ -1,28 +1,5 @@
 package org.openmrs.maven.plugins;
 
-import net.lingala.zip4j.core.ZipFile;
-import net.lingala.zip4j.exception.ZipException;
-import net.lingala.zip4j.model.ZipParameters;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.MojoFailureException;
-import org.eclipse.jgit.api.errors.GitAPIException;
-import org.apache.maven.plugins.annotations.Mojo;
-import org.apache.maven.plugins.annotations.Parameter;
-import org.eclipse.jgit.api.CloneCommand;
-import org.eclipse.jgit.api.Git;
-import org.openmrs.maven.plugins.model.Artifact;
-import org.openmrs.maven.plugins.model.DistroProperties;
-import org.openmrs.maven.plugins.model.Server;
-import org.openmrs.maven.plugins.model.Version;
-import org.openmrs.maven.plugins.utility.DistroHelper;
-import org.openmrs.maven.plugins.model.Project;
-import org.openmrs.maven.plugins.utility.SDKConstants;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -36,103 +13,125 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
+import org.openmrs.maven.plugins.model.Artifact;
+import org.openmrs.maven.plugins.model.DistroProperties;
+import org.openmrs.maven.plugins.model.Project;
+import org.openmrs.maven.plugins.model.Server;
+import org.openmrs.maven.plugins.model.Version;
+import org.openmrs.maven.plugins.utility.DistroHelper;
+import org.openmrs.maven.plugins.utility.SDKConstants;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import net.lingala.zip4j.core.ZipFile;
+import net.lingala.zip4j.exception.ZipException;
+import net.lingala.zip4j.model.ZipParameters;
+
 /**
  * Create docker configuration for distributions.
  */
 @Mojo(name = "build-distro", requiresProject = false)
 public class BuildDistro extends AbstractTask {
-
+	
 	private static final String DEFAULT_SQL_DUMP = Server.CLASSPATH_SCRIPT_PREFIX + "openmrs-platform.sql";
-
+	
 	private static final String OPENMRS_WAR = "openmrs.war";
-
+	
 	private static final String OPENMRS_DISTRO_PROPERTIES = "openmrs-distro.properties";
-
+	
 	private static final String DOCKER_COMPOSE_PATH = "build-distro/docker-compose.yml";
-
+	
 	private static final String DOCKER_COMPOSE_OVERRIDE_PATH = "build-distro/docker-compose.override.yml";
-
+	
 	private static final String DOCKER_COMPOSE_PROD_PATH = "build-distro/docker-compose.prod.yml";
-
+	
 	private static final String README_PATH = "build-distro/README.md";
-
+	
 	private static final String DISTRIBUTION_VERSION_PROMPT = "You can build the following versions of distribution";
-
+	
 	private static final String DUMP_PREFIX = "CREATE DATABASE IF NOT EXISTS `openmrs`;\n\n USE `openmrs`;\n\n";
-
+	
 	private static final String DB_DUMP_PATH = "dbdump" + File.separator + "dump.sql";
-
+	
 	private static final String WAR_FILE_MODULES_DIRECTORY_NAME = "bundledModules";
-
+	
 	private static final String WEB = "web";
-
+	
 	private static final String DOCKER_COMPOSE_YML = "docker-compose.yml";
-
+	
 	private static final String DOCKER_COMPOSE_PROD_YML = "docker-compose.prod.yml";
-
+	
 	private static final String DOCKER_COMPOSE_OVERRIDE_YML = "docker-compose.override.yml";
-
+	
 	private static final String O2_DISTRIBUTION = "2.x Distribution";
-
+	
 	private static final String O3_DISTRIBUTION = "O3 Distribution";
-
+	
 	private static final Logger log = LoggerFactory.getLogger(BuildDistro.class);
-
+	
 	/**
 	 * Path to the openmrs-distro.properties file.
 	 */
 	@Parameter(property = "distro")
 	private String distro;
-
+	
 	/**
 	 * Directory for generated files. (default to 'docker')
 	 */
 	@Parameter(property = "dir")
 	private String dir;
-
+	
 	/**
 	 * SQL script for database configuration.
 	 */
 	@Parameter(property = "dbSql")
 	private String dbSql;
-
+	
 	/**
 	 * Causes npm to completely ignore peerDependencies
 	 */
 	@Parameter(property = "ignorePeerDependencies", defaultValue = "true")
 	private boolean ignorePeerDependencies;
-
+	
 	/**
-	 * Override the reuseNodeCache property that controls whether the SDK reuse the NPM cache after the setup
+	 * Override the reuseNodeCache property that controls whether the SDK reuse the NPM cache after
+	 * the setup
 	 */
 	@Parameter(property = "reuseNodeCache")
 	public Boolean overrideReuseNodeCache;
-
+	
 	/**
-	 * Instead of creating a `modules` folder in the distro directory, will put modules inside
-	 * the war file in `/webapp/src/main/webapp/WEB-INF/bundledModules`
+	 * Instead of creating a `modules` folder in the distro directory, will put modules inside the
+	 * war file in `/webapp/src/main/webapp/WEB-INF/bundledModules`
 	 */
 	@Parameter(defaultValue = "false", property = "bundled")
 	private boolean bundled;
-
+	
 	/**
 	 * Flag to indicate whether to delete the target directory or not.
 	 */
 	@Parameter(defaultValue = "false", property = "reset")
 	private boolean reset;
-
+	
 	@Parameter(property = "appShellVersion")
 	private String appShellVersion;
-
+	
 	@Override
 	public void executeTask() throws MojoExecutionException, MojoFailureException {
 		File buildDirectory = getBuildDirectory();
-
+		
 		File userDir = new File(System.getProperty("user.dir"));
-
+		
 		Artifact distroArtifact = null;
 		DistroProperties distroProperties = null;
-
+		
 		if (distro == null) {
 			File distroFile = new File(userDir, DistroProperties.DISTRO_FILE_NAME);
 			if (distroFile.exists()) {
@@ -142,15 +141,14 @@ public class BuildDistro extends AbstractTask {
 				distroProperties = handleParentDistroProperties(distroArtifact, buildDirectory, distroProperties);
 			} else if (Project.hasProject(userDir)) {
 				Project config = Project.loadProject(userDir);
-				distroArtifact = DistroHelper
-						.parseDistroArtifact(config.getGroupId() + ":" + config.getArtifactId() + ":" + config.getVersion(),
-								versionsHelper);
-
+				distroArtifact = DistroHelper.parseDistroArtifact(
+				    config.getGroupId() + ":" + config.getArtifactId() + ":" + config.getVersion(), versionsHelper);
+				
 				wizard.showMessage("Building distribution from the source at " + userDir + "...\n");
 				new Build(this).buildProject(config);
-				distroFile = distroHelper
-						.extractFileFromDistro(buildDirectory, distroArtifact, DistroProperties.DISTRO_FILE_NAME);
-
+				distroFile = distroHelper.extractFileFromDistro(buildDirectory, distroArtifact,
+				    DistroProperties.DISTRO_FILE_NAME);
+				
 				if (distroFile.exists()) {
 					distroProperties = new DistroProperties(distroFile);
 				} else {
@@ -162,14 +160,14 @@ public class BuildDistro extends AbstractTask {
 			distroArtifact = distroProperties.getParentArtifact();
 			distroProperties = handleParentDistroProperties(distroArtifact, buildDirectory, distroProperties);
 		}
-
+		
 		if (distroProperties == null) {
 			Server server = new Server.ServerBuilder().build();
-
+			
 			List<String> options = new ArrayList<>();
 			options.add(O2_DISTRIBUTION);
 			options.add(O3_DISTRIBUTION);
-
+			
 			String choice = wizard.promptForMissingValueWithOptions("You can setup following servers", null, null, options);
 			switch (choice) {
 				case O2_DISTRIBUTION:
@@ -178,57 +176,62 @@ public class BuildDistro extends AbstractTask {
 						distroProperties = new DistroProperties(server.getVersion());
 					} else {
 						distroProperties = distroHelper.downloadDistroProperties(buildDirectory, server);
-						distroArtifact = new Artifact(server.getDistroArtifactId(), server.getVersion(), server.getDistroGroupId(),
-								"jar");
+						distroArtifact = new Artifact(server.getDistroArtifactId(), server.getVersion(),
+						        server.getDistroGroupId(), "jar");
 					}
 					break;
 				case O3_DISTRIBUTION:
 					wizard.promptForO3RefAppVersionIfMissing(server, versionsHelper);
 					server.setServerDirectory(buildDirectory);
-					distroArtifact = new Artifact(server.getDistroArtifactId(), server.getVersion(), server.getDistroGroupId(), "zip");
-					distroProperties = new DistroProperties(distroHelper.getArtifactProperties(distroArtifact, server, appShellVersion));
+					distroArtifact = new Artifact(server.getDistroArtifactId(), server.getVersion(),
+					        server.getDistroGroupId(), "zip");
+					distroProperties = new DistroProperties(
+					        distroHelper.getArtifactProperties(distroArtifact, server, appShellVersion));
 			}
-
+			
 		}
-
+		
 		if (distroProperties == null) {
 			throw new MojoExecutionException("The distro you specified, '" + distro + "' could not be retrieved");
 		}
-
+		
 		String distroName = buildDistro(buildDirectory, distroArtifact, distroProperties);
-
+		
 		wizard.showMessage(
-				"The '" + distroName + "' distribution created! To start up the server run 'docker-compose up' from "
-						+ buildDirectory.getAbsolutePath() + "\n");
+		    "The '" + distroName + "' distribution created! To start up the server run 'docker-compose up' from "
+		            + buildDirectory.getAbsolutePath() + "\n");
 	}
-
-	private DistroProperties handleParentDistroProperties(Artifact distroArtifact, File buildDirectory, DistroProperties distroProperties) throws MojoExecutionException {
-		if (StringUtils.isNotBlank(distroArtifact.getArtifactId()) && StringUtils.isNotBlank(distroArtifact.getGroupId()) && StringUtils.isNotBlank(distroArtifact.getVersion())) {
-			distroProperties = distroHelper.resolveParentArtifact(distroArtifact, buildDirectory, distroProperties, appShellVersion);
+	
+	private DistroProperties handleParentDistroProperties(Artifact distroArtifact, File buildDirectory,
+	        DistroProperties distroProperties) throws MojoExecutionException {
+		if (StringUtils.isNotBlank(distroArtifact.getArtifactId()) && StringUtils.isNotBlank(distroArtifact.getGroupId())
+		        && StringUtils.isNotBlank(distroArtifact.getVersion())) {
+			distroProperties = distroHelper.resolveParentArtifact(distroArtifact, buildDirectory, distroProperties,
+			    appShellVersion);
 		}
 		return distroProperties;
 	}
-
+	
 	private File getBuildDirectory() throws MojoExecutionException {
 		final File targetDir;
 		if (StringUtils.isBlank(dir)) {
 			String directory = wizard.promptForValueIfMissingWithDefault(
-					"Specify build directory for generated files (-Ddir, default: 'docker')", dir, "dir", "docker");
+			    "Specify build directory for generated files (-Ddir, default: 'docker')", dir, "dir", "docker");
 			targetDir = new File(directory);
 		} else {
 			targetDir = new File(dir);
 		}
-
+		
 		if (targetDir.exists()) {
 			if (targetDir.isDirectory()) {
 				if (!reset) {
 					if (isDockerComposeCreated(targetDir)) {
 						wizard.showMessage("The directory at '" + targetDir.getAbsolutePath()
-								+ "' contains docker config. Only modules and openmrs.war will be overriden");
+						        + "' contains docker config. Only modules and openmrs.war will be overriden");
 						deleteDistroFiles(new File(targetDir, WEB));
 					} else if (targetDir.list().length != 0) {
 						wizard.showMessage("The directory at '" + targetDir.getAbsolutePath()
-								+ "' is not empty. All its content will be lost.");
+						        + "' is not empty. All its content will be lost.");
 						boolean chooseDifferent = wizard.promptYesNo("Would you like to choose a different directory?");
 						if (chooseDifferent) {
 							return getBuildDirectory();
@@ -246,12 +249,12 @@ public class BuildDistro extends AbstractTask {
 		} else {
 			targetDir.mkdirs();
 		}
-
+		
 		dir = targetDir.getAbsolutePath();
-
+		
 		return targetDir;
 	}
-
+	
 	private void deleteDistroFiles(File targetDir) {
 		try {
 			FileUtils.deleteDirectory(new File(targetDir, "modules"));
@@ -262,47 +265,52 @@ public class BuildDistro extends AbstractTask {
 			log.error(e.getMessage(), e);
 		}
 	}
-
+	
 	private void deleteDirectory(File targetDir) throws MojoExecutionException {
 		try {
 			FileUtils.cleanDirectory(targetDir);
 		}
 		catch (IOException e) {
-			throw new MojoExecutionException("Could not clean up directory \"" + targetDir.getAbsolutePath() + "\" " + e.getMessage(), e);
+			throw new MojoExecutionException(
+			        "Could not clean up directory \"" + targetDir.getAbsolutePath() + "\" " + e.getMessage(), e);
 		}
 	}
-
+	
 	private String buildDistro(File targetDirectory, Artifact distroArtifact, DistroProperties distroProperties)
-			throws MojoExecutionException {
+	        throws MojoExecutionException {
 		InputStream dbDumpStream;
 		wizard.showMessage("Downloading modules...\n");
-
+		
 		String distroName = adjustImageName(distroProperties.getName());
 		File web = new File(targetDirectory, WEB);
 		web.mkdirs();
-
-		moduleInstaller
-				.installModules(distroProperties.getWarArtifacts(distroHelper, targetDirectory), web.getAbsolutePath());
+		
+		moduleInstaller.installModules(distroProperties.getWarArtifacts(distroHelper, targetDirectory),
+		    web.getAbsolutePath());
 		renameWebApp(web);
-
+		
 		if (bundled) {
 			try {
 				ZipFile warfile = new ZipFile(new File(web, OPENMRS_WAR));
 				File tempDir = new File(web, "WEB-INF");
 				tempDir.mkdir();
 				moduleInstaller.installModules(distroProperties.getModuleArtifacts(distroHelper, targetDirectory),
-						new File(tempDir, WAR_FILE_MODULES_DIRECTORY_NAME).getAbsolutePath());
-
+				    new File(tempDir, WAR_FILE_MODULES_DIRECTORY_NAME).getAbsolutePath());
+				
 				File owasDir = new File(tempDir, "bundledOwas");
 				owasDir.mkdir();
 				downloadOWAs(targetDirectory, distroProperties, owasDir);
-
-				spaInstaller.installFromDistroProperties(tempDir, distroProperties, ignorePeerDependencies, overrideReuseNodeCache);
+				
+				//TODO: does this flow need this?
+				//downloadContents(targetDirectory, distroProperties);
+				
+				spaInstaller.installFromDistroProperties(tempDir, distroProperties, ignorePeerDependencies,
+				    overrideReuseNodeCache);
 				File frontendDir = new File(tempDir, "frontend");
-				if(frontendDir.exists()) {
+				if (frontendDir.exists()) {
 					frontendDir.renameTo(new File(tempDir, "bundledFrontend"));
 				}
-
+				
 				warfile.addFolder(tempDir, new ZipParameters());
 				try {
 					FileUtils.deleteDirectory(tempDir);
@@ -318,23 +326,24 @@ public class BuildDistro extends AbstractTask {
 			File modulesDir = new File(web, "modules");
 			modulesDir.mkdir();
 			moduleInstaller.installModules(distroProperties.getModuleArtifacts(distroHelper, targetDirectory),
-					modulesDir.getAbsolutePath());
-
+			    modulesDir.getAbsolutePath());
+			
 			File frontendDir = new File(web, "frontend");
 			frontendDir.mkdir();
-
+			
 			File configDir = new File(web, SDKConstants.OPENMRS_SERVER_CONFIGURATION);
 			configDir.mkdir();
 			setConfigFolder(configDir, distroProperties, distroArtifact);
-
+			
+			downloadContents(configDir, distroProperties);
 			spaInstaller.installFromDistroProperties(web, distroProperties, ignorePeerDependencies, overrideReuseNodeCache);
-
-
+			
 			File owasDir = new File(web, "owa");
 			owasDir.mkdir();
 			downloadOWAs(targetDirectory, distroProperties, owasDir);
+			
 		}
-
+		
 		wizard.showMessage("Creating Docker Compose configuration...\n");
 		String distroVersion = adjustImageName(distroProperties.getVersion());
 		writeDockerCompose(targetDirectory, distroVersion);
@@ -345,38 +354,40 @@ public class BuildDistro extends AbstractTask {
 		copyBuildDistroResource(".env", new File(targetDirectory, ".env"));
 		copyDockerfile(web, distroProperties);
 		distroProperties.saveTo(web);
-
+		
 		dbDumpStream = getSqlDumpStream(StringUtils.isNotBlank(dbSql) ? dbSql : distroProperties.getSqlScriptPath(),
-				targetDirectory, distroArtifact);
+		    targetDirectory, distroArtifact);
 		if (dbDumpStream != null) {
 			copyDbDump(targetDirectory, dbDumpStream);
 		}
 		//clean up extracted sql file
 		cleanupSqlFiles(targetDirectory);
-
+		
 		return distroName;
 	}
-
-	private void setConfigFolder(File configDir, DistroProperties distroProperties, Artifact distroArtifact) throws MojoExecutionException {
+	
+	private void setConfigFolder(File configDir, DistroProperties distroProperties, Artifact distroArtifact)
+	        throws MojoExecutionException {
 		if (distroProperties.getConfigArtifacts().isEmpty()) {
 			return;
 		}
-
-
+		
 		downloadConfigs(distroProperties, configDir);
-
-		File refappConfigFile = new File(configDir, distroArtifact.getArtifactId() + "-" + distroArtifact.getVersion() + ".zip");
-
+		
+		File refappConfigFile = new File(configDir,
+		        distroArtifact.getArtifactId() + "-" + distroArtifact.getVersion() + ".zip");
+		
 		// Handle O2 configuration
-		if (!refappConfigFile.exists() && Artifact.GROUP_DISTRO.equals(distroArtifact.getGroupId()) && "referenceapplication-distro".equals(distroArtifact.getArtifactId())) {
+		if (!refappConfigFile.exists() && Artifact.GROUP_DISTRO.equals(distroArtifact.getGroupId())
+		        && "referenceapplication-distro".equals(distroArtifact.getArtifactId())) {
 			refappConfigFile = new File(configDir, "referenceapplication-distro.owa");
 		}
-
+		
 		if (!refappConfigFile.exists()) {
 			wizard.showError("No Configuration file found at " + refappConfigFile.getAbsolutePath());
 			return;
 		}
-
+		
 		try {
 			ZipFile zipFile = new ZipFile(refappConfigFile);
 			zipFile.extractAll(configDir.getPath());
@@ -387,11 +398,12 @@ public class BuildDistro extends AbstractTask {
 				FileUtils.deleteQuietly(file);
 			}
 			FileUtils.deleteQuietly(refappConfigFile);
-		} catch (ZipException | IOException e) {
+		}
+		catch (ZipException | IOException e) {
 			throw new RuntimeException(e);
 		}
 	}
-
+	
 	private void downloadConfigs(DistroProperties distroProperties, File configDir) throws MojoExecutionException {
 		List<Artifact> configs = distroProperties.getConfigArtifacts();
 		wizard.showMessage("Downloading Configs...\n");
@@ -399,9 +411,9 @@ public class BuildDistro extends AbstractTask {
 			moduleInstaller.installModules(configs, configDir.getAbsolutePath());
 		}
 	}
-
+	
 	private void downloadOWAs(File targetDirectory, DistroProperties distroProperties, File owasDir)
-			throws MojoExecutionException {
+	        throws MojoExecutionException {
 		List<Artifact> owas = distroProperties.getOwaArtifacts(distroHelper, targetDirectory);
 		if (!owas.isEmpty()) {
 			wizard.showMessage("Downloading OWAs...\n");
@@ -411,14 +423,30 @@ public class BuildDistro extends AbstractTask {
 			}
 		}
 	}
-
+	
+	private void downloadContents(File configDir, DistroProperties distroProperties) throws MojoExecutionException {
+		
+		File targetDirectory = new File(configDir, "temp_content");
+		targetDirectory.mkdir();
+		
+		List<Artifact> contents = distroProperties.getContentArtifacts(distroHelper, targetDirectory);
+		if (!contents.isEmpty()) {
+			wizard.showMessage("Downloading Contents...\n");
+			for (Artifact content : contents) {
+				wizard.showMessage("Downloading Content: " + content);
+				contentHelper.downloadContent(configDir, targetDirectory, content, moduleInstaller);
+			}
+		}
+		FileUtils.deleteQuietly(targetDirectory);
+	}
+	
 	private boolean isDockerComposeCreated(File targetDir) {
 		File dockerComposeOverride = new File(targetDir, DOCKER_COMPOSE_OVERRIDE_YML);
 		File dockerCompose = new File(targetDir, DOCKER_COMPOSE_YML);
 		File dockerComposeProd = new File(targetDir, DOCKER_COMPOSE_PROD_YML);
 		return dockerCompose.exists() && dockerComposeOverride.exists() && dockerComposeProd.exists();
 	}
-
+	
 	private void copyDockerfile(File targetDirectory, DistroProperties distroProperties) throws MojoExecutionException {
 		Version platformVersion = new Version(distroProperties.getPlatformVersion(distroHelper, targetDirectory));
 		int majorVersion = platformVersion.getMajorVersion();
@@ -435,8 +463,7 @@ public class BuildDistro extends AbstractTask {
 				} else {
 					copyBuildDistroResource("Dockerfile-tomcat8", new File(targetDirectory, "Dockerfile"));
 				}
-			}
-			else {
+			} else {
 				if (bundled) {
 					copyBuildDistroResource("Dockerfile-jre8-bundled", new File(targetDirectory, "Dockerfile"));
 				} else {
@@ -445,18 +472,18 @@ public class BuildDistro extends AbstractTask {
 			}
 		}
 	}
-
+	
 	private boolean isPlatform2point5AndAbove(Version platformVersion) {
 		return platformVersion.getMajorVersion() > 2
-				|| (platformVersion.getMajorVersion() == 2 && platformVersion.getMinorVersion() >= 5);
+		        || (platformVersion.getMajorVersion() == 2 && platformVersion.getMinorVersion() >= 5);
 	}
-
+	
 	/**
 	 * name of sql dump file is unknown, so wipe all files with 'sql' extension
 	 */
 	private void cleanupSqlFiles(File targetDirectory) {
 		File[] sqlFiles = targetDirectory.listFiles(new FilenameFilter() {
-
+			
 			@Override
 			public boolean accept(File dir, String name) {
 				return name.endsWith(".sql");
@@ -466,18 +493,19 @@ public class BuildDistro extends AbstractTask {
 			FileUtils.deleteQuietly(sql);
 		}
 	}
-
+	
 	private void writeDockerCompose(File targetDirectory, String version) throws MojoExecutionException {
 		writeTemplatedFile(targetDirectory, version, DOCKER_COMPOSE_PATH, DOCKER_COMPOSE_YML);
 		writeTemplatedFile(targetDirectory, version, DOCKER_COMPOSE_OVERRIDE_PATH, DOCKER_COMPOSE_OVERRIDE_YML);
 		writeTemplatedFile(targetDirectory, version, DOCKER_COMPOSE_PROD_PATH, DOCKER_COMPOSE_PROD_YML);
 	}
-
+	
 	private void writeReadme(File targetDirectory, String version) throws MojoExecutionException {
 		writeTemplatedFile(targetDirectory, version, README_PATH, "README.md");
 	}
-
-	private void writeTemplatedFile(File targetDirectory, String version, String path, String filename) throws MojoExecutionException {
+	
+	private void writeTemplatedFile(File targetDirectory, String version, String path, String filename)
+	        throws MojoExecutionException {
 		URL composeUrl = getClass().getClassLoader().getResource(path);
 		if (composeUrl == null) {
 			throw new MojoExecutionException("Failed to find file '" + path + "' in classpath");
@@ -494,11 +522,11 @@ public class BuildDistro extends AbstractTask {
 			}
 		}
 	}
-
+	
 	private String adjustImageName(String part) {
 		return part.replaceAll("\\s+", "").toLowerCase();
 	}
-
+	
 	private void copyDbDump(File targetDirectory, InputStream stream) throws MojoExecutionException {
 		File dbDump = new File(targetDirectory, DB_DUMP_PATH);
 		try {
@@ -508,16 +536,15 @@ public class BuildDistro extends AbstractTask {
 		catch (IOException e) {
 			throw new MojoExecutionException("Failed to create SQL dump file " + e.getMessage(), e);
 		}
-
-		try (FileWriter writer = new FileWriter(dbDump);
-		     BufferedInputStream bis = new BufferedInputStream(stream)) {
+		
+		try (FileWriter writer = new FileWriter(dbDump); BufferedInputStream bis = new BufferedInputStream(stream)) {
 			writer.write(DUMP_PREFIX);
-
+			
 			int c;
 			while ((c = bis.read()) != -1) {
 				writer.write(c);
 			}
-
+			
 			writer.write("\n" + SDKConstants.RESET_SEARCH_INDEX_SQL + "\n");
 			writer.flush();
 		}
@@ -528,15 +555,15 @@ public class BuildDistro extends AbstractTask {
 			IOUtils.closeQuietly(stream);
 		}
 	}
-
+	
 	private InputStream getSqlDumpStream(String sqlScriptPath, File targetDirectory, Artifact distroArtifact)
-			throws MojoExecutionException {
+	        throws MojoExecutionException {
 		InputStream stream = null;
-
+		
 		if (sqlScriptPath == null) {
 			return null;
 		}
-
+		
 		try {
 			if (sqlScriptPath.startsWith(Server.CLASSPATH_SCRIPT_PREFIX)) {
 				String sqlScript = sqlScriptPath.replace(Server.CLASSPATH_SCRIPT_PREFIX, "");
@@ -545,8 +572,8 @@ public class BuildDistro extends AbstractTask {
 					stream = resourceUrl.openStream();
 				} else {
 					if (distroArtifact != null && distroArtifact.isValid()) {
-						File extractedSqlFile = distroHelper
-								.extractFileFromDistro(targetDirectory, distroArtifact, sqlScript);
+						File extractedSqlFile = distroHelper.extractFileFromDistro(targetDirectory, distroArtifact,
+						    sqlScript);
 						stream = new FileInputStream(extractedSqlFile);
 					}
 				}
@@ -555,7 +582,8 @@ public class BuildDistro extends AbstractTask {
 				if (scriptFile.exists()) {
 					stream = new FileInputStream(scriptFile);
 				} else {
-					throw new MojoExecutionException("Specified script \"" + scriptFile.getAbsolutePath() + "\" does not exist.");
+					throw new MojoExecutionException(
+					        "Specified script \"" + scriptFile.getAbsolutePath() + "\" does not exist.");
 				}
 			}
 		}
@@ -564,7 +592,7 @@ public class BuildDistro extends AbstractTask {
 		}
 		return stream;
 	}
-
+	
 	private void copyBuildDistroResource(String resource, File target) throws MojoExecutionException {
 		URL resourceUrl = getClass().getClassLoader().getResource("build-distro/web/" + resource);
 		if (resourceUrl != null && !target.exists()) {
@@ -572,28 +600,28 @@ public class BuildDistro extends AbstractTask {
 				FileUtils.copyURLToFile(resourceUrl, target);
 			}
 			catch (IOException e) {
-				throw new MojoExecutionException(
-						"Failed to copy file from classpath: " + resourceUrl + " to " + target.getAbsolutePath() + e.getMessage(), e);
+				throw new MojoExecutionException("Failed to copy file from classpath: " + resourceUrl + " to "
+				        + target.getAbsolutePath() + e.getMessage(), e);
 			}
 		}
 	}
-
+	
 	private void renameWebApp(File targetDirectory) throws MojoExecutionException {
 		File[] warFiles = targetDirectory.listFiles(new FilenameFilter() {
-
+			
 			@Override
 			public boolean accept(File dir, String name) {
 				return name.endsWith(".war");
 			}
 		});
-
+		
 		if (warFiles != null) {
 			for (File file : warFiles) {
 				wizard.showMessage("file:" + file.getAbsolutePath());
 			}
-
+			
 			wizard.showMessage("target:" + targetDirectory);
-
+			
 			if (warFiles.length == 1) {
 				boolean renameSuccess = warFiles[0].renameTo(new File(targetDirectory, OPENMRS_WAR));
 				if (!renameSuccess) {
