@@ -8,7 +8,9 @@
             <defaultValue>org.openmrs.content</defaultValue>
         </requiredProperty>
         <requiredProperty key="version">
-            <defaultValue>1.0.0-SNAPSHOT</defaultValue>
+            <defaultValue>
+                ${package.getClass().forName("java.lang.String").getConstructor($package.getClass().forName("java.lang.String")).newInstance("1.0.0-SNAPSHOT")}
+            </defaultValue>
         </requiredProperty>
         <requiredProperty key="artifactId" />
         <requiredProperty key="package">
@@ -29,10 +31,10 @@
         <fileSet filtered="true" encoding="UTF-8">
             <directory/>
             <includes>
+                <include>assembly.xml</include>
                 <include>content.properties</include>
-                <include>.gitignore</include>
-                <include>README.md</include>
                 <include>pom.xml</include>
+                <include>README.md</include>
             </includes>
         </fileSet>
         <fileSet filtered="true" encoding="UTF-8">
