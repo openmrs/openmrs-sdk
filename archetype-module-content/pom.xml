@@ -27,6 +27,10 @@
         <plugin>
           <artifactId>maven-archetype-plugin</artifactId>
           <version>3.2.1</version>
+          <configuration>
+            <ignoreEOLStyle>true</ignoreEOLStyle>
+            <debug>true</debug>
+          </configuration>
         </plugin>
       </plugins>
     </pluginManagement>
