@@ -8,9 +8,7 @@
             <defaultValue>org.openmrs.content</defaultValue>
         </requiredProperty>
         <requiredProperty key="version">
-            <defaultValue>
-                ${package.getClass().forName("java.lang.String").getConstructor($package.getClass().forName("java.lang.String")).newInstance("1.0.0-SNAPSHOT")}
-            </defaultValue>
+            <defaultValue>1.0.0-SNAPSHOT</defaultValue>
         </requiredProperty>
         <requiredProperty key="artifactId" />
         <requiredProperty key="package">
