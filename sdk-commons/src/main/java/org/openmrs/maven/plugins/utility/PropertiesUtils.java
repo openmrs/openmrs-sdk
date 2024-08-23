@@ -1,28 +1,8 @@
 package org.openmrs.maven.plugins.utility;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
-import java.util.Enumeration;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Properties;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.semver4j.Semver;
-import org.semver4j.SemverException;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -33,14 +13,39 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.Server;
+import org.semver4j.Semver;
+import org.semver4j.SemverException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+
 public class PropertiesUtils {
 
 	private static final String CONTENT_PROPERTIES = "content.properties";
+
+	private static final String CONTENT_PREFIX = "content.";
 
 	static DistroHelper distroHelper;
 
@@ -311,97 +316,132 @@ public class PropertiesUtils {
 	}
 
 	/**
+	 * Parses the content properties from the distro properties file and processes the corresponding ZIP files.
 	 * <p>
-	 * The distro.properties should have entries like: <code>content.hiv=1.0.0-SNAPSHOT</code>. This
-	 * should correspond to a Zip file stored in a Maven repository, and the content.properties file is
-	 * in that Zip file.
-	 * </p>
-	 * <p>
-	 * This method reads all underlying content.properties files and checks dependencies against
-	 * distro.properties.
-	 * </p>
-	 * <p>
-	 * For dependencies defined in both content.properties and distro.properties, this ensures the
-	 * version specified in distro.properties matches the range defined in content.properties;
-	 * otherwise, it outputs an error for the user to fix.
-	 * </p>
-	 * <p>
-	 * For dependencies not defined in distro.properties but defined in content.properties, the SDK
-	 * should locate the latest matching version and add that to the OMODs and ESMs used by the distro.
-	 * </p>
+	 * This method filters out the properties starting with "content." from the distro properties file,
+	 * fetches the corresponding ZIP files from the Maven repository, and processes the content.properties
+	 * files inside the ZIP files. It checks the dependencies against the distro properties file and
+	 * ensures that the versions match.
 	 *
-	 * @param directory The directory where the distro.properties file is located. This is typically the
-	 *            user's working directory.
-	 * @param distroProperties An object representing the properties defined in distro.properties. This
-	 *            includes versions of various dependencies currently used in the distribution.
-	 * @throws MojoExecutionException if there is an error reading the content.properties file or if a
-	 *             version conflict is detected.
+	 * @param distroProperties the distro properties file to parse
+	 * @throws MojoExecutionException if an error occurs during processing
 	 */
-	public static void parseContentProperties(File directory, DistroProperties distroProperties)
-	        throws MojoExecutionException {
-		File[] zipFiles = directory.listFiles((dir, name) -> name.endsWith(".zip"));
-		
-		if (zipFiles == null || zipFiles.length == 0) {
-			log.info("No ZIP files found in directory: {}", directory.getAbsolutePath());
-			return;
-		}
-		
-		boolean foundAny = false;
-		
-		for (File zipFile : zipFiles) {
-			Properties contentProperties = new Properties();
-			boolean found = false;
-			
-			try (ZipFile zip = new ZipFile(zipFile)) {
-				Enumeration<? extends ZipEntry> entries = zip.entries();
-				while (entries.hasMoreElements()) {
-					ZipEntry zipEntry = entries.nextElement();
-					if (CONTENT_PROPERTIES.equals(zipEntry.getName())) {
-						try (InputStream inputStream = zip.getInputStream(zipEntry)) {
-							contentProperties.load(inputStream);
-							found = true;
-							foundAny = true;
-							log.info("content.properties file found in {} and parsed successfully.", zipFile.getName());
-							
-							if (contentProperties.getProperty("name") == null
-							        || contentProperties.getProperty("version") == null) {
-								throw new MojoExecutionException(
-								        "Content package name or version not specified in content.properties in "
-								                + zipFile.getName());
-							}
-						}
-						break;
-					}
+	public static void parseContentProperties(DistroProperties distroProperties) throws MojoExecutionException {
+		File tempDirectory = null;
+		try {
+			tempDirectory = Files.createTempDirectory("content-packages").toFile();
+			String[] contentPackages = getContentPackages(distroProperties);
+
+			for (String contentPackage : contentPackages) {
+				String version = distroProperties.get(contentPackage);
+				File zipFile = fetchZipFromMavenRepo(contentPackage, version, tempDirectory);
+				if (zipFile != null) {
+					processZipFile(zipFile, distroProperties);
 				}
 			}
-			catch (IOException e) {
-				throw new MojoExecutionException(
-				        "Error reading content.properties from ZIP file: " + zipFile.getName() + ": " + e.getMessage(), e);
-			}
-			
-			if (found) {
-				processContentProperties(contentProperties, distroProperties, zipFile.getName());
+
+			processTempDirectory(tempDirectory, distroProperties);
+		} catch (IOException e) {
+			throw new MojoExecutionException("Failed to process content packages", e);
+		} finally {
+			// Clean up temporary files
+			if (tempDirectory != null && tempDirectory.exists()) {
+				try {
+					FileUtils.deleteDirectory(tempDirectory);
+				} catch (IOException e) {
+					log.warn("Failed to delete temporary directory: {}", tempDirectory.getAbsolutePath(), e);
+				}
 			}
 		}
-		
-		if (!foundAny) {
-			log.info("No content.properties file found in any ZIP file in directory: {}", directory.getAbsolutePath());
+	}
+
+	private static File fetchZipFromMavenRepo(String contentPackage, String version, File tempDirectory) throws MojoExecutionException {
+		// Base URL for the OpenMRS JFrog repository
+		String repositoryUrl = "https://openmrs.jfrog.io/artifactory/public/";
+		String groupId = "org.openmrs.content";
+		String artifactId = contentPackage.replace("content.", "");
+		String url = repositoryUrl + groupId.replace('.', '/') + "/" + artifactId + "/" + version + "/" + artifactId + "-" + version + ".zip";
+
+		try (InputStream in = new URL(url).openStream()) {
+			File zipFile = new File(tempDirectory, artifactId + "-" + version + ".zip");
+			Files.copy(in, zipFile.toPath());
+			return zipFile;
+		} catch (IOException e) {
+			throw new MojoExecutionException("Failed to download ZIP file from JFrog repository: " + url, e);
+		}
+	}
+
+	private static void processTempDirectory(File tempDirectory, DistroProperties distroProperties) throws MojoExecutionException {
+		File[] zipFiles = tempDirectory.listFiles((dir, name) -> name.endsWith(".zip"));
+
+		if (zipFiles == null || zipFiles.length == 0) {
+			log.info("No ZIP files found in temporary directory: {}", tempDirectory.getAbsolutePath());
+			return;
+		}
+
+		for (File zipFile : zipFiles) {
+			processZipFile(zipFile, distroProperties);
+		}
+	}
+
+	/**
+	 * Processes a ZIP file by extracting its contents and checking its dependencies.
+	 * <p>
+	 * This method extracts the contents of the ZIP file to a temporary directory,
+	 * checks the dependencies of the ZIP file against the distro properties file,
+	 * and ensures that the versions match.
+	 *
+	 * @param zipFile the ZIP file to process
+	 * @param distroProperties the distro properties file to check dependencies against
+	 * @throws MojoExecutionException if an error occurs during processing
+	 */
+	private static void processZipFile(File zipFile, DistroProperties distroProperties) throws MojoExecutionException {
+		Properties contentProperties = new Properties();
+		boolean found = false;
+
+		try (ZipFile zip = new ZipFile(zipFile)) {
+			Enumeration<? extends ZipEntry> entries = zip.entries();
+			while (entries.hasMoreElements()) {
+				ZipEntry zipEntry = entries.nextElement();
+				if (zipEntry.getName().equals("content.properties")) {
+					try (InputStream inputStream = zip.getInputStream(zipEntry)) {
+						contentProperties.load(inputStream);
+						found = true;
+						log.info("content.properties file found in {} and parsed successfully.", zipFile.getName());
+
+						if (contentProperties.getProperty("name") == null
+								|| contentProperties.getProperty("version") == null) {
+							throw new MojoExecutionException(
+									"Content package name or version not specified in content.properties in "
+											+ zipFile.getName());
+						}
+					}
+					break;
+				}
+			}
+		} catch (IOException e) {
+			throw new MojoExecutionException(
+					"Error reading content.properties from ZIP file: " + zipFile.getName() + ": " + e.getMessage(), e);
+		}
+
+		if (found) {
+			processContentProperties(contentProperties, distroProperties, zipFile.getName());
 		}
 	}
 
 	private static void processContentProperties(Properties contentProperties, DistroProperties distroProperties,
-	        String zipFileName) throws MojoExecutionException {
+												 String zipFileName) throws MojoExecutionException {
 		for (String dependency : contentProperties.stringPropertyNames()) {
 			if (dependency.startsWith("omod.") || dependency.startsWith("owa.") || dependency.startsWith("war")
-			        || dependency.startsWith("spa.frontendModule") || dependency.startsWith("content.")) {
+					|| dependency.startsWith("spa.frontendModule") || dependency.startsWith("content.")) {
 				String versionRange = contentProperties.getProperty(dependency);
 				String distroVersion = distroProperties.get(dependency);
-				
+
 				if (distroVersion == null) {
 					String latestVersion = findLatestMatchingVersion(dependency, versionRange);
 					if (latestVersion == null) {
 						throw new MojoExecutionException(
-						        "No matching version found for dependency " + dependency + " in " + zipFileName);
+								"No matching version found for dependency " + dependency + " in " + zipFileName);
 					}
 					distroProperties.add(dependency, latestVersion);
 				} else {
@@ -427,20 +467,31 @@ public class PropertiesUtils {
 	 *             range format is invalid.
 	 */
 	private static void checkVersionInRange(String contentDependencyKey, String contentDependencyVersionRange,
-	        String distroPropertyVersion, String contentPackageName) throws MojoExecutionException {
+											String distroPropertyVersion, String contentPackageName) throws MojoExecutionException {
 		Semver semverVersion = new Semver(distroPropertyVersion);
-		
+
 		try {
 			boolean inRange = semverVersion.satisfies(contentDependencyVersionRange.trim());
 			if (!inRange) {
 				throw new MojoExecutionException("Incompatible version for " + contentDependencyKey + " in content package "
-				        + contentPackageName + ". Specified range: " + contentDependencyVersionRange
-				        + ", found in distribution: " + distroPropertyVersion);
+						+ contentPackageName + ". Specified range: " + contentDependencyVersionRange
+						+ ", found in distribution: " + distroPropertyVersion);
 			}
 		}
 		catch (SemverException e) {
 			throw new MojoExecutionException("Invalid version range format for " + contentDependencyKey
-			        + " in content package " + contentPackageName + ": " + contentDependencyVersionRange, e);
+					+ " in content package " + contentPackageName + ": " + contentDependencyVersionRange, e);
 		}
+	}
+
+	private static String[] getContentPackages(DistroProperties distroProperties) {
+		List<String> contentPackages = new ArrayList<>();
+		for (Object keyObject : distroProperties.getAllKeys()) {
+			String key = keyObject.toString();
+			if (key.startsWith(CONTENT_PREFIX)) {
+				contentPackages.add(key);
+			}
+		}
+		return contentPackages.toArray(new String[0]);
 	}
 }
