@@ -29,13 +29,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.zip.ZipEntry;
@@ -330,107 +327,82 @@ public class PropertiesUtils {
 		File tempDirectory = null;
 		try {
 			tempDirectory = Files.createTempDirectory("content-packages").toFile();
-			String[] contentPackages = getContentPackages(distroProperties);
-
-			for (String contentPackage : contentPackages) {
-				String version = distroProperties.get(contentPackage);
-				File zipFile = fetchZipFromMavenRepo(contentPackage, version, tempDirectory);
-				if (zipFile != null) {
-					processZipFile(zipFile, distroProperties);
+			
+			for (Object key : distroProperties.getAllKeys()) {
+				String keyOb = key.toString();
+				if (!keyOb.startsWith(CONTENT_PREFIX)) {
+					continue;
 				}
+				
+				String version = distroProperties.get(keyOb);
+				File zipFile = distroHelper.downloadDistro(tempDirectory,
+				    new Artifact(keyOb.replace(CONTENT_PREFIX, ""), version,
+				            checkIfOverwritten(keyOb, distroProperties, "org.openmrs.content"), "zip"),
+				    keyOb.replace(CONTENT_PREFIX, "") + "-" + version + ".zip");
+				if (zipFile == null) {
+					log.warn("ZIP file not found for content package: {}", keyOb);
+					continue;
+				}
+				
+				// Process the ZIP file after it has been successfully fetched
+				processZipFile(zipFile, distroProperties);
 			}
-
-			processTempDirectory(tempDirectory, distroProperties);
-		} catch (IOException e) {
+			
+		}
+		catch (IOException e) {
 			throw new MojoExecutionException("Failed to process content packages", e);
-		} finally {
+		}
+		finally {
 			// Clean up temporary files
 			if (tempDirectory != null && tempDirectory.exists()) {
 				try {
 					FileUtils.deleteDirectory(tempDirectory);
-				} catch (IOException e) {
+				}
+				catch (IOException e) {
 					log.warn("Failed to delete temporary directory: {}", tempDirectory.getAbsolutePath(), e);
 				}
 			}
 		}
 	}
 
-	private static File fetchZipFromMavenRepo(String contentPackage, String version, File tempDirectory) throws MojoExecutionException {
-		// Base URL for the OpenMRS JFrog repository
-		String repositoryUrl = "https://openmrs.jfrog.io/artifactory/public/";
-		String groupId = "org.openmrs.content";
-		String artifactId = contentPackage.replace("content.", "");
-		String url = repositoryUrl + groupId.replace('.', '/') + "/" + artifactId + "/" + version + "/" + artifactId + "-" + version + ".zip";
-
-		try (InputStream in = new URL(url).openStream()) {
-			File zipFile = new File(tempDirectory, artifactId + "-" + version + ".zip");
-			Files.copy(in, zipFile.toPath());
-			return zipFile;
-		} catch (IOException e) {
-			throw new MojoExecutionException("Failed to download ZIP file from JFrog repository: " + url, e);
-		}
-	}
-
-	private static void processTempDirectory(File tempDirectory, DistroProperties distroProperties) throws MojoExecutionException {
-		File[] zipFiles = tempDirectory.listFiles((dir, name) -> name.endsWith(".zip"));
-
-		if (zipFiles == null || zipFiles.length == 0) {
-			log.info("No ZIP files found in temporary directory: {}", tempDirectory.getAbsolutePath());
-			return;
-		}
-
-		for (File zipFile : zipFiles) {
-			processZipFile(zipFile, distroProperties);
-		}
-	}
-
-	/**
-	 * Processes a ZIP file by extracting its contents and checking its dependencies.
-	 * <p>
-	 * This method extracts the contents of the ZIP file to a temporary directory,
-	 * checks the dependencies of the ZIP file against the distro properties file,
-	 * and ensures that the versions match.
-	 *
-	 * @param zipFile the ZIP file to process
-	 * @param distroProperties the distro properties file to check dependencies against
-	 * @throws MojoExecutionException if an error occurs during processing
-	 */
-	private static void processZipFile(File zipFile, DistroProperties distroProperties) throws MojoExecutionException {
+	private static void processZipFile(File contentPackageZipFile, DistroProperties distroProperties) throws MojoExecutionException {
 		Properties contentProperties = new Properties();
-		boolean found = false;
 
-		try (ZipFile zip = new ZipFile(zipFile)) {
+		try (ZipFile zip = new ZipFile(contentPackageZipFile)) {
+			boolean foundContentProperties = false;
 			Enumeration<? extends ZipEntry> entries = zip.entries();
+
 			while (entries.hasMoreElements()) {
 				ZipEntry zipEntry = entries.nextElement();
-				if (zipEntry.getName().equals("content.properties")) {
+				if (zipEntry.getName().equals(CONTENT_PROPERTIES)) {
+					foundContentProperties = true;
+
 					try (InputStream inputStream = zip.getInputStream(zipEntry)) {
 						contentProperties.load(inputStream);
-						found = true;
-						log.info("content.properties file found in {} and parsed successfully.", zipFile.getName());
+						log.info("content.properties file found in {} and parsed successfully.", contentPackageZipFile.getName());
 
-						if (contentProperties.getProperty("name") == null
-								|| contentProperties.getProperty("version") == null) {
+						if (contentProperties.getProperty("name") == null || contentProperties.getProperty("version") == null) {
 							throw new MojoExecutionException(
-									"Content package name or version not specified in content.properties in "
-											+ zipFile.getName());
+									"Content package name or version not specified in content.properties in " + contentPackageZipFile.getName());
 						}
+
+						processContentProperties(contentProperties, distroProperties, contentPackageZipFile.getName());
 					}
 					break;
 				}
 			}
+
+			if (!foundContentProperties) {
+				throw new MojoExecutionException("No content.properties file found in ZIP file: " + contentPackageZipFile.getName());
+			}
+
 		} catch (IOException e) {
 			throw new MojoExecutionException(
-					"Error reading content.properties from ZIP file: " + zipFile.getName() + ": " + e.getMessage(), e);
-		}
-
-		if (found) {
-			processContentProperties(contentProperties, distroProperties, zipFile.getName());
+					"Error reading content.properties from ZIP file: " + contentPackageZipFile.getName() + ": " + e.getMessage(), e);
 		}
 	}
 
-	private static void processContentProperties(Properties contentProperties, DistroProperties distroProperties,
-												 String zipFileName) throws MojoExecutionException {
+	private static void processContentProperties(Properties contentProperties, DistroProperties distroProperties, String zipFileName) throws MojoExecutionException {
 		for (String dependency : contentProperties.stringPropertyNames()) {
 			if (dependency.startsWith("omod.") || dependency.startsWith("owa.") || dependency.startsWith("war")
 					|| dependency.startsWith("spa.frontendModule") || dependency.startsWith("content.")) {
@@ -466,8 +438,7 @@ public class PropertiesUtils {
 	 * @throws MojoExecutionException If the version does not fall within the specified range or if the
 	 *             range format is invalid.
 	 */
-	private static void checkVersionInRange(String contentDependencyKey, String contentDependencyVersionRange,
-											String distroPropertyVersion, String contentPackageName) throws MojoExecutionException {
+	private static void checkVersionInRange(String contentDependencyKey, String contentDependencyVersionRange, String distroPropertyVersion, String contentPackageName) throws MojoExecutionException {
 		Semver semverVersion = new Semver(distroPropertyVersion);
 
 		try {
@@ -477,21 +448,21 @@ public class PropertiesUtils {
 						+ contentPackageName + ". Specified range: " + contentDependencyVersionRange
 						+ ", found in distribution: " + distroPropertyVersion);
 			}
-		}
-		catch (SemverException e) {
+		} catch (SemverException e) {
 			throw new MojoExecutionException("Invalid version range format for " + contentDependencyKey
 					+ " in content package " + contentPackageName + ": " + contentDependencyVersionRange, e);
 		}
 	}
 
-	private static String[] getContentPackages(DistroProperties distroProperties) {
-		List<String> contentPackages = new ArrayList<>();
-		for (Object keyObject : distroProperties.getAllKeys()) {
-			String key = keyObject.toString();
-			if (key.startsWith(CONTENT_PREFIX)) {
-				contentPackages.add(key);
-			}
-		}
-		return contentPackages.toArray(new String[0]);
+	/**
+	 * Checks if the groupId for a given dependency is overwritten in the distro properties.
+	 *
+	 * @param dependencyKey    The key of the dependency.
+	 * @param distroProperties The distro properties file.
+	 * @return The groupId to use for this dependency.
+	 */
+	private static String checkIfOverwritten(String dependencyKey, DistroProperties distroProperties, String defaultGroupId) {
+		String groupId = distroProperties.get(dependencyKey + ".groupId");
+		return groupId != null ? groupId : defaultGroupId;
 	}
 }
