@@ -313,52 +313,59 @@ public class PropertiesUtils {
 	}
 
 	/**
-	 * Parses the content properties from the distro properties file and processes the corresponding ZIP files.
+	 * Parses the content properties specified in the provided distro properties file and processes the corresponding content package ZIP files.
 	 * <p>
-	 * This method filters out the properties starting with "content." from the distro properties file,
-	 * fetches the corresponding ZIP files from the Maven repository, and processes the content.properties
-	 * files inside the ZIP files. It checks the dependencies against the distro properties file and
-	 * ensures that the versions match.
+	 * This method performs the following tasks:
+	 * <ol>
+	 *   <li>Creates a temporary directory to store downloaded ZIP files.</li>
+	 *   <li>Iterates through all keys in the distro properties file.</li>
+	 *   <li>Filters keys to only process those starting with {@code CONTENT_PREFIX}.</li>
+	 *   <li>Downloads the ZIP files for each content package from the Maven repository and stores them in the temporary directory.</li>
+	 *   <li>Processes each downloaded ZIP file to extract and validate the {@code content.properties} file contained within.</li>
+	 *   <li>Handles errors and logs warnings if ZIP files are not found or if there are issues during processing.</li>
+	 * </ol>
+	 * <p>
+	 * After processing, the temporary directory used for storing ZIP files is cleaned up to avoid leaving unnecessary files on the system.
 	 *
-	 * @param distroProperties the distro properties file to parse
-	 * @throws MojoExecutionException if an error occurs during processing
+	 * @param distroProperties The distro properties file containing information about content packages and their versions.
+	 *                         This file is used to determine which content packages to download and process.
+	 * @throws MojoExecutionException If an error occurs during the downloading or processing of content packages.
+	 *                                This exception may be thrown due to issues with file operations, invalid content properties,
+	 *                                or other runtime errors encountered during the execution of this method.
 	 */
 	public static void parseContentProperties(DistroProperties distroProperties) throws MojoExecutionException {
 		File tempDirectory = null;
 		try {
 			tempDirectory = Files.createTempDirectory("content-packages").toFile();
-			
 			for (Object key : distroProperties.getAllKeys()) {
 				String keyOb = key.toString();
 				if (!keyOb.startsWith(CONTENT_PREFIX)) {
 					continue;
 				}
-				
+
 				String version = distroProperties.get(keyOb);
-				File zipFile = distroHelper.downloadDistro(tempDirectory,
-				    new Artifact(keyOb.replace(CONTENT_PREFIX, ""), version,
-				            checkIfOverwritten(keyOb, distroProperties, "org.openmrs.content"), "zip"),
-				    keyOb.replace(CONTENT_PREFIX, "") + "-" + version + ".zip");
+				String zipFileName = keyOb.replace(CONTENT_PREFIX, "") + "-" + version + ".zip";
+				String artifactId = keyOb.replace(CONTENT_PREFIX, "");
+				String groupId = checkIfOverwritten(keyOb, distroProperties);
+
+				Artifact artifact = new Artifact(artifactId, version, groupId, "zip");
+				File zipFile = distroHelper.downloadDistro(tempDirectory, artifact, zipFileName);
+
 				if (zipFile == null) {
 					log.warn("ZIP file not found for content package: {}", keyOb);
 					continue;
 				}
-				
-				// Process the ZIP file after it has been successfully fetched
+
 				processZipFile(zipFile, distroProperties);
 			}
-			
-		}
-		catch (IOException e) {
+
+		} catch (IOException e) {
 			throw new MojoExecutionException("Failed to process content packages", e);
-		}
-		finally {
-			// Clean up temporary files
+		} finally {
 			if (tempDirectory != null && tempDirectory.exists()) {
 				try {
 					FileUtils.deleteDirectory(tempDirectory);
-				}
-				catch (IOException e) {
+				} catch (IOException e) {
 					log.warn("Failed to delete temporary directory: {}", tempDirectory.getAbsolutePath(), e);
 				}
 			}
@@ -461,8 +468,8 @@ public class PropertiesUtils {
 	 * @param distroProperties The distro properties file.
 	 * @return The groupId to use for this dependency.
 	 */
-	private static String checkIfOverwritten(String dependencyKey, DistroProperties distroProperties, String defaultGroupId) {
+	private static String checkIfOverwritten(String dependencyKey, DistroProperties distroProperties) {
 		String groupId = distroProperties.get(dependencyKey + ".groupId");
-		return groupId != null ? groupId : defaultGroupId;
+		return groupId != null ? groupId : "org.openmrs.content";
 	}
 }
