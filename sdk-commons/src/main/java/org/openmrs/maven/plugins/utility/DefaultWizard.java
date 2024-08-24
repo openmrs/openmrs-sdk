@@ -786,7 +786,7 @@ public class DefaultWizard implements Wizard {
 		Map<String, String> optionsMap = new LinkedHashMap<>();
 
 		{
-			Artifact artifact = new Artifact("distro-emr-configuration", "3.0.0-SNAPSHOT", "org.openmrs", "zip");
+			Artifact artifact = new Artifact("distro-emr-configuration", "3.0.0", "org.openmrs", "zip");
 			for (ArtifactVersion version : versionsHelper.getAllVersions(artifact, MAX_OPTIONS_SIZE)) {
 				optionsMap.put(String.format(optionTemplate, version.toString()), artifact.getGroupId() + ":" + artifact.getArtifactId() + ":" + version);
 			}
@@ -797,7 +797,7 @@ public class DefaultWizard implements Wizard {
 		}
 
 		{
-			Artifact artifact = new Artifact("referenceapplication-distro", "3.0.0-SNAPSHOT", "org.openmrs.distro", "zip");
+			Artifact artifact = new Artifact("referenceapplication-distro", "3.0.0", "org.openmrs.distro", "zip");
 			for (ArtifactVersion version : versionsHelper.getAllVersions(artifact, MAX_OPTIONS_SIZE)) {
 				if (!version.toString().endsWith("-SNAPSHOT") && optionsMap.size() < MAX_OPTIONS_SIZE) {
 					optionsMap.put(String.format(optionTemplate, version),
