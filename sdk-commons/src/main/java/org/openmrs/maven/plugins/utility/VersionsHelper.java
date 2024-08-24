@@ -12,6 +12,7 @@ import org.openmrs.maven.plugins.model.Artifact;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Created by user on 27.05.16.
@@ -69,10 +70,22 @@ public class VersionsHelper {
 
     public List<ArtifactVersion> getAllVersions(Artifact artifact, int maxSize) {
         List<ArtifactVersion> versions = getVersions(artifact);
-        versions.removeIf(version -> "3.1.0-SNAPSHOT".equals(version.toString()));
-        versions.removeIf(version -> "3.0.0-SNAPSHOT".equals(version.toString()));
         sortDescending(versions);
-        return versions.subList(0, Math.min(versions.size(), maxSize));
+        System.out.println("Initial Versions: " + versions);
+        Optional<ArtifactVersion> firstNonSnapshotVersion = versions.stream()
+                .filter(version -> !version.toString().endsWith("-SNAPSHOT"))
+                .findFirst();
+
+        if (firstNonSnapshotVersion.isPresent()) {
+            ArtifactVersion firstNonSnapshot = firstNonSnapshotVersion.get();
+            versions.removeIf(version -> version.toString().endsWith("-SNAPSHOT")
+                    && new ComparableVersion(version.toString()).compareTo(new ComparableVersion(firstNonSnapshot.toString())) < 0);
+        }
+
+        List<ArtifactVersion> result = versions.subList(0, Math.min(versions.size(), maxSize));
+        System.out.println("Filtered Versions: " + result);
+
+        return result;
     }
 
     private void sortDescending(List<ArtifactVersion> versions){
