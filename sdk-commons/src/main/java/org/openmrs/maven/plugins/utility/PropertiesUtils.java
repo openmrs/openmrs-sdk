@@ -39,11 +39,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 public class PropertiesUtils {
-
-	private static final String CONTENT_PROPERTIES = "content.properties";
-
-	private static final String CONTENT_PREFIX = "content.";
-
 	static DistroHelper distroHelper;
 
 	private static final Logger log = LoggerFactory.getLogger(PropertiesUtils.class);
@@ -313,51 +308,28 @@ public class PropertiesUtils {
 	}
 
 	/**
-	 * Parses the content properties specified in the provided distro properties file and processes the corresponding content package ZIP files.
-	 * <p>
-	 * This method performs the following tasks:
-	 * <ol>
-	 *   <li>Creates a temporary directory to store downloaded ZIP files.</li>
-	 *   <li>Iterates through all keys in the distro properties file.</li>
-	 *   <li>Filters keys to only process those starting with {@code CONTENT_PREFIX}.</li>
-	 *   <li>Downloads the ZIP files for each content package from the Maven repository and stores them in the temporary directory.</li>
-	 *   <li>Processes each downloaded ZIP file to extract and validate the {@code content.properties} file contained within.</li>
-	 *   <li>Handles errors and logs warnings if ZIP files are not found or if there are issues during processing.</li>
-	 * </ol>
-	 * <p>
-	 * After processing, the temporary directory used for storing ZIP files is cleaned up to avoid leaving unnecessary files on the system.
+	 * Parses and processes content properties from content packages defined in the given {@code DistroProperties} object.
 	 *
-	 * @param distroProperties The distro properties file containing information about content packages and their versions.
-	 *                         This file is used to determine which content packages to download and process.
-	 * @throws MojoExecutionException If an error occurs during the downloading or processing of content packages.
-	 *                                This exception may be thrown due to issues with file operations, invalid content properties,
-	 *                                or other runtime errors encountered during the execution of this method.
+	 * <p>This method creates a temporary directory to download and process content package ZIP files specified
+	 * in the {@code distroProperties} file. The method delegates the download and processing of content packages
+	 * to the {@code downloadContentPackages} method, ensuring that the content packages are correctly handled
+	 * and validated.</p>
+	 *
+	 * <p>After processing, the temporary directory used for storing the downloaded ZIP files is deleted,
+	 * even if an error occurs during processing. If the temporary directory cannot be deleted, a warning is logged.</p>
+	 *
+	 * @param distroProperties The {@code DistroProperties} object containing key-value pairs specifying
+	 *                         content packages and other properties needed to build a distribution.
+	 *
+	 * @throws MojoExecutionException If there is an error during the processing of content packages,
+	 *                                such as issues with creating the temporary directory, downloading
+	 *                                the content packages, or IO errors during file operations.
 	 */
 	public static void parseContentProperties(DistroProperties distroProperties) throws MojoExecutionException {
 		File tempDirectory = null;
 		try {
 			tempDirectory = Files.createTempDirectory("content-packages").toFile();
-			for (Object key : distroProperties.getAllKeys()) {
-				String keyOb = key.toString();
-				if (!keyOb.startsWith(CONTENT_PREFIX)) {
-					continue;
-				}
-
-				String version = distroProperties.get(keyOb);
-				String zipFileName = keyOb.replace(CONTENT_PREFIX, "") + "-" + version + ".zip";
-				String artifactId = keyOb.replace(CONTENT_PREFIX, "");
-				String groupId = checkIfOverwritten(keyOb, distroProperties);
-
-				Artifact artifact = new Artifact(artifactId, version, groupId, "zip");
-				File zipFile = distroHelper.downloadDistro(tempDirectory, artifact, zipFileName);
-
-				if (zipFile == null) {
-					log.warn("ZIP file not found for content package: {}", keyOb);
-					continue;
-				}
-
-				processZipFile(zipFile, distroProperties);
-			}
+			distroHelper.downloadContentPackages(tempDirectory, distroProperties);
 
 		} catch (IOException e) {
 			throw new MojoExecutionException("Failed to process content packages", e);
@@ -372,44 +344,35 @@ public class PropertiesUtils {
 		}
 	}
 
-	private static void processZipFile(File contentPackageZipFile, DistroProperties distroProperties) throws MojoExecutionException {
-		Properties contentProperties = new Properties();
-
-		try (ZipFile zip = new ZipFile(contentPackageZipFile)) {
-			boolean foundContentProperties = false;
-			Enumeration<? extends ZipEntry> entries = zip.entries();
-
-			while (entries.hasMoreElements()) {
-				ZipEntry zipEntry = entries.nextElement();
-				if (zipEntry.getName().equals(CONTENT_PROPERTIES)) {
-					foundContentProperties = true;
-
-					try (InputStream inputStream = zip.getInputStream(zipEntry)) {
-						contentProperties.load(inputStream);
-						log.info("content.properties file found in {} and parsed successfully.", contentPackageZipFile.getName());
-
-						if (contentProperties.getProperty("name") == null || contentProperties.getProperty("version") == null) {
-							throw new MojoExecutionException(
-									"Content package name or version not specified in content.properties in " + contentPackageZipFile.getName());
-						}
-
-						processContentProperties(contentProperties, distroProperties, contentPackageZipFile.getName());
-					}
-					break;
-				}
-			}
-
-			if (!foundContentProperties) {
-				throw new MojoExecutionException("No content.properties file found in ZIP file: " + contentPackageZipFile.getName());
-			}
-
-		} catch (IOException e) {
-			throw new MojoExecutionException(
-					"Error reading content.properties from ZIP file: " + contentPackageZipFile.getName() + ": " + e.getMessage(), e);
-		}
-	}
-
-	private static void processContentProperties(Properties contentProperties, DistroProperties distroProperties, String zipFileName) throws MojoExecutionException {
+	/**
+	 * Processes the {@code content.properties} file of a content package and validates the dependencies
+	 * against the {@code DistroProperties} provided. This method ensures that the dependencies defined
+	 * in the {@code content.properties} file are either present in the {@code distroProperties} file with
+	 * a version that matches the specified version range, or it finds the latest matching version if not
+	 * already specified in {@code distroProperties}.
+	 *
+	 * <p>The method iterates over each dependency listed in the {@code content.properties} file, focusing on
+	 * dependencies that start with specific prefixes such as {@code omod.}, {@code owa.}, {@code war},
+	 * {@code spa.frontendModule}, or {@code content.}. For each dependency, the method performs the following:</p>
+	 * <ul>
+	 *   <li>If the dependency is not present in {@code distroProperties}, it attempts to find the latest version
+	 *   matching the specified version range and adds it to {@code distroProperties}.</li>
+	 *   <li>If the dependency is present, it checks whether the version specified in {@code distroProperties}
+	 *   falls within the version range specified in {@code content.properties}. If it does not, an error is thrown.</li>
+	 * </ul>
+	 *
+	 * @param contentProperties The {@code Properties} object representing the {@code content.properties} file
+	 *                          of a content package.
+	 * @param distroProperties  The {@code DistroProperties} object containing key-value pairs specifying
+	 *                          the current distribution's dependencies and their versions.
+	 * @param zipFileName       The name of the ZIP file containing the {@code content.properties} file being processed.
+	 *                          Used in error messages to provide context.
+	 *
+	 * @throws MojoExecutionException If no matching version is found for a dependency not defined in
+	 *                                {@code distroProperties}, or if the version specified in {@code distroProperties}
+	 *                                does not match the version range in {@code content.properties}.
+	 */
+	protected static void processContentProperties(Properties contentProperties, DistroProperties distroProperties, String zipFileName) throws MojoExecutionException {
 		for (String dependency : contentProperties.stringPropertyNames()) {
 			if (dependency.startsWith("omod.") || dependency.startsWith("owa.") || dependency.startsWith("war")
 					|| dependency.startsWith("spa.frontendModule") || dependency.startsWith("content.")) {
@@ -459,17 +422,5 @@ public class PropertiesUtils {
 			throw new MojoExecutionException("Invalid version range format for " + contentDependencyKey
 					+ " in content package " + contentPackageName + ": " + contentDependencyVersionRange, e);
 		}
-	}
-
-	/**
-	 * Checks if the groupId for a given dependency is overwritten in the distro properties.
-	 *
-	 * @param dependencyKey    The key of the dependency.
-	 * @param distroProperties The distro properties file.
-	 * @return The groupId to use for this dependency.
-	 */
-	private static String checkIfOverwritten(String dependencyKey, DistroProperties distroProperties) {
-		String groupId = distroProperties.get(dependencyKey + ".groupId");
-		return groupId != null ? groupId : "org.openmrs.content";
 	}
 }

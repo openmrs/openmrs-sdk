@@ -12,6 +12,8 @@ import org.openmrs.maven.plugins.model.PackageJson;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.model.UpgradeDifferential;
 import org.openmrs.maven.plugins.model.Version;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.twdata.maven.mojoexecutor.MojoExecutor;
 import org.twdata.maven.mojoexecutor.MojoExecutor.Element;
 
@@ -28,6 +30,7 @@ import java.util.zip.ZipFile;
 
 import static org.openmrs.maven.plugins.model.BaseSdkProperties.PROPERTY_DISTRO_ARTIFACT_ID;
 import static org.openmrs.maven.plugins.model.BaseSdkProperties.PROPERTY_DISTRO_GROUP_ID;
+import static org.openmrs.maven.plugins.utility.PropertiesUtils.processContentProperties;
 import static org.twdata.maven.mojoexecutor.MojoExecutor.artifactId;
 import static org.twdata.maven.mojoexecutor.MojoExecutor.configuration;
 import static org.twdata.maven.mojoexecutor.MojoExecutor.element;
@@ -41,6 +44,11 @@ import static org.twdata.maven.mojoexecutor.MojoExecutor.version;
 
 public class DistroHelper {
 
+	private static final String CONTENT_PROPERTIES = "content.properties";
+
+	private static final String CONTENT_PREFIX = "content.";
+
+	private static final Logger log = LoggerFactory.getLogger(DistroHelper.class);
 	/**
 	 * The project currently being build.
 	 */
@@ -288,6 +296,102 @@ public class DistroHelper {
 		}
 
 		return distroProperties;
+	}
+
+	/**
+	 * Downloads and processes content packages specified in the given distro properties.
+	 *
+	 * <p>This method filters out properties starting with a specific prefix (defined by {@code CONTENT_PREFIX})
+	 * from the {@code distroProperties} file, identifies the corresponding versions, and downloads the
+	 * associated ZIP files from the Maven repository. It then processes each downloaded ZIP file to locate
+	 * and parse a {@code content.properties} file, ensuring that the content package is valid and meets
+	 * the expected requirements.</p>
+	 *
+	 * <p>If a {@code groupId} is overridden for a particular content package, the method uses the overridden
+	 * value when fetching the package from Maven. The ZIP files are temporarily stored and processed to extract
+	 * the {@code content.properties} file, which is then validated and compared against the dependencies specified
+	 * in the {@code distro.properties} file.</p>
+	 *
+	 * @param contentPackageZipFile The directory where content package ZIP files will be temporarily stored.
+	 * @param distroProperties The {@code DistroProperties} object containing key-value pairs that specify
+	 *                         content packages and other properties needed to build a distribution.
+	 *
+	 * @throws MojoExecutionException If there is an error during the download or processing of the content packages,
+	 *                                such as missing or invalid {@code content.properties} files, or any IO issues.
+	 */
+	public void downloadContentPackages(File contentPackageZipFile, DistroProperties distroProperties)
+	        throws MojoExecutionException {
+		Properties contentProperties = new Properties();
+		
+		for (Object key : distroProperties.getAllKeys()) {
+			String keyOb = key.toString();
+			if (!keyOb.startsWith(CONTENT_PREFIX)) {
+				continue;
+			}
+			
+			String version = distroProperties.get(keyOb);
+			String zipFileName = keyOb.replace(CONTENT_PREFIX, "") + "-" + version + ".zip";
+			String artifactId = keyOb.replace(CONTENT_PREFIX, "");
+			String groupId = checkIfOverwritten(keyOb, distroProperties);
+			
+			Artifact artifact = new Artifact(artifactId, version, groupId, "zip");
+			File zipFile = downloadDistro(contentPackageZipFile, artifact, zipFileName);
+			
+			if (zipFile == null) {
+				log.warn("ZIP file not found for content package: {}", keyOb);
+				continue;
+			}
+
+			try (ZipFile zip = new ZipFile(contentPackageZipFile)) {
+				boolean foundContentProperties = false;
+				Enumeration<? extends ZipEntry> entries = zip.entries();
+				
+				while (entries.hasMoreElements()) {
+					ZipEntry zipEntry = entries.nextElement();
+					if (zipEntry.getName().equals(CONTENT_PROPERTIES)) {
+						foundContentProperties = true;
+						
+						try (InputStream inputStream = zip.getInputStream(zipEntry)) {
+							contentProperties.load(inputStream);
+							log.info("content.properties file found in {} and parsed successfully.",
+							    contentPackageZipFile.getName());
+							
+							if (contentProperties.getProperty("name") == null
+							        || contentProperties.getProperty("version") == null) {
+								throw new MojoExecutionException(
+								        "Content package name or version not specified in content.properties in "
+								                + contentPackageZipFile.getName());
+							}
+							
+							processContentProperties(contentProperties, distroProperties, contentPackageZipFile.getName());
+						}
+						break;
+					}
+				}
+				
+				if (!foundContentProperties) {
+					throw new MojoExecutionException(
+					        "No content.properties file found in ZIP file: " + contentPackageZipFile.getName());
+				}
+				
+			}
+			catch (IOException e) {
+				throw new MojoExecutionException("Error reading content.properties from ZIP file: "
+				        + contentPackageZipFile.getName() + ": " + e.getMessage(), e);
+			}
+		}
+	}
+
+	/**
+	 * Checks if the groupId for a given dependency is overwritten in the distro properties.
+	 *
+	 * @param dependencyKey    The key of the dependency.
+	 * @param distroProperties The distro properties file.
+	 * @return The groupId to use for this dependency.
+	 */
+	private static String checkIfOverwritten(String dependencyKey, DistroProperties distroProperties) {
+		String groupId = distroProperties.get(dependencyKey + ".groupId");
+		return groupId != null ? groupId : "org.openmrs.content";
 	}
 
 	public DistroProperties downloadDistroProperties(File serverPath, Server server, String fileType) throws MojoExecutionException {
