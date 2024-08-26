@@ -74,12 +74,56 @@ public class CreateProjectIntegrationTest extends AbstractSdkIntegrationTest {
         assertProjectCreated();
     }
 
+    @Test
+    public void createProject_shouldCreateContentPackageModuleProject() throws Exception{
+        addTaskParam("type", "content-package");
+
+        addTaskParam("moduleId", "test");
+        addTaskParam("moduleName", "Test");
+        addTaskParam("moduleDescription", "none");
+        addTaskParam("groupId", "org.openmrs.content");
+        addTaskParam("version", "1.0.0-SNAPSHOT");
+
+        addAnswer("1.0.0");
+
+        addTaskParam(BATCH_ANSWERS, getAnswers()); //only to set interactive mode to false
+
+        executeTask("create-project");
+        assertSuccess();
+        assertContentPackageCreated();
+    }
+
+    @Test
+    public void createProject_shouldCreateContentPackageProjectUsingBatchAnswers() throws Exception{
+        addAnswer("Content Package");
+        addAnswer("test");
+        addAnswer("Test");
+        addAnswer("none");
+        addAnswer("org.openmrs.content");
+        addAnswer("1.0.0-SNAPSHOT");
+        addAnswer("1.0.0");
+
+        executeTask("create-project");
+        assertSuccess();
+        assertContentPackageCreated();
+    }
+
     private void assertProjectCreated() {
         //check only basic structure of module project and pom existence, not coupled with archetype itself
         assertFilePresent("test");
 
         assertFilePresent("test", "api");
         assertFilePresent("test", "omod");
+        assertFilePresent("test", "pom.xml");
+    }
+
+    private void assertContentPackageCreated() {
+        assertFilePresent("test");
+        assertFilePresent("test", ".github");
+        assertFilePresent("test", "configuration");
+        assertFilePresent("test", "README.md");
+        assertFilePresent("test", "assembly.xml");
+        assertFilePresent("test", "content.properties");
         assertFilePresent("test", "pom.xml");
     }
 }
