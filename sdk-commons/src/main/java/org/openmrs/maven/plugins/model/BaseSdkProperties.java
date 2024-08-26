@@ -28,6 +28,7 @@ public abstract class BaseSdkProperties {
     protected static final String TYPE_OWA = "owa";
     protected static final String TYPE_SPA = "spa";
     protected static final String TYPE_CONFIG = "config";
+    protected static final String TYPE_CONTENT = "content";
     protected static final String TYPE_ZIP = "zip";
 
     protected Properties properties;
@@ -135,23 +136,36 @@ public abstract class BaseSdkProperties {
         return  artifactList;
     }
 
-	public List<Artifact> getConfigArtifacts() {
-		List<Artifact> artifactList = new ArrayList<>();
-		for (Object keyObject : getAllKeys()) {
-			String key = keyObject.toString();
-			String artifactType = getArtifactType(key);
-			if (artifactType.equals(TYPE_CONFIG)) {
-				artifactList.add(
+    public List<Artifact> getConfigArtifacts() {
+        List<Artifact> artifactList = new ArrayList<>();
+        for (Object keyObject : getAllKeys()) {
+            String key = keyObject.toString();
+            String artifactType = getArtifactType(key);
+            if (artifactType.equals(TYPE_CONFIG)) {
+                artifactList.add(
 						new Artifact(checkIfOverwritten(key, ARTIFACT_ID), getParam(key), checkIfOverwritten(key, GROUP_ID),
-								checkIfOverwritten(key, TYPE)));
-			}
-		}
-		return artifactList;
-	}
+                                checkIfOverwritten(key, TYPE)));
+            }
+        }
+        return artifactList;
+    }
 
-	protected Set<Object> getAllKeys() {
-		return properties.keySet();
-	}
+    public List<Artifact> getContentArtifacts() {
+        List<Artifact> artifactList = new ArrayList<>();
+        for (Object keyObject : getAllKeys()) {
+            String key = keyObject.toString();
+            String artifactType = getArtifactType(key);
+            if (artifactType.equals(TYPE_CONTENT)) {
+                String artifactId = key.substring(TYPE_CONTENT.length() + 1);
+                artifactList.add(new Artifact(artifactId, getParam(key), Artifact.GROUP_CONTENT, Artifact.TYPE_ZIP));
+            }
+        }
+        return artifactList;
+    }
+
+    protected Set<Object> getAllKeys() {
+        return properties.keySet();
+    }
 
     protected String getArtifactType(String key){
         String[] wordsArray = key.split("\\.");
@@ -177,37 +191,37 @@ public abstract class BaseSdkProperties {
 
             return setting;
         } else {
-	        switch (param) {
-		        case ARTIFACT_ID:
-			        return extractArtifactId(key);
-		        case GROUP_ID:
+            switch (param) {
+                case ARTIFACT_ID:
+                    return extractArtifactId(key);
+                case GROUP_ID:
                     switch (getArtifactType(key)) {
                         case TYPE_WAR:  //for openmrs.war use org.openmrs.web groupId
                             return Artifact.GROUP_WEB;
                         case TYPE_OMOD:
                             return Artifact.GROUP_MODULE;
                         case TYPE_DISTRO:
-	                    case TYPE_CONFIG:
+                        case TYPE_CONFIG:
                             return properties.getProperty(PROPERTY_DISTRO_GROUP_ID, Artifact.GROUP_DISTRO);
                         default:
                             return "";
                     }
 
-		        case TYPE:
+                case TYPE:
                     switch (getArtifactType(key)) {
                         case TYPE_OMOD:
                         case TYPE_DISTRO:
                             return TYPE_JAR;
                         case TYPE_WAR:
                             return TYPE_WAR;
-	                    case TYPE_CONFIG:
-							return TYPE_ZIP;
+                        case TYPE_CONFIG:
+                            return TYPE_ZIP;
                         default:
                             return "";
                     }
-		        default:
-			        return "";
-	        }
+                default:
+                    return "";
+            }
         }
     }
 

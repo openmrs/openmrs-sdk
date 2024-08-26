@@ -33,14 +33,14 @@ public class DistroProperties extends BaseSdkProperties {
     public static final String PROPERTY_DEFAULT_VALUE_KEY = "property.%s.default";
     public static final String PROPERTY_KEY = "property.%s";
 
-	private static final Logger log = LoggerFactory.getLogger(DistroProperties.class);
+    private static final Logger log = LoggerFactory.getLogger(DistroProperties.class);
 
     public DistroProperties(String version){
         properties = new Properties();
         try {
             loadPropertiesFromResource(createFileName(version), properties);
         } catch (MojoExecutionException e) {
-	        log.error(e.getMessage(), e);
+            log.error(e.getMessage(), e);
         }
     }
 
@@ -171,7 +171,20 @@ public class DistroProperties extends BaseSdkProperties {
         return mergeArtifactLists(childArtifacts, parentArtifacts);
     }
 
-    public Map<String, String> getSpaProperties(DistroHelper distroHelper, File directory) throws MojoExecutionException {
+    public List<Artifact> getContentArtifacts(DistroHelper distroHelper, File directory) throws MojoExecutionException {
+        List<Artifact> childArtifacts = getContentArtifacts();
+        List<Artifact> parentArtifacts = new ArrayList<>();
+
+        Artifact artifact = getDistroArtifact();
+        if (artifact != null) {
+            DistroProperties distroProperties = distroHelper.downloadDistroProperties(directory, artifact);
+            parentArtifacts.addAll(distroProperties.getContentArtifacts(distroHelper, directory));
+        }
+        return mergeArtifactLists(childArtifacts, parentArtifacts);
+    }
+
+    public Map<String, String> getSpaProperties(DistroHelper distroHelper, File directory)
+            throws MojoExecutionException {
         Map<String, String> spaProperties = getSpaProperties();
 
         Artifact artifact = getDistroArtifact();
