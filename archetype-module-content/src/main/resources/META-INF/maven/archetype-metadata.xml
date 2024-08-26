@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype-descriptor xsi:schemaLocation="http://maven.apache.org/plugins/maven-archetype-plugin/archetype-descriptor/1.0.0 http://maven.apache.org/xsd/archetype-descriptor-1.0.0.xsd"
+                      name="openmrs-archetype-module"
+                      xmlns="http://maven.apache.org/plugins/maven-archetype-plugin/archetype-descriptor/1.0.0"
+                      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <requiredProperties>
+        <requiredProperty key="groupId">
+            <defaultValue>org.openmrs.content</defaultValue>
+        </requiredProperty>
+        <requiredProperty key="version">
+            <defaultValue>
+                ${package.getClass().forName("java.lang.String").getConstructor($package.getClass().forName("java.lang.String")).newInstance("1.0.0-SNAPSHOT")}
+            </defaultValue>
+        </requiredProperty>
+        <requiredProperty key="artifactId" />
+        <requiredProperty key="package">
+            <defaultValue>${groupId}.${artifactId}</defaultValue>
+        </requiredProperty>
+        <requiredProperty key="moduleName" />
+        <requiredProperty key="moduleDescription"/>
+        <requiredProperty key="openmrsContentPackageVersion"/>
+    </requiredProperties>
+
+    <fileSets>
+        <fileSet filtered="true" encoding="UTF-8">
+            <directory>.github</directory>
+            <includes>
+                <include>workflows/main.yml</include>
+            </includes>
+        </fileSet>
+        <fileSet filtered="true" encoding="UTF-8">
+            <directory/>
+            <includes>
+                <include>assembly.xml</include>
+                <include>content.properties</include>
+                <include>pom.xml</include>
+                <include>README.md</include>
+            </includes>
+        </fileSet>
+        <fileSet filtered="true" encoding="UTF-8">
+            <directory>configuration</directory>
+            <includes>
+                <include>backend_configuration/.gitkeep</include>
+                <include>frontend_configuration/.gitkeep</include>
+            </includes>
+        </fileSet>
+    </fileSets>
+</archetype-descriptor>
