@@ -16,7 +16,6 @@ import org.openmrs.maven.plugins.model.Project;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.model.Version;
 import org.openmrs.maven.plugins.utility.DistroHelper;
-import org.openmrs.maven.plugins.utility.PropertiesUtils;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -193,7 +192,7 @@ public class BuildDistro extends AbstractTask {
 			throw new MojoExecutionException("The distro you specified, '" + distro + "' could not be retrieved");
 		}
 
-		PropertiesUtils.parseContentProperties(distroProperties);
+		distroHelper.parseContentProperties(distroProperties);
 		String distroName = buildDistro(buildDirectory, distroArtifact, distroProperties);
 
 		wizard.showMessage(

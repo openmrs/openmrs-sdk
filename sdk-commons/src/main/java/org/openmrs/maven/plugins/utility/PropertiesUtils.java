@@ -2,7 +2,6 @@ package org.openmrs.maven.plugins.utility;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -11,10 +10,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.openmrs.maven.plugins.model.Artifact;
-import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.Server;
-import org.semver4j.Semver;
-import org.semver4j.SemverException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -30,7 +26,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.Map;
@@ -38,8 +33,7 @@ import java.util.Properties;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-public class PropertiesUtils {
-	static DistroHelper distroHelper;
+public class PropertiesUtils  {
 
 	private static final Logger log = LoggerFactory.getLogger(PropertiesUtils.class);
 
@@ -305,122 +299,5 @@ public class PropertiesUtils {
 		Document document = builder.parse(url);
 		document.getDocumentElement().normalize();
 		return document;
-	}
-
-	/**
-	 * Parses and processes content properties from content packages defined in the given {@code DistroProperties} object.
-	 *
-	 * <p>This method creates a temporary directory to download and process content package ZIP files specified
-	 * in the {@code distroProperties} file. The method delegates the download and processing of content packages
-	 * to the {@code downloadContentPackages} method, ensuring that the content packages are correctly handled
-	 * and validated.</p>
-	 *
-	 * <p>After processing, the temporary directory used for storing the downloaded ZIP files is deleted,
-	 * even if an error occurs during processing. If the temporary directory cannot be deleted, a warning is logged.</p>
-	 *
-	 * @param distroProperties The {@code DistroProperties} object containing key-value pairs specifying
-	 *                         content packages and other properties needed to build a distribution.
-	 *
-	 * @throws MojoExecutionException If there is an error during the processing of content packages,
-	 *                                such as issues with creating the temporary directory, downloading
-	 *                                the content packages, or IO errors during file operations.
-	 */
-	public static void parseContentProperties(DistroProperties distroProperties) throws MojoExecutionException {
-		File tempDirectory = null;
-		try {
-			tempDirectory = Files.createTempDirectory("content-packages").toFile();
-			distroHelper.downloadContentPackages(tempDirectory, distroProperties);
-
-		} catch (IOException e) {
-			throw new MojoExecutionException("Failed to process content packages", e);
-		} finally {
-			if (tempDirectory != null && tempDirectory.exists()) {
-				try {
-					FileUtils.deleteDirectory(tempDirectory);
-				} catch (IOException e) {
-					log.warn("Failed to delete temporary directory: {}", tempDirectory.getAbsolutePath(), e);
-				}
-			}
-		}
-	}
-
-	/**
-	 * Processes the {@code content.properties} file of a content package and validates the dependencies
-	 * against the {@code DistroProperties} provided. This method ensures that the dependencies defined
-	 * in the {@code content.properties} file are either present in the {@code distroProperties} file with
-	 * a version that matches the specified version range, or it finds the latest matching version if not
-	 * already specified in {@code distroProperties}.
-	 *
-	 * <p>The method iterates over each dependency listed in the {@code content.properties} file, focusing on
-	 * dependencies that start with specific prefixes such as {@code omod.}, {@code owa.}, {@code war},
-	 * {@code spa.frontendModule}, or {@code content.}. For each dependency, the method performs the following:</p>
-	 * <ul>
-	 *   <li>If the dependency is not present in {@code distroProperties}, it attempts to find the latest version
-	 *   matching the specified version range and adds it to {@code distroProperties}.</li>
-	 *   <li>If the dependency is present, it checks whether the version specified in {@code distroProperties}
-	 *   falls within the version range specified in {@code content.properties}. If it does not, an error is thrown.</li>
-	 * </ul>
-	 *
-	 * @param contentProperties The {@code Properties} object representing the {@code content.properties} file
-	 *                          of a content package.
-	 * @param distroProperties  The {@code DistroProperties} object containing key-value pairs specifying
-	 *                          the current distribution's dependencies and their versions.
-	 * @param zipFileName       The name of the ZIP file containing the {@code content.properties} file being processed.
-	 *                          Used in error messages to provide context.
-	 *
-	 * @throws MojoExecutionException If no matching version is found for a dependency not defined in
-	 *                                {@code distroProperties}, or if the version specified in {@code distroProperties}
-	 *                                does not match the version range in {@code content.properties}.
-	 */
-	protected static void processContentProperties(Properties contentProperties, DistroProperties distroProperties, String zipFileName) throws MojoExecutionException {
-		for (String dependency : contentProperties.stringPropertyNames()) {
-			if (dependency.startsWith("omod.") || dependency.startsWith("owa.") || dependency.startsWith("war")
-					|| dependency.startsWith("spa.frontendModule") || dependency.startsWith("content.")) {
-				String versionRange = contentProperties.getProperty(dependency);
-				String distroVersion = distroProperties.get(dependency);
-
-				if (distroVersion == null) {
-					String latestVersion = findLatestMatchingVersion(dependency, versionRange);
-					if (latestVersion == null) {
-						throw new MojoExecutionException(
-								"No matching version found for dependency " + dependency + " in " + zipFileName);
-					}
-					distroProperties.add(dependency, latestVersion);
-				} else {
-					checkVersionInRange(dependency, versionRange, distroVersion, contentProperties.getProperty("name"));
-				}
-			}
-		}
-	}
-
-	private static String findLatestMatchingVersion(String dependency, String versionRange) {
-		return distroHelper.findLatestMatchingVersion(dependency, versionRange);
-	}
-
-	/**
-	 * Checks if the version from distro.properties satisfies the range specified in content.properties.
-	 * Throws an exception if there is a mismatch.
-	 *
-	 * @param contentDependencyKey The key of the content dependency.
-	 * @param contentDependencyVersionRange The version range specified in content.properties.
-	 * @param distroPropertyVersion The version specified in distro.properties.
-	 * @param contentPackageName The name of the content package.
-	 * @throws MojoExecutionException If the version does not fall within the specified range or if the
-	 *             range format is invalid.
-	 */
-	private static void checkVersionInRange(String contentDependencyKey, String contentDependencyVersionRange, String distroPropertyVersion, String contentPackageName) throws MojoExecutionException {
-		Semver semverVersion = new Semver(distroPropertyVersion);
-
-		try {
-			boolean inRange = semverVersion.satisfies(contentDependencyVersionRange.trim());
-			if (!inRange) {
-				throw new MojoExecutionException("Incompatible version for " + contentDependencyKey + " in content package "
-						+ contentPackageName + ". Specified range: " + contentDependencyVersionRange
-						+ ", found in distribution: " + distroPropertyVersion);
-			}
-		} catch (SemverException e) {
-			throw new MojoExecutionException("Invalid version range format for " + contentDependencyKey
-					+ " in content package " + contentPackageName + ": " + contentDependencyVersionRange, e);
-		}
 	}
 }
