@@ -67,6 +67,5 @@
 
 	<properties>
 		<openmrsPlatformVersion>1.11.6</openmrsPlatformVersion>
-		<openmrsContentPackageVersion>1.0.0-SNAPSHOT</openmrsContentPackageVersion>
 	</properties>
 </project>

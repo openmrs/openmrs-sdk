@@ -1,17 +1,5 @@
 package org.openmrs.maven.plugins;
 
-import static org.openmrs.maven.plugins.utility.PropertiesUtils.loadPropertiesFromResource;
-import static org.twdata.maven.mojoexecutor.MojoExecutor.artifactId;
-import static org.twdata.maven.mojoexecutor.MojoExecutor.configuration;
-import static org.twdata.maven.mojoexecutor.MojoExecutor.element;
-import static org.twdata.maven.mojoexecutor.MojoExecutor.executeMojo;
-import static org.twdata.maven.mojoexecutor.MojoExecutor.executionEnvironment;
-import static org.twdata.maven.mojoexecutor.MojoExecutor.goal;
-import static org.twdata.maven.mojoexecutor.MojoExecutor.groupId;
-import static org.twdata.maven.mojoexecutor.MojoExecutor.name;
-import static org.twdata.maven.mojoexecutor.MojoExecutor.plugin;
-import static org.twdata.maven.mojoexecutor.MojoExecutor.version;
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -24,6 +12,18 @@ import java.io.File;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Properties;
+
+import static org.openmrs.maven.plugins.utility.PropertiesUtils.loadPropertiesFromResource;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.artifactId;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.configuration;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.element;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.executeMojo;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.executionEnvironment;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.goal;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.groupId;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.name;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.plugin;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.version;
 
 /**
  * Creates a new OpenMRS project from an archetype
@@ -281,6 +281,7 @@ public class CreateProject extends AbstractTask {
 			    "2.4");
 			archetypeArtifactId = SDKConstants.REFAPP_ARCH_ARTIFACT_ID;
 		} else if (TYPE_CONTENT_PACKAGE.equals(type)) {
+			contentpackage = wizard.promptForValueIfMissingWithDefault("What version of the content package (-D%s) do you want to support?", contentpackage, "contentpackage", "1.0.0");
 			archetypeArtifactId = SDKConstants.CONTENT_PACKAGE_ARCH_ARTIFACT_ID;
 		} else {
 			throw new MojoExecutionException("Invalid project type");
