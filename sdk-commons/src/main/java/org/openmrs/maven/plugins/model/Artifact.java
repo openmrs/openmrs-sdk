@@ -27,7 +27,6 @@ public class Artifact {
     public static final String GROUP_OPENMRS = "org.openmrs";
     public static final String GROUP_H2 = "com.h2database";
     public static final String GROUP_DISTRO = "org.openmrs.distro";
-    public static final String GROUP_CONTENT = "org.openmrs.content";
     public static final String TYPE_OMOD = "omod";
     public static final String TYPE_WAR = "war";
     public static final String TYPE_JAR = "jar";
