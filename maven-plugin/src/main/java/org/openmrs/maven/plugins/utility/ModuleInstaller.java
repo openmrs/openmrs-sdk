@@ -40,9 +40,9 @@ public class ModuleInstaller {
     final VersionsHelper versionsHelper;
 
     public ModuleInstaller(MavenProject mavenProject,
-                           MavenSession mavenSession,
-                           BuildPluginManager pluginManager,
-                           VersionsHelper versionsHelper) {
+            MavenSession mavenSession,
+            BuildPluginManager pluginManager,
+            VersionsHelper versionsHelper) {
         this.mavenProject = mavenProject;
         this.mavenSession = mavenSession;
         this.pluginManager = pluginManager;
@@ -85,6 +85,11 @@ public class ModuleInstaller {
 
     public void installModule(Artifact artifact, String outputDir) throws MojoExecutionException {
         final String goal = "copy";
+        prepareModules(new Artifact[] { artifact }, outputDir, goal);
+    }
+
+    public void installUnpackModule(Artifact artifact, String outputDir) throws MojoExecutionException {
+        final String goal = GOAL_UNPACK;
         prepareModules(new Artifact[] { artifact }, outputDir, goal);
     }
 
