@@ -22,6 +22,7 @@ import org.openmrs.maven.plugins.utility.Jira;
 import org.openmrs.maven.plugins.utility.ModuleInstaller;
 import org.openmrs.maven.plugins.utility.NodeHelper;
 import org.openmrs.maven.plugins.utility.OwaHelper;
+import org.openmrs.maven.plugins.utility.ContentHelper;
 import org.openmrs.maven.plugins.utility.SpaInstaller;
 import org.openmrs.maven.plugins.utility.StatsManager;
 import org.openmrs.maven.plugins.utility.VersionsHelper;
@@ -113,6 +114,11 @@ public abstract class AbstractTask extends AbstractMojo {
 	 * handles OWAs
 	 */
 	OwaHelper owaHelper;
+	
+    /**
+     * handles Contents
+     */
+    ContentHelper contentHelper;
 
 	/**
 	 * installs SPAs
@@ -137,26 +143,27 @@ public abstract class AbstractTask extends AbstractMojo {
 	public AbstractTask() {
 	}
 
-	public AbstractTask(AbstractTask other) {
-		this.mavenProject = other.mavenProject;
-		this.mavenSession = other.mavenSession;
-		this.wizard = other.wizard;
-		this.pluginManager = other.pluginManager;
-		this.artifactFactory = other.artifactFactory;
-		this.artifactMetadataSource = other.artifactMetadataSource;
-		this.moduleInstaller = other.moduleInstaller;
-		this.versionsHelper = other.versionsHelper;
-		this.distroHelper = other.distroHelper;
-		this.owaHelper = other.owaHelper;
-		this.spaInstaller = other.spaInstaller;
-		this.gitHelper = other.gitHelper;
-		this.dockerHelper = other.dockerHelper;
-		this.settings = other.settings;
-		this.batchAnswers = other.batchAnswers;
-		this.testMode = other.testMode;
-		this.openMRSPath = other.openMRSPath;
-		this.stats = other.stats;
-		initTask();
+    public AbstractTask(AbstractTask other) {
+        this.mavenProject = other.mavenProject;
+        this.mavenSession = other.mavenSession;
+        this.wizard = other.wizard;
+        this.pluginManager = other.pluginManager;
+        this.artifactFactory = other.artifactFactory;
+        this.artifactMetadataSource = other.artifactMetadataSource;
+        this.moduleInstaller = other.moduleInstaller;
+        this.versionsHelper = other.versionsHelper;
+        this.distroHelper = other.distroHelper;
+        this.owaHelper = other.owaHelper;
+        this.contentHelper = other.contentHelper;
+        this.spaInstaller = other.spaInstaller;
+        this.gitHelper = other.gitHelper;
+        this.dockerHelper = other.dockerHelper;
+        this.settings = other.settings;
+        this.batchAnswers = other.batchAnswers;
+        this.testMode = other.testMode;
+        this.openMRSPath = other.openMRSPath;
+        this.stats = other.stats;
+        initTask();
 	}
 
 	public void initTask() {
@@ -175,12 +182,15 @@ public abstract class AbstractTask extends AbstractMojo {
 		if (distroHelper == null) {
 			distroHelper = new DistroHelper(mavenProject, mavenSession, pluginManager, wizard, versionsHelper);
 		}
-		if (owaHelper == null) {
-			owaHelper = new OwaHelper(mavenSession, mavenProject, pluginManager, wizard);
-		}
-		if (spaInstaller == null) {
-			spaInstaller = new SpaInstaller(distroHelper, new NodeHelper(mavenProject, mavenSession, pluginManager));
-		}
+        if (owaHelper == null) {
+            owaHelper = new OwaHelper(mavenSession, mavenProject, pluginManager, wizard);
+        }
+        if (contentHelper == null) {
+            contentHelper = new ContentHelper(mavenSession, mavenProject, pluginManager);
+        }
+        if (spaInstaller == null) {
+            spaInstaller = new SpaInstaller(distroHelper, new NodeHelper(mavenProject, mavenSession, pluginManager));
+        }
 		if (dockerHelper == null) {
 			dockerHelper = new DockerHelper(mavenProject, mavenSession, pluginManager, wizard);
 		}

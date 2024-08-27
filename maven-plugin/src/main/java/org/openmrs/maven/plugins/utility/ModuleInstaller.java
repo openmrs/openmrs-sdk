@@ -87,6 +87,11 @@ public class ModuleInstaller {
         final String goal = "copy";
         prepareModules(new Artifact[] { artifact }, outputDir, goal);
     }
+    
+    public void installUnpackModule(Artifact artifact, String outputDir) throws MojoExecutionException {
+        final String goal = GOAL_UNPACK;
+        prepareModules(new Artifact[] { artifact }, outputDir, goal);
+    }
 
     /**
      * Handle list of modules

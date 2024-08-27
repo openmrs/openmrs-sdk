@@ -296,7 +296,9 @@ public class BuildDistro extends AbstractTask {
 				File owasDir = new File(tempDir, "bundledOwas");
 				owasDir.mkdir();
 				downloadOWAs(targetDirectory, distroProperties, owasDir);
-
+				
+                //TODO: does this flow need this?
+                //downloadContents(targetDirectory, distroProperties);
 				spaInstaller.installFromDistroProperties(tempDir, distroProperties, ignorePeerDependencies, overrideReuseNodeCache);
 				File frontendDir = new File(tempDir, "frontend");
 				if(frontendDir.exists()) {
@@ -323,10 +325,10 @@ public class BuildDistro extends AbstractTask {
 			File frontendDir = new File(web, "frontend");
 			frontendDir.mkdir();
 
-			File configDir = new File(web, SDKConstants.OPENMRS_SERVER_CONFIGURATION);
-			configDir.mkdir();
-			setConfigFolder(configDir, distroProperties, distroArtifact);
-
+            File configDir = new File(web, SDKConstants.OPENMRS_SERVER_CONFIGURATION);
+            configDir.mkdir();
+            setConfigFolder(configDir, distroProperties, distroArtifact);
+            downloadContents(configDir, distroProperties);
 			spaInstaller.installFromDistroProperties(web, distroProperties, ignorePeerDependencies, overrideReuseNodeCache);
 
 
@@ -604,4 +606,18 @@ public class BuildDistro extends AbstractTask {
 			}
 		}
 	}
+	
+    private void downloadContents(File configDir, DistroProperties distroProperties) throws MojoExecutionException {        
+        File targetDirectory = new File(configDir, "temp_content");
+        targetDirectory.mkdir();
+        
+        List<Artifact> contents = distroProperties.getContentArtifacts(distroHelper, targetDirectory);
+        if (!contents.isEmpty()) {           
+            for (Artifact content : contents) {
+                wizard.showMessage("Downloading Content: " + content);
+                contentHelper.downloadContent(configDir, targetDirectory, content, moduleInstaller);
+            }
+        }
+        FileUtils.deleteQuietly(targetDirectory);
+    }
 }

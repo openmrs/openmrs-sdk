@@ -278,6 +278,7 @@ public class Setup extends AbstractServerTask {
 			setServerVersionsFromDistroProperties(server, distroProperties);
 			moduleInstaller.installModulesForDistro(server, distroProperties, distroHelper);
 			setConfigFolder(server, distroProperties);
+			installContents(server, distroProperties);
 			if (spaInstaller != null) {
 				spaInstaller.installFromDistroProperties(server.getServerDirectory(), distroProperties, ignorePeerDependencies, overrideReuseNodeCache);
 			}
@@ -693,4 +694,27 @@ public class Setup extends AbstractServerTask {
 		uri = uri.substring(0, uri.lastIndexOf("/") + 1);
 		return uri;
 	}
+	
+    private void installContents(Server server, DistroProperties distroProperties) throws MojoExecutionException {
+        if (distroProperties != null) {
+            File tempContentDir = new File(server.getServerDirectory(), "temp-content");
+            tempContentDir.mkdir();
+            downloadContents(server, distroProperties, tempContentDir);
+            FileUtils.deleteQuietly(tempContentDir);
+        }
+    }
+    
+    private void downloadContents(Server server, DistroProperties distroProperties, File tempContentDir)
+            throws MojoExecutionException {
+        List<Artifact> contents = distroProperties.getContentArtifacts(distroHelper, tempContentDir);
+        //Configuration dir gets created before this method is called
+        File configDir = new File(server.getServerDirectory(), SDKConstants.OPENMRS_SERVER_CONFIGURATION);
+        
+        if (!contents.isEmpty()) {
+            for (Artifact content : contents) {
+                wizard.showMessage("Downloading Content: " + content);
+                contentHelper.downloadContent(configDir, tempContentDir, content, moduleInstaller);
+            }
+        }
+    }
 }

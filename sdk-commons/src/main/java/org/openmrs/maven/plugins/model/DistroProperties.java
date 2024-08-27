@@ -193,6 +193,17 @@ public class DistroProperties extends BaseSdkProperties {
         }
         return mergeArtifactLists(childArtifacts, parentArtifacts);
     }
+    
+    public List<Artifact> getContentArtifacts(DistroHelper distroHelper, File directory) throws MojoExecutionException {
+        List<Artifact> childArtifacts = getContentArtifacts();
+        List<Artifact> parentArtifacts = new ArrayList<>();
+        Artifact artifact = getDistroArtifact();
+        if (artifact != null) {
+            DistroProperties distroProperties = distroHelper.downloadDistroProperties(directory, artifact);
+            parentArtifacts.addAll(distroProperties.getContentArtifacts(distroHelper, directory));
+        }
+        return mergeArtifactLists(childArtifacts, parentArtifacts);
+    }
 
     public String getPlatformVersion(DistroHelper distroHelper, File directory) throws MojoExecutionException{
         Artifact artifact = getDistroArtifact();
@@ -259,7 +270,8 @@ public class DistroProperties extends BaseSdkProperties {
         }
     }
 
-    public Set<Object> getAllKeys() {
+    @Override
+	public Set<Object> getAllKeys() {
         return properties.keySet();
     }
 
