@@ -71,7 +71,6 @@ public class VersionsHelper {
     public List<ArtifactVersion> getAllVersions(Artifact artifact, int maxSize) {
         List<ArtifactVersion> versions = getVersions(artifact);
         sortDescending(versions);
-        System.out.println("Initial Versions: " + versions);
         Optional<ArtifactVersion> firstNonSnapshotVersion = versions.stream()
                 .filter(version -> !version.toString().endsWith("-SNAPSHOT"))
                 .findFirst();
@@ -82,10 +81,7 @@ public class VersionsHelper {
                     && new ComparableVersion(version.toString()).compareTo(new ComparableVersion(firstNonSnapshot.toString())) < 0);
         }
 
-        List<ArtifactVersion> result = versions.subList(0, Math.min(versions.size(), maxSize));
-        System.out.println("Filtered Versions: " + result);
-
-        return result;
+        return versions.subList(0, Math.min(versions.size(), maxSize));
     }
 
     private void sortDescending(List<ArtifactVersion> versions){
