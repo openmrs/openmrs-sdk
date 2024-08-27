@@ -619,7 +619,7 @@ public class BuildDistro extends AbstractTask {
 	private void downloadContents(File configDir, DistroProperties distroProperties) throws MojoExecutionException {
 		File targetDirectory = new File(configDir, "temp_content");
 		targetDirectory.mkdir();
-		
+	
 		List<Artifact> contents = distroProperties.getContentArtifacts(distroHelper, targetDirectory);
 		if (!contents.isEmpty()) {
 			for (Artifact content : contents) {
@@ -628,5 +628,6 @@ public class BuildDistro extends AbstractTask {
 			}
 		}
 		FileUtils.deleteQuietly(targetDirectory);
-	}
+	}	
 }
+
