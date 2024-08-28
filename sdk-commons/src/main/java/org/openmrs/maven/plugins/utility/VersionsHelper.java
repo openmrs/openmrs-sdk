@@ -2,6 +2,7 @@ package org.openmrs.maven.plugins.utility;
 
 import org.apache.maven.artifact.factory.ArtifactFactory;
 import org.apache.maven.artifact.versioning.ArtifactVersion;
+import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.repository.legacy.metadata.ArtifactMetadataRetrievalException;
@@ -11,6 +12,7 @@ import org.openmrs.maven.plugins.model.Artifact;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Created by user on 27.05.16.
@@ -69,13 +71,21 @@ public class VersionsHelper {
     public List<ArtifactVersion> getAllVersions(Artifact artifact, int maxSize) {
         List<ArtifactVersion> versions = getVersions(artifact);
         sortDescending(versions);
+        Optional<ArtifactVersion> firstNonSnapshotVersion = versions.stream()
+                .filter(version -> !version.toString().endsWith("-SNAPSHOT"))
+                .findFirst();
+
+        if (firstNonSnapshotVersion.isPresent()) {
+            ArtifactVersion firstNonSnapshot = firstNonSnapshotVersion.get();
+            versions.removeIf(version -> version.toString().endsWith("-SNAPSHOT")
+                    && new ComparableVersion(version.toString()).compareTo(new ComparableVersion(firstNonSnapshot.toString())) < 0);
+        }
+
         return versions.subList(0, Math.min(versions.size(), maxSize));
     }
 
-    @SuppressWarnings("unchecked")
     private void sortDescending(List<ArtifactVersion> versions){
-        Collections.sort(versions);
-        Collections.reverse(versions);
+        Collections.sort(versions, (v1, v2) -> new ComparableVersion(v2.toString()).compareTo(new ComparableVersion(v1.toString())));
     }
 
     /**
