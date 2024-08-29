@@ -283,6 +283,17 @@ public class DistroProperties extends BaseSdkProperties {
         return Arrays.asList(exclusions.split(","));
     }
 
+    public Set<String> getPropertyNames() {
+        return properties.stringPropertyNames();
+    }
+
+    public void removeProperty(String property) throws MojoExecutionException {
+        if (!properties.containsKey(property)) {
+            throw new MojoExecutionException("The property " + property + " was not found in the distro");
+        }
+        properties.remove(property);
+    }
+
     private String getPlaceholderKey(String string){
         int startIndex = string.indexOf("${")+2;
         int endIndex = string.indexOf("}", startIndex);

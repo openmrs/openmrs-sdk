@@ -1,7 +1,5 @@
 package org.openmrs.maven.plugins.utility;
 
-import static org.openmrs.maven.plugins.utility.PropertiesUtils.loadPropertiesFromFile;
-
 import com.google.common.collect.Lists;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
@@ -51,6 +49,8 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static org.openmrs.maven.plugins.utility.PropertiesUtils.loadPropertiesFromFile;
 
 /**
  * Class for attribute helper functions
@@ -782,11 +782,11 @@ public class DefaultWizard implements Wizard {
 	 * @return A LinkedHashMap containing the generated options map.
 	 */
 	private Map<String, String> getO3VersionsOptionsMap(VersionsHelper versionsHelper,
-			String optionTemplate) {
+														String optionTemplate) {
 		Map<String, String> optionsMap = new LinkedHashMap<>();
 
 		{
-			Artifact artifact = new Artifact("distro-emr-configuration", "3.0.0-SNAPSHOT", "org.openmrs", "zip");
+			Artifact artifact = new Artifact("distro-emr-configuration", "3.0.0", "org.openmrs", "zip");
 			for (ArtifactVersion version : versionsHelper.getAllVersions(artifact, MAX_OPTIONS_SIZE)) {
 				optionsMap.put(String.format(optionTemplate, version.toString()), artifact.getGroupId() + ":" + artifact.getArtifactId() + ":" + version);
 			}
@@ -797,10 +797,12 @@ public class DefaultWizard implements Wizard {
 		}
 
 		{
-			Artifact artifact = new Artifact("referenceapplication-distro", "3.0.0-SNAPSHOT", "org.openmrs.distro", "zip");
+			Artifact artifact = new Artifact("referenceapplication-distro", "3.0.0", "org.openmrs.distro", "zip");
 			for (ArtifactVersion version : versionsHelper.getAllVersions(artifact, MAX_OPTIONS_SIZE)) {
-				optionsMap.put(String.format(optionTemplate, version.toString()), artifact.getGroupId() + ":" + artifact.getArtifactId() + ":" + version);
-
+				if (!version.toString().endsWith("-SNAPSHOT") && optionsMap.size() < MAX_OPTIONS_SIZE) {
+					optionsMap.put(String.format(optionTemplate, version),
+							artifact.getGroupId() + ":" + artifact.getArtifactId() + ":" + version);
+				}
 			}
 		}
 
