@@ -325,6 +325,11 @@ public class DefaultWizard implements Wizard {
 		writer.println("\n[ERROR]" + textToShow);
 	}
 
+	@Override
+	public void showWarning(String message) {
+		writer.println("\n[WARNING]" + message);
+	}
+
 	/**
 	 * Prompt for a value if it not set, and default value is NOT set
 	 *

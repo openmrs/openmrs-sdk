@@ -51,6 +51,8 @@ public interface Wizard {
 
     void showError(String message);
 
+    void showWarning(String message);
+
     String promptForValueIfMissingWithDefault(String message, String value, String parameterName, String defValue)
             throws MojoExecutionException;
 
