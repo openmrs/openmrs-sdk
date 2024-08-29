@@ -116,11 +116,6 @@ public abstract class AbstractTask extends AbstractMojo {
 	OwaHelper owaHelper;
 	
 	/**
-	 * handles Contents
-	 */
-	ContentHelper contentHelper;
-
-	/**
 	 * installs SPAs
 	 */
 	SpaInstaller spaInstaller;
@@ -153,8 +148,7 @@ public abstract class AbstractTask extends AbstractMojo {
 		this.moduleInstaller = other.moduleInstaller;
 		this.versionsHelper = other.versionsHelper;
 		this.distroHelper = other.distroHelper;
-		this.owaHelper = other.owaHelper;
-		this.contentHelper = other.contentHelper;
+		this.owaHelper = other.owaHelper;		
 		this.spaInstaller = other.spaInstaller;
 		this.gitHelper = other.gitHelper;
 		this.dockerHelper = other.dockerHelper;
@@ -184,10 +178,7 @@ public abstract class AbstractTask extends AbstractMojo {
 		}
 		if (owaHelper == null) {
 			owaHelper = new OwaHelper(mavenSession, mavenProject, pluginManager, wizard);
-		}
-		if (contentHelper == null) {
-			contentHelper = new ContentHelper(mavenSession, mavenProject, pluginManager);
-		}
+		}		
 		if (spaInstaller == null) {
 			spaInstaller = new SpaInstaller(distroHelper, new NodeHelper(mavenProject, mavenSession, pluginManager));
 		}

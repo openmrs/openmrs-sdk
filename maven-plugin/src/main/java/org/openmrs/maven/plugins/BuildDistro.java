@@ -17,6 +17,7 @@ import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.model.Version;
+import org.openmrs.maven.plugins.utility.ContentHelper;
 import org.openmrs.maven.plugins.utility.DistroHelper;
 import org.openmrs.maven.plugins.model.Project;
 import org.openmrs.maven.plugins.utility.SDKConstants;
@@ -303,8 +304,7 @@ public class BuildDistro extends AbstractTask {
 				owasDir.mkdir();
 				downloadOWAs(targetDirectory, distroProperties, owasDir);
 				
-				//TODO: does this flow need this?
-				//downloadContents(targetDirectory, distroProperties);
+				downloadContents(targetDirectory, distroProperties);
 				spaInstaller.installFromDistroProperties(tempDir, distroProperties, ignorePeerDependencies,
 				    overrideReuseNodeCache);
 				File frontendDir = new File(tempDir, "frontend");
@@ -335,7 +335,7 @@ public class BuildDistro extends AbstractTask {
 			File configDir = new File(web, SDKConstants.OPENMRS_SERVER_CONFIGURATION);
 			configDir.mkdir();
 			setConfigFolder(configDir, distroProperties, distroArtifact);
-			downloadContents(configDir, distroProperties);
+			downloadContents(web, distroProperties);
 			spaInstaller.installFromDistroProperties(web, distroProperties, ignorePeerDependencies, overrideReuseNodeCache);
 			
 			File owasDir = new File(web, "owa");
@@ -616,18 +616,20 @@ public class BuildDistro extends AbstractTask {
 		}
 	}
 	
-	private void downloadContents(File configDir, DistroProperties distroProperties) throws MojoExecutionException {
-		File targetDirectory = new File(configDir, "temp_content");
-		targetDirectory.mkdir();
-	
-		List<Artifact> contents = distroProperties.getContentArtifacts(distroHelper, targetDirectory);
+	private void downloadContents(File web, DistroProperties distroProperties) throws MojoExecutionException {
+		
+		ContentHelper contentHelper = new ContentHelper(web);		
+		File tempContentDirectory = new File(web, "temp_content");
+		web.mkdir();
+		
+		List<Artifact> contents = distroProperties.getContentArtifacts(distroHelper, web);
 		if (!contents.isEmpty()) {
 			for (Artifact content : contents) {
 				wizard.showMessage("Downloading Content: " + content);
-				contentHelper.downloadContent(configDir, targetDirectory, content, moduleInstaller);
+				contentHelper.downloadContent(content, moduleInstaller, tempContentDirectory);
 			}
 		}
-		FileUtils.deleteQuietly(targetDirectory);
+		FileUtils.deleteQuietly(web);
 	}	
 }
 
