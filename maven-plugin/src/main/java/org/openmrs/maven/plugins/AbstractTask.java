@@ -113,7 +113,7 @@ public abstract class AbstractTask extends AbstractMojo {
 	 * handles OWAs
 	 */
 	OwaHelper owaHelper;
-	
+
 	/**
 	 * installs SPAs
 	 */
