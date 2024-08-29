@@ -75,7 +75,7 @@ public class BuildDistro extends AbstractTask {
 
 	private static final Logger log = LoggerFactory.getLogger(BuildDistro.class);
 
-    /**
+	/**
 	 * Path to the openmrs-distro.properties file.
 	 */
 	@Parameter(property = "distro")

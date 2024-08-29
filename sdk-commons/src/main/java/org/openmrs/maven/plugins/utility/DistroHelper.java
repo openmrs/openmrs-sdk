@@ -31,8 +31,11 @@ import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import static org.openmrs.maven.plugins.model.BaseSdkProperties.ARTIFACT_ID;
+import static org.openmrs.maven.plugins.model.BaseSdkProperties.GROUP_ID;
 import static org.openmrs.maven.plugins.model.BaseSdkProperties.PROPERTY_DISTRO_ARTIFACT_ID;
 import static org.openmrs.maven.plugins.model.BaseSdkProperties.PROPERTY_DISTRO_GROUP_ID;
+import static org.openmrs.maven.plugins.model.BaseSdkProperties.TYPE;
 import static org.twdata.maven.mojoexecutor.MojoExecutor.artifactId;
 import static org.twdata.maven.mojoexecutor.MojoExecutor.configuration;
 import static org.twdata.maven.mojoexecutor.MojoExecutor.element;
@@ -646,12 +649,11 @@ public class DistroHelper {
 				continue;
 			}
 
+			Artifact artifact = new Artifact(distroProperties.checkIfOverwritten(keyOb.replace(CONTENT_PREFIX, ""), ARTIFACT_ID), distroProperties.getParam(keyOb),
+					distroProperties.checkIfOverwritten(keyOb, GROUP_ID), distroProperties.checkIfOverwritten(keyOb, TYPE));
+
 			String version = distroProperties.get(keyOb);
 			String zipFileName = keyOb.replace(CONTENT_PREFIX, "") + "-" + version + ".zip";
-			String artifactId = keyOb.replace(CONTENT_PREFIX, "");
-			String groupId = checkIfOverwritten(keyOb, distroProperties);
-
-			Artifact artifact = new Artifact(artifactId, version, groupId, "zip");
 			File zipFile = downloadDistro(contentPackageZipFile, artifact, zipFileName);
 
 			if (zipFile == null) {
@@ -746,18 +748,6 @@ public class DistroHelper {
 				}
 			}
 		}
-	}
-
-	/**
-	 * Checks if the groupId for a given dependency is overwritten in the distro properties.
-	 *
-	 * @param dependencyKey    The key of the dependency.
-	 * @param distroProperties The distro properties file.
-	 * @return The groupId to use for this dependency.
-	 */
-	private static String checkIfOverwritten(String dependencyKey, DistroProperties distroProperties) {
-		String groupId = distroProperties.get(dependencyKey + ".groupId");
-		return groupId != null ? groupId : "org.openmrs.content";
 	}
 
 	/**

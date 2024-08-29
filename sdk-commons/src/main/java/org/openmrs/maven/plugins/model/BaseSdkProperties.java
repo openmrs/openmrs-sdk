@@ -16,14 +16,15 @@ public abstract class BaseSdkProperties {
 
     public static final String PROPERTY_DISTRO_ARTIFACT_ID = "distro.artifactId";
     public static final String PROPERTY_DISTRO_GROUP_ID = "distro.groupId";
-    protected static final String ARTIFACT_ID = "artifactId";
-    protected static final String TYPE = "type";
-    protected static final String GROUP_ID = "groupId";
+    public static final String ARTIFACT_ID = "artifactId";
+    public static final String TYPE = "type";
+    public static final String GROUP_ID = "groupId";
     protected static final String TYPE_OMOD = "omod";
     protected static final String TYPE_WAR = "war";
     protected static final String TYPE_JAR = "jar";
     protected static final String NAME = "name";
     protected static final String VERSION = "version";
+    protected static final String TYPE_CONTENT = "content";
     protected static final String TYPE_DISTRO = "distro";
     protected static final String TYPE_OWA = "owa";
     protected static final String TYPE_SPA = "spa";
@@ -189,6 +190,8 @@ public abstract class BaseSdkProperties {
                         case TYPE_DISTRO:
 	                    case TYPE_CONFIG:
                             return properties.getProperty(PROPERTY_DISTRO_GROUP_ID, Artifact.GROUP_DISTRO);
+						case TYPE_CONTENT:
+							return Artifact.GROUP_CONTENT;
                         default:
                             return "";
                     }
@@ -200,7 +203,8 @@ public abstract class BaseSdkProperties {
                             return TYPE_JAR;
                         case TYPE_WAR:
                             return TYPE_WAR;
-	                    case TYPE_CONFIG:
+						case TYPE_CONFIG:
+						case TYPE_CONTENT:
 							return TYPE_ZIP;
                         default:
                             return "";

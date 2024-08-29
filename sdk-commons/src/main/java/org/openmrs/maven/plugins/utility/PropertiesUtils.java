@@ -33,7 +33,7 @@ import java.util.Properties;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-public class PropertiesUtils  {
+public class PropertiesUtils {
 
 	private static final Logger log = LoggerFactory.getLogger(PropertiesUtils.class);
 

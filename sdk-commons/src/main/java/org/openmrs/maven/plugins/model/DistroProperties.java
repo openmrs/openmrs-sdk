@@ -319,4 +319,9 @@ public class DistroProperties extends BaseSdkProperties {
         return properties.getProperty(contentDependencyKey);
     }
 
+    @Override
+    public String checkIfOverwritten(String key, String param) {
+        return super.checkIfOverwritten(key, param);
+    }
+
 }
