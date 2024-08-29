@@ -178,7 +178,7 @@ public abstract class AbstractTask extends AbstractMojo {
 		}
 		if (owaHelper == null) {
 			owaHelper = new OwaHelper(mavenSession, mavenProject, pluginManager, wizard);
-		}		
+		}
 		if (spaInstaller == null) {
 			spaInstaller = new SpaInstaller(distroHelper, new NodeHelper(mavenProject, mavenSession, pluginManager));
 		}
