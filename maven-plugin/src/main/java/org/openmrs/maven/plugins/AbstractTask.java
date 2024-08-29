@@ -13,7 +13,6 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.settings.Settings;
 import org.openmrs.maven.plugins.model.Server;
-import org.openmrs.maven.plugins.utility.ContentHelper;
 import org.openmrs.maven.plugins.utility.DefaultJira;
 import org.openmrs.maven.plugins.utility.DistroHelper;
 import org.openmrs.maven.plugins.git.DefaultGitHelper;
@@ -148,7 +147,7 @@ public abstract class AbstractTask extends AbstractMojo {
 		this.moduleInstaller = other.moduleInstaller;
 		this.versionsHelper = other.versionsHelper;
 		this.distroHelper = other.distroHelper;
-		this.owaHelper = other.owaHelper;		
+		this.owaHelper = other.owaHelper;
 		this.spaInstaller = other.spaInstaller;
 		this.gitHelper = other.gitHelper;
 		this.dockerHelper = other.dockerHelper;
