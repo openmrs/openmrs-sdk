@@ -303,8 +303,8 @@ public class BuildDistro extends AbstractTask {
 				File owasDir = new File(tempDir, "bundledOwas");
 				owasDir.mkdir();
 				downloadOWAs(targetDirectory, distroProperties, owasDir);
+				downloadContents(web, distroProperties);
 				
-				downloadContents(targetDirectory, distroProperties);
 				spaInstaller.installFromDistroProperties(tempDir, distroProperties, ignorePeerDependencies,
 				    overrideReuseNodeCache);
 				File frontendDir = new File(tempDir, "frontend");
@@ -336,6 +336,7 @@ public class BuildDistro extends AbstractTask {
 			configDir.mkdir();
 			setConfigFolder(configDir, distroProperties, distroArtifact);
 			downloadContents(web, distroProperties);
+			
 			spaInstaller.installFromDistroProperties(web, distroProperties, ignorePeerDependencies, overrideReuseNodeCache);
 			
 			File owasDir = new File(web, "owa");
@@ -618,7 +619,8 @@ public class BuildDistro extends AbstractTask {
 	
 	private void downloadContents(File web, DistroProperties distroProperties) throws MojoExecutionException {
 		
-		ContentHelper contentHelper = new ContentHelper(web);		
+		ContentHelper contentHelper = new ContentHelper(web);
+		
 		File tempContentDirectory = new File(web, "temp_content");
 		web.mkdir();
 		
@@ -630,6 +632,5 @@ public class BuildDistro extends AbstractTask {
 			}
 		}
 		FileUtils.deleteQuietly(web);
-	}	
+	}
 }
-

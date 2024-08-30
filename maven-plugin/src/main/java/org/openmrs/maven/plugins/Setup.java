@@ -281,7 +281,7 @@ public class Setup extends AbstractServerTask {
 			setServerVersionsFromDistroProperties(server, distroProperties);
 			moduleInstaller.installModulesForDistro(server, distroProperties, distroHelper);
 			setConfigFolder(server, distroProperties);
-			installContents(server, distroProperties);
+			downloadContents(server, distroProperties);
 			if (spaInstaller != null) {
 				spaInstaller.installFromDistroProperties(server.getServerDirectory(), distroProperties,
 				    ignorePeerDependencies, overrideReuseNodeCache);
@@ -690,7 +690,7 @@ public class Setup extends AbstractServerTask {
 		return uri;
 	}
 	
-	private void installContents(Server server, DistroProperties distroProperties) throws MojoExecutionException {
+	private void downloadContents(Server server, DistroProperties distroProperties) throws MojoExecutionException {
 		if (distroProperties != null) {
 			ContentHelper contentHelper = new ContentHelper(server.getServerDirectory());
 			File tempContentDir = new File(server.getServerDirectory(), "temp-content");
