@@ -282,6 +282,16 @@ public class DistroProperties extends BaseSdkProperties {
         properties.remove(property);
     }
 
+    public void addExclusion(String exclusion) {
+        String exclusions = getParam("exclusions");
+        if (exclusions == null){
+            properties.setProperty("exclusions", exclusion);
+            return;
+        }
+
+        properties.setProperty("exclusions", exclusions + "," + exclusion);
+    }
+
     private String getPlaceholderKey(String string){
         int startIndex = string.indexOf("${")+2;
         int endIndex = string.indexOf("}", startIndex);
