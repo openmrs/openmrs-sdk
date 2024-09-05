@@ -98,9 +98,9 @@ public class SpaInstaller {
 			// print frontend tool version number
 			nodeHelper.runNpx(String.format("%s --version", program), legacyPeerDeps);
 			nodeHelper.runNpx(
-					String.format("%s build --target %s --build-config %s", program, buildTargetDir, spaConfigFile), legacyPeerDeps);
-			nodeHelper.runNpx(
 					String.format("%s assemble --target %s --mode config --config %s", program, buildTargetDir, spaConfigFile), legacyPeerDeps);
+			nodeHelper.runNpx(
+					String.format("%s build --target %s --build-config %s", program, buildTargetDir, spaConfigFile), legacyPeerDeps);
 
 			Path nodeCache = NodeHelper.tempDir;
 			if (!reuseNodeCache) {
