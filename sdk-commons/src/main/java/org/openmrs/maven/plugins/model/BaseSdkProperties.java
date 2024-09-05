@@ -180,37 +180,36 @@ public abstract class BaseSdkProperties {
         } else {
 	        switch (param) {
 		        case ARTIFACT_ID:
-			        return extractArtifactId(key);
+                            return extractArtifactId(key);
 		        case GROUP_ID:
-                    switch (getArtifactType(key)) {
-                        case TYPE_WAR:  //for openmrs.war use org.openmrs.web groupId
-                            return Artifact.GROUP_WEB;
-                        case TYPE_OMOD:
-                            return Artifact.GROUP_MODULE;
-                        case TYPE_DISTRO:
-	                    case TYPE_CONFIG:
-                            return properties.getProperty(PROPERTY_DISTRO_GROUP_ID, Artifact.GROUP_DISTRO);
-						case TYPE_CONTENT:
-							return Artifact.GROUP_CONTENT;
-                        default:
-                            return "";
-                    }
-
+                            switch (getArtifactType(key)) {
+                                case TYPE_WAR:  //for openmrs.war use org.openmrs.web groupId
+                                    return Artifact.GROUP_WEB;
+                                case TYPE_OMOD:
+                                    return Artifact.GROUP_MODULE;
+                                case TYPE_DISTRO:
+	                        case TYPE_CONFIG:
+                                    return properties.getProperty(PROPERTY_DISTRO_GROUP_ID, Artifact.GROUP_DISTRO);
+	                        case TYPE_CONTENT:
+                                    return Artifact.GROUP_CONTENT;
+                                default:
+                                    return "";
+                            }
 		        case TYPE:
-                    switch (getArtifactType(key)) {
-                        case TYPE_OMOD:
-                        case TYPE_DISTRO:
-                            return TYPE_JAR;
-                        case TYPE_WAR:
-                            return TYPE_WAR;
-						case TYPE_CONFIG:
-						case TYPE_CONTENT:
-							return TYPE_ZIP;
-                        default:
-                            return "";
-                    }
+                            switch (getArtifactType(key)) {
+                                case TYPE_OMOD:
+                                case TYPE_DISTRO:
+                                    return TYPE_JAR;
+                                case TYPE_WAR:
+                                    return TYPE_WAR;
+                                case TYPE_CONFIG:
+                                case TYPE_CONTENT:
+                                    return TYPE_ZIP;
+                                default:
+                                    return "";
+                            }
 		        default:
-			        return "";
+                            return "";
 	        }
         }
     }
