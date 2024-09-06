@@ -786,8 +786,7 @@ public class DefaultWizard implements Wizard {
 	 * @param optionTemplate   The template for generating option keys in the map.
 	 * @return A LinkedHashMap containing the generated options map.
 	 */
-	private Map<String, String> getO3VersionsOptionsMap(VersionsHelper versionsHelper,
-														String optionTemplate) {
+	private Map<String, String> getO3VersionsOptionsMap(VersionsHelper versionsHelper, String optionTemplate) {
 		Map<String, String> optionsMap = new LinkedHashMap<>();
 
 		{
