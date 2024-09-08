@@ -1,5 +1,24 @@
 package org.openmrs.maven.plugins;
 
+import net.lingala.zip4j.core.ZipFile;
+import net.lingala.zip4j.exception.ZipException;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.output.NullOutputStream;
+import org.apache.commons.lang.StringUtils;
+import org.apache.ibatis.jdbc.ScriptRunner;
+import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
+import org.openmrs.maven.plugins.model.Artifact;
+import org.openmrs.maven.plugins.model.DistroProperties;
+import org.openmrs.maven.plugins.model.Server;
+import org.openmrs.maven.plugins.model.Version;
+import org.openmrs.maven.plugins.utility.DBConnector;
+import org.openmrs.maven.plugins.utility.DistroHelper;
+import org.openmrs.maven.plugins.utility.SDKConstants;
+import org.openmrs.maven.plugins.utility.ServerHelper;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -19,25 +38,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-
-import net.lingala.zip4j.core.ZipFile;
-import net.lingala.zip4j.exception.ZipException;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.output.NullOutputStream;
-import org.apache.commons.lang.StringUtils;
-import org.apache.ibatis.jdbc.ScriptRunner;
-import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.MojoFailureException;
-import org.apache.maven.plugins.annotations.Mojo;
-import org.apache.maven.plugins.annotations.Parameter;
-import org.openmrs.maven.plugins.model.Artifact;
-import org.openmrs.maven.plugins.model.DistroProperties;
-import org.openmrs.maven.plugins.model.Server;
-import org.openmrs.maven.plugins.model.Version;
-import org.openmrs.maven.plugins.utility.DBConnector;
-import org.openmrs.maven.plugins.utility.DistroHelper;
-import org.openmrs.maven.plugins.utility.SDKConstants;
-import org.openmrs.maven.plugins.utility.ServerHelper;
 
 
 /**
@@ -276,6 +276,7 @@ public class Setup extends AbstractServerTask {
 			// `setServerVersionsFromDistroProperties`, and `server.setValuesFromDistroPropertiesModules`.
 			distroHelper.savePropertiesToServer(distroProperties, server);
 			setServerVersionsFromDistroProperties(server, distroProperties);
+			distroHelper.parseContentProperties(distroProperties);
 			moduleInstaller.installModulesForDistro(server, distroProperties, distroHelper);
 			setConfigFolder(server, distroProperties);
 			if (spaInstaller != null) {

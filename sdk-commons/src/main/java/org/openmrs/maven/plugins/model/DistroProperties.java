@@ -1,8 +1,5 @@
 package org.openmrs.maven.plugins.model;
 
-import static org.openmrs.maven.plugins.utility.PropertiesUtils.loadPropertiesFromFile;
-import static org.openmrs.maven.plugins.utility.PropertiesUtils.loadPropertiesFromResource;
-
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -20,6 +17,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+
+import static org.openmrs.maven.plugins.utility.PropertiesUtils.loadPropertiesFromFile;
+import static org.openmrs.maven.plugins.utility.PropertiesUtils.loadPropertiesFromResource;
 
 /**
  *
@@ -312,4 +312,37 @@ public class DistroProperties extends BaseSdkProperties {
         int index = asString.indexOf("{");
         return index != -1 && asString.substring(index).contains("}");
     }
+
+    public boolean contains(String propertyName) {
+        return properties.containsKey(propertyName);
+    }
+
+    /**
+     * Adds a dependency with the specified version to the properties.
+     *
+     * @param dependency The name of the dependency.
+     * @param version The version of the dependency.
+     */
+    public void add(String dependency, String version) {
+        if (StringUtils.isBlank(dependency) || StringUtils.isBlank(version)) {
+            log.error("Dependency name or version cannot be blank");
+            return;
+        }
+
+        if (dependency.startsWith("omod.") || dependency.startsWith("owa.") || dependency.startsWith("war")
+                || dependency.startsWith("spa.frontendModule")) {
+            properties.setProperty(dependency, version);
+            log.info("Added dependency: {} with version: {}", dependency, version);
+        }
+    }
+
+    public String get(String contentDependencyKey) {
+        return properties.getProperty(contentDependencyKey);
+    }
+
+    @Override
+    public String checkIfOverwritten(String key, String param) {
+        return super.checkIfOverwritten(key, param);
+    }
+
 }
