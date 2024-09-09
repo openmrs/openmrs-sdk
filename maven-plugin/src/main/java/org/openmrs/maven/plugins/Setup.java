@@ -14,6 +14,7 @@ import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.model.Version;
+import org.openmrs.maven.plugins.utility.ContentHelper;
 import org.openmrs.maven.plugins.utility.DBConnector;
 import org.openmrs.maven.plugins.utility.DistroHelper;
 import org.openmrs.maven.plugins.utility.SDKConstants;
@@ -279,6 +280,7 @@ public class Setup extends AbstractServerTask {
 			distroHelper.parseContentProperties(distroProperties);
 			moduleInstaller.installModulesForDistro(server, distroProperties, distroHelper);
 			setConfigFolder(server, distroProperties);
+			installContentConfiguration(server, distroProperties);
 			if (spaInstaller != null) {
 				spaInstaller.installFromDistroProperties(server.getServerDirectory(), distroProperties, ignorePeerDependencies, overrideReuseNodeCache);
 			}
@@ -330,7 +332,7 @@ public class Setup extends AbstractServerTask {
 			owasDir.mkdir();
 			downloadOWAs(server.getServerDirectory(), distroProperties, owasDir);
 		}
-	}
+	}	
 
 	private void downloadOWAs(File targetDirectory, DistroProperties distroProperties, File owasDir)
 			throws MojoExecutionException {
@@ -343,7 +345,24 @@ public class Setup extends AbstractServerTask {
 			}
 		}
 	}
-
+	
+	private void installContentConfiguration(Server server, DistroProperties distroProperties) throws MojoExecutionException {
+		if (distroProperties != null) {
+			File tempContentDir = new File(server.getServerDirectory(), "temp-content");
+			tempContentDir.mkdir();
+			List<Artifact> contents = distroProperties.getContentArtifacts(distroHelper, tempContentDir);
+			ContentHelper contentHelper = new ContentHelper(server.getServerDirectory());
+					
+			if (!contents.isEmpty()) {
+				for (Artifact content : contents) {
+					wizard.showMessage("Downloading Content: " + content + "\n");
+					contentHelper.downloadContent(content, moduleInstaller, tempContentDir);				
+				}
+			}
+			FileUtils.deleteQuietly(tempContentDir);
+		}
+	}
+		
 	/**
 	 * Sets the configuration folder for the specified server using the provided distro properties.
 	 *
