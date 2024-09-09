@@ -150,6 +150,18 @@ public abstract class BaseSdkProperties {
 		return artifactList;
 	}
 
+	public List<Artifact> getContentArtifacts() {
+        List<Artifact> artifacts = new ArrayList<>();
+        for (Object keyObject: getAllKeys()) {
+            String key = keyObject.toString();
+            if (key.startsWith(TYPE_CONTENT + ".")) {
+                String artifactId = key.substring(TYPE_CONTENT.length() + 1);
+                artifacts.add(new Artifact(artifactId, getParam(key), Artifact.GROUP_CONTENT, Artifact.TYPE_ZIP));
+            }
+        }
+        return artifacts;
+    }
+
 	protected Set<Object> getAllKeys() {
 		return properties.keySet();
 	}
