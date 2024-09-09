@@ -16,19 +16,19 @@ public abstract class BaseSdkProperties {
 
     public static final String PROPERTY_DISTRO_ARTIFACT_ID = "distro.artifactId";
     public static final String PROPERTY_DISTRO_GROUP_ID = "distro.groupId";
-    protected static final String ARTIFACT_ID = "artifactId";
-    protected static final String TYPE = "type";
-    protected static final String GROUP_ID = "groupId";
+    public static final String ARTIFACT_ID = "artifactId";
+    public static final String TYPE = "type";
+    public static final String GROUP_ID = "groupId";
     protected static final String TYPE_OMOD = "omod";
     protected static final String TYPE_WAR = "war";
     protected static final String TYPE_JAR = "jar";
     protected static final String NAME = "name";
     protected static final String VERSION = "version";
+    protected static final String TYPE_CONTENT = "content";
     protected static final String TYPE_DISTRO = "distro";
     protected static final String TYPE_OWA = "owa";
     protected static final String TYPE_SPA = "spa";
     protected static final String TYPE_CONFIG = "config";
-    protected static final String TYPE_CONTENT = "content";
     protected static final String TYPE_ZIP = "zip";
 
     protected Properties properties;
@@ -149,19 +149,6 @@ public abstract class BaseSdkProperties {
 		}
 		return artifactList;
 	}
-	
-	public List<Artifact> getContentArtifacts() {
-		List<Artifact> artifactList = new ArrayList<>();
-		for (Object keyObject : getAllKeys()) {
-			String key = keyObject.toString();
-			String artifactType = getArtifactType(key);
-			if (artifactType.equals(TYPE_CONTENT)) {
-				String artifactId = key.substring(TYPE_CONTENT.length() + 1);				
-				artifactList.add(new Artifact(artifactId, getParam(key), Artifact.GROUP_CONTENT, Artifact.TYPE_ZIP));
-			}
-		}
-		return artifactList;
-	}
 
 	protected Set<Object> getAllKeys() {
 		return properties.keySet();
@@ -193,34 +180,36 @@ public abstract class BaseSdkProperties {
         } else {
 	        switch (param) {
 		        case ARTIFACT_ID:
-			        return extractArtifactId(key);
+                            return extractArtifactId(key);
 		        case GROUP_ID:
-                    switch (getArtifactType(key)) {
-                        case TYPE_WAR:  //for openmrs.war use org.openmrs.web groupId
-                            return Artifact.GROUP_WEB;
-                        case TYPE_OMOD:
-                            return Artifact.GROUP_MODULE;
-                        case TYPE_DISTRO:
-	                    case TYPE_CONFIG:
-                            return properties.getProperty(PROPERTY_DISTRO_GROUP_ID, Artifact.GROUP_DISTRO);
-                        default:
-                            return "";
-                    }
-
+                            switch (getArtifactType(key)) {
+                                case TYPE_WAR:  //for openmrs.war use org.openmrs.web groupId
+                                    return Artifact.GROUP_WEB;
+                                case TYPE_OMOD:
+                                    return Artifact.GROUP_MODULE;
+                                case TYPE_DISTRO:
+	                        case TYPE_CONFIG:
+                                    return properties.getProperty(PROPERTY_DISTRO_GROUP_ID, Artifact.GROUP_DISTRO);
+	                        case TYPE_CONTENT:
+                                    return Artifact.GROUP_CONTENT;
+                                default:
+                                    return "";
+                            }
 		        case TYPE:
-                    switch (getArtifactType(key)) {
-                        case TYPE_OMOD:
-                        case TYPE_DISTRO:
-                            return TYPE_JAR;
-                        case TYPE_WAR:
-                            return TYPE_WAR;
-	                    case TYPE_CONFIG:
-							return TYPE_ZIP;
-                        default:
-                            return "";
-                    }
+                            switch (getArtifactType(key)) {
+                                case TYPE_OMOD:
+                                case TYPE_DISTRO:
+                                    return TYPE_JAR;
+                                case TYPE_WAR:
+                                    return TYPE_WAR;
+                                case TYPE_CONFIG:
+                                case TYPE_CONTENT:
+                                    return TYPE_ZIP;
+                                default:
+                                    return "";
+                            }
 		        default:
-			        return "";
+                            return "";
 	        }
         }
     }

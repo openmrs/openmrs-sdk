@@ -166,8 +166,8 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
         Path indexFilePath = testDirectoryPath.resolve(Paths.get(serverId, "frontend", "index.html"));
         assertPathPresent(indexFilePath);
         assertFilePresent(serverId, "frontend", "importmap.json");
-        assertFilePresent(serverId,  "frontend", "openmrs-esm-login-app-3.3.1");
-        assertFilePresent(serverId, "frontend", "openmrs-esm-patient-chart-app-3.1.0");
+        assertFilePresent(serverId,  "frontend", "openmrs-esm-login-app-5.6.0");
+        assertFilePresent(serverId, "frontend", "openmrs-esm-patient-chart-app-8.0.0");
         String indexContents = FileUtils.readFileToString(getTestFile(indexFilePath), StandardCharsets.UTF_8);
         assertThat(indexContents, containsString("apiUrl: \"notopenmrs\""));
         assertThat(indexContents, containsString("configUrls: [\"foo\"]"));

@@ -8,18 +8,15 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
-import org.eclipse.jgit.api.errors.GitAPIException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
-import org.eclipse.jgit.api.CloneCommand;
-import org.eclipse.jgit.api.Git;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.DistroProperties;
+import org.openmrs.maven.plugins.model.Project;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.model.Version;
 import org.openmrs.maven.plugins.utility.ContentHelper;
 import org.openmrs.maven.plugins.utility.DistroHelper;
-import org.openmrs.maven.plugins.model.Project;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -196,6 +193,7 @@ public class BuildDistro extends AbstractTask {
 			throw new MojoExecutionException("The distro you specified, '" + distro + "' could not be retrieved");
 		}
 
+		distroHelper.parseContentProperties(distroProperties);
 		String distroName = buildDistro(buildDirectory, distroArtifact, distroProperties);
 
 		wizard.showMessage(
@@ -335,13 +333,28 @@ public class BuildDistro extends AbstractTask {
 			downloadOWAs(targetDirectory, distroProperties, owasDir);
 		}
 
+
+		boolean isAbovePlatform2point0 = isAbovePlatformVersion(new Version(distroProperties.getPlatformVersion()), 2, 0);
+		if(isAbovePlatform2point0) {
+			File openmrsCoreDir = new File(web, "openmrs_core");
+			openmrsCoreDir.mkdir();
+			new File(web, "openmrs.war").renameTo(new File(openmrsCoreDir, "openmrs.war"));
+			new File(web, "modules").renameTo(new File(web, "openmrs_modules"));
+			new File(web, "frontend").renameTo(new File(web, "openmrs_spa"));
+			new File(web, "configuration").renameTo(new File(web, "openmrs_config"));
+			new File(web, "owa").renameTo(new File(web, "openmrs_owas"));
+		}
+
 		wizard.showMessage("Creating Docker Compose configuration...\n");
 		String distroVersion = adjustImageName(distroProperties.getVersion());
 		writeDockerCompose(targetDirectory, distroVersion);
 		writeReadme(targetDirectory, distroVersion);
-		copyBuildDistroResource("setenv.sh", new File(web, "setenv.sh"));
-		copyBuildDistroResource("startup.sh", new File(web, "startup.sh"));
-		copyBuildDistroResource("wait-for-it.sh", new File(web, "wait-for-it.sh"));
+		if(!isAbovePlatform2point0) {
+			copyBuildDistroResource("setenv.sh", new File(web, "setenv.sh"));
+			copyBuildDistroResource("startup.sh", new File(web, "startup.sh"));
+			copyBuildDistroResource("wait-for-it.sh", new File(web, "wait-for-it.sh"));
+		}
+
 		copyBuildDistroResource(".env", new File(targetDirectory, ".env"));
 		copyDockerfile(web, distroProperties);
 		distroProperties.saveTo(web);
@@ -430,9 +443,9 @@ public class BuildDistro extends AbstractTask {
 		} else {
 			if (isPlatform2point5AndAbove(platformVersion)) {
 				if (bundled) {
-					copyBuildDistroResource("Dockerfile-tomcat8-bundled", new File(targetDirectory, "Dockerfile"));
+					copyBuildDistroResource("Dockerfile-jre11-bundled", new File(targetDirectory, "Dockerfile"));
 				} else {
-					copyBuildDistroResource("Dockerfile-tomcat8", new File(targetDirectory, "Dockerfile"));
+					copyBuildDistroResource("Dockerfile-jre11", new File(targetDirectory, "Dockerfile"));
 				}
 			}
 			else {
@@ -446,9 +459,14 @@ public class BuildDistro extends AbstractTask {
 	}
 
 	private boolean isPlatform2point5AndAbove(Version platformVersion) {
-		return platformVersion.getMajorVersion() > 2
-				|| (platformVersion.getMajorVersion() == 2 && platformVersion.getMinorVersion() >= 5);
+		 return isAbovePlatformVersion(platformVersion, 2, 5);
 	}
+
+	private boolean isAbovePlatformVersion(Version platformVersion, int majorVersion, int minorVersion) {
+		return platformVersion.getMajorVersion() > majorVersion
+				|| (platformVersion.getMajorVersion() == majorVersion && platformVersion.getMinorVersion() >= minorVersion);
+	}
+
 
 	/**
 	 * name of sql dump file is unknown, so wipe all files with 'sql' extension
@@ -509,7 +527,7 @@ public class BuildDistro extends AbstractTask {
 		}
 
 		try (FileWriter writer = new FileWriter(dbDump);
-		     BufferedInputStream bis = new BufferedInputStream(stream)) {
+			 BufferedInputStream bis = new BufferedInputStream(stream)) {
 			writer.write(DUMP_PREFIX);
 
 			int c;
