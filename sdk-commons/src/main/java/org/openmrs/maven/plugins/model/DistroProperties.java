@@ -1,5 +1,8 @@
 package org.openmrs.maven.plugins.model;
 
+import static org.openmrs.maven.plugins.utility.PropertiesUtils.loadPropertiesFromFile;
+import static org.openmrs.maven.plugins.utility.PropertiesUtils.loadPropertiesFromResource;
+
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -17,9 +20,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-
-import static org.openmrs.maven.plugins.utility.PropertiesUtils.loadPropertiesFromFile;
-import static org.openmrs.maven.plugins.utility.PropertiesUtils.loadPropertiesFromResource;
 
 /**
  *
@@ -290,6 +290,10 @@ public class DistroProperties extends BaseSdkProperties {
         }
 
         properties.setProperty("exclusions", exclusions + "," + exclusion);
+    }
+
+    public void addProperty(String property, String value) throws MojoExecutionException {
+        properties.put(property, value);
     }
 
     private String getPlaceholderKey(String string){
