@@ -6,10 +6,16 @@ import org.openmrs.maven.plugins.model.PackageJson;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 public class NpmVersionHelper {
 	
@@ -44,6 +50,35 @@ public class NpmVersionHelper {
 			throw new RuntimeException("Error retrieving resolved version from NPM", e);
 		}
 	}
+
+	public List<String> getPackageVersions(String packageName, int limit) {
+		try {
+			ProcessBuilder processBuilder = new ProcessBuilder()
+					.command("npm", "view", packageName, "versions", "--dry-run", "--json").redirectErrorStream(true);
+
+			Process process = processBuilder.start();
+
+			StringBuilder output = new StringBuilder();
+			try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+				String line;
+				while ((line = bufferedReader.readLine()) != null) {
+					output.append(line);
+				}
+			}
+
+			int exitCode = process.waitFor();
+			if (exitCode != 0) {
+				return new ArrayList<>();
+			}
+			JsonNode jsonNode = objectMapper.readTree(output.toString());
+
+			return StreamSupport.stream(jsonNode.spliterator(), false).map(JsonNode::asText)
+					.sorted(Collections.reverseOrder()).limit(limit).collect(Collectors.toList());
+
+		} catch (IOException | InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
 	
 	private static JsonNode getPackageMetadata(String versionRange, String packageName) throws IOException, InterruptedException {
 		if (packageName == null || packageName.isEmpty()) {
