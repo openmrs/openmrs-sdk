@@ -65,7 +65,8 @@ public class Setup extends AbstractServerTask {
 
 	private static final String NO_DEBUGGING_DEFAULT_ANSWER = "no debugging";
 
-	private static final int DEFAULT_PORT = 8080;
+	private static final int DEFAULT_PORT = 8080;	
+		
 
 	/**
 	 * DB Driver type
@@ -280,10 +281,11 @@ public class Setup extends AbstractServerTask {
 			distroHelper.parseContentProperties(distroProperties);
 			moduleInstaller.installModulesForDistro(server, distroProperties, distroHelper);
 			setConfigFolder(server, distroProperties);
-			installContentConfiguration(server, distroProperties);
+			downloadAndMoveContentBackendConfig(server.getServerDirectory(), distroProperties);
 			if (spaInstaller != null) {
 				spaInstaller.installFromDistroProperties(server.getServerDirectory(), distroProperties, ignorePeerDependencies, overrideReuseNodeCache);
 			}
+			ContentHelper.deleteTempContentFolder(server.getServerDirectory());
 			installOWAs(server, distroProperties);
 		} else {
 			moduleInstaller.installDefaultModules(server);
@@ -310,6 +312,11 @@ public class Setup extends AbstractServerTask {
 				distroProperties.getModuleArtifacts(distroHelper, server.getServerDirectory()), distroProperties);
 		server.setUnspecifiedToDefault();
 		server.save();
+	}
+
+	private void cleanupContentTempFolder() {
+		
+		
 	}
 
 	private void setJdk(Server server) throws MojoExecutionException {
@@ -346,20 +353,17 @@ public class Setup extends AbstractServerTask {
 		}
 	}
 	
-	private void installContentConfiguration(Server server, DistroProperties distroProperties) throws MojoExecutionException {
+	private void downloadAndMoveContentBackendConfig(File serverDirectory, DistroProperties distroProperties) throws MojoExecutionException {
 		if (distroProperties != null) {
-			File tempContentDir = new File(server.getServerDirectory(), "temp-content");
-			tempContentDir.mkdir();
-			List<Artifact> contents = distroProperties.getContentArtifacts(distroHelper, tempContentDir);
-			ContentHelper contentHelper = new ContentHelper(server.getServerDirectory());
-					
+			File targetDir = new File(serverDirectory, SDKConstants.OPENMRS_SERVER_CONFIGURATION);				
+			List<Artifact> contents = distroProperties.getContentArtifacts();
+								
 			if (!contents.isEmpty()) {
 				for (Artifact content : contents) {
 					wizard.showMessage("Downloading Content: " + content + "\n");
-					contentHelper.downloadContent(content, moduleInstaller, tempContentDir);				
+					ContentHelper.downloadContent(serverDirectory, content, moduleInstaller, targetDir);				
 				}
-			}
-			FileUtils.deleteQuietly(tempContentDir);
+			}			
 		}
 	}
 		

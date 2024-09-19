@@ -294,9 +294,9 @@ public class BuildDistro extends AbstractTask {
 
 				File owasDir = new File(tempDir, "bundledOwas");
 				owasDir.mkdir();
-				downloadOWAs(targetDirectory, distroProperties, owasDir);				
-				spaInstaller.installFromDistroProperties(tempDir, distroProperties, ignorePeerDependencies, overrideReuseNodeCache);
-				installContentConfiguration(web, distroProperties);
+				downloadOWAs(targetDirectory, distroProperties, owasDir);	
+				//downloadAndMoveContentBackendConfig(targetDirectory, distroProperties);
+				spaInstaller.installFromDistroProperties(tempDir, distroProperties, ignorePeerDependencies, overrideReuseNodeCache);				
 				File frontendDir = new File(tempDir, "frontend");
 				if(frontendDir.exists()) {
 					frontendDir.renameTo(new File(tempDir, "bundledFrontend"));
@@ -304,6 +304,7 @@ public class BuildDistro extends AbstractTask {
 
 				warfile.addFolder(tempDir, new ZipParameters());
 				try {
+					//ContentHelper.deleteTempContentFolder(targetDirectory);
 					FileUtils.deleteDirectory(tempDir);
 				}
 				catch (IOException e) {
@@ -325,12 +326,13 @@ public class BuildDistro extends AbstractTask {
 			File configDir = new File(web, SDKConstants.OPENMRS_SERVER_CONFIGURATION);
 			configDir.mkdir();
 			setConfigFolder(configDir, distroProperties, distroArtifact);
-			installContentConfiguration(web, distroProperties);
+			downloadAndMoveContentBackendConfig(web, distroProperties, configDir);
 			spaInstaller.installFromDistroProperties(web, distroProperties, ignorePeerDependencies, overrideReuseNodeCache);
 
 			File owasDir = new File(web, "owa");
 			owasDir.mkdir();
 			downloadOWAs(targetDirectory, distroProperties, owasDir);
+			//ContentHelper.deleteTempContentFolder(targetDirectory);
 		}
 
 
@@ -622,20 +624,16 @@ public class BuildDistro extends AbstractTask {
 		}
 	}
 
-	private void installContentConfiguration(File web, DistroProperties distroProperties) throws MojoExecutionException {
+	private void downloadAndMoveContentBackendConfig(File web, DistroProperties distroProperties, File targetDir) throws MojoExecutionException {	
 		
-		ContentHelper contentHelper = new ContentHelper(web);		
-		File tempContentDirectory = new File(web, "temp_content");
-		tempContentDirectory.mkdir();
-		
-		List<Artifact> contents = distroProperties.getContentArtifacts(distroHelper, web);
+		List<Artifact> contents = distroProperties.getContentArtifacts();
 		if (!contents.isEmpty()) {
 			for (Artifact content : contents) {
 				wizard.showMessage("Downloading Content: " + content);
-				contentHelper.downloadContent(content, moduleInstaller, tempContentDirectory);
+				ContentHelper.downloadContent(web, content, moduleInstaller, targetDir);
 			}
 		}
-		FileUtils.deleteQuietly(tempContentDirectory);
+		
 	}
 
 }
