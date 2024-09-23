@@ -294,9 +294,8 @@ public class BuildDistro extends AbstractTask {
 
 				File owasDir = new File(tempDir, "bundledOwas");
 				owasDir.mkdir();
-				downloadOWAs(targetDirectory, distroProperties, owasDir);	
-				//downloadAndMoveContentBackendConfig(targetDirectory, distroProperties);
-				spaInstaller.installFromDistroProperties(tempDir, distroProperties, ignorePeerDependencies, overrideReuseNodeCache);				
+				downloadOWAs(targetDirectory, distroProperties, owasDir);
+				spaInstaller.installFromDistroProperties(tempDir, distroProperties, ignorePeerDependencies, overrideReuseNodeCache);
 				File frontendDir = new File(tempDir, "frontend");
 				if(frontendDir.exists()) {
 					frontendDir.renameTo(new File(tempDir, "bundledFrontend"));
@@ -304,7 +303,6 @@ public class BuildDistro extends AbstractTask {
 
 				warfile.addFolder(tempDir, new ZipParameters());
 				try {
-					//ContentHelper.deleteTempContentFolder(targetDirectory);
 					FileUtils.deleteDirectory(tempDir);
 				}
 				catch (IOException e) {
@@ -325,7 +323,7 @@ public class BuildDistro extends AbstractTask {
 
 			File configDir = new File(web, SDKConstants.OPENMRS_SERVER_CONFIGURATION);
 			configDir.mkdir();
-			setConfigFolder(configDir, distroProperties, distroArtifact);			
+			setConfigFolder(configDir, distroProperties, distroArtifact);
 			ContentHelper.downloadAndMoveContentBackendConfig(web, distroProperties, moduleInstaller, wizard);
 			spaInstaller.installFromDistroProperties(web, distroProperties, ignorePeerDependencies, overrideReuseNodeCache);
 
@@ -621,5 +619,6 @@ public class BuildDistro extends AbstractTask {
 				throw new MojoExecutionException("Distro should contain only single war file");
 			}
 		}
-	}	
+	}
+
 }
