@@ -3,6 +3,7 @@ package org.openmrs.maven.plugins.utility;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -22,15 +23,19 @@ public class ContentHelper {
 	public static final String FRONTEND_CONFIG_FOLDER = File.separator + "configs" + File.separator + "frontend_config";
 	public static final String BACKEND_CONFIG_FOLDER = "configs" + File.separator + "backend_config";
 	
-	public static void downloadContent(File serverDirectory, Artifact contentArtifact, ModuleInstaller moduleInstaller, File targetDir) throws MojoExecutionException {
-		
-		String artifactId = contentArtifact.getArtifactId();
-		//create a artifact folder under temp_content
-		File sourceDir = new File(serverDirectory, TEMP_CONTENT_FOLDER + File.separator + artifactId);
-		sourceDir.mkdirs();
-		
-		moduleInstaller.installUnpackModule(contentArtifact, sourceDir.getAbsolutePath());		
-		moveBackendConfig(artifactId, sourceDir, targetDir);
+	public static void downloadContent(File serverDirectory, Artifact contentArtifact, ModuleInstaller moduleInstaller,
+	        File targetDir) throws MojoExecutionException {
+		try {
+			String artifactId = contentArtifact.getArtifactId();
+			//create a artifact folder under temp_content
+			File sourceDir = Files.createTempDirectory(TEMP_CONTENT_FOLDER + artifactId).toFile();
+			
+			moduleInstaller.installAndUnpackModule(contentArtifact, sourceDir.getAbsolutePath());
+			moveBackendConfig(artifactId, sourceDir, targetDir);
+		}
+		catch (Exception e) {
+			throw new MojoExecutionException("Error creating temp_content: " + e.getMessage(), e);
+		}
 	}
 	
 	private static void moveBackendConfig(String artifactId, File sourceDir, File targetDir) throws MojoExecutionException {
@@ -79,17 +84,17 @@ public class ContentHelper {
 		return contentConfigFiles;
 	}
 	
-	public static void deleteTempContentFolder(File serverDirectory) throws MojoExecutionException {
-		try {
-			File tempContentDir = new File(serverDirectory, TEMP_CONTENT_FOLDER);
-			
-			if (tempContentDir.exists()) {
-				FileUtils.deleteDirectory(tempContentDir);
-			}
+	public static void downloadAndMoveContentBackendConfig(File serverDirectory, DistroProperties distroProperties, ModuleInstaller moduleInstaller, Wizard wizard) throws MojoExecutionException {
+		if (distroProperties != null) {
+			File targetDir = new File(serverDirectory, SDKConstants.OPENMRS_SERVER_CONFIGURATION);				
+			List<Artifact> contents = distroProperties.getContentArtifacts();
+								
+			if (!contents.isEmpty()) {
+				for (Artifact content : contents) {
+					wizard.showMessage("Downloading Content: " + content + "\n");
+					ContentHelper.downloadContent(serverDirectory, content, moduleInstaller, targetDir);				
+				}
+			}			
 		}
-		catch (IOException e) {
-			throw new MojoExecutionException("Error deleting temp content directory: " + e.getMessage(), e);
-		}
-	}
-	
+	}	
 }

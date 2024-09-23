@@ -88,7 +88,7 @@ public class ModuleInstaller {
         prepareModules(new Artifact[] { artifact }, outputDir, goal);
     }
     
-    public void installUnpackModule(Artifact artifact, String outputDir) throws MojoExecutionException {
+    public void installAndUnpackModule(Artifact artifact, String outputDir) throws MojoExecutionException {
         final String goal = GOAL_UNPACK;
         prepareModules(new Artifact[] { artifact }, outputDir, goal);
     }

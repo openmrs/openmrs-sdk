@@ -325,14 +325,13 @@ public class BuildDistro extends AbstractTask {
 
 			File configDir = new File(web, SDKConstants.OPENMRS_SERVER_CONFIGURATION);
 			configDir.mkdir();
-			setConfigFolder(configDir, distroProperties, distroArtifact);
-			downloadAndMoveContentBackendConfig(web, distroProperties, configDir);
+			setConfigFolder(configDir, distroProperties, distroArtifact);			
+			ContentHelper.downloadAndMoveContentBackendConfig(web, distroProperties, moduleInstaller, wizard);
 			spaInstaller.installFromDistroProperties(web, distroProperties, ignorePeerDependencies, overrideReuseNodeCache);
 
 			File owasDir = new File(web, "owa");
 			owasDir.mkdir();
 			downloadOWAs(targetDirectory, distroProperties, owasDir);
-			//ContentHelper.deleteTempContentFolder(targetDirectory);
 		}
 
 
@@ -622,18 +621,5 @@ public class BuildDistro extends AbstractTask {
 				throw new MojoExecutionException("Distro should contain only single war file");
 			}
 		}
-	}
-
-	private void downloadAndMoveContentBackendConfig(File web, DistroProperties distroProperties, File targetDir) throws MojoExecutionException {	
-		
-		List<Artifact> contents = distroProperties.getContentArtifacts();
-		if (!contents.isEmpty()) {
-			for (Artifact content : contents) {
-				wizard.showMessage("Downloading Content: " + content);
-				ContentHelper.downloadContent(web, content, moduleInstaller, targetDir);
-			}
-		}
-		
-	}
-
+	}	
 }

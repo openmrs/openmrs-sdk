@@ -2,6 +2,10 @@ package org.openmrs.maven.plugins.model;
 
 import org.apache.commons.lang.StringUtils;
 
+import static org.openmrs.maven.plugins.model.BaseSdkProperties.ARTIFACT_ID;
+import static org.openmrs.maven.plugins.model.BaseSdkProperties.GROUP_ID;
+import static org.openmrs.maven.plugins.model.BaseSdkProperties.TYPE;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -151,16 +155,16 @@ public abstract class BaseSdkProperties {
 	}
 
 	public List<Artifact> getContentArtifacts() {
-        List<Artifact> artifacts = new ArrayList<>();
-        for (Object keyObject: getAllKeys()) {
-            String key = keyObject.toString();
-            if (key.startsWith(TYPE_CONTENT + ".")) {
-                String artifactId = key.substring(TYPE_CONTENT.length() + 1);
-                artifacts.add(new Artifact(artifactId, getParam(key), Artifact.GROUP_CONTENT, Artifact.TYPE_ZIP));
-            }
-        }
-        return artifacts;
-    }
+		List<Artifact> artifacts = new ArrayList<>();
+		for (Object keyObject : getAllKeys()) {
+			String key = keyObject.toString();
+			if (key.startsWith(TYPE_CONTENT + ".")) {
+				artifacts.add(new Artifact(checkIfOverwritten(key, ARTIFACT_ID), getParam(key),
+				        checkIfOverwritten(key, GROUP_ID), checkIfOverwritten(key, TYPE)));
+			}
+		}
+		return artifacts;
+	}
 
 	protected Set<Object> getAllKeys() {
 		return properties.keySet();

@@ -281,11 +281,10 @@ public class Setup extends AbstractServerTask {
 			distroHelper.parseContentProperties(distroProperties);
 			moduleInstaller.installModulesForDistro(server, distroProperties, distroHelper);
 			setConfigFolder(server, distroProperties);
-			downloadAndMoveContentBackendConfig(server.getServerDirectory(), distroProperties);
+			ContentHelper.downloadAndMoveContentBackendConfig(server.getServerDirectory(), distroProperties, moduleInstaller, wizard);						
 			if (spaInstaller != null) {
 				spaInstaller.installFromDistroProperties(server.getServerDirectory(), distroProperties, ignorePeerDependencies, overrideReuseNodeCache);
-			}
-			ContentHelper.deleteTempContentFolder(server.getServerDirectory());
+			}			
 			installOWAs(server, distroProperties);
 		} else {
 			moduleInstaller.installDefaultModules(server);
@@ -334,7 +333,7 @@ public class Setup extends AbstractServerTask {
 			owasDir.mkdir();
 			downloadOWAs(server.getServerDirectory(), distroProperties, owasDir);
 		}
-	}	
+	}
 
 	private void downloadOWAs(File targetDirectory, DistroProperties distroProperties, File owasDir)
 			throws MojoExecutionException {
@@ -346,21 +345,7 @@ public class Setup extends AbstractServerTask {
 				owaHelper.downloadOwa(owasDir, owa, moduleInstaller);
 			}
 		}
-	}
-	
-	private void downloadAndMoveContentBackendConfig(File serverDirectory, DistroProperties distroProperties) throws MojoExecutionException {
-		if (distroProperties != null) {
-			File targetDir = new File(serverDirectory, SDKConstants.OPENMRS_SERVER_CONFIGURATION);				
-			List<Artifact> contents = distroProperties.getContentArtifacts();
-								
-			if (!contents.isEmpty()) {
-				for (Artifact content : contents) {
-					wizard.showMessage("Downloading Content: " + content + "\n");
-					ContentHelper.downloadContent(serverDirectory, content, moduleInstaller, targetDir);				
-				}
-			}			
-		}
-	}
+	}	
 		
 	/**
 	 * Sets the configuration folder for the specified server using the provided distro properties.
