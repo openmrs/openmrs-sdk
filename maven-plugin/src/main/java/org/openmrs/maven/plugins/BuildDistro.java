@@ -327,7 +327,7 @@ public class BuildDistro extends AbstractTask {
 			ContentHelper.downloadAndMoveContentBackendConfig(web, distroProperties, moduleInstaller, wizard);
 			spaInstaller.installFromDistroProperties(web, distroProperties, ignorePeerDependencies, overrideReuseNodeCache);
 			ContentHelper.deleteTempContentFolder(web);
-			
+
 			File owasDir = new File(web, "owa");
 			owasDir.mkdir();
 			downloadOWAs(targetDirectory, distroProperties, owasDir);
@@ -621,5 +621,4 @@ public class BuildDistro extends AbstractTask {
 			}
 		}
 	}
-
 }
