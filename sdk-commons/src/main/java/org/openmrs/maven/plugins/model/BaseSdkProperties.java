@@ -2,10 +2,6 @@ package org.openmrs.maven.plugins.model;
 
 import org.apache.commons.lang.StringUtils;
 
-import static org.openmrs.maven.plugins.model.BaseSdkProperties.ARTIFACT_ID;
-import static org.openmrs.maven.plugins.model.BaseSdkProperties.GROUP_ID;
-import static org.openmrs.maven.plugins.model.BaseSdkProperties.TYPE;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;

@@ -65,8 +65,7 @@ public class Setup extends AbstractServerTask {
 
 	private static final String NO_DEBUGGING_DEFAULT_ANSWER = "no debugging";
 
-	private static final int DEFAULT_PORT = 8080;	
-		
+	private static final int DEFAULT_PORT = 8080;
 
 	/**
 	 * DB Driver type
@@ -281,10 +280,10 @@ public class Setup extends AbstractServerTask {
 			distroHelper.parseContentProperties(distroProperties);
 			moduleInstaller.installModulesForDistro(server, distroProperties, distroHelper);
 			setConfigFolder(server, distroProperties);
-			ContentHelper.downloadAndMoveContentBackendConfig(server.getServerDirectory(), distroProperties, moduleInstaller, wizard);						
+			ContentHelper.downloadAndMoveContentBackendConfig(server.getServerDirectory(), distroProperties, moduleInstaller, wizard);
 			if (spaInstaller != null) {
 				spaInstaller.installFromDistroProperties(server.getServerDirectory(), distroProperties, ignorePeerDependencies, overrideReuseNodeCache);
-			}			
+			}
 			installOWAs(server, distroProperties);
 		} else {
 			moduleInstaller.installDefaultModules(server);
@@ -345,8 +344,8 @@ public class Setup extends AbstractServerTask {
 				owaHelper.downloadOwa(owasDir, owa, moduleInstaller);
 			}
 		}
-	}	
-		
+	}
+
 	/**
 	 * Sets the configuration folder for the specified server using the provided distro properties.
 	 *
