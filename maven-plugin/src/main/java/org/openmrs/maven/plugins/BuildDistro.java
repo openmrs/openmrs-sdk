@@ -15,6 +15,7 @@ import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.Project;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.model.Version;
+import org.openmrs.maven.plugins.utility.ContentHelper;
 import org.openmrs.maven.plugins.utility.DistroHelper;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 import org.slf4j.Logger;
@@ -294,7 +295,6 @@ public class BuildDistro extends AbstractTask {
 				File owasDir = new File(tempDir, "bundledOwas");
 				owasDir.mkdir();
 				downloadOWAs(targetDirectory, distroProperties, owasDir);
-
 				spaInstaller.installFromDistroProperties(tempDir, distroProperties, ignorePeerDependencies, overrideReuseNodeCache);
 				File frontendDir = new File(tempDir, "frontend");
 				if(frontendDir.exists()) {
@@ -325,8 +325,9 @@ public class BuildDistro extends AbstractTask {
 			configDir.mkdir();
 			setConfigFolder(configDir, distroProperties, distroArtifact);
 
-			spaInstaller.installFromDistroProperties(web, distroProperties, ignorePeerDependencies, overrideReuseNodeCache);
+			ContentHelper.downloadAndMoveContentBackendConfig(web, distroProperties, moduleInstaller, wizard);
 
+			spaInstaller.installFromDistroProperties(web, distroProperties, ignorePeerDependencies, overrideReuseNodeCache);
 
 			File owasDir = new File(web, "owa");
 			owasDir.mkdir();
@@ -374,7 +375,6 @@ public class BuildDistro extends AbstractTask {
 		if (distroProperties.getConfigArtifacts().isEmpty()) {
 			return;
 		}
-
 
 		downloadConfigs(distroProperties, configDir);
 
@@ -514,7 +514,7 @@ public class BuildDistro extends AbstractTask {
 	}
 
 	private String adjustImageName(String part) {
-		return part.replaceAll("\\s+", "").toLowerCase();
+		return part != null ? part.replaceAll("\\s+", "").toLowerCase() : "";
 	}
 
 	private void copyDbDump(File targetDirectory, InputStream stream) throws MojoExecutionException {
