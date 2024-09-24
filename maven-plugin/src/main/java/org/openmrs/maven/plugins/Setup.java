@@ -279,13 +279,16 @@ public class Setup extends AbstractServerTask {
 			setServerVersionsFromDistroProperties(server, distroProperties);
 			distroHelper.parseContentProperties(distroProperties);
 			moduleInstaller.installModulesForDistro(server, distroProperties, distroHelper);
-			setConfigFolder(server, distroProperties);
+
 			ContentHelper.downloadAndMoveContentBackendConfig(server.getServerDirectory(), distroProperties, moduleInstaller, wizard);						
+
 			if (spaInstaller != null) {
 				spaInstaller.installFromDistroProperties(server.getServerDirectory(), distroProperties, ignorePeerDependencies, overrideReuseNodeCache);
 			}
-			ContentHelper.deleteTempContentFolder(server.getServerDirectory());
+
 			installOWAs(server, distroProperties);
+
+			setConfigFolder(server, distroProperties);
 		} else {
 			moduleInstaller.installDefaultModules(server);
 		}

@@ -324,9 +324,10 @@ public class BuildDistro extends AbstractTask {
 			File configDir = new File(web, SDKConstants.OPENMRS_SERVER_CONFIGURATION);
 			configDir.mkdir();
 			setConfigFolder(configDir, distroProperties, distroArtifact);
+
 			ContentHelper.downloadAndMoveContentBackendConfig(web, distroProperties, moduleInstaller, wizard);
+
 			spaInstaller.installFromDistroProperties(web, distroProperties, ignorePeerDependencies, overrideReuseNodeCache);
-			ContentHelper.deleteTempContentFolder(web);
 
 			File owasDir = new File(web, "owa");
 			owasDir.mkdir();
@@ -513,7 +514,7 @@ public class BuildDistro extends AbstractTask {
 	}
 
 	private String adjustImageName(String part) {
-		return part.replaceAll("\\s+", "").toLowerCase();
+		return part != null ? part.replaceAll("\\s+", "").toLowerCase() : "";
 	}
 
 	private void copyDbDump(File targetDirectory, InputStream stream) throws MojoExecutionException {

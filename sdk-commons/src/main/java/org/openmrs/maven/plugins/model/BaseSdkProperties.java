@@ -82,7 +82,7 @@ public abstract class BaseSdkProperties {
     }
 
     public String getName(){
-        return getParam("name");
+        return getParam("name", "openmrs");
     }
 
     public void setName(String name){
@@ -249,7 +249,18 @@ public abstract class BaseSdkProperties {
      * @param key
      * @return
      */
-    public String getParam(String key) {return properties.getProperty(key); }
+    public String getParam(String key) {
+        return properties.getProperty(key);
+    }
+
+    /**
+     * get param from properties
+     * @param key
+     * @return
+     */
+    public String getParam(String key, String defaultValue) {
+        return properties.getProperty(key, defaultValue);
+    }
 
     public Artifact getModuleArtifact(String artifactId){
         String key = TYPE_OMOD + "." + artifactId;

@@ -1,5 +1,6 @@
 package org.openmrs.maven.plugins.utility;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -10,7 +11,11 @@ import org.openmrs.maven.plugins.model.Server;
 import org.twdata.maven.mojoexecutor.MojoExecutor;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.twdata.maven.mojoexecutor.MojoExecutor.Element;
@@ -28,6 +33,8 @@ import static org.twdata.maven.mojoexecutor.MojoExecutor.version;
  * Handles installing modules on server
  */
 public class ModuleInstaller {
+
+    private static final String GOAL_COPY = "copy";
 
     private static final String GOAL_UNPACK = "unpack";
 
@@ -74,23 +81,31 @@ public class ModuleInstaller {
     }
 
     public void installModules(List<Artifact> artifacts, String outputDir) throws MojoExecutionException {
-        final String goal = "copy";
-        prepareModules(artifacts.toArray(new Artifact[0]), outputDir, goal);
+        prepareModules(artifacts.toArray(new Artifact[0]), outputDir, GOAL_COPY);
     }
 
     public void installModules(Artifact[] artifacts, String outputDir) throws MojoExecutionException {
-        final String goal = "copy";
-        prepareModules(artifacts, outputDir, goal);
+        prepareModules(artifacts, outputDir, GOAL_COPY);
     }
 
     public void installModule(Artifact artifact, String outputDir) throws MojoExecutionException {
-        final String goal = "copy";
-        prepareModules(new Artifact[] { artifact }, outputDir, goal);
+        prepareModules(new Artifact[] { artifact }, outputDir, GOAL_COPY);
     }
-    
+
     public void installAndUnpackModule(Artifact artifact, String outputDir) throws MojoExecutionException {
-        final String goal = GOAL_UNPACK;
-        prepareModules(new Artifact[] { artifact }, outputDir, goal);
+        Path markersDirectory;
+        try {
+            markersDirectory = Files.createTempDirectory("openmrs-sdk-markers");
+        } catch (IOException e) {
+            throw new MojoExecutionException("Error creating markers directory", e);
+        }
+
+        prepareModules(new Artifact[] { artifact }, outputDir, GOAL_UNPACK,
+                element("overWriteSnapshots", "true"),
+                element("overWriteReleases", "true"),
+                element("markersDirectory", markersDirectory.toAbsolutePath().toString()));
+
+        FileUtils.deleteQuietly(markersDirectory.toFile());
     }
 
     /**
@@ -100,7 +115,7 @@ public class ModuleInstaller {
      * @param goal
      * @throws MojoExecutionException
      */
-    private void prepareModules(Artifact[] artifacts, String outputDir, String goal) throws MojoExecutionException {
+    private void prepareModules(Artifact[] artifacts, String outputDir, String goal, MojoExecutor.Element... additionalConfiguration) throws MojoExecutionException {
         MojoExecutor.Element[] artifactItems = new MojoExecutor.Element[artifacts.length];
         for (int index = 0; index < artifacts.length; index++) {
             artifactItems[index] = artifacts[index].toElement(outputDir);
@@ -108,10 +123,9 @@ public class ModuleInstaller {
 
         List<MojoExecutor.Element> configuration = new ArrayList<>();
         configuration.add(element("artifactItems", artifactItems));
-        if (goal.equals(GOAL_UNPACK)) {
-            configuration.add(element("overWriteSnapshots", "true"));
-            configuration.add(element("overWriteReleases", "true"));
-        }
+
+        configuration.addAll(Arrays.asList(additionalConfiguration));
+
         executeMojo(
                 plugin(
                         groupId(SDKConstants.DEPENDENCY_PLUGIN_GROUP_ID),
