@@ -97,21 +97,16 @@ public class ContentHelper {
 		
 	}	
 	
-	public static List<File> collectFrontendConfigs(DistroProperties distroProperties) throws MojoExecutionException {
-		System.out.println("------------------------------------------collectFrontendConfigs");
+	public static List<File> collectFrontendConfigs(DistroProperties distroProperties) throws MojoExecutionException {		
 		List<File> allConfigFiles = new ArrayList<File>();	
 		if (distroProperties != null) {			
 			List<Artifact> contents = distroProperties.getContentArtifacts();								
-			if (contents != null) {
-				System.out.println("------------------------------------------collectFrontendConfigs--1");
-				for (Artifact contentArtifact : contents) {		
-					System.out.println("------------------------------------------collectFrontendConfigs--2");
-					allConfigFiles.addAll(extractAndGetAllContentFrontendConfigs(contentArtifact));
-					System.out.println("------------------------------------------collectFrontendConfigs--3");
+			if (contents != null) {				
+				for (Artifact contentArtifact : contents) {						
+					allConfigFiles.addAll(extractAndGetAllContentFrontendConfigs(contentArtifact));					
 				}
 			}			
 		}
-		System.out.println("\n\n" +allConfigFiles.size());
 		return allConfigFiles;		
 	}	
 }

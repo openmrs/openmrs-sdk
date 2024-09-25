@@ -95,10 +95,9 @@ public class SpaInstaller {
 			String program = "openmrs@" + coreVersion;
 			String legacyPeerDeps = ignorePeerDependencies ? "--legacy-peer-deps" : "";
 			// print frontend tool version number
-			nodeHelper.runNpx(String.format("%s --version", program), legacyPeerDeps);
-			System.out.println("------------------------------------------------------------------\n\n");
+			nodeHelper.runNpx(String.format("%s --version", program), legacyPeerDeps);			
 			List<File> configFiles = ContentHelper.collectFrontendConfigs(distroProperties);
-			System.out.println("------------------------------------------------------------------" + configFiles.size());
+			
 			if (configFiles.isEmpty()) {
 				nodeHelper.runNpx(
 					String.format("%s assemble --target %s --mode config --config %s", program, buildTargetDir, spaConfigFile), legacyPeerDeps);
