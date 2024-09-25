@@ -263,25 +263,11 @@ public class CreateProject extends AbstractTask {
 				.promptForValueIfMissingWithDefault(DESCRIPTION_PROMPT_TMPL, moduleDescription, "", "no description");
 
 		if (TYPE_CONTENT_PACKAGE.equals(type)) {
+			groupId = "org.openmrs.content";
 			wizard.showMessage(CONTENT_MAVEN_INFO);
-			groupId = wizard.promptForValueIfMissingWithDefault(GROUP_ID_PROMPT_TMPL, groupId, "groupId", "org.openmrs.content");
-			while (!groupId.matches("[a-z][a-z0-9.]*")) {
-				wizard.showError("The specified groupId " + groupId
-						+ " is not valid. It must start from a letter and can contain only alphanumerics and dots.");
-				groupId = null;
-				groupId = wizard
-						.promptForValueIfMissingWithDefault(GROUP_ID_PROMPT_TMPL, groupId, "groupId", "org.openmrs.content");
-			}
 		} else {
-			wizard.showMessage(MAVEN_INFO);
-			groupId = wizard.promptForValueIfMissingWithDefault(GROUP_ID_PROMPT_TMPL, groupId, "groupId", "org.openmrs.module");
-			while (!groupId.matches("[a-z][a-z0-9.]*")) {
-				wizard.showError("The specified groupId " + groupId
-						+ " is not valid. It must start from a letter and can contain only alphanumerics and dots.");
-				groupId = null;
-				groupId = wizard
-						.promptForValueIfMissingWithDefault(GROUP_ID_PROMPT_TMPL, groupId, "groupId", "org.openmrs.module");
-			}
+			groupId = "org.openmrs.module";
+			wizard.showMessage(CONTENT_MAVEN_INFO);
 		}
 
 		artifactId = moduleId;
@@ -306,7 +292,7 @@ public class CreateProject extends AbstractTask {
 		}
 
 		archetypeVersion = getSdkVersion();
-		packageName = TYPE_CONTENT_PACKAGE.equals(type) ? "org.openmrs.content." + artifactId : "org.openmrs.module." + artifactId;
+		packageName = groupId + "." + artifactId;
 
 		Properties properties = new Properties();
 		properties.setProperty("artifactId", artifactId);
