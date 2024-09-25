@@ -15,6 +15,7 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -23,11 +24,10 @@ import static org.openmrs.maven.plugins.utility.PropertiesUtils.getSdkProperties
 
 public class SpaInstaller {
 	
-	static final String BAD_SPA_PROPERTIES_MESSAGE = "Distro properties file contains invalid 'spa.' elements. " +
-			"Please check the distro properties file and the specification. " +
-			"Parent properties cannot have their own values (i.e., if 'spa.foo.bar' exists, 'spa.foo' cannot be assigned a value). "
-			+
-			"Duplicate properties are not allowed.";
+	static final String BAD_SPA_PROPERTIES_MESSAGE = "Distro properties file contains invalid 'spa.' elements. "
+	        + "Please check the distro properties file and the specification. "
+	        + "Parent properties cannot have their own values (i.e., if 'spa.foo.bar' exists, 'spa.foo' cannot be assigned a value). "
+	        + "Duplicate properties are not allowed.";
 	
 	static final String NODE_VERSION = "16.15.0";
 	
@@ -38,11 +38,10 @@ public class SpaInstaller {
 	private final NodeHelper nodeHelper;
 	
 	private final DistroHelper distroHelper;
-
+	
 	private static final Logger logger = LoggerFactory.getLogger(SpaInstaller.class);
 	
-	public SpaInstaller(DistroHelper distroHelper,
-			NodeHelper nodeHelper) {
+	public SpaInstaller(DistroHelper distroHelper, NodeHelper nodeHelper) {
 		this.distroHelper = distroHelper;
 		this.nodeHelper = nodeHelper;
 	}
@@ -50,16 +49,16 @@ public class SpaInstaller {
 	/**
 	 * Installs the SPA Microfrontend application based on entries in the distro properties.
 	 *
-	 * @param appDataDir       The application data directory
+	 * @param appDataDir The application data directory
 	 * @param distroProperties Non-null
 	 * @throws MojoExecutionException
 	 */
 	public void installFromDistroProperties(File appDataDir, DistroProperties distroProperties)
-			throws MojoExecutionException {
-
+	        throws MojoExecutionException {
+		
 		installFromDistroProperties(appDataDir, distroProperties, false, null);
 	}
-
+	
 	public void installFromDistroProperties(File appDataDir, DistroProperties distroProperties, boolean ignorePeerDependencies, Boolean overrideReuseNodeCache)
 			throws MojoExecutionException {
 
@@ -97,10 +96,18 @@ public class SpaInstaller {
 			String legacyPeerDeps = ignorePeerDependencies ? "--legacy-peer-deps" : "";
 			// print frontend tool version number
 			nodeHelper.runNpx(String.format("%s --version", program), legacyPeerDeps);
-			nodeHelper.runNpx(
+			System.out.println("------------------------------------------------------------------\n\n");
+			List<File> configFiles = ContentHelper.collectFrontendConfigs(distroProperties);
+			System.out.println("------------------------------------------------------------------" + configFiles.size());
+			if (configFiles.isEmpty()) {
+				nodeHelper.runNpx(
 					String.format("%s assemble --target %s --mode config --config %s", program, buildTargetDir, spaConfigFile), legacyPeerDeps);
+			} else {
+                String assembleCommand = assembleWithFrontendConfig(program, buildTargetDir, configFiles, spaConfigFile); 
+                nodeHelper.runNpx(assembleCommand, legacyPeerDeps); 
+			}
 			nodeHelper.runNpx(
-					String.format("%s build --target %s --build-config %s", program, buildTargetDir, spaConfigFile), legacyPeerDeps);
+				String.format("%s build --target %s --build-config %s", program, buildTargetDir, spaConfigFile), legacyPeerDeps);
 
 			Path nodeCache = NodeHelper.tempDir;
 			if (!reuseNodeCache) {
@@ -115,6 +122,18 @@ public class SpaInstaller {
 		}
 	}
 	
+	public String assembleWithFrontendConfig(String program, File buildTargetDir, List<File> configFiles, File spaConfigFile) {
+      
+        StringBuilder command = new StringBuilder();
+        command.append(String.format("%s assemble --target %s --mode config", program, buildTargetDir));
+        for (File configFile : configFiles) {
+            command.append(String.format(" --config-file %s", configFile.getAbsolutePath()));
+        }
+        command.append(String.format(" --config %s", spaConfigFile));
+        return command.toString();
+    }
+
+	
 	private Map<String, Object> convertPropertiesToJSON(Map<String, String> properties) throws MojoExecutionException {
 		Set<String> foundPropertySetKeys = new HashSet<>();
 		Map<String, Object> result = new LinkedHashMap<>();
@@ -128,9 +147,9 @@ public class SpaInstaller {
 		for (String dotDelimitedKeys : properties.keySet()) {
 			if (foundPropertySetKeys.contains(dotDelimitedKeys)) {
 				String badLine = "spa." + dotDelimitedKeys + "=" + properties.get(dotDelimitedKeys);
-				throw new MojoExecutionException(BAD_SPA_PROPERTIES_MESSAGE +
-						" The following property is a parent property to another, and therefore cannot be assigned a value:\t\""
-						+ badLine + "\"");
+				throw new MojoExecutionException(BAD_SPA_PROPERTIES_MESSAGE
+				        + " The following property is a parent property to another, and therefore cannot be assigned a value:\t\""
+				        + badLine + "\"");
 			}
 			addPropertyToJSONObject(result, dotDelimitedKeys, properties.get(dotDelimitedKeys));
 		}
@@ -140,22 +159,22 @@ public class SpaInstaller {
 	
 	/**
 	 * Add a line from the properties file to the new JSON object. Creates nested objects as needed.
-	 * Known array-valued keys are parsed as comma-delimited arrays; e.g.,
-	 * `configUrls=qux` becomes `{ "configUrls": ["qux"] }` because `configUrls` is known to be array-valued
+	 * Known array-valued keys are parsed as comma-delimited arrays; e.g., `configUrls=qux` becomes
+	 * `{ "configUrls": ["qux"] }` because `configUrls` is known to be array-valued
 	 *
-	 * @param jsonObject  the object being constructed
+	 * @param jsonObject the object being constructed
 	 * @param propertyKey
 	 * @param value
 	 */
 	private void addPropertyToJSONObject(Map<String, Object> jsonObject, String propertyKey, String value)
-			throws MojoExecutionException {
+	        throws MojoExecutionException {
 		String[] keys = propertyKey.split("\\.");
 		
 		if (keys.length == 1) {
 			if (jsonObject.containsKey(keys[0])) {
-				throw new MojoExecutionException(BAD_SPA_PROPERTIES_MESSAGE +
-						" Encountered this error processing a property containing the key '" + keys[0] + "' and with value "
-						+ value);
+				throw new MojoExecutionException(
+				        BAD_SPA_PROPERTIES_MESSAGE + " Encountered this error processing a property containing the key '"
+				                + keys[0] + "' and with value " + value);
 			}
 			
 			if ("configUrls".equals(keys[0])) {
@@ -171,8 +190,8 @@ public class SpaInstaller {
 			
 			Object childObject = jsonObject.get(keys[0]);
 			if (!(childObject instanceof Map)) {
-				throw new MojoExecutionException(BAD_SPA_PROPERTIES_MESSAGE +
-						" Also please post to OpenMRS Talk and include this full message. If you are seeing this, there has been a programming error.");
+				throw new MojoExecutionException(BAD_SPA_PROPERTIES_MESSAGE
+				        + " Also please post to OpenMRS Talk and include this full message. If you are seeing this, there has been a programming error.");
 			}
 			
 			@SuppressWarnings("unchecked")
@@ -188,8 +207,8 @@ public class SpaInstaller {
 			om.writeValue(file, jsonObject);
 		}
 		catch (IOException e) {
-			throw new MojoExecutionException("Exception while writing JSON to \"" + file.getAbsolutePath() + "\" "
-					+ e.getMessage(), e);
+			throw new MojoExecutionException(
+			        "Exception while writing JSON to \"" + file.getAbsolutePath() + "\" " + e.getMessage(), e);
 		}
 	}
 	
