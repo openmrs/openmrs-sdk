@@ -31,6 +31,7 @@
             <directory/>
             <includes>
                 <include>assembly.xml</include>
+                <include>.gitignore</include>
                 <include>content.properties</include>
                 <include>pom.xml</include>
                 <include>README.md</include>
