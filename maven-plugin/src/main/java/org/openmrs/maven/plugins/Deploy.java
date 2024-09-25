@@ -12,6 +12,7 @@ import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.model.Version;
+import org.openmrs.maven.plugins.utility.ContentHelper;
 import org.openmrs.maven.plugins.utility.DistroHelper;
 import org.openmrs.maven.plugins.model.Project;
 import org.openmrs.maven.plugins.utility.SDKConstants;
@@ -123,6 +124,7 @@ public class Deploy extends AbstractServerTask {
 			if (artifact != null) {
 				deployOpenmrsFromDir(server, artifact);
 			} else if (distroProperties != null) {
+				ContentHelper.setModuleInstaller(moduleInstaller);
 				serverUpgrader.upgradeToDistro(server, distroProperties, ignorePeerDependencies, overrideReuseNodeCache);
 			} else if (checkCurrentDirForModuleProject()) {
 				deployModule(groupId, artifactId, version, server);

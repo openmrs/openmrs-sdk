@@ -31,7 +31,6 @@ public class ContentHelper {
 			throw new MojoExecutionException("Exception while trying to create temporary directory", e);
 		}
 		
-		// Ensure moduleInstaller is set before calling this
 		if (moduleInstaller == null) {
 			throw new MojoExecutionException("ModuleInstaller is not initialized.");
 		}
@@ -113,8 +112,7 @@ public class ContentHelper {
 		return allConfigFiles;		
 	}
 
-	public static String assembleWithFrontendConfig(String program, File buildTargetDir, List<File> configFiles, File spaConfigFile) {
-		// TODO: Implement this method
-		return null;
-	}	
+	public static void setModuleInstaller(ModuleInstaller modulInst) {
+		moduleInstaller = modulInst;
+	}
 }
