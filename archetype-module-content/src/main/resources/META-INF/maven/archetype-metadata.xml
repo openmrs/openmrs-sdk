@@ -18,7 +18,6 @@
         </requiredProperty>
         <requiredProperty key="moduleName" />
         <requiredProperty key="moduleDescription"/>
-        <requiredProperty key="openmrsContentPackageVersion"/>
     </requiredProperties>
 
     <fileSets>

@@ -3,8 +3,9 @@
     <groupId>${groupId}</groupId>
     <artifactId>${artifactId}</artifactId>
     <version>${version}</version>
-    <name>{moduleName}</name>
     <packaging>pom</packaging>
+    <name>${moduleName}</name>
+    <description>${moduleDescription}</description>
     <developers>
         <developer>
             <name>OpenMRS</name>

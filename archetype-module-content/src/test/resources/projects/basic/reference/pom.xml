@@ -3,8 +3,9 @@
     <groupId>org.openmrs.content</groupId>
     <artifactId>content-package</artifactId>
     <version>1.0.0-SNAPSHOT</version>
-    <name>{moduleName}</name>
     <packaging>pom</packaging>
+    <name>content package</name>
+    <description>Basic Content Package Module. Useful for creating other Content Packages i.e hiv,...</description>
     <developers>
         <developer>
             <name>OpenMRS</name>
