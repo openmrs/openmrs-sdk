@@ -68,6 +68,13 @@ public class CreateProject extends AbstractTask {
 					"as an artifactId. The version should follow maven versioning convention, \n" +
 					"which in short is: major.minor.maintenance(-SNAPSHOT).";
 
+	private static final String CONTENT_MAVEN_INFO =
+			"GroupId, artifactId and version combined together identify your module in the maven repository. \n\n" +
+					"By convention the OpenMRS Content Packages modules use 'org.openmrs.content' as a groupId \n" +
+					"(must follow convention for naming java packages) and the module id \n" +
+					"as an artifactId. The version should follow maven versioning convention, \n" +
+					"which in short is: major.minor.maintenance(-SNAPSHOT).";
+
 	private static final String DESCRIPTION_PROMPT_TMPL = "Describe your module in a few sentences";
 
 	private static final String GROUP_ID_PROMPT_TMPL = "Please specify %s";
@@ -255,14 +262,12 @@ public class CreateProject extends AbstractTask {
 		moduleDescription = wizard
 				.promptForValueIfMissingWithDefault(DESCRIPTION_PROMPT_TMPL, moduleDescription, "", "no description");
 
-		wizard.showMessage(MAVEN_INFO);
-		groupId = wizard.promptForValueIfMissingWithDefault(GROUP_ID_PROMPT_TMPL, groupId, "groupId", "org.openmrs.module");
-		while (!groupId.matches("[a-z][a-z0-9.]*")) {
-			wizard.showError("The specified groupId " + groupId
-					+ " is not valid. It must start from a letter and can contain only alphanumerics and dots.");
-			groupId = null;
-			groupId = wizard
-					.promptForValueIfMissingWithDefault(GROUP_ID_PROMPT_TMPL, groupId, "groupId", "org.openmrs.module");
+		if (TYPE_CONTENT_PACKAGE.equals(type)) {
+			groupId = "org.openmrs.content";
+			wizard.showMessage(CONTENT_MAVEN_INFO);
+		} else {
+			groupId = "org.openmrs.module";
+			wizard.showMessage(CONTENT_MAVEN_INFO);
 		}
 
 		artifactId = moduleId;
@@ -281,14 +286,13 @@ public class CreateProject extends AbstractTask {
 			    "2.4");
 			archetypeArtifactId = SDKConstants.REFAPP_ARCH_ARTIFACT_ID;
 		} else if (TYPE_CONTENT_PACKAGE.equals(type)) {
-			contentpackage = wizard.promptForValueIfMissingWithDefault("What version of the content package (-D%s) do you want to support?", contentpackage, "contentpackage", "1.0.0");
 			archetypeArtifactId = SDKConstants.CONTENT_PACKAGE_ARCH_ARTIFACT_ID;
 		} else {
 			throw new MojoExecutionException("Invalid project type");
 		}
 
 		archetypeVersion = getSdkVersion();
-		packageName = "org.openmrs.module." + artifactId;
+		packageName = groupId + "." + artifactId;
 
 		Properties properties = new Properties();
 		properties.setProperty("artifactId", artifactId);
@@ -303,8 +307,6 @@ public class CreateProject extends AbstractTask {
 		} else if (refapp != null) {
 			properties.setProperty("openmrsRefappVersion", refapp);
 			properties.setProperty("moduleClassnamePrefix", moduleClassnamePrefix);
-		} else if (contentpackage != null) {
-			properties.setProperty("openmrsContentPackageVersion", contentpackage);
 		}
 		properties.setProperty("package", packageName);
 		mavenSession.getUserProperties().putAll(properties);

@@ -30,6 +30,7 @@
           <configuration>
             <ignoreEOLStyle>true</ignoreEOLStyle>
             <debug>true</debug>
+            <useDefaultExcludes>false</useDefaultExcludes>
           </configuration>
         </plugin>
       </plugins>
