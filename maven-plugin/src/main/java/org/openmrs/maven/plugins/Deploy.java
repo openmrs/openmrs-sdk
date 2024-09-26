@@ -124,7 +124,6 @@ public class Deploy extends AbstractServerTask {
 			if (artifact != null) {
 				deployOpenmrsFromDir(server, artifact);
 			} else if (distroProperties != null) {
-				ContentHelper.setModuleInstaller(moduleInstaller);
 				serverUpgrader.upgradeToDistro(server, distroProperties, ignorePeerDependencies, overrideReuseNodeCache);
 			} else if (checkCurrentDirForModuleProject()) {
 				deployModule(groupId, artifactId, version, server);

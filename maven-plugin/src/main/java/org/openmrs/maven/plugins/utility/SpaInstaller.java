@@ -29,20 +29,23 @@ public class SpaInstaller {
 	        + "Parent properties cannot have their own values (i.e., if 'spa.foo.bar' exists, 'spa.foo' cannot be assigned a value). "
 	        + "Duplicate properties are not allowed.";
 	
-	static final String NODE_VERSION = "16.15.0";
+	static final String NODE_VERSION = "20.17.0";
 	
-	static final String NPM_VERSION = "8.5.5";
+	static final String NPM_VERSION = "10.8.2";
 	
 	static final String BUILD_TARGET_DIR = "frontend";	
 	
 	private final NodeHelper nodeHelper;
 	
 	private final DistroHelper distroHelper;
+
+	private final ModuleInstaller moduleInstaller;
 	
 	private static final Logger logger = LoggerFactory.getLogger(SpaInstaller.class);
 	
 	public SpaInstaller(DistroHelper distroHelper, NodeHelper nodeHelper) {
 		this.distroHelper = distroHelper;
+		this.moduleInstaller = new ModuleInstaller(distroHelper.mavenProject, distroHelper.mavenSession, distroHelper.pluginManager, distroHelper.versionHelper);
 		this.nodeHelper = nodeHelper;
 	}
 	
@@ -71,6 +74,7 @@ public class SpaInstaller {
 		if (coreVersion == null) {
 			coreVersion = "next";
 		}
+
 		String nodeVersion = spaProperties.remove("node");
 		if (nodeVersion == null) {
 			nodeVersion = NODE_VERSION;
@@ -91,7 +95,7 @@ public class SpaInstaller {
 			nodeHelper.installNodeAndNpm(nodeVersion, npmVersion, reuseNodeCache);
 			File buildTargetDir = new File(appDataDir, BUILD_TARGET_DIR);
 
-			String program = "openmrs@" + "5.8.0";
+			String program = "openmrs@" + coreVersion;
 			String legacyPeerDeps = ignorePeerDependencies ? "--legacy-peer-deps" : "";
 			// print frontend tool version number
 			nodeHelper.runNpx(String.format("%s --version", program), legacyPeerDeps);
@@ -100,7 +104,7 @@ public class SpaInstaller {
 				nodeHelper.runNpx(String.format("%s assemble --target %s --mode config --config %s", program, buildTargetDir,
 				    spaConfigFile), legacyPeerDeps);				
 			} else {
-				List<File> configFiles = ContentHelper.collectFrontendConfigs(distroProperties);
+				List<File> configFiles = ContentHelper.collectFrontendConfigs(distroProperties, moduleInstaller);
 				String assembleCommand = assembleWithFrontendConfig(program, buildTargetDir, configFiles, spaConfigFile);
 				nodeHelper.runNpx(assembleCommand, legacyPeerDeps);
 			}
@@ -120,14 +124,19 @@ public class SpaInstaller {
 		}
 	}
 	
-	public String assembleWithFrontendConfig(String program, File buildTargetDir, List<File> configFiles, File spaConfigFile) {
-      
+	private String assembleWithFrontendConfig(String program, File buildTargetDir, List<File> configFiles, File spaConfigFile) {
         StringBuilder command = new StringBuilder();
-        command.append(String.format("%s assemble --target %s --mode config", program, buildTargetDir));
+		command.append(program)
+				.append(" assemble --target '")
+				.append(buildTargetDir)
+				.append("' --mode config --config '")
+				.append(spaConfigFile)
+				.append("'");
+
         for (File configFile : configFiles) {
-            command.append(String.format(" --config-file %s", configFile.getAbsolutePath()));
+            command.append(" --config-file '").append(configFile.getAbsolutePath()).append("'");
         }
-        command.append(String.format(" --config %s", spaConfigFile));
+
         return command.toString();
     }
 
