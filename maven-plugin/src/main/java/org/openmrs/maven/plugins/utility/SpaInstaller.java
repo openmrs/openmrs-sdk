@@ -33,7 +33,7 @@ public class SpaInstaller {
 	
 	static final String NPM_VERSION = "8.5.5";
 	
-	static final String BUILD_TARGET_DIR = "frontend";
+	static final String BUILD_TARGET_DIR = "frontend";	
 	
 	private final NodeHelper nodeHelper;
 	
@@ -65,8 +65,7 @@ public class SpaInstaller {
 		// We find all the lines in distro properties beginning with `spa` and convert these
 		// into a JSON structure. This is passed to the frontend build tool.
 		// If no SPA elements are present in the distro properties, the SPA is not installed.
-		Map<String, String> spaProperties = distroProperties.getSpaProperties(distroHelper, appDataDir);
-
+		Map<String, String> spaProperties = distroProperties.getSpaProperties(distroHelper, appDataDir);		
 		// Three of these properties are not passed to the build tool, but are used to specify the build execution itself
 		String coreVersion = spaProperties.remove("core");
 		if (coreVersion == null) {
@@ -80,7 +79,7 @@ public class SpaInstaller {
 		if (npmVersion == null) {
 			npmVersion = NPM_VERSION;
 		}
-
+		
 		if (!spaProperties.isEmpty()) {
 			Map<String, Object> spaConfigJson = convertPropertiesToJSON(spaProperties);
 
@@ -92,16 +91,18 @@ public class SpaInstaller {
 			nodeHelper.installNodeAndNpm(nodeVersion, npmVersion, reuseNodeCache);
 			File buildTargetDir = new File(appDataDir, BUILD_TARGET_DIR);
 
-			String program = "openmrs@" + coreVersion;
+			String program = "openmrs@" + "5.8.0";
 			String legacyPeerDeps = ignorePeerDependencies ? "--legacy-peer-deps" : "";
 			// print frontend tool version number
 			nodeHelper.runNpx(String.format("%s --version", program), legacyPeerDeps);
 			
-			List<File> configFiles = ContentHelper.collectFrontendConfigs(distroProperties);			
-			if (configFiles.isEmpty()) {
+			List<File> configFiles = ContentHelper.collectFrontendConfigs(distroProperties);		
+			
+			if (!configFiles.isEmpty()) {
+				System.out.println("---------------SHOULD NOT SEE THIS-----------------------------" + configFiles.size());
 				nodeHelper.runNpx(
 					String.format("%s assemble --target %s --mode config --config %s", program, buildTargetDir, spaConfigFile), legacyPeerDeps);
-			} else {
+			}	else {				
                 String assembleCommand = assembleWithFrontendConfig(program, buildTargetDir, configFiles, spaConfigFile); 
                 nodeHelper.runNpx(assembleCommand, legacyPeerDeps); 
 			}
