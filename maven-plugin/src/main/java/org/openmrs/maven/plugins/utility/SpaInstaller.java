@@ -98,8 +98,7 @@ public class SpaInstaller {
 			
 			List<File> configFiles = ContentHelper.collectFrontendConfigs(distroProperties);		
 			
-			if (!configFiles.isEmpty()) {
-				System.out.println("---------------SHOULD NOT SEE THIS-----------------------------" + configFiles.size());
+			if (configFiles.isEmpty()) {				
 				nodeHelper.runNpx(
 					String.format("%s assemble --target %s --mode config --config %s", program, buildTargetDir, spaConfigFile), legacyPeerDeps);
 			}	else {				
