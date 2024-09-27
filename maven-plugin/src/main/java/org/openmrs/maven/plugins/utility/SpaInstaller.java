@@ -127,14 +127,13 @@ public class SpaInstaller {
 	private String assembleWithFrontendConfig(String program, File buildTargetDir, List<File> configFiles, File spaConfigFile) {
         StringBuilder command = new StringBuilder();
 		command.append(program)
-				.append(" assemble --target '")
+				.append(" assemble --target ")
 				.append(buildTargetDir)
-				.append("' --mode config --config '")
-				.append(spaConfigFile)
-				.append("'");
+				.append(" --mode config --config ")
+				.append(spaConfigFile);
 
         for (File configFile : configFiles) {
-            command.append(" --config-file '").append(configFile.getAbsolutePath()).append("'");
+            command.append(" --config-file ").append(configFile.getAbsolutePath());
         }
 
         return command.toString();
