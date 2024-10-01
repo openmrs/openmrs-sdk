@@ -18,7 +18,7 @@ import java.io.Closeable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.concurrent.CountDownLatch;
 
 /**
@@ -65,9 +65,9 @@ public class CreateMySql extends AbstractDockerMojo {
 
     private boolean noMySqlImage(DockerClient docker) {
         ListImagesCmd listImagesCmd = docker.listImagesCmd();
-        listImagesCmd.getFilters().put("reference", Arrays.asList(MYSQL_8_4_1));
+        listImagesCmd.getFilters().put("reference", Collections.singletonList(MYSQL_8_4_1));
         List<Image> mysql = listImagesCmd.exec();
-        return mysql.size() == 0;
+        return mysql.isEmpty();
     }
 
     private void createMysqlContainer(DockerClient docker) {
