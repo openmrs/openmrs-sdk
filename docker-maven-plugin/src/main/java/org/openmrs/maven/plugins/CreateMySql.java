@@ -11,12 +11,14 @@ import com.github.dockerjava.api.model.Ports;
 import com.github.dockerjava.api.model.PullResponseItem;
 import com.github.dockerjava.api.model.Volume;
 import org.apache.commons.lang.StringUtils;
+import com.github.dockerjava.api.command.ListImagesCmd;
 import org.apache.maven.plugin.MojoExecutionException;
 
 import java.io.Closeable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Collections;
 import java.util.concurrent.CountDownLatch;
 
 /**
@@ -62,8 +64,10 @@ public class CreateMySql extends AbstractDockerMojo {
     }
 
     private boolean noMySqlImage(DockerClient docker) {
-        List<Image> mysql = docker.listImagesCmd().withImageNameFilter(MYSQL_8_4_1).exec();
-        return mysql.size() == 0;
+        ListImagesCmd listImagesCmd = docker.listImagesCmd();
+        listImagesCmd.getFilters().put("reference", Collections.singletonList(MYSQL_8_4_1));
+        List<Image> mysql = listImagesCmd.exec();
+        return mysql.isEmpty();
     }
 
     private void createMysqlContainer(DockerClient docker) {

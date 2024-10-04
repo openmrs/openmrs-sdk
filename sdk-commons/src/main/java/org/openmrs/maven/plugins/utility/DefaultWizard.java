@@ -971,7 +971,7 @@ public class DefaultWizard implements Wizard {
 
 	private String determineWindowsDockerHost() {
 		if (determineDockerForWindowsHost()) {
-			return DockerHelper.DEFAULT_HOST_DOCKER_FOR_WINDOWS;
+			return DockerHelper.DEFAULT_WINDOWS_PIPE_FOR_DOCKER;
 		} else {
 			return determineDockerToolboxHost();
 		}
