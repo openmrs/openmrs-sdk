@@ -33,6 +33,8 @@
                 <include>assembly.xml</include>
                 <include>.gitignore</include>
                 <include>content.properties</include>
+                <include>license-header.txt</include>
+                <include>OpenMRSFormatter.xml</include>
                 <include>pom.xml</include>
                 <include>README.md</include>
             </includes>

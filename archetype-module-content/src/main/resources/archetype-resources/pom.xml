@@ -140,6 +140,7 @@
                             </includes>
                             <licenseHeader>
                                 <file>${project.basedir}/license-header.txt</file>
+                                <delimiter>^(?!&lt;\?xml)</delimiter>
                             </licenseHeader>
                         </format>
                     </formats>
