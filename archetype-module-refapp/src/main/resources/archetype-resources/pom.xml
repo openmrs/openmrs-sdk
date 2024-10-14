@@ -124,61 +124,51 @@
 						</execution>
 					</executions>
 				</plugin>
-				<plugin>
-					<groupId>net.revelc.code.formatter</groupId>
-					<artifactId>formatter-maven-plugin</artifactId>
-					<version>2.13.0</version>
-					<configuration>
-						<lineEnding>LF</lineEnding>
-						<configFile>eclipse/OpenMRSFormatter.xml</configFile>
-					</configuration>
-					<dependencies>
-						<dependency>
-							<groupId>org.openmrs.tools</groupId>
-							<artifactId>openmrs-tools</artifactId>
-							<version>${openmrsPlatformToolsVersion}</version>
-						</dependency>
-					</dependencies>
-					<executions>
-						<execution>
-							<goals>
-								<goal>format</goal>
-							</goals>
-						</execution>
-					</executions>
-				</plugin>
-				<plugin>
-					<groupId>net.revelc.code</groupId>
-					<artifactId>impsort-maven-plugin</artifactId>
-					<version>1.5.0</version>
-					<dependencies>
-						<!-- Needed because of maven 3.9.0 backward compatibility issue,
-                             See : https://github.com/revelc/impsort-maven-plugin/issues/64 -->
-						<dependency>
-							<groupId>org.codehaus.plexus</groupId>
-							<artifactId>plexus-utils</artifactId>
-							<version>3.5.1</version>
-						</dependency>
-					</dependencies>
-					<configuration>
-						<groups>javax, java, *</groups>
-						<removeUnused>true</removeUnused>
-					</configuration>
-					<executions>
-						<execution>
-							<goals>
-								<goal>sort</goal>
-							</goals>
-						</execution>
-					</executions>
-				</plugin>
 				<!-- Fix for "Failed to execute goal org.apache.maven.plugins:maven-resources-plugin:3.2.0:resources (default-resources) on project application-etude: Input length = 1" -->
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-resources-plugin</artifactId>
 					<version>3.1.0</version>
 				</plugin>
-
+				<!-- Spotless plugin -->
+				<plugin>
+					<groupId>com.diffplug.spotless</groupId>
+					<artifactId>spotless-maven-plugin</artifactId>
+					<version>2.27.2</version>
+					<configuration>
+						<java>
+							<licenseHeader>
+								<file>${project.basedir}/license-header.txt</file>
+							</licenseHeader>
+							<eclipse>
+								<file>${project.basedir}/OpenMRSFormatter.xml</file>
+							</eclipse>
+							<removeUnusedImports/>
+							<importOrder>
+								<order>javax,java,org,com,</order>
+							</importOrder>
+						</java>
+						<formats>
+							<format>
+								<includes>
+									<include>**/*.xml</include>
+								</includes>
+								<licenseHeader>
+									<file>${project.basedir}/license-header.txt</file>
+								</licenseHeader>
+							</format>
+						</formats>
+					</configuration>
+					<executions>
+						<execution>
+							<id>spotless-apply</id>
+							<phase>validate</phase>
+							<goals>
+								<goal>apply</goal>
+							</goals>
+						</execution>
+					</executions>
+				</plugin>
 			</plugins>
 		</pluginManagement>
 	</build>
@@ -186,8 +176,8 @@
 	<repositories>
 		<repository>
 			<id>openmrs-repo</id>
-			<name>OpenMRS Nexus Repository</name>
-			<url>https://mavenrepo.openmrs.org/public</url>
+				<name>OpenMRS Nexus Repository</name>
+				<url>https://mavenrepo.openmrs.org/public</url>
 		</repository>
 		<repository>
 			<id>central</id>

@@ -115,27 +115,41 @@
                     </execution>
                 </executions>
             </plugin>
+            <!-- Spotless plugin -->
             <plugin>
-                <groupId>net.revelc.code</groupId>
-                <artifactId>impsort-maven-plugin</artifactId>
-                <version>1.5.0</version>
-                <dependencies>
-                    <!-- Needed because of maven 3.9.0 backward compatibility issue,
-                         See : https://github.com/revelc/impsort-maven-plugin/issues/64 -->
-                    <dependency>
-                        <groupId>org.codehaus.plexus</groupId>
-                        <artifactId>plexus-utils</artifactId>
-                        <version>3.5.1</version>
-                    </dependency>
-                </dependencies>
+                <groupId>com.diffplug.spotless</groupId>
+                <artifactId>spotless-maven-plugin</artifactId>
+                <version>2.27.2</version>
                 <configuration>
-                    <groups>javax, java, *</groups>
-                    <removeUnused>true</removeUnused>
+                    <java>
+                        <licenseHeader>
+                            <file>${project.basedir}/license-header.txt</file>
+                        </licenseHeader>
+                        <eclipse>
+                            <file>${project.basedir}/OpenMRSFormatter.xml</file>
+                        </eclipse>
+                        <removeUnusedImports/>
+                        <importOrder>
+                            <order>javax,java,org,com,</order>
+                        </importOrder>
+                    </java>
+                    <formats>
+                        <format>
+                            <includes>
+                                <include>**/*.xml</include>
+                            </includes>
+                            <licenseHeader>
+                                <file>${project.basedir}/license-header.txt</file>
+                            </licenseHeader>
+                        </format>
+                    </formats>
                 </configuration>
                 <executions>
                     <execution>
+                        <id>spotless-apply</id>
+                        <phase>validate</phase>
                         <goals>
-                            <goal>sort</goal>
+                            <goal>apply</goal>
                         </goals>
                     </execution>
                 </executions>
