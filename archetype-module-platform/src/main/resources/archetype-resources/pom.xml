@@ -70,7 +70,7 @@
 							</eclipse>
 							<removeUnusedImports/>
 							<importOrder>
-								<order>javax,java,org,com,</order>
+								<order>javax,java</order>
 							</importOrder>
 						</java>
 						<formats>

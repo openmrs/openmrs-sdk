@@ -145,7 +145,7 @@
 							</eclipse>
 							<removeUnusedImports/>
 							<importOrder>
-								<order>javax,java,org,com,</order>
+								<order>javax,java</order>
 							</importOrder>
 						</java>
 						<formats>
@@ -177,8 +177,8 @@
 	<repositories>
 		<repository>
 			<id>openmrs-repo</id>
-				<name>OpenMRS Nexus Repository</name>
-				<url>https://mavenrepo.openmrs.org/public</url>
+			<name>OpenMRS Nexus Repository</name>
+			<url>https://mavenrepo.openmrs.org/public</url>
 		</repository>
 		<repository>
 			<id>central</id>
