@@ -371,7 +371,7 @@ public class Setup extends AbstractServerTask {
 			// If such a folder is found in the downloaded artifact, use it.  Otherwise, use the entire zip contents
 			File tempConfigDir = new File(server.getServerTmpDirectory(), UUID.randomUUID().toString());
 			try {
-				if (!tempConfigDir.mkdir()) {
+				if (!tempConfigDir.mkdirs()) {
 					throw new MojoExecutionException("Unable to create temporary directory " + tempConfigDir.getAbsolutePath() + "\n");
 				}
 				moduleInstaller.installAndUnpackModule(configArtifact, tempConfigDir.getAbsolutePath());
