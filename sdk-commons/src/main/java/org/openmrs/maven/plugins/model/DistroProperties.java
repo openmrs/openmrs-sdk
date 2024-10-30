@@ -127,15 +127,12 @@ public class DistroProperties extends BaseSdkProperties {
 
         int missingCount = 0;
         if (StringUtils.isBlank(parentArtifactId)) {
-            log.warn("parent.artifactId  missing");
             missingCount++;
         }
         if (StringUtils.isBlank(parentGroupId)) {
-            log.warn("parent.groupId is missing");
             missingCount++;
         }
         if (StringUtils.isBlank(parentVersion)) {
-            log.warn("parent.version is missing");
             missingCount++;
         }
 
