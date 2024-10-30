@@ -1,7 +1,5 @@
 package org.openmrs.maven.plugins;
 
-import net.lingala.zip4j.core.ZipFile;
-import net.lingala.zip4j.exception.ZipException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.output.NullOutputStream;
 import org.apache.commons.lang.StringUtils;
@@ -39,6 +37,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 
 
 /**
@@ -287,8 +286,7 @@ public class Setup extends AbstractServerTask {
 			}
 
 			installOWAs(server, distroProperties);
-
-			setConfigFolder(server, distroProperties);
+			installConfiguration(server, distroProperties);
 		} else {
 			moduleInstaller.installDefaultModules(server);
 		}
@@ -351,60 +349,47 @@ public class Setup extends AbstractServerTask {
 	}
 
 	/**
-	 * Sets the configuration folder for the specified server using the provided distro properties.
+	 * Installs configuration based on config.xyz distro properties
 	 *
 	 * @param server           The server for which to set the configuration folder.
 	 * @param distroProperties The distro properties containing the configuration information.
 	 */
-	private void setConfigFolder(Server server, DistroProperties distroProperties) throws MojoExecutionException {
+	private void installConfiguration(Server server, DistroProperties distroProperties) throws MojoExecutionException {
 		if (distroProperties.getConfigArtifacts().isEmpty()) {
 			return;
 		}
 
-		File configDir = new File(server.getServerDirectory(), SDKConstants.OPENMRS_SERVER_CONFIGURATION);
-		configDir.mkdir();
-
-		downloadConfigs(distroProperties, configDir);
-
-		File refappConfigFile = new File(configDir, server.getDistroArtifactId() + "-" + server.getVersion() + ".zip");
-
-		// Handle O2 configuration
-		if (!refappConfigFile.exists() && Artifact.GROUP_DISTRO.equals(server.getDistroGroupId()) && "referenceapplication-distro".equals(server.getDistroArtifactId())) {
-			refappConfigFile = new File(configDir, "referenceapplication-distro.owa");
-		}
-
-		if (!refappConfigFile.exists()) {
-			wizard.showError("No Configuration file found at " + refappConfigFile.getAbsolutePath());
-			return;
-		}
-
-		try {
-			ZipFile zipFile = new ZipFile(refappConfigFile);
-			zipFile.extractAll(configDir.getPath());
-			for (File file : Objects.requireNonNull(configDir.listFiles())) {
-				if (file.getName().equals("openmrs_config")) {
-					FileUtils.copyDirectory(file, configDir);
-				}
-				FileUtils.deleteQuietly(file);
-			}
-			FileUtils.deleteQuietly(refappConfigFile);
-		} catch (ZipException | IOException e) {
-			throw new RuntimeException(e);
-		}
-	}
-
-	/**
-	 * Downloads the configuration artifact specified in the distro properties and saves them in the provided config directory.
-	 *
-	 * @param distroProperties The distro properties containing the configuration artifacts to download.
-	 * @param configDir        The directory where the configuration files will be saved.
-	 * @throws MojoExecutionException If an error occurs while downloading the configuration files.
-	 */
-	private void downloadConfigs(DistroProperties distroProperties, File configDir) throws MojoExecutionException {
-		List<Artifact> configs = distroProperties.getConfigArtifacts();
 		wizard.showMessage("Downloading Configs...\n");
-		if (!configs.isEmpty()) {
-			moduleInstaller.installModules(configs, configDir.getAbsolutePath());
+		File configDir = new File(server.getServerDirectory(), SDKConstants.OPENMRS_SERVER_CONFIGURATION);
+		if (configDir.mkdir()) {
+			wizard.showMessage("Created directory " + configDir.getAbsolutePath() + "\n");
+		}
+
+		List<Artifact> configs = distroProperties.getConfigArtifacts();
+		for (Artifact configArtifact : configs) {
+			// Some config artifacts have their configuration packaged in an "openmrs_config" subfolder within the zip
+			// If such a folder is found in the downloaded artifact, use it.  Otherwise, use the entire zip contents
+			File tempConfigDir = new File(server.getServerTmpDirectory(), UUID.randomUUID().toString());
+			try {
+				if (!tempConfigDir.mkdir()) {
+					throw new MojoExecutionException("Unable to create temporary directory " + tempConfigDir.getAbsolutePath() + "\n");
+				}
+				moduleInstaller.installAndUnpackModule(configArtifact, tempConfigDir.getAbsolutePath());
+				File directoryToCopy = tempConfigDir;
+				for (File f : Objects.requireNonNull(tempConfigDir.listFiles())) {
+					if (f.isDirectory() && f.getName().equals("openmrs_config")) {
+						directoryToCopy = f;
+					}
+				}
+				try {
+					FileUtils.copyDirectory(directoryToCopy, configDir);
+				} catch (IOException e) {
+					throw new MojoExecutionException("Unable to copy config: " + directoryToCopy.getAbsolutePath() + "\n");
+				}
+			}
+			finally {
+				FileUtils.deleteQuietly(tempConfigDir);
+			}
 		}
 	}
 

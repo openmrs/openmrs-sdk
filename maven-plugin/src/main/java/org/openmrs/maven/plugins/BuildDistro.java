@@ -33,6 +33,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 
 /**
  * Create docker configuration for distributions.
@@ -322,8 +323,10 @@ public class BuildDistro extends AbstractTask {
 			frontendDir.mkdir();
 
 			File configDir = new File(web, SDKConstants.OPENMRS_SERVER_CONFIGURATION);
-			configDir.mkdir();
-			setConfigFolder(configDir, distroProperties, distroArtifact);
+			if (!configDir.mkdir()) {
+				throw new MojoExecutionException("Failed to create " + configDir.getAbsolutePath() + " directory");
+			}
+			installConfiguration(configDir, distroProperties);
 
 			ContentHelper.downloadAndMoveContentBackendConfig(web, distroProperties, moduleInstaller, wizard);
 
@@ -371,45 +374,43 @@ public class BuildDistro extends AbstractTask {
 		return distroName;
 	}
 
-	private void setConfigFolder(File configDir, DistroProperties distroProperties, Artifact distroArtifact) throws MojoExecutionException {
+	/**
+	 * Installs configuration based on config.xyz distro properties
+	 *
+	 * @param configDir        The directory into which to load the configuration
+	 * @param distroProperties The distro properties containing the configuration information.
+	 */
+	private void installConfiguration(File configDir, DistroProperties distroProperties) throws MojoExecutionException {
 		if (distroProperties.getConfigArtifacts().isEmpty()) {
 			return;
 		}
 
-		downloadConfigs(distroProperties, configDir);
-
-		File refappConfigFile = new File(configDir, distroArtifact.getArtifactId() + "-" + distroArtifact.getVersion() + ".zip");
-
-		// Handle O2 configuration
-		if (!refappConfigFile.exists() && Artifact.GROUP_DISTRO.equals(distroArtifact.getGroupId()) && "referenceapplication-distro".equals(distroArtifact.getArtifactId())) {
-			refappConfigFile = new File(configDir, "referenceapplication-distro.owa");
-		}
-
-		if (!refappConfigFile.exists()) {
-			wizard.showError("No Configuration file found at " + refappConfigFile.getAbsolutePath());
-			return;
-		}
-
-		try {
-			ZipFile zipFile = new ZipFile(refappConfigFile);
-			zipFile.extractAll(configDir.getPath());
-			for (File file : Objects.requireNonNull(configDir.listFiles())) {
-				if (file.getName().equals("openmrs_config")) {
-					FileUtils.copyDirectory(file, configDir);
-				}
-				FileUtils.deleteQuietly(file);
-			}
-			FileUtils.deleteQuietly(refappConfigFile);
-		} catch (ZipException | IOException e) {
-			throw new RuntimeException(e);
-		}
-	}
-
-	private void downloadConfigs(DistroProperties distroProperties, File configDir) throws MojoExecutionException {
-		List<Artifact> configs = distroProperties.getConfigArtifacts();
 		wizard.showMessage("Downloading Configs...\n");
-		if (!configs.isEmpty()) {
-			moduleInstaller.installModules(configs, configDir.getAbsolutePath());
+		List<Artifact> configs = distroProperties.getConfigArtifacts();
+		for (Artifact configArtifact : configs) {
+			// Some config artifacts have their configuration packaged in an "openmrs_config" subfolder within the zip
+			// If such a folder is found in the downloaded artifact, use it.  Otherwise, use the entire zip contents
+			File tempConfigDir = new File(configDir.getParentFile(), UUID.randomUUID().toString());
+			try {
+				if (!tempConfigDir.mkdir()) {
+					throw new MojoExecutionException("Unable to create temporary directory " + tempConfigDir.getAbsolutePath() + "\n");
+				}
+				moduleInstaller.installAndUnpackModule(configArtifact, tempConfigDir.getAbsolutePath());
+				File directoryToCopy = tempConfigDir;
+				for (File f : Objects.requireNonNull(tempConfigDir.listFiles())) {
+					if (f.isDirectory() && f.getName().equals("openmrs_config")) {
+						directoryToCopy = f;
+					}
+				}
+				try {
+					FileUtils.copyDirectory(directoryToCopy, configDir);
+				} catch (IOException e) {
+					throw new MojoExecutionException("Unable to copy config: " + directoryToCopy.getAbsolutePath() + "\n");
+				}
+			}
+			finally {
+				FileUtils.deleteQuietly(tempConfigDir);
+			}
 		}
 	}
 
