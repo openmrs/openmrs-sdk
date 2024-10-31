@@ -286,7 +286,7 @@ public class Setup extends AbstractServerTask {
 			}
 
 			installOWAs(server, distroProperties);
-			installConfiguration(server, distroProperties);
+			configurationInstaller.installToServer(server, distroProperties);
 		} else {
 			moduleInstaller.installDefaultModules(server);
 		}
@@ -344,51 +344,6 @@ public class Setup extends AbstractServerTask {
 			for (Artifact owa : owas) {
 				wizard.showMessage("Downloading OWA: " + owa);
 				owaHelper.downloadOwa(owasDir, owa, moduleInstaller);
-			}
-		}
-	}
-
-	/**
-	 * Installs configuration based on config.xyz distro properties
-	 *
-	 * @param server           The server for which to set the configuration folder.
-	 * @param distroProperties The distro properties containing the configuration information.
-	 */
-	private void installConfiguration(Server server, DistroProperties distroProperties) throws MojoExecutionException {
-		if (distroProperties.getConfigArtifacts().isEmpty()) {
-			return;
-		}
-
-		wizard.showMessage("Downloading Configs...\n");
-		File configDir = new File(server.getServerDirectory(), SDKConstants.OPENMRS_SERVER_CONFIGURATION);
-		if (configDir.mkdir()) {
-			wizard.showMessage("Created directory " + configDir.getAbsolutePath() + "\n");
-		}
-
-		List<Artifact> configs = distroProperties.getConfigArtifacts();
-		for (Artifact configArtifact : configs) {
-			// Some config artifacts have their configuration packaged in an "openmrs_config" subfolder within the zip
-			// If such a folder is found in the downloaded artifact, use it.  Otherwise, use the entire zip contents
-			File tempConfigDir = new File(server.getServerTmpDirectory(), UUID.randomUUID().toString());
-			try {
-				if (!tempConfigDir.mkdirs()) {
-					throw new MojoExecutionException("Unable to create temporary directory " + tempConfigDir.getAbsolutePath() + "\n");
-				}
-				moduleInstaller.installAndUnpackModule(configArtifact, tempConfigDir.getAbsolutePath());
-				File directoryToCopy = tempConfigDir;
-				for (File f : Objects.requireNonNull(tempConfigDir.listFiles())) {
-					if (f.isDirectory() && f.getName().equals("openmrs_config")) {
-						directoryToCopy = f;
-					}
-				}
-				try {
-					FileUtils.copyDirectory(directoryToCopy, configDir);
-				} catch (IOException e) {
-					throw new MojoExecutionException("Unable to copy config: " + directoryToCopy.getAbsolutePath() + "\n");
-				}
-			}
-			finally {
-				FileUtils.deleteQuietly(tempConfigDir);
 			}
 		}
 	}

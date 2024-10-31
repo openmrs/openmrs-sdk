@@ -32,8 +32,6 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
 
 /**
  * Create docker configuration for distributions.
@@ -323,10 +321,7 @@ public class BuildDistro extends AbstractTask {
 			frontendDir.mkdir();
 
 			File configDir = new File(web, SDKConstants.OPENMRS_SERVER_CONFIGURATION);
-			if (!configDir.mkdir()) {
-				throw new MojoExecutionException("Failed to create " + configDir.getAbsolutePath() + " directory");
-			}
-			installConfiguration(configDir, distroProperties);
+			configurationInstaller.installToDirectory(configDir, distroProperties);
 
 			ContentHelper.downloadAndMoveContentBackendConfig(web, distroProperties, moduleInstaller, wizard);
 
@@ -372,46 +367,6 @@ public class BuildDistro extends AbstractTask {
 		cleanupSqlFiles(targetDirectory);
 
 		return distroName;
-	}
-
-	/**
-	 * Installs configuration based on config.xyz distro properties
-	 *
-	 * @param configDir        The directory into which to load the configuration
-	 * @param distroProperties The distro properties containing the configuration information.
-	 */
-	private void installConfiguration(File configDir, DistroProperties distroProperties) throws MojoExecutionException {
-		if (distroProperties.getConfigArtifacts().isEmpty()) {
-			return;
-		}
-
-		wizard.showMessage("Downloading Configs...\n");
-		List<Artifact> configs = distroProperties.getConfigArtifacts();
-		for (Artifact configArtifact : configs) {
-			// Some config artifacts have their configuration packaged in an "openmrs_config" subfolder within the zip
-			// If such a folder is found in the downloaded artifact, use it.  Otherwise, use the entire zip contents
-			File tempConfigDir = new File(configDir.getParentFile(), UUID.randomUUID().toString());
-			try {
-				if (!tempConfigDir.mkdir()) {
-					throw new MojoExecutionException("Unable to create temporary directory " + tempConfigDir.getAbsolutePath() + "\n");
-				}
-				moduleInstaller.installAndUnpackModule(configArtifact, tempConfigDir.getAbsolutePath());
-				File directoryToCopy = tempConfigDir;
-				for (File f : Objects.requireNonNull(tempConfigDir.listFiles())) {
-					if (f.isDirectory() && f.getName().equals("openmrs_config")) {
-						directoryToCopy = f;
-					}
-				}
-				try {
-					FileUtils.copyDirectory(directoryToCopy, configDir);
-				} catch (IOException e) {
-					throw new MojoExecutionException("Unable to copy config: " + directoryToCopy.getAbsolutePath() + "\n");
-				}
-			}
-			finally {
-				FileUtils.deleteQuietly(tempConfigDir);
-			}
-		}
 	}
 
 	private void downloadOWAs(File targetDirectory, DistroProperties distroProperties, File owasDir)

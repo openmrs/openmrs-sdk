@@ -13,6 +13,7 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.settings.Settings;
 import org.openmrs.maven.plugins.model.Server;
+import org.openmrs.maven.plugins.utility.ConfigurationInstaller;
 import org.openmrs.maven.plugins.utility.DefaultJira;
 import org.openmrs.maven.plugins.utility.DistroHelper;
 import org.openmrs.maven.plugins.git.DefaultGitHelper;
@@ -120,6 +121,11 @@ public abstract class AbstractTask extends AbstractMojo {
 	SpaInstaller spaInstaller;
 
 	/**
+	 * installs configuration artifacts
+	 */
+	ConfigurationInstaller configurationInstaller;
+
+	/**
 	 * handles github and provides basic git utilities
 	 */
 	GitHelper gitHelper;
@@ -180,6 +186,9 @@ public abstract class AbstractTask extends AbstractMojo {
 		}
 		if (spaInstaller == null) {
 			spaInstaller = new SpaInstaller(distroHelper, new NodeHelper(mavenProject, mavenSession, pluginManager));
+		}
+		if (configurationInstaller == null) {
+			configurationInstaller = new ConfigurationInstaller(distroHelper);
 		}
 		if (dockerHelper == null) {
 			dockerHelper = new DockerHelper(mavenProject, mavenSession, pluginManager, wizard);
