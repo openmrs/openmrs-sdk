@@ -35,9 +35,6 @@ public class ConfigurationInstaller {
 	 */
 	public void installToServer(Server server, DistroProperties distroProperties) throws MojoExecutionException {
 		File directory = new File(server.getServerDirectory(), SDKConstants.OPENMRS_SERVER_CONFIGURATION);
-		if (directory.exists()) {
-			throw new MojoExecutionException("Server configuration directory already exists");
-		}
 		File tempDir = new File(server.getServerTmpDirectory(), UUID.randomUUID().toString());
 		installToDirectory(directory, tempDir, distroProperties);
 	}
@@ -51,11 +48,8 @@ public class ConfigurationInstaller {
 		if (distroProperties.getConfigArtifacts().isEmpty()) {
 			return;
 		}
-		if (installDir.exists()) {
-			throw new MojoExecutionException("Server configuration directory already exists");
-		}
-		if (!installDir.mkdirs()) {
-			throw new MojoExecutionException("Unable to create directory: " + installDir);
+		if (installDir.mkdirs()) {
+			wizard.showMessage("Created configuration directory: " + installDir.getAbsolutePath());
 		}
 
 		wizard.showMessage("Downloading Configuration...\n");
