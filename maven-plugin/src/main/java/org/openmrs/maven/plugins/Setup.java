@@ -1,7 +1,5 @@
 package org.openmrs.maven.plugins;
 
-import net.lingala.zip4j.core.ZipFile;
-import net.lingala.zip4j.exception.ZipException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.output.NullOutputStream;
 import org.apache.commons.lang.StringUtils;
@@ -23,7 +21,6 @@ import org.openmrs.maven.plugins.utility.ServerHelper;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
@@ -38,7 +35,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 
 /**
@@ -287,8 +283,7 @@ public class Setup extends AbstractServerTask {
 			}
 
 			installOWAs(server, distroProperties);
-
-			setConfigFolder(server, distroProperties);
+			configurationInstaller.installToServer(server, distroProperties);
 		} else {
 			moduleInstaller.installDefaultModules(server);
 		}
@@ -347,64 +342,6 @@ public class Setup extends AbstractServerTask {
 				wizard.showMessage("Downloading OWA: " + owa);
 				owaHelper.downloadOwa(owasDir, owa, moduleInstaller);
 			}
-		}
-	}
-
-	/**
-	 * Sets the configuration folder for the specified server using the provided distro properties.
-	 *
-	 * @param server           The server for which to set the configuration folder.
-	 * @param distroProperties The distro properties containing the configuration information.
-	 */
-	private void setConfigFolder(Server server, DistroProperties distroProperties) throws MojoExecutionException {
-		if (distroProperties.getConfigArtifacts().isEmpty()) {
-			return;
-		}
-
-		File configDir = new File(server.getServerDirectory(), SDKConstants.OPENMRS_SERVER_CONFIGURATION);
-		configDir.mkdir();
-
-		downloadConfigs(distroProperties, configDir);
-
-		File refappConfigFile = new File(configDir, server.getDistroArtifactId() + "-" + server.getVersion() + ".zip");
-
-		// Handle O2 configuration
-		if (!refappConfigFile.exists() && Artifact.GROUP_DISTRO.equals(server.getDistroGroupId()) && "referenceapplication-distro".equals(server.getDistroArtifactId())) {
-			refappConfigFile = new File(configDir, "referenceapplication-distro.owa");
-		}
-
-		if (!refappConfigFile.exists()) {
-			wizard.showError("No Configuration file found at " + refappConfigFile.getAbsolutePath());
-			return;
-		}
-
-		try {
-			ZipFile zipFile = new ZipFile(refappConfigFile);
-			zipFile.extractAll(configDir.getPath());
-			for (File file : Objects.requireNonNull(configDir.listFiles())) {
-				if (file.getName().equals("openmrs_config")) {
-					FileUtils.copyDirectory(file, configDir);
-				}
-				FileUtils.deleteQuietly(file);
-			}
-			FileUtils.deleteQuietly(refappConfigFile);
-		} catch (ZipException | IOException e) {
-			throw new RuntimeException(e);
-		}
-	}
-
-	/**
-	 * Downloads the configuration artifact specified in the distro properties and saves them in the provided config directory.
-	 *
-	 * @param distroProperties The distro properties containing the configuration artifacts to download.
-	 * @param configDir        The directory where the configuration files will be saved.
-	 * @throws MojoExecutionException If an error occurs while downloading the configuration files.
-	 */
-	private void downloadConfigs(DistroProperties distroProperties, File configDir) throws MojoExecutionException {
-		List<Artifact> configs = distroProperties.getConfigArtifacts();
-		wizard.showMessage("Downloading Configs...\n");
-		if (!configs.isEmpty()) {
-			moduleInstaller.installModules(configs, configDir.getAbsolutePath());
 		}
 	}
 
