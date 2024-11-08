@@ -218,7 +218,7 @@ public class SpaInstaller {
 		}
 	}
 
-	private File prepareTargetDirectory(File appDataDir) throws MojoExecutionException{
+	private File prepareTargetDirectory(File appDataDir) throws MojoExecutionException {
 		File targetDir = new File(appDataDir, BUILD_TARGET_DIR);
 		if (targetDir.exists()) {
 			try {
