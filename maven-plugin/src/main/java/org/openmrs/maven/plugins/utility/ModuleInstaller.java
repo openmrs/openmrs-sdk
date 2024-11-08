@@ -1,6 +1,7 @@
 package org.openmrs.maven.plugins.utility;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -17,6 +18,8 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
 
 import static org.twdata.maven.mojoexecutor.MojoExecutor.Element;
 import static org.twdata.maven.mojoexecutor.MojoExecutor.artifactId;
@@ -56,6 +59,10 @@ public class ModuleInstaller {
         this.versionsHelper = versionsHelper;
     }
 
+    public ModuleInstaller(DistroHelper distroHelper) {
+        this(distroHelper.mavenProject, distroHelper.mavenSession, distroHelper.pluginManager, distroHelper.versionHelper);
+    }
+
     public void installDefaultModules(Server server) throws MojoExecutionException {
         boolean isPlatform = server.getVersion() == null;  // this might be always true, in which case `getCoreModules` can be simplified
         List<Artifact> coreModules = SDKConstants.getCoreModules(server.getPlatformVersion(), isPlatform);
@@ -90,6 +97,45 @@ public class ModuleInstaller {
 
     public void installModule(Artifact artifact, String outputDir) throws MojoExecutionException {
         prepareModules(new Artifact[] { artifact }, outputDir, GOAL_COPY);
+    }
+
+    /**
+     * @param artifact the artifact retrieve from Maven
+     * @param outputDir the directory into which the artifact should be unpacked
+     * @param include optionally allows limiting the unpacked artifacts to only those specified in the directory that matches this name
+     * @throws MojoExecutionException
+     */
+    public void installAndUnpackModule(Artifact artifact, File outputDir, String include) throws MojoExecutionException {
+        if (!outputDir.exists()) {
+            throw new MojoExecutionException("Output directory does not exist: " + outputDir);
+        }
+        if (StringUtils.isBlank(include) || include.equals("/")) {
+            installAndUnpackModule(artifact, outputDir.getAbsolutePath());
+        }
+        else {
+            File tempDir = null;
+            try {
+                tempDir = Files.createTempDirectory(artifact.getArtifactId() + "-" + UUID.randomUUID()).toFile();
+                installAndUnpackModule(artifact, tempDir.getAbsolutePath());
+                boolean copied = false;
+                for (File f : Objects.requireNonNull(tempDir.listFiles())) {
+                    if (f.isDirectory() && f.getName().equals(include)) {
+                        FileUtils.copyDirectory(f, outputDir);
+                        copied = true;
+                        break;
+                    }
+                }
+                if (!copied) {
+                    throw new MojoExecutionException("No directory named " + include + " exists in artifact " + artifact);
+                }
+            }
+            catch (IOException e) {
+                throw new MojoExecutionException("Unable to create temporary directory to install " + artifact);
+            }
+            finally {
+                FileUtils.deleteQuietly(tempDir);
+            }
+        }
     }
 
     public void installAndUnpackModule(Artifact artifact, String outputDir) throws MojoExecutionException {
