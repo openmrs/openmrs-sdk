@@ -154,9 +154,14 @@ public abstract class BaseSdkProperties {
 		List<Artifact> artifacts = new ArrayList<>();
 		for (Object keyObject : getAllKeys()) {
 			String key = keyObject.toString();
-			if (key.startsWith(TYPE_CONTENT + ".")) {
-				artifacts.add(new Artifact(checkIfOverwritten(key, ARTIFACT_ID), getParam(key),
-				        checkIfOverwritten(key, GROUP_ID), checkIfOverwritten(key, TYPE)));
+            String artifactType = getArtifactType(key);
+			if (artifactType.equals(TYPE_CONTENT)) {
+				artifacts.add(new Artifact(
+                        checkIfOverwritten(key, ARTIFACT_ID),
+                        getParam(key),
+				        checkIfOverwritten(key, GROUP_ID),
+                        checkIfOverwritten(key, TYPE)
+                ));
 			}
 		}
 		return artifacts;
@@ -166,7 +171,7 @@ public abstract class BaseSdkProperties {
 		return properties.keySet();
 	}
 
-    protected String getArtifactType(String key){
+    protected String getArtifactType(String key) {
         String[] wordsArray = key.split("\\.");
         if(!(wordsArray[wordsArray.length-1].equals(TYPE) || wordsArray[wordsArray.length-1].equals(ARTIFACT_ID) || wordsArray[wordsArray.length-1].equals(GROUP_ID))){
             if(key.contains(".")){

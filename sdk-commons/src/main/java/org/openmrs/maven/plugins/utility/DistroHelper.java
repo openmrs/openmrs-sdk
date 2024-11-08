@@ -641,23 +641,16 @@ public class DistroHelper {
 	 */
 	public void downloadContentPackages(File contentPackageZipFile, DistroProperties distroProperties)
 			throws MojoExecutionException {
+
 		Properties contentProperties = new Properties();
 
-		for (Object key : distroProperties.getAllKeys()) {
-			String keyOb = key.toString();
-			if (!keyOb.startsWith(CONTENT_PREFIX)) {
-				continue;
-			}
+		for (Artifact artifact : distroProperties.getContentArtifacts()) {
 
-			Artifact artifact = new Artifact(distroProperties.checkIfOverwritten(keyOb.replace(CONTENT_PREFIX, ""), ARTIFACT_ID), distroProperties.getParam(keyOb),
-					distroProperties.checkIfOverwritten(keyOb, GROUP_ID), distroProperties.checkIfOverwritten(keyOb, TYPE));
-
-			String version = distroProperties.get(keyOb);
-			String zipFileName = keyOb.replace(CONTENT_PREFIX, "") + "-" + version + ".zip";
+			String zipFileName = artifact.getArtifactId() + "-" + artifact.getVersion() + ".zip";
 			File zipFile = downloadDistro(contentPackageZipFile, artifact, zipFileName);
 
 			if (zipFile == null) {
-				log.warn("ZIP file not found for content package: {}", keyOb);
+				log.warn("ZIP file not found for content package: {}", artifact.getArtifactId());
 				continue;
 			}
 
