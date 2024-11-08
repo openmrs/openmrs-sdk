@@ -8,7 +8,9 @@ import org.junit.Test;
 import java.util.List;
 import java.util.Properties;
 
+import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 
@@ -48,6 +50,42 @@ public class DistroPropertiesTest {
         assertThat(findArtifactByArtifactId(distroArtifacts, "appui-omod"), hasVersion("1.6.7"));
         assertThat(distro.getVersion(), is("1"));
         assertThat(distro.getPlatformVersion(), is("222"));
+    }
+
+    @Test
+    public void shouldGetContentPropertiesWithDefaults() {
+        Properties properties = new Properties();
+        properties.setProperty("content.hiv", "1.0.0");
+        properties.setProperty("content.tb", "2.3.4-SNAPSHOT");
+        DistroProperties distro = new DistroProperties(properties);
+        List<Artifact> contentArtifacts = distro.getContentArtifacts();
+        assertThat(contentArtifacts, hasSize(2));
+        Artifact hiv = findArtifactByArtifactId(contentArtifacts, "hiv");
+        assertThat(hiv, notNullValue());
+        assertThat(hiv, hasVersion("1.0.0"));
+        assertThat(hiv.getGroupId(), equalTo(Artifact.GROUP_CONTENT));
+        assertThat(hiv.getType(), equalTo(Artifact.TYPE_ZIP));
+        Artifact tb = findArtifactByArtifactId(contentArtifacts, "tb");
+        assertThat(tb, notNullValue());
+        assertThat(tb, hasVersion("2.3.4-SNAPSHOT"));
+        assertThat(tb.getGroupId(), equalTo(Artifact.GROUP_CONTENT));
+        assertThat(tb.getType(), equalTo(Artifact.TYPE_ZIP));
+    }
+
+    @Test
+    public void shouldGetContentPropertiesWithOverrides() {
+        Properties properties = new Properties();
+        properties.setProperty("content.hiv", "1.0.0");
+        properties.setProperty("content.hiv.groupId", "org.openmrs.new");
+        properties.setProperty("content.hiv.type", "gzip");
+        DistroProperties distro = new DistroProperties(properties);
+        List<Artifact> contentArtifacts = distro.getContentArtifacts();
+        assertThat(contentArtifacts, hasSize(1));
+        Artifact hiv = findArtifactByArtifactId(contentArtifacts, "hiv");
+        assertThat(hiv, notNullValue());
+        assertThat(hiv, hasVersion("1.0.0"));
+        assertThat(hiv.getGroupId(), equalTo("org.openmrs.new"));
+        assertThat(hiv.getType(), equalTo("gzip"));
     }
 
     @Test(expected = MojoExecutionException.class)
