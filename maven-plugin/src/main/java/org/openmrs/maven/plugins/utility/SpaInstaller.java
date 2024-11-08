@@ -222,14 +222,12 @@ public class SpaInstaller {
 		File targetDir = new File(appDataDir, BUILD_TARGET_DIR);
 		if (targetDir.exists()) {
 			try {
-				distroHelper.wizard.showMessage("Removing existing frontend directory: " + targetDir);
 				FileUtils.deleteDirectory(targetDir);
 			}
 			catch (IOException e) {
 				throw new MojoExecutionException("Unable to delete existing " + BUILD_TARGET_DIR + " directory", e);
 			}
 		}
-		distroHelper.wizard.showMessage("Creating new frontend directory: " + targetDir);
 		targetDir.mkdirs();
 		return targetDir;
 	}
