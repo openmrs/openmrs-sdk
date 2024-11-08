@@ -32,7 +32,6 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * Create docker configuration for distributions.
@@ -322,8 +321,7 @@ public class BuildDistro extends AbstractTask {
 			frontendDir.mkdir();
 
 			File configDir = new File(web, SDKConstants.OPENMRS_SERVER_CONFIGURATION);
-			configDir.mkdir();
-			setConfigFolder(configDir, distroProperties, distroArtifact);
+			configurationInstaller.installToDirectory(configDir, distroProperties);
 
 			ContentHelper.downloadAndMoveContentBackendConfig(web, distroProperties, moduleInstaller, wizard);
 
@@ -369,48 +367,6 @@ public class BuildDistro extends AbstractTask {
 		cleanupSqlFiles(targetDirectory);
 
 		return distroName;
-	}
-
-	private void setConfigFolder(File configDir, DistroProperties distroProperties, Artifact distroArtifact) throws MojoExecutionException {
-		if (distroProperties.getConfigArtifacts().isEmpty()) {
-			return;
-		}
-
-		downloadConfigs(distroProperties, configDir);
-
-		File refappConfigFile = new File(configDir, distroArtifact.getArtifactId() + "-" + distroArtifact.getVersion() + ".zip");
-
-		// Handle O2 configuration
-		if (!refappConfigFile.exists() && Artifact.GROUP_DISTRO.equals(distroArtifact.getGroupId()) && "referenceapplication-distro".equals(distroArtifact.getArtifactId())) {
-			refappConfigFile = new File(configDir, "referenceapplication-distro.owa");
-		}
-
-		if (!refappConfigFile.exists()) {
-			wizard.showError("No Configuration file found at " + refappConfigFile.getAbsolutePath());
-			return;
-		}
-
-		try {
-			ZipFile zipFile = new ZipFile(refappConfigFile);
-			zipFile.extractAll(configDir.getPath());
-			for (File file : Objects.requireNonNull(configDir.listFiles())) {
-				if (file.getName().equals("openmrs_config")) {
-					FileUtils.copyDirectory(file, configDir);
-				}
-				FileUtils.deleteQuietly(file);
-			}
-			FileUtils.deleteQuietly(refappConfigFile);
-		} catch (ZipException | IOException e) {
-			throw new RuntimeException(e);
-		}
-	}
-
-	private void downloadConfigs(DistroProperties distroProperties, File configDir) throws MojoExecutionException {
-		List<Artifact> configs = distroProperties.getConfigArtifacts();
-		wizard.showMessage("Downloading Configs...\n");
-		if (!configs.isEmpty()) {
-			moduleInstaller.installModules(configs, configDir.getAbsolutePath());
-		}
 	}
 
 	private void downloadOWAs(File targetDirectory, DistroProperties distroProperties, File owasDir)
