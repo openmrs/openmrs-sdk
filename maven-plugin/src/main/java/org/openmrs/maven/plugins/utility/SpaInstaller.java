@@ -3,6 +3,7 @@ package org.openmrs.maven.plugins.utility;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.MoreFiles;
 import com.google.common.io.RecursiveDeleteOption;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.openmrs.maven.plugins.model.DistroProperties;
@@ -56,14 +57,14 @@ public class SpaInstaller {
 	 * @param distroProperties Non-null
 	 * @throws MojoExecutionException
 	 */
-	public void installFromDistroProperties(File appDataDir, DistroProperties distroProperties)
-	        throws MojoExecutionException {
-		
+	public void installFromDistroProperties(File appDataDir, DistroProperties distroProperties) throws MojoExecutionException {
 		installFromDistroProperties(appDataDir, distroProperties, false, null);
 	}
 	
 	public void installFromDistroProperties(File appDataDir, DistroProperties distroProperties, boolean ignorePeerDependencies, Boolean overrideReuseNodeCache)
 			throws MojoExecutionException {
+
+		File buildTargetDir = prepareTargetDirectory(appDataDir);
 
 		// We find all the lines in distro properties beginning with `spa` and convert these
 		// into a JSON structure. This is passed to the frontend build tool.
@@ -93,7 +94,6 @@ public class SpaInstaller {
 			Properties sdkProperties = getSdkProperties();
 			boolean reuseNodeCache = (overrideReuseNodeCache != null) ? overrideReuseNodeCache : Boolean.parseBoolean(sdkProperties.getProperty("reuseNodeCache"));
 			nodeHelper.installNodeAndNpm(nodeVersion, npmVersion, reuseNodeCache);
-			File buildTargetDir = new File(appDataDir, BUILD_TARGET_DIR);
 
 			String program = "openmrs@" + coreVersion;
 			String legacyPeerDeps = ignorePeerDependencies ? "--legacy-peer-deps" : "";
@@ -217,5 +217,20 @@ public class SpaInstaller {
 			        "Exception while writing JSON to \"" + file.getAbsolutePath() + "\" " + e.getMessage(), e);
 		}
 	}
-	
+
+	private File prepareTargetDirectory(File appDataDir) throws MojoExecutionException{
+		File targetDir = new File(appDataDir, BUILD_TARGET_DIR);
+		if (targetDir.exists()) {
+			try {
+				distroHelper.wizard.showMessage("Removing existing frontend directory: " + targetDir);
+				FileUtils.deleteDirectory(targetDir);
+			}
+			catch (IOException e) {
+				throw new MojoExecutionException("Unable to delete existing " + BUILD_TARGET_DIR + " directory", e);
+			}
+		}
+		distroHelper.wizard.showMessage("Creating new frontend directory: " + targetDir);
+		targetDir.mkdirs();
+		return targetDir;
+	}
 }
