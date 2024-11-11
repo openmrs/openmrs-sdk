@@ -73,7 +73,15 @@ public class SpaInstaller {
 	public void installFromDistroProperties(File appDataDir, DistroProperties distroProperties, boolean ignorePeerDependencies, Boolean overrideReuseNodeCache)
 			throws MojoExecutionException {
 
-        File buildTargetDir = prepareTargetDirectory(appDataDir);
+		File buildTargetDir = new File(appDataDir, BUILD_TARGET_DIR);
+		if (buildTargetDir.exists()) {
+			try {
+				FileUtils.deleteDirectory(buildTargetDir);
+			}
+			catch (IOException e) {
+				throw new MojoExecutionException("Unable to delete existing " + BUILD_TARGET_DIR + " directory", e);
+			}
+		}
 
 		// Retrieve the properties with a spa. prefix out of the distro properties
 		Map<String, String> spaProperties = distroProperties.getSpaProperties(distroHelper, appDataDir);
@@ -252,19 +260,5 @@ public class SpaInstaller {
 			throw new MojoExecutionException(
 			        "Exception while writing JSON to \"" + file.getAbsolutePath() + "\" " + e.getMessage(), e);
 		}
-	}
-
-	private File prepareTargetDirectory(File appDataDir) throws MojoExecutionException {
-		File targetDir = new File(appDataDir, BUILD_TARGET_DIR);
-		if (targetDir.exists()) {
-			try {
-				FileUtils.deleteDirectory(targetDir);
-			}
-			catch (IOException e) {
-				throw new MojoExecutionException("Unable to delete existing " + BUILD_TARGET_DIR + " directory", e);
-			}
-		}
-		targetDir.mkdirs();
-		return targetDir;
 	}
 }
