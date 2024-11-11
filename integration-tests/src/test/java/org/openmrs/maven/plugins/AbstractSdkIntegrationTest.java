@@ -231,13 +231,13 @@ public abstract class AbstractSdkIntegrationTest {
         assertPathPresent(resolvedPath);
     }
 
-    public void assertFileContains(String regex, String... paths) throws IOException {
+    public void assertFileContains(String text, String... paths) throws IOException {
         Path resolvedPath = testDirectoryPath.toAbsolutePath();
         for (String path : paths) {
             resolvedPath = resolvedPath.resolve(path);
         }
         String jsContents = new String(Files.readAllBytes(resolvedPath), StandardCharsets.UTF_8);
-        assertThat(jsContents, Matchers.containsString(regex));
+        assertThat(jsContents, Matchers.containsString(text));
     }
 
     public void assertPathPresent(Path path) {

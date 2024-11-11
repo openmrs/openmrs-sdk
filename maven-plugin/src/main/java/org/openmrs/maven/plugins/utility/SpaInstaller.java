@@ -6,6 +6,8 @@ import com.google.common.io.RecursiveDeleteOption;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.openmrs.maven.plugins.model.Artifact;
+import org.openmrs.maven.plugins.model.BaseSdkProperties;
 import org.openmrs.maven.plugins.model.DistroProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,13 +43,20 @@ public class SpaInstaller {
 	private final DistroHelper distroHelper;
 
 	private final ModuleInstaller moduleInstaller;
-	
+
+	private final Wizard wizard;
+
 	private static final Logger logger = LoggerFactory.getLogger(SpaInstaller.class);
 	
 	public SpaInstaller(DistroHelper distroHelper, NodeHelper nodeHelper) {
+		this(distroHelper, nodeHelper, new ModuleInstaller(distroHelper), distroHelper.wizard);
+	}
+
+	public SpaInstaller(DistroHelper distroHelper, NodeHelper nodeHelper, ModuleInstaller moduleInstaller, Wizard wizard) {
 		this.distroHelper = distroHelper;
-		this.moduleInstaller = new ModuleInstaller(distroHelper.mavenProject, distroHelper.mavenSession, distroHelper.pluginManager, distroHelper.versionHelper);
 		this.nodeHelper = nodeHelper;
+		this.moduleInstaller = moduleInstaller;
+		this.wizard = wizard;
 	}
 	
 	/**
@@ -64,18 +73,40 @@ public class SpaInstaller {
 	public void installFromDistroProperties(File appDataDir, DistroProperties distroProperties, boolean ignorePeerDependencies, Boolean overrideReuseNodeCache)
 			throws MojoExecutionException {
 
-		File buildTargetDir = prepareTargetDirectory(appDataDir);
+        File buildTargetDir = prepareTargetDirectory(appDataDir);
 
-		// We find all the lines in distro properties beginning with `spa` and convert these
-		// into a JSON structure. This is passed to the frontend build tool.
-		// If no SPA elements are present in the distro properties, the SPA is not installed.
-		Map<String, String> spaProperties = distroProperties.getSpaProperties(distroHelper, appDataDir);		
-		// Three of these properties are not passed to the build tool, but are used to specify the build execution itself
+		// Retrieve the properties with a spa. prefix out of the distro properties
+		Map<String, String> spaProperties = distroProperties.getSpaProperties(distroHelper, appDataDir);
+
+		// If a maven artifact is defined, then we download the artifact and unpack it
+		String artifactId = spaProperties.remove(BaseSdkProperties.ARTIFACT_ID);
+		if (artifactId != null) {
+			wizard.showMessage("Found spa.artifactId in distro properties: " + artifactId);
+			String groupId = spaProperties.remove(BaseSdkProperties.GROUP_ID);
+			String version = spaProperties.remove(BaseSdkProperties.VERSION);
+			if (groupId == null || version == null) {
+				throw new MojoExecutionException("If specifying a spa.artifactId, you must also specify a spa.groupId and spa.version property");
+			}
+			String type = spaProperties.remove(BaseSdkProperties.ARTIFACT_ID);
+			String includes = spaProperties.remove(BaseSdkProperties.INCLUDES);
+			Artifact artifact = new Artifact(artifactId, version, groupId, (type == null ? BaseSdkProperties.TYPE_ZIP : type));
+			wizard.showMessage("Installing SPA from Maven artifact: " + artifact);
+			if (buildTargetDir.mkdirs()) {
+				wizard.showMessage("Created " + BUILD_TARGET_DIR + " directory: " + buildTargetDir.getAbsolutePath());
+			}
+			moduleInstaller.installAndUnpackModule(artifact, buildTargetDir, includes);
+			wizard.showMessage("SPA successfully installed to " + buildTargetDir.getAbsolutePath());
+			return;
+		}
+
+		// If no maven artifact is defined, then check if npm build configuration is defined
+
+		// First pull any optional properties that may be used to specify the core, node, or npm versions
+		// These properties are not passed to the build tool, but are used to specify the build execution itself
 		String coreVersion = spaProperties.remove("core");
 		if (coreVersion == null) {
 			coreVersion = "next";
 		}
-
 		String nodeVersion = spaProperties.remove("node");
 		if (nodeVersion == null) {
 			nodeVersion = NODE_VERSION;
@@ -84,42 +115,47 @@ public class SpaInstaller {
 		if (npmVersion == null) {
 			npmVersion = NPM_VERSION;
 		}
-		
-		if (!spaProperties.isEmpty()) {
-			Map<String, Object> spaConfigJson = convertPropertiesToJSON(spaProperties);
 
-			File spaConfigFile = new File(appDataDir, "spa-build-config.json");
-			writeJSONObject(spaConfigFile, spaConfigJson);
+		// If there are no remaining spa properties, then no spa configuration has been provided
+		if (spaProperties.isEmpty()) {
+			wizard.showMessage("No spa configuration found in the distro properties");
+			return;
+		}
 
-			Properties sdkProperties = getSdkProperties();
-			boolean reuseNodeCache = (overrideReuseNodeCache != null) ? overrideReuseNodeCache : Boolean.parseBoolean(sdkProperties.getProperty("reuseNodeCache"));
-			nodeHelper.installNodeAndNpm(nodeVersion, npmVersion, reuseNodeCache);
+		// If there are remaining spa properties, then build and install using node
+		Map<String, Object> spaConfigJson = convertPropertiesToJSON(spaProperties);
 
-			String program = "openmrs@" + coreVersion;
-			String legacyPeerDeps = ignorePeerDependencies ? "--legacy-peer-deps" : "";
-			// print frontend tool version number
-			nodeHelper.runNpx(String.format("%s --version", program), legacyPeerDeps);
-			
-			if (distroProperties.getContentArtifacts().isEmpty()) {				
-				nodeHelper.runNpx(String.format("%s assemble --target %s --mode config --config %s", program, buildTargetDir,
-				    spaConfigFile), legacyPeerDeps);				
-			} else {
-				List<File> configFiles = ContentHelper.collectFrontendConfigs(distroProperties, moduleInstaller);
-				String assembleCommand = assembleWithFrontendConfig(program, buildTargetDir, configFiles, spaConfigFile);
-				nodeHelper.runNpx(assembleCommand, legacyPeerDeps);
-			}
-			nodeHelper.runNpx(
-				String.format("%s build --target %s --build-config %s", program, buildTargetDir, spaConfigFile), legacyPeerDeps);
+		File spaConfigFile = new File(appDataDir, "spa-build-config.json");
+		writeJSONObject(spaConfigFile, spaConfigJson);
 
-			Path nodeCache = NodeHelper.tempDir;
-			if (!reuseNodeCache) {
-				try {
-					if (nodeCache != null && nodeCache.toFile().exists()) {
-						MoreFiles.deleteRecursively(nodeCache, RecursiveDeleteOption.ALLOW_INSECURE);
-					}
-				} catch (IOException e) {
-					logger.error("Couldn't delete the temp file", e);
+		Properties sdkProperties = getSdkProperties();
+		boolean reuseNodeCache = (overrideReuseNodeCache != null) ? overrideReuseNodeCache : Boolean.parseBoolean(sdkProperties.getProperty("reuseNodeCache"));
+		nodeHelper.installNodeAndNpm(nodeVersion, npmVersion, reuseNodeCache);
+
+		String program = "openmrs@" + coreVersion;
+		String legacyPeerDeps = ignorePeerDependencies ? "--legacy-peer-deps" : "";
+		// print frontend tool version number
+		nodeHelper.runNpx(String.format("%s --version", program), legacyPeerDeps);
+
+		if (distroProperties.getContentArtifacts().isEmpty()) {
+			nodeHelper.runNpx(String.format("%s assemble --target %s --mode config --config %s", program, buildTargetDir,
+				spaConfigFile), legacyPeerDeps);
+		} else {
+			List<File> configFiles = ContentHelper.collectFrontendConfigs(distroProperties, moduleInstaller);
+			String assembleCommand = assembleWithFrontendConfig(program, buildTargetDir, configFiles, spaConfigFile);
+			nodeHelper.runNpx(assembleCommand, legacyPeerDeps);
+		}
+		nodeHelper.runNpx(
+			String.format("%s build --target %s --build-config %s", program, buildTargetDir, spaConfigFile), legacyPeerDeps);
+
+		Path nodeCache = NodeHelper.tempDir;
+		if (!reuseNodeCache) {
+			try {
+				if (nodeCache != null && nodeCache.toFile().exists()) {
+					MoreFiles.deleteRecursively(nodeCache, RecursiveDeleteOption.ALLOW_INSECURE);
 				}
+			} catch (IOException e) {
+				logger.error("Couldn't delete the temp file", e);
 			}
 		}
 	}
