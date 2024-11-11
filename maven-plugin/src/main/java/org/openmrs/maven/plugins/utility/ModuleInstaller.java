@@ -102,14 +102,14 @@ public class ModuleInstaller {
     /**
      * @param artifact the artifact retrieve from Maven
      * @param outputDir the directory into which the artifact should be unpacked
-     * @param include optionally allows limiting the unpacked artifacts to only those specified in the directory that matches this name
+     * @param includes optionally allows limiting the unpacked artifacts to only those specified in the directory that matches this name
      * @throws MojoExecutionException
      */
-    public void installAndUnpackModule(Artifact artifact, File outputDir, String include) throws MojoExecutionException {
+    public void installAndUnpackModule(Artifact artifact, File outputDir, String includes) throws MojoExecutionException {
         if (!outputDir.exists()) {
             throw new MojoExecutionException("Output directory does not exist: " + outputDir);
         }
-        if (StringUtils.isBlank(include) || include.equals("/")) {
+        if (StringUtils.isBlank(includes)) {
             installAndUnpackModule(artifact, outputDir.getAbsolutePath());
         }
         else {
@@ -119,14 +119,14 @@ public class ModuleInstaller {
                 installAndUnpackModule(artifact, tempDir.getAbsolutePath());
                 boolean copied = false;
                 for (File f : Objects.requireNonNull(tempDir.listFiles())) {
-                    if (f.isDirectory() && f.getName().equals(include)) {
+                    if (f.isDirectory() && f.getName().equals(includes)) {
                         FileUtils.copyDirectory(f, outputDir);
                         copied = true;
                         break;
                     }
                 }
                 if (!copied) {
-                    throw new MojoExecutionException("No directory named " + include + " exists in artifact " + artifact);
+                    throw new MojoExecutionException("No directory named " + includes + " exists in artifact " + artifact);
                 }
             }
             catch (IOException e) {
