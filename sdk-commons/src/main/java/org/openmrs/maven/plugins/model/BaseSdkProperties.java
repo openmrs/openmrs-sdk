@@ -19,17 +19,18 @@ public abstract class BaseSdkProperties {
     public static final String ARTIFACT_ID = "artifactId";
     public static final String TYPE = "type";
     public static final String GROUP_ID = "groupId";
-    protected static final String TYPE_OMOD = "omod";
-    protected static final String TYPE_WAR = "war";
-    protected static final String TYPE_JAR = "jar";
-    protected static final String NAME = "name";
-    protected static final String VERSION = "version";
-    protected static final String TYPE_CONTENT = "content";
-    protected static final String TYPE_DISTRO = "distro";
-    protected static final String TYPE_OWA = "owa";
-    protected static final String TYPE_SPA = "spa";
-    protected static final String TYPE_CONFIG = "config";
-    protected static final String TYPE_ZIP = "zip";
+    public static final String TYPE_OMOD = "omod";
+    public static final String TYPE_WAR = "war";
+    public static final String TYPE_JAR = "jar";
+    public static final String NAME = "name";
+    public static final String VERSION = "version";
+    public static final String TYPE_CONTENT = "content";
+    public static final String TYPE_DISTRO = "distro";
+    public static final String TYPE_OWA = "owa";
+    public static final String TYPE_SPA = "spa";
+    public static final String TYPE_CONFIG = "config";
+    public static final String TYPE_ZIP = "zip";
+    public static final String INCLUDES = "includes";
 
     protected Properties properties;
 

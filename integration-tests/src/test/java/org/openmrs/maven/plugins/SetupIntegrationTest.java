@@ -375,6 +375,24 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
         assertFileNotPresent(serverId, "modules", "htmlformentry-3.3.0.omod");
     }
 
+    @Test
+    public void setup_shouldInstallWithSpaSpecifiedAsMavenArtifacts() throws Exception{
+        addTaskParam("distro", testDirectory.toString() + File.separator + "openmrs-distro-spa-artifacts.properties");
+        addMockDbSettings();
+
+        String serverId = UUID.randomUUID().toString();
+        addAnswer(serverId);
+        addAnswer("1044");
+        addAnswer("8080");
+
+        executeTask("setup");
+
+        assertFilePresent( serverId, "openmrs-2.6.9.war");
+        assertModulesInstalled(serverId, "spa-2.0.0.omod");
+        assertFilePresent(serverId, "frontend", "index.html");
+        assertFileContains("@openmrs/esm-dispensing-app", serverId, "frontend", "importmap.json");
+    }
+
     private String readValueFromPropertyKey(File propertiesFile, String key) throws Exception {
 
         InputStream in = new FileInputStream(propertiesFile);
