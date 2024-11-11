@@ -30,7 +30,7 @@ public abstract class BaseSdkProperties {
     public static final String TYPE_SPA = "spa";
     public static final String TYPE_CONFIG = "config";
     public static final String TYPE_ZIP = "zip";
-    public static final String INCLUDE = "include";
+    public static final String INCLUDES = "includes";
 
     protected Properties properties;
 

@@ -94,8 +94,8 @@ public class SpaInstallerTest {
 
         ArgumentCaptor<Artifact> artifactCaptor = ArgumentCaptor.forClass(Artifact.class);
         ArgumentCaptor<File> targetDirectoryCaptor = ArgumentCaptor.forClass(File.class);
-        ArgumentCaptor<String> sourceDirCaptor = ArgumentCaptor.forClass(String.class);
-        verify(moduleInstaller, times(1)).installAndUnpackModule(artifactCaptor.capture(), targetDirectoryCaptor.capture(), sourceDirCaptor.capture());
+        ArgumentCaptor<String> includesCaptor = ArgumentCaptor.forClass(String.class);
+        verify(moduleInstaller, times(1)).installAndUnpackModule(artifactCaptor.capture(), targetDirectoryCaptor.capture(), includesCaptor.capture());
         Artifact artifact = artifactCaptor.getValue();
         assertThat(artifact.getArtifactId(), equalTo("openmrs-frontend-example"));
         assertThat(artifact.getGroupId(), equalTo("org.openmrs.frontend"));

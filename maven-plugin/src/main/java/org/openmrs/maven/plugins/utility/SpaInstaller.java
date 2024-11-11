@@ -89,13 +89,13 @@ public class SpaInstaller {
 				throw new MojoExecutionException("If specifying a spa.artifactId, you must also specify a spa.groupId and spa.version property");
 			}
 			String type = spaProperties.remove(BaseSdkProperties.ARTIFACT_ID);
-			String includeFromArtifact = spaProperties.remove(BaseSdkProperties.INCLUDE);
+			String includes = spaProperties.remove(BaseSdkProperties.INCLUDES);
 			Artifact artifact = new Artifact(artifactId, version, groupId, (type == null ? BaseSdkProperties.TYPE_ZIP : type));
 			wizard.showMessage("Installing SPA from Maven artifact: " + artifact);
 			if (buildTargetDir.mkdirs()) {
 				wizard.showMessage("Created " + BUILD_TARGET_DIR + " directory: " + buildTargetDir.getAbsolutePath());
 			}
-			moduleInstaller.installAndUnpackModule(artifact, buildTargetDir, includeFromArtifact);
+			moduleInstaller.installAndUnpackModule(artifact, buildTargetDir, includes);
 			wizard.showMessage("SPA successfully installed to " + buildTargetDir.getAbsolutePath());
 			return;
 		}
