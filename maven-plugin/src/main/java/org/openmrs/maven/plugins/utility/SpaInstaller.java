@@ -3,6 +3,7 @@ package org.openmrs.maven.plugins.utility;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.MoreFiles;
 import com.google.common.io.RecursiveDeleteOption;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.openmrs.maven.plugins.model.Artifact;
@@ -44,7 +45,7 @@ public class SpaInstaller {
 	private final ModuleInstaller moduleInstaller;
 
 	private final Wizard wizard;
-	
+
 	private static final Logger logger = LoggerFactory.getLogger(SpaInstaller.class);
 	
 	public SpaInstaller(DistroHelper distroHelper, NodeHelper nodeHelper) {
@@ -65,9 +66,7 @@ public class SpaInstaller {
 	 * @param distroProperties Non-null
 	 * @throws MojoExecutionException
 	 */
-	public void installFromDistroProperties(File appDataDir, DistroProperties distroProperties)
-	        throws MojoExecutionException {
-		
+	public void installFromDistroProperties(File appDataDir, DistroProperties distroProperties) throws MojoExecutionException {
 		installFromDistroProperties(appDataDir, distroProperties, false, null);
 	}
 	
@@ -75,6 +74,14 @@ public class SpaInstaller {
 			throws MojoExecutionException {
 
 		File buildTargetDir = new File(appDataDir, BUILD_TARGET_DIR);
+		if (buildTargetDir.exists()) {
+			try {
+				FileUtils.deleteDirectory(buildTargetDir);
+			}
+			catch (IOException e) {
+				throw new MojoExecutionException("Unable to delete existing " + BUILD_TARGET_DIR + " directory", e);
+			}
+		}
 
 		// Retrieve the properties with a spa. prefix out of the distro properties
 		Map<String, String> spaProperties = distroProperties.getSpaProperties(distroHelper, appDataDir);
