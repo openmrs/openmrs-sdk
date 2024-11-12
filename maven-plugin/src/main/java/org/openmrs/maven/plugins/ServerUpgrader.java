@@ -35,53 +35,58 @@ public class ServerUpgrader {
     }
 
 	public void upgradeToDistro(Server server, DistroProperties distroProperties, boolean ignorePeerDependencies, Boolean overrideReuseNodeCache) throws MojoExecutionException {
-        UpgradeDifferential upgradeDifferential = DistroHelper.calculateUpdateDifferential(parentTask.distroHelper, server, distroProperties);
-        boolean confirmed = parentTask.wizard.promptForConfirmDistroUpgrade(upgradeDifferential, server, distroProperties);
-		if(confirmed){
-			server.saveBackupProperties();
+		boolean serverExists = server.getPropertiesFile().exists();
+		UpgradeDifferential upgradeDifferential = DistroHelper.calculateUpdateDifferential(parentTask.distroHelper, server, distroProperties);
+		if (serverExists) {
+			boolean confirmed = parentTask.wizard.promptForConfirmDistroUpgrade(upgradeDifferential, server, distroProperties);
+			if (!confirmed) {
+				parentTask.wizard.showMessage("Server upgrade aborted");
+				return;
+			}
+		}
+		server.saveBackupProperties();
 
-			String modulesDir = server.getServerDirectory().getPath()+File.separator+SDKConstants.OPENMRS_SERVER_MODULES;
-			if(upgradeDifferential.getPlatformArtifact()!=null){
-				server.deleteServerTmpDirectory();
-				replaceWebapp(server, upgradeDifferential.getPlatformArtifact().getVersion());
-			}
-			if(!upgradeDifferential.getModulesToAdd().isEmpty()){
-				parentTask.moduleInstaller.installModules(upgradeDifferential.getModulesToAdd(), modulesDir);
-				for(Artifact artifact: upgradeDifferential.getModulesToAdd()){
-					server.setModuleProperties(artifact);
-				}
-			}
-			if(!upgradeDifferential.getModulesToDelete().isEmpty()){
-				for(Artifact artifact: upgradeDifferential.getModulesToDelete()){
-					File moduleToDelete = new File(modulesDir, artifact.getDestFileName());
-					moduleToDelete.delete();
-					server.removeModuleProperties(artifact);
-				}
-			}
-			if(!upgradeDifferential.getUpdateOldToNewMap().isEmpty()){
-				for(Map.Entry<Artifact, Artifact> updateEntry : upgradeDifferential.getUpdateOldToNewMap().entrySet()){
-					updateModule(server, modulesDir, updateEntry);
-				}
-			}
-			if(!upgradeDifferential.getDowngradeNewToOldMap().isEmpty()){
-				for(Map.Entry<Artifact, Artifact> downgradeEntry : upgradeDifferential.getDowngradeNewToOldMap().entrySet()){
-					updateModule(server, modulesDir, downgradeEntry);
-				}
-			}
-			parentTask.spaInstaller.installFromDistroProperties(server.getServerDirectory(), distroProperties);
-
-			server.setVersion(distroProperties.getVersion());
-			server.setName(distroProperties.getName());
-			server.getDistroPropertiesFile().delete();
-			distroProperties.saveTo(server.getServerDirectory());
-			server.deleteBackupProperties();
-			deleteDependencyPluginMarker();
-			server.saveAndSynchronizeDistro();
-			parentTask.getLog().info("Server upgraded successfully");
-		} else {
-			parentTask.wizard.showMessage("Server upgrade aborted");
+		if (upgradeDifferential.getPlatformArtifact()!=null){
+			server.deleteServerTmpDirectory();
+			replaceWebapp(server, upgradeDifferential.getPlatformArtifact().getVersion());
 		}
 
+		String modulesDir = server.getServerDirectory().getPath()+File.separator+SDKConstants.OPENMRS_SERVER_MODULES;
+
+
+		if (!upgradeDifferential.getModulesToAdd().isEmpty()){
+			parentTask.moduleInstaller.installModules(upgradeDifferential.getModulesToAdd(), modulesDir);
+			for(Artifact artifact: upgradeDifferential.getModulesToAdd()){
+				server.setModuleProperties(artifact);
+			}
+		}
+		if(!upgradeDifferential.getModulesToDelete().isEmpty()){
+			for(Artifact artifact: upgradeDifferential.getModulesToDelete()){
+				File moduleToDelete = new File(modulesDir, artifact.getDestFileName());
+				moduleToDelete.delete();
+				server.removeModuleProperties(artifact);
+			}
+		}
+		if(!upgradeDifferential.getUpdateOldToNewMap().isEmpty()){
+			for(Map.Entry<Artifact, Artifact> updateEntry : upgradeDifferential.getUpdateOldToNewMap().entrySet()){
+				updateModule(server, modulesDir, updateEntry);
+			}
+		}
+		if(!upgradeDifferential.getDowngradeNewToOldMap().isEmpty()){
+			for(Map.Entry<Artifact, Artifact> downgradeEntry : upgradeDifferential.getDowngradeNewToOldMap().entrySet()){
+				updateModule(server, modulesDir, downgradeEntry);
+			}
+		}
+		parentTask.spaInstaller.installFromDistroProperties(server.getServerDirectory(), distroProperties);
+
+		server.setVersion(distroProperties.getVersion());
+		server.setName(distroProperties.getName());
+		server.getDistroPropertiesFile().delete();
+		distroProperties.saveTo(server.getServerDirectory());
+		server.deleteBackupProperties();
+		deleteDependencyPluginMarker();
+		server.saveAndSynchronizeDistro();
+		parentTask.getLog().info("Server upgraded successfully");
 	}
 
 	private void updateModule(Server server, String modulesDir, Map.Entry<Artifact, Artifact> updateEntry) throws MojoExecutionException {

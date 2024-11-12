@@ -98,15 +98,15 @@ public class DefaultWizard implements Wizard {
 
 	private static final String UPGRADE_CONFIRM_TMPL = "\nThe %s %s introduces the following changes:";
 
-	private static final String UPDATE_MODULE_TMPL = "^ Updates %s %s to %s";
+	private static final String UPDATE_ARTIFACT_TMPL = "^ Updates %s %s to %s";
 
-	private static final String DOWNGRADE_MODULE_TMPL = "v Downgrades %s %s to %s";
+	private static final String DOWNGRADE_ARTIFACT_TMPL = "v Downgrades %s %s to %s";
 
-	private static final String ADD_MODULE_TMPL = "+ Adds %s %s";
+	private static final String ADD_ARTIFACT_TMPL = "+ Adds %s %s";
 
-	private static final String DELETE_MODULE_TMPL = "- Deletes %s %s";
+	private static final String DELETE_ARTIFACT_TMPL = "- Deletes %s %s";
 
-	private static final String NO_DIFFERENTIAL = "\nNo modules to update or add found";
+	private static final String NO_DIFFERENTIAL = "\nNo distribution changes found";
 
 	public static final String PLATFORM_VERSION_PROMPT = "You can deploy the following versions of a platform";
 
@@ -1163,7 +1163,7 @@ public class DefaultWizard implements Wizard {
 		if (upgradeDifferential.getPlatformArtifact() != null) {
 			needConfirmation = showUpdateHeader(distroProperties, needConfirmation);
 			writer.printf(
-					(upgradeDifferential.isPlatformUpgraded() ? UPDATE_MODULE_TMPL : DOWNGRADE_MODULE_TMPL) + "%n",
+					(upgradeDifferential.isPlatformUpgraded() ? UPDATE_ARTIFACT_TMPL : DOWNGRADE_ARTIFACT_TMPL) + "%n",
 					upgradeDifferential.getPlatformArtifact().getArtifactId(),
 					server.getPlatformVersion(),
 					upgradeDifferential.getPlatformArtifact().getVersion());
@@ -1174,7 +1174,7 @@ public class DefaultWizard implements Wizard {
 			//updating to same SNAPSHOT doesn't require confirmation, they are not shown
 			if (!updateEntry.getKey().getVersion().equals(updateEntry.getValue().getVersion())) {
 				needConfirmation = showUpdateHeader(distroProperties, needConfirmation);
-				writer.printf((UPDATE_MODULE_TMPL) + "%n",
+				writer.printf((UPDATE_ARTIFACT_TMPL) + "%n",
 						updateEntry.getKey().getArtifactId(),
 						updateEntry.getKey().getVersion(),
 						updateEntry.getValue().getVersion());
@@ -1184,7 +1184,7 @@ public class DefaultWizard implements Wizard {
 		for (Entry<Artifact, Artifact> downgradeEntry : upgradeDifferential.getDowngradeNewToOldMap().entrySet()) {
 			if (!downgradeEntry.getKey().getVersion().equals(downgradeEntry.getValue().getVersion())) {
 				needConfirmation = showUpdateHeader(distroProperties, needConfirmation);
-				writer.printf((DOWNGRADE_MODULE_TMPL) + "%n",
+				writer.printf((DOWNGRADE_ARTIFACT_TMPL) + "%n",
 						downgradeEntry.getKey().getArtifactId(),
 						downgradeEntry.getKey().getVersion(),
 						downgradeEntry.getValue().getVersion());
@@ -1193,14 +1193,14 @@ public class DefaultWizard implements Wizard {
 
 		for (Artifact addArtifact : upgradeDifferential.getModulesToAdd()) {
 			needConfirmation = showUpdateHeader(distroProperties, needConfirmation);
-			writer.printf((ADD_MODULE_TMPL) + "%n",
+			writer.printf((ADD_ARTIFACT_TMPL) + "%n",
 					addArtifact.getArtifactId(),
 					addArtifact.getVersion());
 		}
 
 		for (Artifact deleteArtifact : upgradeDifferential.getModulesToDelete()) {
 			needConfirmation = showUpdateHeader(distroProperties, needConfirmation);
-			writer.printf((DELETE_MODULE_TMPL) + "%n",
+			writer.printf((DELETE_ARTIFACT_TMPL) + "%n",
 					deleteArtifact.getArtifactId(),
 					deleteArtifact.getVersion());
 		}

@@ -31,11 +31,8 @@ import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-import static org.openmrs.maven.plugins.model.BaseSdkProperties.ARTIFACT_ID;
-import static org.openmrs.maven.plugins.model.BaseSdkProperties.GROUP_ID;
 import static org.openmrs.maven.plugins.model.BaseSdkProperties.PROPERTY_DISTRO_ARTIFACT_ID;
 import static org.openmrs.maven.plugins.model.BaseSdkProperties.PROPERTY_DISTRO_GROUP_ID;
-import static org.openmrs.maven.plugins.model.BaseSdkProperties.TYPE;
 import static org.twdata.maven.mojoexecutor.MojoExecutor.artifactId;
 import static org.twdata.maven.mojoexecutor.MojoExecutor.configuration;
 import static org.twdata.maven.mojoexecutor.MojoExecutor.element;
@@ -91,19 +88,6 @@ public class DistroHelper {
 	public static DistroProperties getDistroPropertiesFromDir() {
 		File distroFile = new File(new File(System.getProperty("user.dir")), "openmrs-distro.properties");
 		return getDistroPropertiesFromFile(distroFile);
-	}
-
-	/**
-	 * Creates a minimal distro properties for the current server configuration, which is
-	 * a platform installation. The database driver must have been configured before this is
-	 * called.
-	 */
-	public DistroProperties createDistroForPlatform(Server server) {
-		DistroProperties distroProperties = new DistroProperties(server.getServerId(), server.getPlatformVersion());
-		if (server.getDbDriver().equals(SDKConstants.DRIVER_H2)) {
-			distroProperties.setH2Support(true);
-		}
-		return distroProperties;
 	}
 
 	/**
@@ -367,16 +351,29 @@ public class DistroHelper {
 	 * - updateMap include modules which are already on server with newer/equal SNAPSHOT version
 	 * - add modules which are not installed on server yet
 	 */
-	public static UpgradeDifferential calculateUpdateDifferential(DistroHelper distroHelper, Server server,
-																  DistroProperties distroProperties) throws MojoExecutionException {
-		List<Artifact> newList = new ArrayList<>(
-				distroProperties.getWarArtifacts(distroHelper, server.getServerDirectory()));
+	public static UpgradeDifferential calculateUpdateDifferential(DistroHelper distroHelper, Server server, DistroProperties distroProperties) throws MojoExecutionException {
+		boolean serverExists = server.getPropertiesFile().exists();
+		List<Artifact> oldList = new ArrayList<>();
+		if (serverExists) {
+			oldList.addAll(server.getWarArtifacts());
+			oldList.addAll(server.getModuleArtifacts());
+			oldList.addAll(server.getOwaArtifacts());
+			oldList.addAll(server.getConfigArtifacts());
+			oldList.addAll(server.getContentArtifacts());
+			oldList.addAll(server.getSpaArtifacts());
+		}
+		List<Artifact> newList = new ArrayList<>();
+		newList.addAll(distroProperties.getWarArtifacts(distroHelper, server.getServerDirectory()));
 		newList.addAll(distroProperties.getModuleArtifacts(distroHelper, server.getServerDirectory()));
-		return calculateUpdateDifferential(server.getServerModules(), newList);
+		newList.addAll(distroProperties.getOwaArtifacts(distroHelper, server.getServerDirectory()));
+		newList.addAll(distroProperties.getConfigArtifacts(distroHelper, server.getServerDirectory()));
+		newList.addAll(distroProperties.getContentArtifacts(distroHelper, server.getServerDirectory()));
+		newList.addAll(distroProperties.getSpaArtifacts(distroHelper, server.getServerDirectory()));
+		// TODO: This does not factor in any spa properties that do not refer to artifacts (eg. frontendModules)
+		return calculateUpdateDifferential(oldList, newList);
 	}
 
-	static UpgradeDifferential calculateUpdateDifferential(List<Artifact> oldList, List<Artifact> newList)
-			throws MojoExecutionException {
+	static UpgradeDifferential calculateUpdateDifferential(List<Artifact> oldList, List<Artifact> newList) throws MojoExecutionException {
 		UpgradeDifferential upgradeDifferential = new UpgradeDifferential();
 		for (Artifact newListModule : newList) {
 			boolean toAdd = true;

@@ -51,7 +51,7 @@ public class AddExclusion extends AbstractTask {
             throw new MojoFailureException("Invalid distro file");
         }
 
-        Artifact distroArtifact = originalDistroProperties.getParentArtifact();
+        Artifact distroArtifact = originalDistroProperties.getDistroArtifact();
         if (StringUtils.isNotBlank(distroArtifact.getArtifactId()) && StringUtils.isNotBlank(distroArtifact.getGroupId()) && StringUtils.isNotBlank(distroArtifact.getVersion())) {
             DistroProperties distroProperties = distroHelper.resolveParentArtifact(distroArtifact, new File(distro).getParentFile(), originalDistroProperties, null);
             if (StringUtils.isBlank(property)) {

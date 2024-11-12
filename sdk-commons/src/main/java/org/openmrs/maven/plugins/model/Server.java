@@ -537,16 +537,6 @@ public class Server extends BaseSdkProperties {
     }
 
     /**
-     * Get artifacts of core and all modules on server
-     */
-    public List<Artifact> getServerModules() {
-        List<Artifact> artifacts = new ArrayList<>();
-        artifacts.addAll(getModuleArtifacts());
-        artifacts.addAll(getWarArtifacts());
-        return artifacts;
-    }
-
-    /**
      * returns lists of baseArtifacts updated with updateArtifacts(add absent objects and update versions)
      *
      * @param baseArtifacts - main list

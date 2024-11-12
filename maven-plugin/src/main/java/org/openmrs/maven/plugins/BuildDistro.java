@@ -135,7 +135,7 @@ public class BuildDistro extends AbstractTask {
 			if (distroFile.exists()) {
 				wizard.showMessage("Building distribution from the distro file at " + distroFile + "...\n");
 				distroProperties = new DistroProperties(distroFile);
-				distroArtifact = distroProperties.getParentArtifact();
+				distroArtifact = distroProperties.getDistroArtifact();
 				distroProperties = handleParentDistroProperties(distroArtifact, buildDirectory, distroProperties);
 			} else if (Project.hasProject(userDir)) {
 				Project config = Project.loadProject(userDir);
@@ -156,7 +156,7 @@ public class BuildDistro extends AbstractTask {
 			}
 		} else if (StringUtils.isNotBlank(distro)) {
 			distroProperties = distroHelper.resolveDistroPropertiesForStringSpecifier(distro, versionsHelper);
-			distroArtifact = distroProperties.getParentArtifact();
+			distroArtifact = distroProperties.getDistroArtifact();
 			distroProperties = handleParentDistroProperties(distroArtifact, buildDirectory, distroProperties);
 		}
 

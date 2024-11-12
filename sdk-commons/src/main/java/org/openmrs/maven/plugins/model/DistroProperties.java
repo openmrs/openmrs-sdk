@@ -15,6 +15,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -35,7 +36,7 @@ public class DistroProperties extends BaseSdkProperties {
 
 	private static final Logger log = LoggerFactory.getLogger(DistroProperties.class);
 
-    public DistroProperties(String version){
+    public DistroProperties(String version) {
         properties = new Properties();
         try {
             loadPropertiesFromResource(createFileName(version), properties);
@@ -44,7 +45,7 @@ public class DistroProperties extends BaseSdkProperties {
         }
     }
 
-    public DistroProperties(String name, String platformVersion){
+    public DistroProperties(String name, String platformVersion) {
         properties = new Properties();
         setName(name);
         setVersion("1.0");  // it's unclear what this means or why it is necessary, but it is tested for
@@ -60,7 +61,7 @@ public class DistroProperties extends BaseSdkProperties {
         loadPropertiesFromFile(file, this.properties);
     }
 
-    private String createFileName(String version){
+    private String createFileName(String version) {
         return String.format(DEAFAULT_FILE_NAME, version);
     }
 
@@ -120,30 +121,6 @@ public class DistroProperties extends BaseSdkProperties {
         return null;
     }
 
-    public Artifact getParentArtifact() {
-        String parentArtifactId = getParam("parent.artifactId");
-        String parentGroupId = getParam("parent.groupId");
-        String parentVersion = getParam("parent.version");
-
-        int missingCount = 0;
-        if (StringUtils.isBlank(parentArtifactId)) {
-            missingCount++;
-        }
-        if (StringUtils.isBlank(parentGroupId)) {
-            missingCount++;
-        }
-        if (StringUtils.isBlank(parentVersion)) {
-            missingCount++;
-        }
-
-        // We are only going to throw an error if only one or two parameters are missing
-        if (missingCount > 0 && missingCount < 3) {
-            throw new IllegalArgumentException("Missing arguments for the parent");
-        }
-
-        return new Artifact(parentArtifactId, parentVersion, parentGroupId, "zip");
-    }
-
     public List<Artifact> getModuleArtifacts(DistroHelper distroHelper, File directory) throws MojoExecutionException {
         List<Artifact> childArtifacts = getModuleArtifacts();
         List<Artifact> parentArtifacts = new ArrayList<>();
@@ -169,14 +146,47 @@ public class DistroProperties extends BaseSdkProperties {
     }
 
     public Map<String, String> getSpaProperties(DistroHelper distroHelper, File directory) throws MojoExecutionException {
-        Map<String, String> spaProperties = getSpaProperties();
-
+        Map<String, String> spaProperties = new HashMap<>();
         Artifact artifact = getDistroArtifact();
         if (artifact != null) {
             DistroProperties distroProperties = distroHelper.downloadDistroProperties(directory, artifact);
             spaProperties.putAll(distroProperties.getSpaProperties(distroHelper, directory));
         }
+        spaProperties.putAll(getSpaProperties());
         return spaProperties;
+    }
+
+    public List<Artifact> getSpaArtifacts(DistroHelper distroHelper, File directory) throws MojoExecutionException {
+        List<Artifact> childArtifacts = getSpaArtifacts();
+        List<Artifact> parentArtifacts = new ArrayList<>();
+        Artifact artifact = getDistroArtifact();
+        if (artifact != null) {
+            DistroProperties distroProperties = distroHelper.downloadDistroProperties(directory, artifact);
+            parentArtifacts.addAll(distroProperties.getSpaArtifacts(distroHelper, directory));
+        }
+        return mergeArtifactLists(childArtifacts, parentArtifacts);
+    }
+
+    public List<Artifact> getConfigArtifacts(DistroHelper distroHelper, File directory) throws MojoExecutionException {
+        List<Artifact> childArtifacts = getConfigArtifacts();
+        List<Artifact> parentArtifacts = new ArrayList<>();
+        Artifact artifact = getDistroArtifact();
+        if (artifact != null) {
+            DistroProperties distroProperties = distroHelper.downloadDistroProperties(directory, artifact);
+            parentArtifacts.addAll(distroProperties.getConfigArtifacts(distroHelper, directory));
+        }
+        return mergeArtifactLists(childArtifacts, parentArtifacts);
+    }
+
+    public List<Artifact> getContentArtifacts(DistroHelper distroHelper, File directory) throws MojoExecutionException {
+        List<Artifact> childArtifacts = getContentArtifacts();
+        List<Artifact> parentArtifacts = new ArrayList<>();
+        Artifact artifact = getDistroArtifact();
+        if (artifact != null) {
+            DistroProperties distroProperties = distroHelper.downloadDistroProperties(directory, artifact);
+            parentArtifacts.addAll(distroProperties.getContentArtifacts(distroHelper, directory));
+        }
+        return mergeArtifactLists(childArtifacts, parentArtifacts);
     }
 
     public List<Artifact> getWarArtifacts(DistroHelper distroHelper, File directory) throws MojoExecutionException{

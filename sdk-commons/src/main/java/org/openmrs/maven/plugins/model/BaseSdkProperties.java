@@ -125,6 +125,19 @@ public abstract class BaseSdkProperties {
         return spaProperties;
     }
 
+    public List<Artifact> getSpaArtifacts() {
+        List<Artifact> ret = new ArrayList<>();
+        Map<String, String> spaProperties = getSpaProperties();
+        String artifactId = spaProperties.get(BaseSdkProperties.ARTIFACT_ID);
+        if (artifactId != null) {
+            String groupId = spaProperties.get(BaseSdkProperties.GROUP_ID);
+            String version = spaProperties.get(BaseSdkProperties.VERSION);
+            String type = spaProperties.remove(BaseSdkProperties.ARTIFACT_ID);
+            ret.add(new Artifact(artifactId, version, groupId, (type == null ? BaseSdkProperties.TYPE_ZIP : type)));
+        }
+        return ret;
+    }
+
     public List<Artifact> getWarArtifacts(){
         List<Artifact> artifactList = new ArrayList<>();
         for (Object keyObject: getAllKeys()) {
@@ -349,7 +362,15 @@ public abstract class BaseSdkProperties {
     }
 
     private boolean isBaseSdkProperty(String key) {
-        return  (key.startsWith(TYPE_OMOD) || key.startsWith(TYPE_WAR) || key.equals(NAME) || key.equals(VERSION));
+        return (key.startsWith(TYPE_WAR) ||
+                key.startsWith(TYPE_OMOD) ||
+                key.startsWith(TYPE_OWA) ||
+                key.startsWith(TYPE_CONFIG) ||
+                key.startsWith(TYPE_CONTENT) ||
+                key.startsWith(TYPE_SPA) ||
+                key.equals(NAME) ||
+                key.equals(VERSION)
+        );
     }
 
 

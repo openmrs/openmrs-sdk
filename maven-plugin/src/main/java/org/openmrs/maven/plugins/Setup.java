@@ -213,7 +213,7 @@ public class Setup extends AbstractServerTask {
 					break;
 
 				default:  // distro properties from current directory
-					Artifact distroArtifact = distroProperties.getParentArtifact();
+					Artifact distroArtifact = distroProperties.getDistroArtifact();
 					if (StringUtils.isNotBlank(distroArtifact.getArtifactId()) && StringUtils.isNotBlank(distroArtifact.getGroupId()) && StringUtils.isNotBlank(distroArtifact.getVersion())) {
 						distroProperties = distroHelper.resolveParentArtifact(distroArtifact, server, distroProperties, appShellVersion);
 					} else {
@@ -267,46 +267,26 @@ public class Setup extends AbstractServerTask {
 	 * @throws MojoExecutionException
 	 */
 	public void setup(Server server, DistroProperties distroProperties) throws MojoExecutionException {
-		if (distroProperties != null) {
-			// Add all the distro properties to the server properties.
-			// It might be worth looking at redundancy between `distroHelper.savePropertiesToServer`,
-			// `setServerVersionsFromDistroProperties`, and `server.setValuesFromDistroPropertiesModules`.
-			distroHelper.savePropertiesToServer(distroProperties, server);
-			setServerVersionsFromDistroProperties(server, distroProperties);
-			distroHelper.parseContentProperties(distroProperties);
-			moduleInstaller.installModulesForDistro(server, distroProperties, distroHelper);
-
-			ContentHelper.downloadAndMoveContentBackendConfig(server.getServerDirectory(), distroProperties, moduleInstaller, wizard);						
-
-			if (spaInstaller != null) {
-				spaInstaller.installFromDistroProperties(server.getServerDirectory(), distroProperties, ignorePeerDependencies, overrideReuseNodeCache);
-			}
-
-			installOWAs(server, distroProperties);
-			configurationInstaller.installToServer(server, distroProperties);
-		} else {
-			moduleInstaller.installDefaultModules(server);
-		}
-
 		serverHelper = new ServerHelper(wizard);
-
 		setServerPort(server);
 		setDebugPort(server);
-
 		setupDatabase(server, distroProperties);
 
-		// If there's no distro at this point, we create a minimal one here,
-		// *after* having initialized server.isH2Supported in `setupDatabase` above.
+		// If there's no distro at this point, we create a minimal one here, *after* having initialized server.isH2Supported in `setupDatabase` above.
 		if (distroProperties == null) {
-			distroProperties = distroHelper.createDistroForPlatform(server);
+			distroProperties = new DistroProperties(server.getServerId(), server.getPlatformVersion());
+			if (server.getDbDriver().equals(SDKConstants.DRIVER_H2)) {
+				distroProperties.setH2Support(true);
+			}
+			distroProperties.setPlatformVersion(server.getPlatformVersion());
 		}
-		distroProperties.saveTo(server.getServerDirectory());
 
 		setJdk(server);
 
-		server.setValuesFromDistroPropertiesModules(
-				distroProperties.getWarArtifacts(distroHelper, server.getServerDirectory()),
-				distroProperties.getModuleArtifacts(distroHelper, server.getServerDirectory()), distroProperties);
+		ServerUpgrader serverUpgrader = new ServerUpgrader(this);
+		serverUpgrader.installFromDistro(server, distroProperties, ignorePeerDependencies, overrideReuseNodeCache);
+		distroProperties.saveTo(server.getServerDirectory());
+
 		server.setUnspecifiedToDefault();
 		server.save();
 	}
