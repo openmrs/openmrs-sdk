@@ -1,7 +1,6 @@
 package org.openmrs.maven.plugins.model;
 
 import org.apache.commons.lang.StringUtils;
-import org.openmrs.maven.plugins.utility.SDKConstants;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -334,9 +333,9 @@ public abstract class BaseSdkProperties {
 
     public void addPropertiesForArtifact(String type, Artifact artifact) {
         String base = type + "." + artifact.getArtifactId();
-        properties.put(base, properties.get(artifact.getVersion()));
-        properties.put(base + "." + GROUP_ID, properties.get(artifact.getGroupId()));
-        properties.put(base + "." + TYPE, properties.get(artifact.getType()));
+        properties.put(base, artifact.getVersion());
+        properties.put(base + "." + GROUP_ID, artifact.getGroupId());
+        properties.put(base + "." + TYPE, artifact.getType());
     }
 
     /**

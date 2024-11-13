@@ -214,7 +214,10 @@ public class Setup extends AbstractServerTask {
 
 				default:  // distro properties from current directory
 					Artifact distroArtifact = distroProperties.getDistroArtifact();
-					if (StringUtils.isNotBlank(distroArtifact.getArtifactId()) && StringUtils.isNotBlank(distroArtifact.getGroupId()) && StringUtils.isNotBlank(distroArtifact.getVersion())) {
+					if (distroArtifact != null &&
+							StringUtils.isNotBlank(distroArtifact.getArtifactId()) &&
+							StringUtils.isNotBlank(distroArtifact.getGroupId()) &&
+							StringUtils.isNotBlank(distroArtifact.getVersion())) {
 						distroProperties = distroHelper.resolveParentArtifact(distroArtifact, server, distroProperties, appShellVersion);
 					} else {
 						server.setPlatformVersion(
@@ -284,8 +287,8 @@ public class Setup extends AbstractServerTask {
 		setJdk(server);
 
 		ServerUpgrader serverUpgrader = new ServerUpgrader(this);
-		serverUpgrader.upgradeToDistro(server, distroProperties, ignorePeerDependencies, overrideReuseNodeCache);
 		distroProperties.saveTo(server.getServerDirectory());
+		serverUpgrader.upgradeToDistro(server, distroProperties, ignorePeerDependencies, overrideReuseNodeCache);
 
 		server.setUnspecifiedToDefault();
 		server.save();
