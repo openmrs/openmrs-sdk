@@ -376,9 +376,8 @@ public class DistroHelper {
 		List<Artifact> newSpa = distroProperties.getSpaArtifacts(distroHelper, server.getServerDirectory());
 		upgradeDifferential.setSpaArtifactChanges(new UpgradeDifferential.ArtifactChanges(oldSpa, newSpa));
 
-		// TODO: This isn't right, as the spa properties here are not the build properties, fix this.
-		Map<String, String> oldSpaProps = server.getSpaProperties();
-		Map<String, String> newSpaProps = distroProperties.getSpaProperties(distroHelper, server.getServerDirectory());
+		Map<String, String> oldSpaProps = server.getSpaBuildProperties();
+		Map<String, String> newSpaProps = distroProperties.getSpaBuildProperties(distroHelper, server.getServerDirectory());
 		upgradeDifferential.setSpaBuildChanges(new UpgradeDifferential.PropertyChanges(oldSpaProps, newSpaProps));
 
 		// Config

@@ -10,7 +10,6 @@ import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.model.UpgradeDifferential;
 import org.openmrs.maven.plugins.model.Version;
 import org.openmrs.maven.plugins.utility.ContentHelper;
-import org.openmrs.maven.plugins.utility.DistroHelper;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 
 import java.io.File;

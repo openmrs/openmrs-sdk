@@ -145,32 +145,26 @@ public class DistroProperties extends BaseSdkProperties {
         return mergeArtifactLists(childArtifacts, parentArtifacts);
     }
 
-    public Map<String, String> getSpaProperties(DistroHelper distroHelper, File directory) throws MojoExecutionException {
-        Map<String, String> spaProperties = new HashMap<>();
+    public Map<String, String> getSpaBuildProperties(DistroHelper distroHelper, File directory) throws MojoExecutionException {
+        Map<String, String> m = new HashMap<>();
         Artifact artifact = getDistroArtifact();
         if (artifact != null) {
             DistroProperties distroProperties = distroHelper.downloadDistroProperties(directory, artifact);
-            spaProperties.putAll(distroProperties.getSpaProperties(distroHelper, directory));
+            m.putAll(distroProperties.getSpaBuildProperties(distroHelper, directory));
         }
-        spaProperties.putAll(getSpaProperties());
-        return spaProperties;
+        m.putAll(getSpaBuildProperties());
+        return m;
     }
 
     public Map<String, String> getSpaArtifactProperties(DistroHelper distroHelper, File directory) throws MojoExecutionException {
-        Map<String, String> ret = new HashMap<>();
-        Map<String, String> spaProperties = getSpaProperties(distroHelper, directory);
-        ret.put(BaseSdkProperties.ARTIFACT_ID, spaProperties.get(BaseSdkProperties.ARTIFACT_ID));
-        ret.put(BaseSdkProperties.GROUP_ID, spaProperties.get(BaseSdkProperties.GROUP_ID));
-        ret.put(BaseSdkProperties.VERSION, spaProperties.get(BaseSdkProperties.VERSION));
-        ret.put(BaseSdkProperties.TYPE, spaProperties.get(BaseSdkProperties.TYPE));
-        ret.put(BaseSdkProperties.INCLUDES, spaProperties.get(BaseSdkProperties.INCLUDES));
-        return ret;
-    }
-
-    public Map<String, String> getSpaBuildProperties(DistroHelper distroHelper, File directory) throws MojoExecutionException {
-        Map<String, String> spaProperties = getSpaProperties(distroHelper, directory);
-        spaProperties.keySet().removeAll(getSpaArtifactProperties(distroHelper, directory).values());
-        return spaProperties;
+        Map<String, String> m = new HashMap<>();
+        Artifact artifact = getDistroArtifact();
+        if (artifact != null) {
+            DistroProperties distroProperties = distroHelper.downloadDistroProperties(directory, artifact);
+            m.putAll(distroProperties.getSpaArtifactProperties(distroHelper, directory));
+        }
+        m.putAll(getSpaArtifactProperties());
+        return m;
     }
 
     public List<Artifact> getSpaArtifacts(DistroHelper distroHelper, File directory) throws MojoExecutionException {

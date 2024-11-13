@@ -1,7 +1,10 @@
 package org.openmrs.maven.plugins.model;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.maven.plugin.MojoExecutionException;
+import org.openmrs.maven.plugins.utility.DistroHelper;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -125,6 +128,22 @@ public abstract class BaseSdkProperties {
         return spaProperties;
     }
 
+    public Map<String, String> getSpaArtifactProperties() {
+        Map<String, String> ret = new HashMap<>();
+        Map<String, String> spaProperties = getSpaProperties();
+        ret.put(BaseSdkProperties.ARTIFACT_ID, spaProperties.get(BaseSdkProperties.ARTIFACT_ID));
+        ret.put(BaseSdkProperties.GROUP_ID, spaProperties.get(BaseSdkProperties.GROUP_ID));
+        ret.put(BaseSdkProperties.VERSION, spaProperties.get(BaseSdkProperties.VERSION));
+        ret.put(BaseSdkProperties.TYPE, spaProperties.get(BaseSdkProperties.TYPE));
+        ret.put(BaseSdkProperties.INCLUDES, spaProperties.get(BaseSdkProperties.INCLUDES));
+        return ret;
+    }
+
+    public Map<String, String> getSpaBuildProperties() {
+        Map<String, String> spaProperties = getSpaProperties();
+        spaProperties.keySet().removeAll(getSpaArtifactProperties().values());
+        return spaProperties;
+    }
 
     public List<Artifact> getSpaArtifacts() {
         List<Artifact> ret = new ArrayList<>();
