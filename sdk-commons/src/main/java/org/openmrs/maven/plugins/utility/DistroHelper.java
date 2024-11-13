@@ -137,7 +137,6 @@ public class DistroHelper {
 						}
 						server.setPropertyValue(propertyName, propertyValue);
 					}
-
 				}
 			}
 		}

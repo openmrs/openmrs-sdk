@@ -270,6 +270,12 @@ public class Setup extends AbstractServerTask {
 	 * @throws MojoExecutionException
 	 */
 	public void setup(Server server, DistroProperties distroProperties) throws MojoExecutionException {
+
+		// Copy any values from the distro properties with a `property.` prefix, and prompt for missing values as appropriate
+		if (distroProperties != null) {
+			distroHelper.savePropertiesToServer(distroProperties, server);
+		}
+
 		serverHelper = new ServerHelper(wizard);
 		setServerPort(server);
 		setDebugPort(server);
@@ -281,7 +287,6 @@ public class Setup extends AbstractServerTask {
 			if (server.getDbDriver().equals(SDKConstants.DRIVER_H2)) {
 				distroProperties.setH2Support(true);
 			}
-			distroProperties.setPlatformVersion(server.getPlatformVersion());
 		}
 
 		setJdk(server);
@@ -307,8 +312,6 @@ public class Setup extends AbstractServerTask {
 
 		wizard.promptForJavaHomeIfMissing(server);
 	}
-
-
 
 	private void wipeDatabase(Server server) throws MojoExecutionException {
 		String uri = getUriWithoutDb(server);
@@ -354,16 +357,6 @@ public class Setup extends AbstractServerTask {
 					server.setDebugPort(debug);
 				}
 			}
-		}
-	}
-
-	private void setServerVersionsFromDistroProperties(Server server, DistroProperties distroProperties)
-			throws MojoExecutionException {
-		if (server.getPlatformVersion() == null) {
-			server.setPlatformVersion(distroProperties.getPlatformVersion(distroHelper, server.getServerDirectory()));
-		}
-		if (server.getVersion() == null) {
-			server.setVersion(distroProperties.getVersion());
 		}
 	}
 

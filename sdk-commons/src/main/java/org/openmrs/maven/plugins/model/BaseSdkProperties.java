@@ -139,7 +139,7 @@ public abstract class BaseSdkProperties {
         return ret;
     }
 
-    public List<Artifact> getWarArtifacts(){
+    public List<Artifact> getWarArtifacts() {
         List<Artifact> artifactList = new ArrayList<>();
         for (Object keyObject: getAllKeys()) {
             String key = keyObject.toString();

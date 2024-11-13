@@ -52,9 +52,14 @@ public class ServerUpgrader {
 		server.saveBackupProperties();
 		server.deleteServerTmpDirectory();
 
+		if (distroProperties.getVersion() != null) {
+			server.setVersion(distroProperties.getVersion());
+		}
+
 		// Upgrade the war
+		File warFile = server.getWarFile();
 		UpgradeDifferential.ArtifactChanges warChanges = upgradeDifferential.getWarChanges();
-		if (warChanges.hasChanges()) {
+		if (warChanges.hasChanges() || !warFile.exists()) {
 			if (warChanges.getNewArtifacts().isEmpty()) {
 				throw new MojoExecutionException("Deleting openmrs core is not supported");
 			}
@@ -184,7 +189,7 @@ public class ServerUpgrader {
      * @throws MojoExecutionException
      */
     private void replaceWebapp(Server server, String version) throws MojoExecutionException {
-        File webapp = new File(server.getServerDirectory(), "openmrs-"+server.getPlatformVersion()+".war");
+        File webapp = server.getWarFile();
 		if (webapp.delete()) {
 			parentTask.wizard.showMessage("Replacing existing war: " + webapp.getName());
 		}

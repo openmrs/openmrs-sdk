@@ -864,6 +864,10 @@ public class Server extends BaseSdkProperties {
         }
     }
 
+    public File getWarFile() {
+        return new File(getServerDirectory(), "openmrs-" + getPlatformVersion() + ".war");
+    }
+
     public String getWebappVersionFromFilesystem() throws MojoExecutionException {
         File[] files = serverDirectory.listFiles(new FilenameFilter() {
             @Override
