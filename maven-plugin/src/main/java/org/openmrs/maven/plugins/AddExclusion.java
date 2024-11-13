@@ -52,7 +52,7 @@ public class AddExclusion extends AbstractTask {
         }
 
         Artifact distroArtifact = originalDistroProperties.getDistroArtifact();
-        if (StringUtils.isNotBlank(distroArtifact.getArtifactId()) && StringUtils.isNotBlank(distroArtifact.getGroupId()) && StringUtils.isNotBlank(distroArtifact.getVersion())) {
+        if (distroArtifact != null) {
             DistroProperties distroProperties = distroHelper.resolveParentArtifact(distroArtifact, new File(distro).getParentFile(), originalDistroProperties, null);
             if (StringUtils.isBlank(property)) {
                 List<String> currentExclusions = distroProperties.getExclusions();

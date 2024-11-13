@@ -201,7 +201,7 @@ public class BuildDistro extends AbstractTask {
 	}
 
 	private DistroProperties handleParentDistroProperties(Artifact distroArtifact, File buildDirectory, DistroProperties distroProperties) throws MojoExecutionException {
-		if (StringUtils.isNotBlank(distroArtifact.getArtifactId()) && StringUtils.isNotBlank(distroArtifact.getGroupId()) && StringUtils.isNotBlank(distroArtifact.getVersion())) {
+		if (distroArtifact != null) {
 			distroProperties = distroHelper.resolveParentArtifact(distroArtifact, buildDirectory, distroProperties, appShellVersion);
 		}
 		return distroProperties;
