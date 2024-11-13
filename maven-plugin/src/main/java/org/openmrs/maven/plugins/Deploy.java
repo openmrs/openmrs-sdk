@@ -10,11 +10,10 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.DistroProperties;
+import org.openmrs.maven.plugins.model.Project;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.model.Version;
-import org.openmrs.maven.plugins.utility.ContentHelper;
 import org.openmrs.maven.plugins.utility.DistroHelper;
-import org.openmrs.maven.plugins.model.Project;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 
 import java.io.File;
@@ -22,7 +21,17 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.Element;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.artifactId;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.configuration;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.element;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.executeMojo;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.executionEnvironment;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.goal;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.groupId;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.name;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.plugin;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.version;
 
 /**
  * Deploys an artifact (OMOD, OWA, or WAR) to an SDK server instance. If run from an appropriate Maven project, will prompt
@@ -307,15 +316,14 @@ public class Deploy extends AbstractServerTask {
 		}
 	}
 
-	private void deployOpenmrsPlatform(Server server, Artifact artifact)
-			throws MojoExecutionException, MojoFailureException {
-		DistroProperties platformDistroProperties = distroHelper
-				.downloadDistroProperties(server.getServerDirectory(), artifact);
+	private void deployOpenmrsPlatform(Server server, Artifact artifact) throws MojoExecutionException {
+		DistroProperties platformDistroProperties = distroHelper.downloadDistroProperties(server.getServerDirectory(), artifact);
+		platformDistroProperties = distroHelper.getDistroPropertiesForFullAncestry(platformDistroProperties, server.getServerDirectory());
+
 		DistroProperties serverDistroProperties = server.getDistroProperties();
 
-		List<Artifact> warArtifacts = platformDistroProperties.getWarArtifacts(distroHelper, server.getServerDirectory());
-		List<Artifact> moduleArtifacts = platformDistroProperties
-				.getModuleArtifacts(distroHelper, server.getServerDirectory());
+		List<Artifact> warArtifacts = platformDistroProperties.getWarArtifacts();
+		List<Artifact> moduleArtifacts = platformDistroProperties.getModuleArtifacts();
 
 		serverDistroProperties.setArtifacts(warArtifacts, moduleArtifacts);
 		serverDistroProperties.saveTo(server.getServerDirectory());

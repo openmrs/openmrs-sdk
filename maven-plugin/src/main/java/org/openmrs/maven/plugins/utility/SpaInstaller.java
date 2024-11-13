@@ -84,8 +84,8 @@ public class SpaInstaller {
 		}
 
 		// If a maven artifact is defined, then we download the artifact and unpack it
-		Map<String, String> spaArtifactProperties = distroProperties.getSpaArtifactProperties(distroHelper, appDataDir);
-		List<Artifact> spaArtifacts = distroProperties.getSpaArtifacts(distroHelper, appDataDir);
+		Map<String, String> spaArtifactProperties = distroProperties.getSpaArtifactProperties();
+		List<Artifact> spaArtifacts = distroProperties.getSpaArtifacts();
 		if (!spaArtifacts.isEmpty()) {
 			if (spaArtifacts.size() > 1) {
 				throw new MojoExecutionException("Only a single spa artifact is supported");
@@ -108,7 +108,7 @@ public class SpaInstaller {
 
 		// First pull any optional properties that may be used to specify the core, node, or npm versions
 		// These properties are not passed to the build tool, but are used to specify the build execution itself
-		Map<String, String> spaProperties = distroProperties.getSpaBuildProperties(distroHelper, appDataDir);
+		Map<String, String> spaProperties = distroProperties.getSpaBuildProperties();
 		String coreVersion = spaProperties.remove("core");
 		if (coreVersion == null) {
 			coreVersion = "next";

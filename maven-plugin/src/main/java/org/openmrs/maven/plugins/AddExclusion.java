@@ -51,21 +51,22 @@ public class AddExclusion extends AbstractTask {
             throw new MojoFailureException("Invalid distro file");
         }
 
-        Artifact distroArtifact = originalDistroProperties.getDistroArtifact();
-        if (distroArtifact != null) {
-            DistroProperties distroProperties = distroHelper.resolveParentArtifact(distroArtifact, new File(distro).getParentFile(), originalDistroProperties, null);
+        Artifact parentDistro = originalDistroProperties.getParentDistroArtifact();
+        if (parentDistro != null) {
+            DistroProperties parentProperties = distroHelper.downloadDistroProperties(new File(distro).getParentFile(), parentDistro);
+            parentProperties = distroHelper.getDistroPropertiesForFullAncestry(parentProperties, new File(distro).getParentFile());
             if (StringUtils.isBlank(property)) {
-                List<String> currentExclusions = distroProperties.getExclusions();
-                List<String> options = distroProperties.getPropertyNames().stream().filter(prop -> !currentExclusions.contains(prop)).collect(Collectors.toList());
-                property = wizard.promptForMissingValueWithOptions("Enter the property you want to exclude",
-                        null, null, options);
-            } else {
-                if (!distroProperties.getPropertyNames().contains(property)) {
+                List<String> currentExclusions = originalDistroProperties.getExclusions();
+                List<String> options = parentProperties.getPropertyNames().stream().filter(prop -> !currentExclusions.contains(prop)).collect(Collectors.toList());
+                property = wizard.promptForMissingValueWithOptions("Enter the property you want to exclude", null, null, options);
+            }
+            else {
+                if (!parentProperties.getPropertyNames().contains(property)) {
                     wizard.showWarning("The property is not included in the parent distro");
                 }
             }
-
-        } else {
+        }
+        else {
             wizard.showWarning("This distro properties file does not contain a valid parent distro");
             if (StringUtils.isBlank(property)) {
                 property = wizard.promptForValueIfMissing(null, "property to exclude");

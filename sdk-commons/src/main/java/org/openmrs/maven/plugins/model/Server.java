@@ -1,13 +1,12 @@
 package org.openmrs.maven.plugins.model;
 
-import static org.openmrs.maven.plugins.utility.PropertiesUtils.loadPropertiesFromFile;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Writer;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.openmrs.maven.plugins.utility.DistroHelper;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,6 +31,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
+
+import static org.openmrs.maven.plugins.utility.PropertiesUtils.loadPropertiesFromFile;
 
 /**
  * Class for Server model
@@ -579,9 +580,15 @@ public class Server extends BaseSdkProperties {
         }
     }
 
-    public void setValuesFromDistroPropertiesModules(List<Artifact> warArtifacts, List<Artifact> moduleArtifacts, DistroProperties distroProperties) {
+    public void setValuesFromDistroProperties(DistroHelper distroHelper, DistroProperties distroProperties) throws MojoExecutionException {
         if (distroProperties != null) {
-            this.properties.putAll(distroProperties.getModuleAndWarProperties(warArtifacts, moduleArtifacts));
+            distroProperties = distroHelper.getDistroPropertiesForFullAncestry(distroProperties, getServerDirectory());
+            for (Object property : distroProperties.getAllKeys()) {
+                String key = property.toString();
+                if (distroProperties.isBaseSdkProperty(key)) {
+                    this.properties.put(key, distroProperties.getParam(key));
+                }
+            }
             setName(distroProperties.getName());
             setVersion(distroProperties.getVersion());
         }

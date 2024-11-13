@@ -206,32 +206,23 @@ public class Setup extends AbstractServerTask {
 					break;
 				case O3_DISTRIBUTION:
 					wizard.promptForO3RefAppVersionIfMissing(server, versionsHelper);
-					Artifact artifact = new Artifact(server.getDistroArtifactId(), server.getVersion(),
-							server.getDistroGroupId(), "zip");
-					distroProperties = new DistroProperties(distroHelper.getArtifactProperties(artifact, server, appShellVersion));
+					Artifact artifact = new Artifact(server.getDistroArtifactId(), server.getVersion(), server.getDistroGroupId(), "zip");
+					distroProperties = distroHelper.downloadDistroProperties(server.getServerDirectory(), artifact);
 					platformMode = false;
 					break;
-
 				default:  // distro properties from current directory
-					Artifact distroArtifact = distroProperties.getDistroArtifact();
-					if (distroArtifact != null) {
-						distroProperties = distroHelper.resolveParentArtifact(distroArtifact, server, distroProperties, appShellVersion);
-					} else {
-						server.setPlatformVersion(
-								distroProperties.getPlatformVersion(distroHelper, server.getServerTmpDirectory()));
-						server.setVersion(distroProperties.getVersion());
-					}
 					platformMode = false;
 			}
 		} else if (platform != null) {
 			server.setPlatformVersion(platform);
 			platformMode = true;
-		} else {  // getting distro properties from file
+		} else {  // getting distro properties from distro parameter
 			distroProperties = distroHelper.resolveDistroPropertiesForStringSpecifier(distro, versionsHelper);
 			if (distroProperties == null) {
 				throw new MojoExecutionException("Distro " + distro + "could not be retrieved");
 			}
-			server.setPlatformVersion(distroProperties.getPlatformVersion(distroHelper, server.getServerTmpDirectory()));
+
+			server.setPlatformVersion(distroProperties.getPlatformVersion());
 			server.setVersion(distroProperties.getVersion());
 			platformMode = false;
 		}
@@ -270,7 +261,11 @@ public class Setup extends AbstractServerTask {
 
 		// Copy any values from the distro properties with a `property.` prefix, and prompt for missing values as appropriate
 		if (distroProperties != null) {
+			// Get the full ancestry of the distro properties applied, if not already done here
+			distroProperties = distroHelper.getDistroPropertiesForFullAncestry(distroProperties, server.getServerDirectory());
 			distroHelper.savePropertiesToServer(distroProperties, server);
+			server.setVersion(distroProperties.getVersion());
+			server.setPlatformVersion(distroProperties.getPlatformVersion());
 		}
 
 		serverHelper = new ServerHelper(wizard);

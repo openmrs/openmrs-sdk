@@ -1,10 +1,7 @@
 package org.openmrs.maven.plugins.model;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.maven.plugin.MojoExecutionException;
-import org.openmrs.maven.plugins.utility.DistroHelper;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -29,6 +26,7 @@ public abstract class BaseSdkProperties {
     public static final String VERSION = "version";
     public static final String TYPE_CONTENT = "content";
     public static final String TYPE_DISTRO = "distro";
+    public static final String TYPE_PARENT = "parent"; // This is an alternative to "distro"
     public static final String TYPE_OWA = "owa";
     public static final String TYPE_SPA = "spa";
     public static final String TYPE_CONFIG = "config";
@@ -81,7 +79,7 @@ public abstract class BaseSdkProperties {
         return getParam("version");
     }
 
-    public void setVersion(String version){
+    public void setVersion(String version) {
         properties.setProperty("version", version);
     }
 
@@ -89,11 +87,11 @@ public abstract class BaseSdkProperties {
         return getParam("name", "openmrs");
     }
 
-    public void setName(String name){
+    public void setName(String name) {
         properties.setProperty("name", name);
     }
 
-    public List<Artifact> getModuleArtifacts(){
+    public List<Artifact> getModuleArtifacts() {
         List<Artifact> artifactList = new ArrayList<>();
         for (Object keyObject: getAllKeys()) {
             String key = keyObject.toString();
@@ -398,7 +396,7 @@ public abstract class BaseSdkProperties {
         }
     }
 
-    private boolean isBaseSdkProperty(String key) {
+    public boolean isBaseSdkProperty(String key) {
         return (key.startsWith(TYPE_WAR) ||
                 key.startsWith(TYPE_OMOD) ||
                 key.startsWith(TYPE_OWA) ||

@@ -40,6 +40,10 @@ public class ServerUpgrader {
 
 	public void upgradeToDistro(Server server, DistroProperties distroProperties, boolean ignorePeerDependencies, Boolean overrideReuseNodeCache) throws MojoExecutionException {
 		boolean serverExists = server.getPropertiesFile().exists();
+
+		// Get the full ancestry of the distro properties applied, if not already done here
+		distroProperties = parentTask.distroHelper.getDistroPropertiesForFullAncestry(distroProperties, server.getServerDirectory());
+
 		UpgradeDifferential upgradeDifferential = parentTask.distroHelper.calculateUpdateDifferential(server, distroProperties);
 		if (serverExists) {
 			boolean confirmed = parentTask.wizard.promptForConfirmDistroUpgrade(upgradeDifferential, server, distroProperties);
@@ -256,11 +260,7 @@ public class ServerUpgrader {
 				distroProperties.saveTo(serverPath.toAbsolutePath().toFile());
 			}
 			if(StringUtils.isNotBlank(server.getParam(Server.PROPERTY_PLATFORM))){
-				server.setValuesFromDistroPropertiesModules(
-						server.getDistroProperties().getWarArtifacts(parentTask.distroHelper, server.getServerDirectory()),
-						server.getDistroProperties().getModuleArtifacts(parentTask.distroHelper, server.getServerDirectory()),
-						server.getDistroProperties()
-				);
+				server.setValuesFromDistroProperties(parentTask.distroHelper, server.getDistroProperties());
 				updateModulesPropertiesWithUserModules(server);
 				server.removePlatformVersionProperty();
 				server.removeUserModulesProperty();

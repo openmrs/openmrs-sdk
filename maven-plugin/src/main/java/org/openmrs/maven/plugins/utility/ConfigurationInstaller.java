@@ -57,7 +57,7 @@ public class ConfigurationInstaller {
 
 		wizard.showMessage("Downloading Configuration...\n");
 
-		List<Artifact> configs = distroProperties.getConfigArtifacts(distroHelper, tempDir);
+		List<Artifact> configs = distroProperties.getConfigArtifacts();
 		for (Artifact configArtifact : configs) {
 			// Some config artifacts have their configuration packaged in an "openmrs_config" subfolder within the zip
 			// If such a folder is found in the downloaded artifact, use it.  Otherwise, use the entire zip contents

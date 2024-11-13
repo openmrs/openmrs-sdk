@@ -32,8 +32,8 @@ import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-import static org.openmrs.maven.plugins.model.BaseSdkProperties.PROPERTY_DISTRO_ARTIFACT_ID;
-import static org.openmrs.maven.plugins.model.BaseSdkProperties.PROPERTY_DISTRO_GROUP_ID;
+import static org.openmrs.maven.plugins.model.BaseSdkProperties.TYPE_DISTRO;
+import static org.openmrs.maven.plugins.model.BaseSdkProperties.TYPE_PARENT;
 import static org.twdata.maven.mojoexecutor.MojoExecutor.artifactId;
 import static org.twdata.maven.mojoexecutor.MojoExecutor.configuration;
 import static org.twdata.maven.mojoexecutor.MojoExecutor.element;
@@ -356,38 +356,41 @@ public class DistroHelper {
 		UpgradeDifferential upgradeDifferential = new UpgradeDifferential();
 		DistroHelper distroHelper = this;
 
+		// Get the full ancestry of the distro properties applied, if not already done here
+		distroProperties = getDistroPropertiesForFullAncestry(distroProperties, server.getServerDirectory());
+
 		// War File
 		List<Artifact> oldWars = server.getWarArtifacts();
-		List<Artifact> newWars = distroProperties.getWarArtifacts(distroHelper, server.getServerDirectory());
+		List<Artifact> newWars = distroProperties.getWarArtifacts();
 		upgradeDifferential.setWarChanges(new UpgradeDifferential.ArtifactChanges(oldWars, newWars));
 
 		// Modules
 		List<Artifact> oldModules = server.getModuleArtifacts();
-		List<Artifact> newModules = distroProperties.getModuleArtifacts(distroHelper, server.getServerDirectory());
+		List<Artifact> newModules = distroProperties.getModuleArtifacts();
 		upgradeDifferential.setModuleChanges(new UpgradeDifferential.ArtifactChanges(oldModules, newModules));
 
 		// Owas
 		List<Artifact> oldOwas = server.getOwaArtifacts();
-		List<Artifact> newOwas = distroProperties.getOwaArtifacts(distroHelper, server.getServerDirectory());
+		List<Artifact> newOwas = distroProperties.getOwaArtifacts();
 		upgradeDifferential.setOwaChanges(new UpgradeDifferential.ArtifactChanges(oldOwas, newOwas));
 
 		// Spa
 		List<Artifact> oldSpa = server.getSpaArtifacts();
-		List<Artifact> newSpa = distroProperties.getSpaArtifacts(distroHelper, server.getServerDirectory());
+		List<Artifact> newSpa = distroProperties.getSpaArtifacts();
 		upgradeDifferential.setSpaArtifactChanges(new UpgradeDifferential.ArtifactChanges(oldSpa, newSpa));
 
 		Map<String, String> oldSpaProps = server.getSpaBuildProperties();
-		Map<String, String> newSpaProps = distroProperties.getSpaBuildProperties(distroHelper, server.getServerDirectory());
+		Map<String, String> newSpaProps = distroProperties.getSpaBuildProperties();
 		upgradeDifferential.setSpaBuildChanges(new UpgradeDifferential.PropertyChanges(oldSpaProps, newSpaProps));
 
 		// Config
 		List<Artifact> oldConfig = server.getConfigArtifacts();
-		List<Artifact> newConfig = distroProperties.getConfigArtifacts(distroHelper, server.getServerDirectory());
+		List<Artifact> newConfig = distroProperties.getConfigArtifacts();
 		upgradeDifferential.setConfigChanges(new UpgradeDifferential.ArtifactChanges(oldConfig, newConfig));
 
 		// Content
 		List<Artifact> oldContent = server.getContentArtifacts();
-		List<Artifact> newContent = distroProperties.getContentArtifacts(distroHelper, server.getServerDirectory());
+		List<Artifact> newContent = distroProperties.getContentArtifacts();
 		upgradeDifferential.setContentChanges(new UpgradeDifferential.ArtifactChanges(oldContent, newContent));
 
 		return upgradeDifferential;
@@ -449,45 +452,35 @@ public class DistroHelper {
   		return getFrontendPropertiesForServer(artifact, server.getServerDirectory());
     }
 
-	public Properties getArtifactProperties(Artifact artifact, File directory, String appShellVersion) throws MojoExecutionException {
-		File file = downloadDistro(directory, artifact);
-		Properties properties = new Properties();
-		properties.putAll(PropertiesUtils.getDistroProperties(file));
-		properties.putAll(getFrontendPropertiesForServer(artifact, directory));
-		properties.putAll(PropertiesUtils.getConfigurationProperty(artifact));
-		properties.put(PROPERTY_DISTRO_GROUP_ID, artifact.getGroupId());
-		properties.put(PROPERTY_DISTRO_ARTIFACT_ID, artifact.getArtifactId());
-		if(appShellVersion != null) {
-			properties.setProperty("spa.core", appShellVersion);
+	public DistroProperties getDistroPropertiesForFullAncestry(DistroProperties distroProperties, File directory) throws MojoExecutionException {
+		Properties mergedProperties = new Properties();
+
+		// First we add the properties from any parent distributions, recursively, excluding any in the exclusions list
+		Artifact parentArtifact = distroProperties.getParentDistroArtifact();
+		if (parentArtifact != null) {
+			DistroProperties parentProperties = downloadDistroProperties(directory, parentArtifact);
+			DistroProperties parentFullAncestry = getDistroPropertiesForFullAncestry(parentProperties, directory);
+			List<String> exclusions = distroProperties.getExclusions();
+			for (Object key : parentFullAncestry.getAllKeys()) {
+				String keyStr = key.toString();
+				// TODO: Should we widen this to exclude anything that startsWith an exclusion, or allow wildcards?
+				if (!exclusions.contains(keyStr)) {
+					mergedProperties.put(key, parentFullAncestry.getParam(keyStr));
+				}
+			}
 		}
-		properties.setProperty("omod.spa", versionHelper.getLatestSnapshotVersion(new Artifact("spa", "latest")));
-		return properties;
-	}
 
-
-	public Properties getArtifactProperties(Artifact artifact, Server server, String appShellVersion) throws MojoExecutionException {
-		return getArtifactProperties(artifact, server.getServerDirectory(), appShellVersion);
-	}
-
-	public DistroProperties resolveParentArtifact(Artifact parentArtifact, File directory, DistroProperties distroProperties, String appShellVersion) throws MojoExecutionException {
-		Properties properties = getArtifactProperties(parentArtifact, directory, appShellVersion);
+		// Next, we add the properties from this distribution in.  These will override any defined in a parent
 		for (Object key : distroProperties.getAllKeys()) {
-			String keyStr = (String) key;
-			properties.setProperty(keyStr, distroProperties.getParam(keyStr));
+			String keyStr = key.toString();
+			// We remove the parent distro properties once these have been applied
+			if (keyStr.startsWith(TYPE_PARENT + ".") || keyStr.startsWith(TYPE_DISTRO + ".")) {
+				continue;
+			}
+			mergedProperties.put(key, distroProperties.getParam(keyStr));
 		}
-		List<String> exclusions = distroProperties.getExclusions();
 
-		for (String exclusion : exclusions) {
-			properties.remove(exclusion);
-		}
-		return new DistroProperties(properties);
-	}
-
-	public DistroProperties resolveParentArtifact(Artifact parentArtifact, Server server, DistroProperties distroProperties, String appShellVersion) throws MojoExecutionException {
-		server.setDistroArtifactId(parentArtifact.getArtifactId());
-		server.setDistroGroupId(parentArtifact.getGroupId());
-		server.setVersion(parentArtifact.getVersion());
-		return resolveParentArtifact(parentArtifact, server.getServerDirectory(), distroProperties, appShellVersion);
+		return new DistroProperties(mergedProperties);
 	}
 
 	/**
