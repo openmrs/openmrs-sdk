@@ -41,7 +41,7 @@ public class ServerUpgrader {
 
 	public void upgradeToDistro(Server server, DistroProperties distroProperties, boolean ignorePeerDependencies, Boolean overrideReuseNodeCache) throws MojoExecutionException {
 		boolean serverExists = server.getPropertiesFile().exists();
-		UpgradeDifferential upgradeDifferential = DistroHelper.calculateUpdateDifferential(parentTask.distroHelper, server, distroProperties);
+		UpgradeDifferential upgradeDifferential = parentTask.distroHelper.calculateUpdateDifferential(server, distroProperties);
 		if (serverExists) {
 			boolean confirmed = parentTask.wizard.promptForConfirmDistroUpgrade(upgradeDifferential, server, distroProperties);
 			if (!confirmed) {
@@ -61,10 +61,13 @@ public class ServerUpgrader {
 		UpgradeDifferential.ArtifactChanges warChanges = upgradeDifferential.getWarChanges();
 		if (warChanges.hasChanges() || !warFile.exists()) {
 			if (warChanges.getNewArtifacts().isEmpty()) {
-				throw new MojoExecutionException("Deleting openmrs core is not supported");
+				throw new MojoExecutionException("Deleting openmrs war is not supported");
+			}
+			if (!warChanges.getDowngradedArtifacts().isEmpty()) {
+				throw new MojoExecutionException("Downgrading openmrs war is not allowed");
 			}
 			if (warChanges.getNewArtifacts().size() > 1) {
-				throw new MojoExecutionException("Only one openmrs webapp can be configured in a distribution");
+				throw new MojoExecutionException("Only one openmrs war can be configured in a distribution");
 			}
 			replaceWebapp(server, warChanges.getNewArtifacts().get(0).getVersion());
 		}

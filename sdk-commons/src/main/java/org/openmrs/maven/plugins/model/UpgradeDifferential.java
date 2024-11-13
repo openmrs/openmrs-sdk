@@ -128,34 +128,18 @@ public class UpgradeDifferential {
             if (artifactsToCompareAreInvalid(previous, next)) {
                 return false;
             }
-
             Version previousVersion = new Version(previous.getVersion());
             Version nextVersion = new Version(next.getVersion());
-
-            if (nextVersion.higher(previousVersion)) {
-                return true;
-            } else if (nextVersion.equal(previousVersion)) {
-                return (previousVersion.isSnapshot() && nextVersion.isSnapshot());
-            } else {
-                return false;
-            }
+            return nextVersion.higher(previousVersion) || (previousVersion.isSnapshot() && nextVersion.isSnapshot());
         }
 
         public boolean isLowerVersion(Artifact previous, Artifact next) {
             if (artifactsToCompareAreInvalid(previous, next)) {
                 return false;
             }
-
             Version previousVersion = new Version(previous.getVersion());
             Version nextVersion = new Version(next.getVersion());
-
-            if (nextVersion.lower(previousVersion)) {
-                return true;
-            } else if (nextVersion.equal(previousVersion)) {
-                return (previousVersion.isSnapshot() && nextVersion.isSnapshot());
-            } else {
-                return false;
-            }
+            return nextVersion.lower(previousVersion);
         }
 
         public boolean artifactsToCompareAreInvalid(Artifact previous, Artifact next) {

@@ -170,7 +170,7 @@ public class Server extends BaseSdkProperties {
         properties = new Properties();
     }
 
-    private Server(File file, Properties properties) {
+    public Server(File file, Properties properties) {
         if (file != null) {
             this.propertiesFile = new File(file, SDKConstants.OPENMRS_SERVER_PROPERTIES);
             this.serverDirectory = file;
