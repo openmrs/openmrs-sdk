@@ -221,9 +221,6 @@ public class Setup extends AbstractServerTask {
 			if (distroProperties == null) {
 				throw new MojoExecutionException("Distro " + distro + "could not be retrieved");
 			}
-
-			server.setPlatformVersion(distroProperties.getPlatformVersion());
-			server.setVersion(distroProperties.getVersion());
 			platformMode = false;
 		}
 
