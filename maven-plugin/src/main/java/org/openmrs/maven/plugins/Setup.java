@@ -284,7 +284,7 @@ public class Setup extends AbstractServerTask {
 		setJdk(server);
 
 		ServerUpgrader serverUpgrader = new ServerUpgrader(this);
-		serverUpgrader.installFromDistro(server, distroProperties, ignorePeerDependencies, overrideReuseNodeCache);
+		serverUpgrader.upgradeToDistro(server, distroProperties, ignorePeerDependencies, overrideReuseNodeCache);
 		distroProperties.saveTo(server.getServerDirectory());
 
 		server.setUnspecifiedToDefault();
