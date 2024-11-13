@@ -131,10 +131,6 @@ public class DistroHelperTest {
         assertThat(differential.getModuleChanges().getDowngradedArtifacts().values(), hasItem(new Artifact(moduleId + "-omod", toVersion)));
     }
 
-    private DistroProperties getDistroProperties(Properties properties) {
-        return new DistroProperties(properties);
-    }
-
     private UpgradeDifferential calculateDifferential(Properties serverProperties, Properties distroProperties) throws MojoExecutionException{
         DistroHelper distroHelper = new DistroHelper(null, null, null, null, null);
         return distroHelper.calculateUpdateDifferential(new Server(null, serverProperties), new DistroProperties(distroProperties));

@@ -188,6 +188,9 @@ public class BuildDistro extends AbstractTask {
 			throw new MojoExecutionException("The distro you specified, '" + distro + "' could not be retrieved");
 		}
 
+		// Get the full ancestry of the distro properties applied, if not already done here
+		distroProperties = distroHelper.getDistroPropertiesForFullAncestry(distroProperties, buildDirectory);
+
 		distroHelper.parseContentProperties(distroProperties);
 		String distroName = buildDistro(buildDirectory, distroArtifact, distroProperties);
 
@@ -262,9 +265,6 @@ public class BuildDistro extends AbstractTask {
 	private String buildDistro(File targetDirectory, Artifact distroArtifact, DistroProperties distroProperties) throws MojoExecutionException {
 		InputStream dbDumpStream;
 		wizard.showMessage("Downloading modules...\n");
-
-		// Get the full ancestry of the distro properties applied, if not already done here
-		distroProperties = distroHelper.getDistroPropertiesForFullAncestry(distroProperties, targetDirectory);
 
 		String distroName = adjustImageName(distroProperties.getName());
 

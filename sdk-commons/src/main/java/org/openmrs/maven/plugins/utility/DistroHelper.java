@@ -354,7 +354,6 @@ public class DistroHelper {
 	public UpgradeDifferential calculateUpdateDifferential(Server server, DistroProperties distroProperties) throws MojoExecutionException {
 
 		UpgradeDifferential upgradeDifferential = new UpgradeDifferential();
-		DistroHelper distroHelper = this;
 
 		// Get the full ancestry of the distro properties applied, if not already done here
 		distroProperties = getDistroPropertiesForFullAncestry(distroProperties, server.getServerDirectory());
