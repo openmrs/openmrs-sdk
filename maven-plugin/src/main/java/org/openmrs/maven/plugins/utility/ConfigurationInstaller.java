@@ -18,14 +18,11 @@ import java.util.UUID;
  */
 public class ConfigurationInstaller {
 
-	private final DistroHelper distroHelper;
-
 	private final Wizard wizard;
 
 	private final ModuleInstaller moduleInstaller;
 
 	public ConfigurationInstaller(DistroHelper distroHelper) {
-		this.distroHelper = distroHelper;
 		this.wizard = distroHelper.wizard;
 		this.moduleInstaller = new ModuleInstaller(distroHelper.mavenProject, distroHelper.mavenSession, distroHelper.pluginManager, distroHelper.versionHelper);
 	}
