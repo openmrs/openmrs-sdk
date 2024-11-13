@@ -152,7 +152,7 @@ public abstract class BaseSdkProperties {
         if (artifactId != null) {
             String groupId = spaProperties.get(BaseSdkProperties.GROUP_ID);
             String version = spaProperties.get(BaseSdkProperties.VERSION);
-            String type = spaProperties.remove(BaseSdkProperties.ARTIFACT_ID);
+            String type = spaProperties.get(BaseSdkProperties.TYPE);
             ret.add(new Artifact(artifactId, version, groupId, (type == null ? BaseSdkProperties.TYPE_ZIP : type)));
         }
         return ret;

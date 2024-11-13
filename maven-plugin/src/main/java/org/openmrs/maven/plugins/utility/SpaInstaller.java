@@ -85,21 +85,20 @@ public class SpaInstaller {
 
 		// If a maven artifact is defined, then we download the artifact and unpack it
 		Map<String, String> spaArtifactProperties = distroProperties.getSpaArtifactProperties(distroHelper, appDataDir);
-		String artifactId = spaArtifactProperties.get(BaseSdkProperties.ARTIFACT_ID);
-		if (artifactId != null) {
-			wizard.showMessage("Found spa.artifactId in distro properties: " + artifactId);
-			String groupId = spaArtifactProperties.get(BaseSdkProperties.GROUP_ID);
-			String version = spaArtifactProperties.get(BaseSdkProperties.VERSION);
-			if (groupId == null || version == null) {
+		List<Artifact> spaArtifacts = distroProperties.getSpaArtifacts(distroHelper, appDataDir);
+		if (!spaArtifacts.isEmpty()) {
+			if (spaArtifacts.size() > 1) {
+				throw new MojoExecutionException("Only a single spa artifact is supported");
+			}
+			Artifact artifact = spaArtifacts.get(0);
+			if (artifact.getGroupId() == null || artifact.getVersion() == null) {
 				throw new MojoExecutionException("If specifying a spa.artifactId, you must also specify a spa.groupId and spa.version property");
 			}
-			String type = spaArtifactProperties.get(BaseSdkProperties.TYPE);
-			String includes = spaArtifactProperties.get(BaseSdkProperties.INCLUDES);
-			Artifact artifact = new Artifact(artifactId, version, groupId, (type == null ? BaseSdkProperties.TYPE_ZIP : type));
 			wizard.showMessage("Installing SPA from Maven artifact: " + artifact);
 			if (buildTargetDir.mkdirs()) {
 				wizard.showMessage("Created " + BUILD_TARGET_DIR + " directory: " + buildTargetDir.getAbsolutePath());
 			}
+			String includes = spaArtifactProperties.get(BaseSdkProperties.INCLUDES);
 			moduleInstaller.installAndUnpackModule(artifact, buildTargetDir, includes);
 			wizard.showMessage("SPA successfully installed to " + buildTargetDir.getAbsolutePath());
 			return;
