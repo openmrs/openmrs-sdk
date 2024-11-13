@@ -53,6 +53,7 @@ public class SDKConstants {
     public static final String OPENMRS_SDK_JDK_CUSTOM_INVALID = "JDK path is invalid";
     public static final String OPENMRS_SDK_PROPERTIES = "sdk.properties";
     public static final String OPENMRS_SERVER_MODULES = "modules";
+    public static final String OPENMRS_SERVER_OWA = "owa";
     public static final String OPENMRS_SERVER_CONFIGURATION = "configuration";
     // properties names
     public static final String OPENMRS_SDK_PROPERTIES_JAVA_HOME_OPTIONS = "javaHomeOptions";

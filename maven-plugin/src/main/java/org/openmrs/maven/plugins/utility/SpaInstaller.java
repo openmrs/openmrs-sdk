@@ -83,20 +83,18 @@ public class SpaInstaller {
 			}
 		}
 
-		// Retrieve the properties with a spa. prefix out of the distro properties
-		Map<String, String> spaProperties = distroProperties.getSpaProperties(distroHelper, appDataDir);
-
 		// If a maven artifact is defined, then we download the artifact and unpack it
-		String artifactId = spaProperties.remove(BaseSdkProperties.ARTIFACT_ID);
+		Map<String, String> spaArtifactProperties = distroProperties.getSpaArtifactProperties(distroHelper, appDataDir);
+		String artifactId = spaArtifactProperties.get(BaseSdkProperties.ARTIFACT_ID);
 		if (artifactId != null) {
 			wizard.showMessage("Found spa.artifactId in distro properties: " + artifactId);
-			String groupId = spaProperties.remove(BaseSdkProperties.GROUP_ID);
-			String version = spaProperties.remove(BaseSdkProperties.VERSION);
+			String groupId = spaArtifactProperties.get(BaseSdkProperties.GROUP_ID);
+			String version = spaArtifactProperties.get(BaseSdkProperties.VERSION);
 			if (groupId == null || version == null) {
 				throw new MojoExecutionException("If specifying a spa.artifactId, you must also specify a spa.groupId and spa.version property");
 			}
-			String type = spaProperties.remove(BaseSdkProperties.ARTIFACT_ID);
-			String includes = spaProperties.remove(BaseSdkProperties.INCLUDES);
+			String type = spaArtifactProperties.get(BaseSdkProperties.TYPE);
+			String includes = spaArtifactProperties.get(BaseSdkProperties.INCLUDES);
 			Artifact artifact = new Artifact(artifactId, version, groupId, (type == null ? BaseSdkProperties.TYPE_ZIP : type));
 			wizard.showMessage("Installing SPA from Maven artifact: " + artifact);
 			if (buildTargetDir.mkdirs()) {
@@ -111,6 +109,7 @@ public class SpaInstaller {
 
 		// First pull any optional properties that may be used to specify the core, node, or npm versions
 		// These properties are not passed to the build tool, but are used to specify the build execution itself
+		Map<String, String> spaProperties = distroProperties.getSpaBuildProperties(distroHelper, appDataDir);
 		String coreVersion = spaProperties.remove("core");
 		if (coreVersion == null) {
 			coreVersion = "next";

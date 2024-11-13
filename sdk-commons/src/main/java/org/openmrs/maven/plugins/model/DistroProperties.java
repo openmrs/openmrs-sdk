@@ -1,8 +1,5 @@
 package org.openmrs.maven.plugins.model;
 
-import static org.openmrs.maven.plugins.utility.PropertiesUtils.loadPropertiesFromFile;
-import static org.openmrs.maven.plugins.utility.PropertiesUtils.loadPropertiesFromResource;
-
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -21,6 +18,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+
+import static org.openmrs.maven.plugins.utility.PropertiesUtils.loadPropertiesFromFile;
+import static org.openmrs.maven.plugins.utility.PropertiesUtils.loadPropertiesFromResource;
 
 /**
  *
@@ -153,6 +153,23 @@ public class DistroProperties extends BaseSdkProperties {
             spaProperties.putAll(distroProperties.getSpaProperties(distroHelper, directory));
         }
         spaProperties.putAll(getSpaProperties());
+        return spaProperties;
+    }
+
+    public Map<String, String> getSpaArtifactProperties(DistroHelper distroHelper, File directory) throws MojoExecutionException {
+        Map<String, String> ret = new HashMap<>();
+        Map<String, String> spaProperties = getSpaProperties(distroHelper, directory);
+        ret.put(BaseSdkProperties.ARTIFACT_ID, spaProperties.get(BaseSdkProperties.ARTIFACT_ID));
+        ret.put(BaseSdkProperties.GROUP_ID, spaProperties.get(BaseSdkProperties.GROUP_ID));
+        ret.put(BaseSdkProperties.VERSION, spaProperties.get(BaseSdkProperties.VERSION));
+        ret.put(BaseSdkProperties.TYPE, spaProperties.get(BaseSdkProperties.TYPE));
+        ret.put(BaseSdkProperties.INCLUDES, spaProperties.get(BaseSdkProperties.INCLUDES));
+        return ret;
+    }
+
+    public Map<String, String> getSpaBuildProperties(DistroHelper distroHelper, File directory) throws MojoExecutionException {
+        Map<String, String> spaProperties = getSpaProperties(distroHelper, directory);
+        spaProperties.keySet().removeAll(getSpaArtifactProperties(distroHelper, directory).values());
         return spaProperties;
     }
 

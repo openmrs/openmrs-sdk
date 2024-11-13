@@ -3,7 +3,13 @@ package org.openmrs.maven.plugins;
 import org.apache.commons.io.FileUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.shared.utils.StringUtils;
-import org.openmrs.maven.plugins.model.*;
+import org.openmrs.maven.plugins.model.Artifact;
+import org.openmrs.maven.plugins.model.BaseSdkProperties;
+import org.openmrs.maven.plugins.model.DistroProperties;
+import org.openmrs.maven.plugins.model.Server;
+import org.openmrs.maven.plugins.model.UpgradeDifferential;
+import org.openmrs.maven.plugins.model.Version;
+import org.openmrs.maven.plugins.utility.ContentHelper;
 import org.openmrs.maven.plugins.utility.DistroHelper;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 
@@ -11,7 +17,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Map;
 
 public class ServerUpgrader {
     private final AbstractTask parentTask;
@@ -45,56 +50,102 @@ public class ServerUpgrader {
 			}
 		}
 		server.saveBackupProperties();
+		server.deleteServerTmpDirectory();
 
-		if (upgradeDifferential.getPlatformArtifact()!=null){
-			server.deleteServerTmpDirectory();
-			replaceWebapp(server, upgradeDifferential.getPlatformArtifact().getVersion());
+		// Upgrade the war
+		UpgradeDifferential.ArtifactChanges warChanges = upgradeDifferential.getWarChanges();
+		if (warChanges.hasChanges()) {
+			if (warChanges.getNewArtifacts().isEmpty()) {
+				throw new MojoExecutionException("Deleting openmrs core is not supported");
+			}
+			if (warChanges.getNewArtifacts().size() > 1) {
+				throw new MojoExecutionException("Only one openmrs webapp can be configured in a distribution");
+			}
+			replaceWebapp(server, warChanges.getNewArtifacts().get(0).getVersion());
 		}
 
-		String modulesDir = server.getServerDirectory().getPath()+File.separator+SDKConstants.OPENMRS_SERVER_MODULES;
-
-
-		if (!upgradeDifferential.getModulesToAdd().isEmpty()){
-			parentTask.moduleInstaller.installModules(upgradeDifferential.getModulesToAdd(), modulesDir);
-			for(Artifact artifact: upgradeDifferential.getModulesToAdd()){
+		// Upgrade modules
+		UpgradeDifferential.ArtifactChanges moduleChanges = upgradeDifferential.getModuleChanges();
+		if (moduleChanges.hasChanges()) {
+			File modulesDir = new File(server.getServerDirectory(), SDKConstants.OPENMRS_SERVER_MODULES);
+			for (Artifact artifact : moduleChanges.getArtifactsToRemove()) {
+				File moduleToDelete = new File(modulesDir, artifact.getDestFileName());
+				if (moduleToDelete.delete()) {
+					parentTask.wizard.showMessage("Removed module: " + moduleToDelete.getAbsolutePath());
+				}
+				server.removeModuleProperties(artifact);
+			}
+			parentTask.moduleInstaller.installModules(moduleChanges.getArtifactsToAdd(), modulesDir.getAbsolutePath());
+			for (Artifact artifact : moduleChanges.getArtifactsToAdd()) {
 				server.setModuleProperties(artifact);
 			}
 		}
-		if(!upgradeDifferential.getModulesToDelete().isEmpty()){
-			for(Artifact artifact: upgradeDifferential.getModulesToDelete()){
-				File moduleToDelete = new File(modulesDir, artifact.getDestFileName());
-				moduleToDelete.delete();
-				server.removeModuleProperties(artifact);
+
+		// Upgrade owas
+		UpgradeDifferential.ArtifactChanges owaChanges = upgradeDifferential.getOwaChanges();
+		if (owaChanges.hasChanges()) {
+			File owaDir = new File(server.getServerDirectory(), SDKConstants.OPENMRS_SERVER_OWA);
+			if (owaDir.mkdir()) {
+				parentTask.wizard.showMessage("Created directory: " + owaDir.getName());
+			}
+			for (Artifact artifact : owaChanges.getArtifactsToRemove()) {
+				File owaFile = new File(owaDir, artifact.getDestFileName());
+				if (owaFile.delete()) {
+					parentTask.wizard.showMessage("Removed owa file: " + owaFile.getName());
+				}
+				File owaExpandedDir = new File(owaDir, artifact.getArtifactId());
+				if (owaExpandedDir.exists()) {
+					try {
+						FileUtils.deleteDirectory(owaExpandedDir);
+						parentTask.wizard.showMessage("Removed owa dir: " + owaExpandedDir);
+					} catch (IOException e) {
+						throw new MojoExecutionException("Failed to delete directory: " + owaExpandedDir.getAbsolutePath(), e);
+					}
+				}
+				server.removePropertiesForArtifact(BaseSdkProperties.TYPE_OWA, artifact);
+			}
+			for (Artifact artifact : owaChanges.getArtifactsToAdd()) {
+				parentTask.wizard.showMessage("Installing OWA: " + artifact.getArtifactId());
+				parentTask.owaHelper.downloadOwa(owaDir, artifact, parentTask.moduleInstaller);
+				server.addPropertiesForArtifact(BaseSdkProperties.TYPE_OWA, artifact);
 			}
 		}
-		if(!upgradeDifferential.getUpdateOldToNewMap().isEmpty()){
-			for(Map.Entry<Artifact, Artifact> updateEntry : upgradeDifferential.getUpdateOldToNewMap().entrySet()){
-				updateModule(server, modulesDir, updateEntry);
-			}
+
+		// Upgrade spa
+		UpgradeDifferential.ArtifactChanges spaArtifactChanges = upgradeDifferential.getSpaArtifactChanges();
+		UpgradeDifferential.PropertyChanges spaBuildChanges = upgradeDifferential.getSpaBuildChanges();
+		boolean updateSpa = spaArtifactChanges.hasChanges() || spaBuildChanges.hasChanges();
+		if (updateSpa) {
+			parentTask.spaInstaller.installFromDistroProperties(server.getServerDirectory(), distroProperties);
 		}
-		if(!upgradeDifferential.getDowngradeNewToOldMap().isEmpty()){
-			for(Map.Entry<Artifact, Artifact> downgradeEntry : upgradeDifferential.getDowngradeNewToOldMap().entrySet()){
-				updateModule(server, modulesDir, downgradeEntry);
-			}
+
+		// Upgrade config
+		UpgradeDifferential.ArtifactChanges configChanges = upgradeDifferential.getConfigChanges();
+		if (configChanges.hasChanges()) {
+			parentTask.configurationInstaller.installToServer(server, distroProperties);
 		}
-		parentTask.spaInstaller.installFromDistroProperties(server.getServerDirectory(), distroProperties);
+
+		// Upgrade content
+
+		// TODO: This needs refactoring.  The validation should really happen _before_ changes are made to the server, so that it doesn't get in a bad state
+		// TODO: This needs to be more interactive, prompting whether or not to add to distro properties
+		parentTask.distroHelper.parseContentProperties(distroProperties);
+		UpgradeDifferential.ArtifactChanges contentChanges = upgradeDifferential.getContentChanges();
+		if (contentChanges.hasChanges()) {
+			ContentHelper.downloadAndMoveContentBackendConfig(server.getServerDirectory(), distroProperties, parentTask.moduleInstaller, parentTask.wizard);
+			// TODO: The frontend config seems conspicuously missing here?
+		}
 
 		server.setVersion(distroProperties.getVersion());
 		server.setName(distroProperties.getName());
-		server.getDistroPropertiesFile().delete();
+		if (server.getDistroPropertiesFile().delete()) {
+			parentTask.wizard.showMessage("Removed old distro properties file, and saving new one");
+		}
 		distroProperties.saveTo(server.getServerDirectory());
 		server.deleteBackupProperties();
 		deleteDependencyPluginMarker();
 		server.saveAndSynchronizeDistro();
 		parentTask.getLog().info("Server upgraded successfully");
-	}
-
-	private void updateModule(Server server, String modulesDir, Map.Entry<Artifact, Artifact> updateEntry) throws MojoExecutionException {
-		File oldModule = new File(modulesDir, updateEntry.getKey().getDestFileName());
-		oldModule.delete();
-		server.removeModuleProperties(updateEntry.getKey());
-		parentTask.moduleInstaller.installModule(updateEntry.getValue(), modulesDir);
-		server.setModuleProperties(updateEntry.getValue());
 	}
 
 	/**
@@ -134,7 +185,9 @@ public class ServerUpgrader {
      */
     private void replaceWebapp(Server server, String version) throws MojoExecutionException {
         File webapp = new File(server.getServerDirectory(), "openmrs-"+server.getPlatformVersion()+".war");
-        webapp.delete();
+		if (webapp.delete()) {
+			parentTask.wizard.showMessage("Replacing existing war: " + webapp.getName());
+		}
         Artifact webappArtifact = new Artifact(SDKConstants.WEBAPP_ARTIFACT_ID, version, Artifact.GROUP_WEB, Artifact.TYPE_WAR);
         parentTask.moduleInstaller.installModule(webappArtifact, server.getServerDirectory().getPath());
         server.setPlatformVersion(version);

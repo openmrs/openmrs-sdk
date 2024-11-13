@@ -26,6 +26,7 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.zip.ZipEntry;
@@ -352,135 +353,46 @@ public class DistroHelper {
 	 * - add modules which are not installed on server yet
 	 */
 	public static UpgradeDifferential calculateUpdateDifferential(DistroHelper distroHelper, Server server, DistroProperties distroProperties) throws MojoExecutionException {
-		boolean serverExists = server.getPropertiesFile().exists();
-		List<Artifact> oldList = new ArrayList<>();
-		if (serverExists) {
-			oldList.addAll(server.getWarArtifacts());
-			oldList.addAll(server.getModuleArtifacts());
-			oldList.addAll(server.getOwaArtifacts());
-			oldList.addAll(server.getConfigArtifacts());
-			oldList.addAll(server.getContentArtifacts());
-			oldList.addAll(server.getSpaArtifacts());
-		}
-		List<Artifact> newList = new ArrayList<>();
-		newList.addAll(distroProperties.getWarArtifacts(distroHelper, server.getServerDirectory()));
-		newList.addAll(distroProperties.getModuleArtifacts(distroHelper, server.getServerDirectory()));
-		newList.addAll(distroProperties.getOwaArtifacts(distroHelper, server.getServerDirectory()));
-		newList.addAll(distroProperties.getConfigArtifacts(distroHelper, server.getServerDirectory()));
-		newList.addAll(distroProperties.getContentArtifacts(distroHelper, server.getServerDirectory()));
-		newList.addAll(distroProperties.getSpaArtifacts(distroHelper, server.getServerDirectory()));
-		// TODO: This does not factor in any spa properties that do not refer to artifacts (eg. frontendModules)
-		return calculateUpdateDifferential(oldList, newList);
-	}
 
-	static UpgradeDifferential calculateUpdateDifferential(List<Artifact> oldList, List<Artifact> newList) throws MojoExecutionException {
 		UpgradeDifferential upgradeDifferential = new UpgradeDifferential();
-		for (Artifact newListModule : newList) {
-			boolean toAdd = true;
-			for (Artifact oldListModule : oldList) {
-				if (isSameArtifact(oldListModule, newListModule)) {
-					if (isHigherVersion(oldListModule, newListModule)) {
-						if (isOpenmrsWebapp(newListModule)) {
-							upgradeDifferential.setPlatformArtifact(newListModule);
-							upgradeDifferential.setPlatformUpgraded(true);
-						} else {
-							upgradeDifferential.putUpdateEntry(oldListModule, newListModule);
-						}
-					} else if (isLowerVersion(oldListModule, newListModule)) {
-						if (isOpenmrsWebapp(newListModule)) {
-							upgradeDifferential.setPlatformArtifact(newListModule);
-							upgradeDifferential.setPlatformUpgraded(false);
-						} else {
-							upgradeDifferential.putDowngradeEntry(oldListModule, newListModule);
-						}
-					}
-					toAdd = false;
-					break;
-				}
-			}
-			if (toAdd) {
-				upgradeDifferential.addModuleToAdd(newListModule);
-			}
-		}
-		for (Artifact oldListModule : oldList) {
-			boolean moduleNotFound = true;
-			for (Artifact newListModule : newList) {
-				if (isSameArtifact(newListModule, oldListModule)) {
-					moduleNotFound = false;
-					break;
-				}
-			}
-			if (moduleNotFound) {
-				if (isOpenmrsWebapp(oldListModule)) {
-					throw new MojoExecutionException("You can delete only modules. Deleting openmrs core is not possible");
-				} else {
-					upgradeDifferential.addModuleToDelete(oldListModule);
-				}
-			}
-		}
+
+		// War File
+		List<Artifact> oldWars = server.getWarArtifacts();
+		List<Artifact> newWars = distroProperties.getWarArtifacts(distroHelper, server.getServerDirectory());
+		upgradeDifferential.setWarChanges(new UpgradeDifferential.ArtifactChanges(oldWars, newWars));
+
+		// Modules
+		List<Artifact> oldModules = server.getModuleArtifacts();
+		List<Artifact> newModules = distroProperties.getModuleArtifacts(distroHelper, server.getServerDirectory());
+		upgradeDifferential.setModuleChanges(new UpgradeDifferential.ArtifactChanges(oldModules, newModules));
+
+		// Owas
+		List<Artifact> oldOwas = server.getOwaArtifacts();
+		List<Artifact> newOwas = distroProperties.getOwaArtifacts(distroHelper, server.getServerDirectory());
+		upgradeDifferential.setOwaChanges(new UpgradeDifferential.ArtifactChanges(oldOwas, newOwas));
+
+		// Spa
+		List<Artifact> oldSpa = server.getSpaArtifacts();
+		List<Artifact> newSpa = distroProperties.getSpaArtifacts(distroHelper, server.getServerDirectory());
+		upgradeDifferential.setSpaArtifactChanges(new UpgradeDifferential.ArtifactChanges(oldSpa, newSpa));
+
+		Map<String, String> oldSpaProps = server.getSpaProperties();
+		Map<String, String> newSpaProps = distroProperties.getSpaProperties(distroHelper, server.getServerDirectory());
+		upgradeDifferential.setSpaPropertiesDifferential(new UpgradeDifferential.PropertyChanges(oldSpaProps, newSpaProps));
+
+		// Config
+		List<Artifact> oldConfig = server.getConfigArtifacts();
+		List<Artifact> newConfig = distroProperties.getConfigArtifacts(distroHelper, server.getServerDirectory());
+		upgradeDifferential.setConfigDifferential(new UpgradeDifferential.ArtifactChanges(oldConfig, newConfig));
+
+		// Content
+		List<Artifact> oldContent = server.getContentArtifacts();
+		List<Artifact> newContent = distroProperties.getContentArtifacts(distroHelper, server.getServerDirectory());
+		upgradeDifferential.setContentDifferential(new UpgradeDifferential.ArtifactChanges(oldContent, newContent));
+
 		return upgradeDifferential;
 	}
 
-	private static boolean isOpenmrsWebapp(Artifact artifact) {
-		return Artifact.TYPE_WAR.equals(artifact.getType()) && SDKConstants.WEBAPP_ARTIFACT_ID
-				.equals(artifact.getArtifactId());
-	}
-
-	private static boolean isSameArtifact(Artifact left, Artifact right) {
-		return getId(left.getDestFileName()).equals(getId(right.getDestFileName()));
-	}
-
-	private static String getId(String name) {
-		int index = name.indexOf('-');
-		if (index == -1)
-			return name;
-		return name.substring(0, index);
-	}
-
-	/**
-	 * checks if next artifact is higher version of the same artifact
-	 * returns true for equal version snapshots
-	 */
-	private static boolean isHigherVersion(Artifact previous, Artifact next) {
-		if (artifactsToCompareAreInvalid(previous, next)) {
-			return false;
-		}
-
-		Version previousVersion = new Version(previous.getVersion());
-		Version nextVersion = new Version(next.getVersion());
-
-		if (nextVersion.higher(previousVersion)) {
-			return true;
-		} else if (nextVersion.equal(previousVersion)) {
-			return (previousVersion.isSnapshot() && nextVersion.isSnapshot());
-		} else {
-			return false;
-		}
-	}
-
-	private static boolean isLowerVersion(Artifact previous, Artifact next) {
-		if (artifactsToCompareAreInvalid(previous, next)) {
-			return false;
-		}
-
-		Version previousVersion = new Version(previous.getVersion());
-		Version nextVersion = new Version(next.getVersion());
-
-		if (nextVersion.lower(previousVersion)) {
-			return true;
-		} else if (nextVersion.equal(previousVersion)) {
-			return (previousVersion.isSnapshot() && nextVersion.isSnapshot());
-		} else {
-			return false;
-		}
-	}
-
-	private static boolean artifactsToCompareAreInvalid(Artifact previous, Artifact next) {
-		return previous == null || next == null
-				|| previous.getArtifactId() == null || next.getArtifactId() == null
-				|| previous.getVersion() == null || next.getVersion() == null
-				|| !isSameArtifact(previous, next);
-	}
 
 	public Properties getFrontendProperties(Artifact distroArtifact, File directory) throws MojoExecutionException {
 		com.github.zafarkhaja.semver.Version v = com.github.zafarkhaja.semver.Version.parse(distroArtifact.getVersion());

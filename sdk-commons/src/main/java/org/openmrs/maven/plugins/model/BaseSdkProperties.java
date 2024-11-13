@@ -1,6 +1,7 @@
 package org.openmrs.maven.plugins.model;
 
 import org.apache.commons.lang.StringUtils;
+import org.openmrs.maven.plugins.utility.SDKConstants;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -124,6 +125,7 @@ public abstract class BaseSdkProperties {
         }
         return spaProperties;
     }
+
 
     public List<Artifact> getSpaArtifacts() {
         List<Artifact> ret = new ArrayList<>();
@@ -298,7 +300,6 @@ public abstract class BaseSdkProperties {
             setCustomModuleType(newModule);
         }
         setModule(newModule);
-
     }
 
     public void removeModuleProperties(Artifact artifact) {
@@ -318,6 +319,24 @@ public abstract class BaseSdkProperties {
             }
             properties = newProperties;
         }
+    }
+
+    public void removePropertiesForArtifact(String type, Artifact artifact) {
+        Properties newProperties = new Properties();
+        for (Object keyObject : properties.keySet()) {
+            String key = keyObject.toString();
+            if (!key.startsWith(type + "." + artifact.getArtifactId())) {
+                properties.put(key, properties.get(key));
+            }
+        }
+        properties = newProperties;
+    }
+
+    public void addPropertiesForArtifact(String type, Artifact artifact) {
+        String base = type + "." + artifact.getArtifactId();
+        properties.put(base, properties.get(artifact.getVersion()));
+        properties.put(base + "." + GROUP_ID, properties.get(artifact.getGroupId()));
+        properties.put(base + "." + TYPE, properties.get(artifact.getType()));
     }
 
     /**

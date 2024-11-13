@@ -305,25 +305,7 @@ public class Setup extends AbstractServerTask {
 		wizard.promptForJavaHomeIfMissing(server);
 	}
 
-	private void installOWAs(Server server, DistroProperties distroProperties) throws MojoExecutionException {
-		if (distroProperties != null) {
-			File owasDir = new File(server.getServerDirectory(), "owa");
-			owasDir.mkdir();
-			downloadOWAs(server.getServerDirectory(), distroProperties, owasDir);
-		}
-	}
 
-	private void downloadOWAs(File targetDirectory, DistroProperties distroProperties, File owasDir)
-			throws MojoExecutionException {
-		List<Artifact> owas = distroProperties.getOwaArtifacts(distroHelper, targetDirectory);
-		if (!owas.isEmpty()) {
-			wizard.showMessage("Downloading OWAs...\n");
-			for (Artifact owa : owas) {
-				wizard.showMessage("Downloading OWA: " + owa);
-				owaHelper.downloadOwa(owasDir, owa, moduleInstaller);
-			}
-		}
-	}
 
 	private void wipeDatabase(Server server) throws MojoExecutionException {
 		String uri = getUriWithoutDb(server);
