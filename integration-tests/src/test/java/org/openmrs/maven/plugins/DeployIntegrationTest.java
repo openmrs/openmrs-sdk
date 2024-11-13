@@ -82,6 +82,29 @@ public class DeployIntegrationTest extends AbstractSdkIntegrationTest {
     }
 
     @Test
+    public void deploy_shouldDowngradeDistroTo2_1() throws Exception {
+
+        addAnswer(testServerId);
+        addAnswer("n");
+        addAnswer("n");
+        addAnswer("Distribution");
+        addAnswer("referenceapplication:2.1");
+        addAnswer("y");
+
+        executeTask("deploy");
+
+        assertSuccess();
+        assertFilePresent(testServerId, "openmrs-1.10.0.war");
+        DistroProperties distroProperties = new DistroProperties("2.1");
+        assertModulesInstalled(testServerId, distroProperties);
+        assertPlatformUpdated(testServerId, "1.10.0");
+
+        Server.setServersPath(testDirectory.getAbsolutePath());
+        Server server = Server.loadServer(testServerId);
+        assertThat(server, serverHasVersion("2.1"));
+    }
+
+    @Test
     public void deploy_shouldUpgradeDistroFromDistroProperties() throws Exception {
         addAnswer(testServerId);
         addAnswer("y");

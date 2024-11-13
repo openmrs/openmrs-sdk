@@ -66,9 +66,6 @@ public class ServerUpgrader {
 			if (warChanges.getNewArtifacts().isEmpty()) {
 				throw new MojoExecutionException("Deleting openmrs war is not supported");
 			}
-			if (!warChanges.getDowngradedArtifacts().isEmpty()) {
-				throw new MojoExecutionException("Downgrading openmrs war is not allowed");
-			}
 			if (warChanges.getNewArtifacts().size() > 1) {
 				throw new MojoExecutionException("Only one openmrs war can be configured in a distribution");
 			}
