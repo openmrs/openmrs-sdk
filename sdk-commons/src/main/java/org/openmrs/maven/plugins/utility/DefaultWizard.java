@@ -1151,64 +1151,83 @@ public class DefaultWizard implements Wizard {
 	 * @return
 	 */
 	@Override
-	public boolean promptForConfirmDistroUpgrade(UpgradeDifferential upgradeDifferential, Server server,
-			DistroProperties distroProperties) throws MojoExecutionException {
-		if (upgradeDifferential.isEmpty()) {
+	public boolean promptForConfirmDistroUpgrade(UpgradeDifferential upgradeDifferential, Server server, DistroProperties distroProperties) throws MojoExecutionException {
+		boolean hasChanges = false;
+		boolean needConfirmation = false;
+
+		UpgradeDifferential.ArtifactChanges warChanges = upgradeDifferential.getWarChanges();
+		if (warChanges.hasChanges()) {
+			hasChanges = true;
+			needConfirmation = showUpdateHeader(distroProperties, needConfirmation);
+			writer.printf(
+					(warChanges.getDowngradedArtifacts().isEmpty() ? UPDATE_ARTIFACT_TMPL : DOWNGRADE_ARTIFACT_TMPL) + "%n",
+					warChanges.getNewArtifacts().get(0).getArtifactId(),
+					server.getPlatformVersion(),
+					warChanges.getNewArtifacts().get(0).getVersion());
+		}
+
+		//update map should contain entry with equal versions only when they are same snapshots
+		//(e.g. update 'appui 0.2-SNAPSHOT' to 'appui 0.2-SNAPSHOT')
+		//updating to same SNAPSHOT doesn't require confirmation, they are not shown
+
+		List<UpgradeDifferential.ArtifactChanges> allArtifactChanges = new ArrayList<>();
+		allArtifactChanges.add(upgradeDifferential.getModuleChanges());
+		allArtifactChanges.add(upgradeDifferential.getOwaChanges());
+		allArtifactChanges.add(upgradeDifferential.getSpaArtifactChanges());
+		allArtifactChanges.add(upgradeDifferential.getConfigChanges());
+		allArtifactChanges.add(upgradeDifferential.getContentChanges());
+		UpgradeDifferential.PropertyChanges spaBuildChanges = upgradeDifferential.getSpaBuildChanges();
+
+		for (UpgradeDifferential.ArtifactChanges artifactChanges : allArtifactChanges) {
+			hasChanges = true;
+			for (Entry<Artifact, Artifact> updateEntry : artifactChanges.getUpgradedArtifacts().entrySet()) {
+				if (!updateEntry.getKey().getVersion().equals(updateEntry.getValue().getVersion())) {
+					needConfirmation = showUpdateHeader(distroProperties, needConfirmation);
+					writer.printf((UPDATE_ARTIFACT_TMPL) + "%n",
+							updateEntry.getKey().getArtifactId(),
+							updateEntry.getKey().getVersion(),
+							updateEntry.getValue().getVersion());
+				}
+			}
+			for (Entry<Artifact, Artifact> downgradeEntry : artifactChanges.getDowngradedArtifacts().entrySet()) {
+				if (!downgradeEntry.getKey().getVersion().equals(downgradeEntry.getValue().getVersion())) {
+					needConfirmation = showUpdateHeader(distroProperties, needConfirmation);
+					writer.printf((DOWNGRADE_ARTIFACT_TMPL) + "%n",
+							downgradeEntry.getKey().getArtifactId(),
+							downgradeEntry.getKey().getVersion(),
+							downgradeEntry.getValue().getVersion());
+				}
+			}
+			for (Artifact addArtifact : artifactChanges.getAddedArtifacts()) {
+				needConfirmation = showUpdateHeader(distroProperties, needConfirmation);
+				writer.printf((ADD_ARTIFACT_TMPL) + "%n",
+						addArtifact.getArtifactId(),
+						addArtifact.getVersion());
+			}
+
+			for (Artifact deleteArtifact : artifactChanges.getRemovedArtifacts()) {
+				needConfirmation = showUpdateHeader(distroProperties, needConfirmation);
+				writer.printf((DELETE_ARTIFACT_TMPL) + "%n",
+						deleteArtifact.getArtifactId(),
+						deleteArtifact.getVersion());
+			}
+		}
+
+		if (spaBuildChanges.hasChanges()) {
+			hasChanges = true;
+			writer.printf("Build and deploy a new Spa");
+		}
+
+		if (!hasChanges) {
 			showMessage(NO_DIFFERENTIAL);
 			return false;
 		}
 
-		boolean needConfirmation = false;
-
-		if (upgradeDifferential.getPlatformArtifact() != null) {
-			needConfirmation = showUpdateHeader(distroProperties, needConfirmation);
-			writer.printf(
-					(upgradeDifferential.isPlatformUpgraded() ? UPDATE_ARTIFACT_TMPL : DOWNGRADE_ARTIFACT_TMPL) + "%n",
-					upgradeDifferential.getPlatformArtifact().getArtifactId(),
-					server.getPlatformVersion(),
-					upgradeDifferential.getPlatformArtifact().getVersion());
-		}
-		for (Entry<Artifact, Artifact> updateEntry : upgradeDifferential.getUpdateOldToNewMap().entrySet()) {
-			//update map should contain entry with equal versions only when they are same snapshots
-			//(e.g. update 'appui 0.2-SNAPSHOT' to 'appui 0.2-SNAPSHOT')
-			//updating to same SNAPSHOT doesn't require confirmation, they are not shown
-			if (!updateEntry.getKey().getVersion().equals(updateEntry.getValue().getVersion())) {
-				needConfirmation = showUpdateHeader(distroProperties, needConfirmation);
-				writer.printf((UPDATE_ARTIFACT_TMPL) + "%n",
-						updateEntry.getKey().getArtifactId(),
-						updateEntry.getKey().getVersion(),
-						updateEntry.getValue().getVersion());
-			}
-		}
-
-		for (Entry<Artifact, Artifact> downgradeEntry : upgradeDifferential.getDowngradeNewToOldMap().entrySet()) {
-			if (!downgradeEntry.getKey().getVersion().equals(downgradeEntry.getValue().getVersion())) {
-				needConfirmation = showUpdateHeader(distroProperties, needConfirmation);
-				writer.printf((DOWNGRADE_ARTIFACT_TMPL) + "%n",
-						downgradeEntry.getKey().getArtifactId(),
-						downgradeEntry.getKey().getVersion(),
-						downgradeEntry.getValue().getVersion());
-			}
-		}
-
-		for (Artifact addArtifact : upgradeDifferential.getModulesToAdd()) {
-			needConfirmation = showUpdateHeader(distroProperties, needConfirmation);
-			writer.printf((ADD_ARTIFACT_TMPL) + "%n",
-					addArtifact.getArtifactId(),
-					addArtifact.getVersion());
-		}
-
-		for (Artifact deleteArtifact : upgradeDifferential.getModulesToDelete()) {
-			needConfirmation = showUpdateHeader(distroProperties, needConfirmation);
-			writer.printf((DELETE_ARTIFACT_TMPL) + "%n",
-					deleteArtifact.getArtifactId(),
-					deleteArtifact.getVersion());
-		}
-
 		if (needConfirmation) {
 			return promptYesNo(String.format("Would you like to apply those changes to '%s'?", server.getServerId()));
-		} else
+		} else {
 			return true;
+		}
 	}
 
 	private boolean showUpdateHeader(DistroProperties distroProperties, boolean needConfirmation) {
