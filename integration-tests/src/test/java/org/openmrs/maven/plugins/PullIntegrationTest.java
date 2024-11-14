@@ -1,22 +1,16 @@
 package org.openmrs.maven.plugins;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.maven.it.Verifier;
-import org.apache.maven.it.util.ResourceExtractor;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.model.Project;
+import org.openmrs.maven.plugins.model.Server;
 
 import java.io.File;
 
-/**
- *
- */
 public class PullIntegrationTest extends AbstractSdkIntegrationTest {
 
     private static final String OPENMRS_MODULE_IDGEN = "openmrs-module-idgen";
@@ -28,44 +22,28 @@ public class PullIntegrationTest extends AbstractSdkIntegrationTest {
     private String serverId;
 
     @Before
+    @Override
     public void setup() throws Exception {
-        testDirectory = ResourceExtractor.simpleExtractResources(getClass(), TEST_DIRECTORY);
-        testDirectoryPath = testDirectory.toPath();
-        verifier = new Verifier(new File(testDirectory, OPENMRS_MODULE_IDGEN).getAbsolutePath());
+        super.setup();
         serverId = setupTestServer();
-
         cloneGitProject();
-
+        verifier = new Verifier(new File(testDirectory, OPENMRS_MODULE_IDGEN).getAbsolutePath());
         addTaskParam("openMRSPath", testDirectory.getAbsolutePath());
-    }
-
-
-    @After
-    public void teardown() throws Exception {
-        deleteTestServer(serverId);
-        FileUtils.deleteDirectory(testDirectoryPath.resolve(OPENMRS_MODULE_IDGEN).toFile());
     }
 
     @Test
     public void shouldUpdateWatchedProjectsToLatestUpstreamMaster() throws Exception {
-        verifier = new Verifier(testDirectory.getAbsolutePath());
-        addTaskParam("openMRSPath", testDirectory.getAbsolutePath());
         addWatchedProjects();
-
         addAnswer(serverId);
-
         executeTask(PULL_GOAL);
-
-        verifier.verifyTextInLog(SUCCESS_MESSAGE+":");
+        verifier.verifyTextInLog(SUCCESS_MESSAGE);
         assertSuccess();
     }
 
     @Test
     public void  shouldNotifyThereIsNoWatchedProjects() throws Exception {
         addTaskParam("serverId", serverId);
-
         executeTask(PULL_GOAL);
-
         verifier.verifyTextInLog(String.format(NO_WATCHED_PROJECTS_MESSAGE, serverId));
         assertSuccess();
     }
@@ -73,19 +51,15 @@ public class PullIntegrationTest extends AbstractSdkIntegrationTest {
     @Test
     public void shouldUpdateWatchedProjectsWithGivenServerIdFromGitProjectDir() throws Exception{
         addWatchedProjects();
-
         addTaskParam("serverId", serverId);
-
         executeTask(PULL_GOAL);
-
-        verifier.verifyTextInLog(SUCCESS_MESSAGE+":");
+        verifier.verifyTextInLog(SUCCESS_MESSAGE);
         assertSuccess();
     }
 
     @Test
-    public void shouldUpdateGitProjectFromDir() throws Exception{
+    public void shouldUpdateGitProjectFromDir() throws Exception {
         executeTask(PULL_GOAL);
-
         verifier.verifyTextInLog(SUCCESS_MESSAGE);
         assertSuccess();
     }

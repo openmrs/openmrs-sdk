@@ -162,15 +162,6 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
         assertFilePresent(serverId, "openmrs-1.11.5.war");
         assertFilePresent(serverId, "modules");
         assertModulesInstalled(serverId, "owa-1.4.omod", "uicommons-1.7.omod", "uiframework-3.6.omod");
-        assertFilePresent(serverId, "frontend");
-        Path indexFilePath = testDirectoryPath.resolve(Paths.get(serverId, "frontend", "index.html"));
-        assertPathPresent(indexFilePath);
-        assertFilePresent(serverId, "frontend", "importmap.json");
-        assertFilePresent(serverId,  "frontend", "openmrs-esm-login-app-5.6.0");
-        assertFilePresent(serverId, "frontend", "openmrs-esm-patient-chart-app-8.0.0");
-        String indexContents = FileUtils.readFileToString(getTestFile(indexFilePath), StandardCharsets.UTF_8);
-        assertThat(indexContents, containsString("apiUrl: \"notopenmrs\""));
-        assertThat(indexContents, containsString("configUrls: [\"foo\"]"));
 
         Server.setServersPath(testDirectory.getAbsolutePath());
         Server server = Server.loadServer(serverId);
@@ -359,8 +350,9 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
     }
 
     @Test
-    public void setup_shouldInstallWithParentDistroSpecifiedInDistroProperties() throws Exception{
-        addTaskParam("distro", testDirectory.toString() + File.separator + "parent-distro-properties" + File.separator + "openmrs-distro.properties");
+    public void setup_shouldInstallWithParentDistroSpecifiedInDistroProperties() throws Exception {
+        includeDistroPropertiesFile("openmrs-distro-parent-distro.properties");
+        addTaskParam("distro", testDirectory.toString() + File.separator + "openmrs-distro.properties");
         addMockDbSettings();
 
         String serverId = UUID.randomUUID().toString();
@@ -376,8 +368,36 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
     }
 
     @Test
-    public void setup_shouldInstallWithSpaSpecifiedAsMavenArtifacts() throws Exception{
-        addTaskParam("distro", testDirectory.toString() + File.separator + "openmrs-distro-spa-artifacts.properties");
+    public void setup_shouldInstallWithSpaSpecifiedAsBuildProperties() throws Exception {
+        includeDistroPropertiesFile("openmrs-distro-spa-build.properties");
+        addTaskParam("distro", testDirectory.toString() + File.separator + "openmrs-distro.properties");
+        addMockDbSettings();
+
+        String serverId = UUID.randomUUID().toString();
+        addAnswer(serverId);
+        addAnswer("1044");
+        addAnswer("8080");
+
+        executeTask("setup");
+
+        assertFilePresent( serverId, "openmrs-1.11.5.war");
+        assertModulesInstalled(serverId, "spa-2.0.0.omod");
+
+        assertFilePresent(serverId, "frontend");
+        Path indexFilePath = testDirectoryPath.resolve(Paths.get(serverId, "frontend", "index.html"));
+        assertPathPresent(indexFilePath);
+        assertFilePresent(serverId, "frontend", "importmap.json");
+        assertFilePresent(serverId,  "frontend", "openmrs-esm-login-app-5.6.0");
+        assertFilePresent(serverId, "frontend", "openmrs-esm-patient-chart-app-8.0.0");
+        String indexContents = FileUtils.readFileToString(getTestFile(indexFilePath), StandardCharsets.UTF_8);
+        assertThat(indexContents, containsString("apiUrl: \"notopenmrs\""));
+        assertThat(indexContents, containsString("configUrls: [\"foo\"]"));
+    }
+
+    @Test
+    public void setup_shouldInstallWithSpaSpecifiedAsMavenArtifacts() throws Exception {
+        includeDistroPropertiesFile("openmrs-distro-spa-artifacts.properties");
+        addTaskParam("distro", testDirectory.toString() + File.separator + "openmrs-distro.properties");
         addMockDbSettings();
 
         String serverId = UUID.randomUUID().toString();

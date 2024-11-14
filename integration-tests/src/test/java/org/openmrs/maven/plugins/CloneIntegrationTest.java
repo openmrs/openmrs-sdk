@@ -14,7 +14,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class CloneIntegrationTest extends AbstractSdkIntegrationTest {
 
     @Test
-    public void clone_shouldCloneRepository() throws Exception{
+    public void clone_shouldCloneRepository() throws Exception {
 
         final String MODULE_ARTIFACT_ID = "appui";
         final String USERNAME = "tmarzeion";

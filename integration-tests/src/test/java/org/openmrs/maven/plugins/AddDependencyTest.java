@@ -1,8 +1,5 @@
 package org.openmrs.maven.plugins;
 
-import org.apache.maven.plugin.MojoExecutionException;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.utility.DistroHelper;
@@ -15,20 +12,9 @@ import static org.junit.Assert.assertTrue;
 
 public class AddDependencyTest extends AbstractSdkIntegrationTest {
 
-    private String distroFile;
-
-    private DistroProperties originalProperties;
-
-
-    @Before
-    public void setUp() {
-        distroFile = testDirectory + File.separator + "openmrs-distro.properties";
-        originalProperties = DistroHelper.getDistroPropertiesFromFile(new File(distroFile));
-    }
-
     @Test
     public void shouldAddOmodDependency() throws Exception {
-        addTaskParam("distro", distroFile);
+        addTaskParam("distro", distroFile.getAbsolutePath());
         addTaskParam("type", "OMOD");
         addTaskParam("groupId", "org.openmrs.module");
         addTaskParam("artifactId", "webservices.rest");
@@ -37,7 +23,7 @@ public class AddDependencyTest extends AbstractSdkIntegrationTest {
         executeTask("add");
         assertSuccess();
 
-        DistroProperties distroProperties = DistroHelper.getDistroPropertiesFromFile(new File(distroFile));
+        DistroProperties distroProperties = DistroHelper.getDistroPropertiesFromFile(distroFile);
         assertNotNull(distroProperties);
         assertTrue(distroProperties.getAllKeys().contains("omod.webservices.rest"));
         assertEquals(distroProperties.getParam("omod.webservices.rest"), "2.30.0");
@@ -45,7 +31,7 @@ public class AddDependencyTest extends AbstractSdkIntegrationTest {
 
     @Test
     public void shouldAddSpaDependency() throws Exception {
-        addTaskParam("distro", distroFile);
+        addTaskParam("distro", distroFile.getAbsolutePath());
         addTaskParam("type", "SPA");
         addTaskParam("moduleName", "@openmrs/esm-system-admin-app");
         addTaskParam("version", "4.0.3");
@@ -53,7 +39,7 @@ public class AddDependencyTest extends AbstractSdkIntegrationTest {
         executeTask("add");
         assertSuccess();
 
-        DistroProperties distroProperties = DistroHelper.getDistroPropertiesFromFile(new File(distroFile));
+        DistroProperties distroProperties = DistroHelper.getDistroPropertiesFromFile(distroFile);
         assertNotNull(distroProperties);
 
         assertTrue(distroProperties.getAllKeys().contains("spa.frontendModules.@openmrs/esm-system-admin-app"));
@@ -62,7 +48,7 @@ public class AddDependencyTest extends AbstractSdkIntegrationTest {
 
     @Test
     public void shouldAddOwaDependency() throws Exception {
-        addTaskParam("distro", distroFile);
+        addTaskParam("distro", distroFile.getAbsolutePath());
         addTaskParam("type", "OWA");
         addTaskParam("artifactId", "sysadmin");
         addTaskParam("version", "1.2.0");
@@ -70,7 +56,7 @@ public class AddDependencyTest extends AbstractSdkIntegrationTest {
         executeTask("add");
         assertSuccess();
 
-        DistroProperties distroProperties = DistroHelper.getDistroPropertiesFromFile(new File(distroFile));
+        DistroProperties distroProperties = DistroHelper.getDistroPropertiesFromFile(distroFile);
         assertNotNull(distroProperties);
 
         assertTrue(distroProperties.getAllKeys().contains("owa.sysadmin"));
@@ -79,14 +65,14 @@ public class AddDependencyTest extends AbstractSdkIntegrationTest {
 
     @Test
     public void shouldAddWarDependency() throws Exception {
-        addTaskParam("distro", distroFile);
+        addTaskParam("distro", distroFile.getAbsolutePath());
         addTaskParam("type", "WAR");
         addTaskParam("version", "2.6.1");
 
         executeTask("add");
         assertSuccess();
 
-        DistroProperties distroProperties = DistroHelper.getDistroPropertiesFromFile(new File(distroFile));
+        DistroProperties distroProperties = DistroHelper.getDistroPropertiesFromFile(distroFile);
         assertNotNull(distroProperties);
 
         assertTrue(distroProperties.getAllKeys().contains("war.openmrs"));
@@ -95,14 +81,14 @@ public class AddDependencyTest extends AbstractSdkIntegrationTest {
 
     @Test
     public void shouldAddCustomDependencyIfTypeIsNotSpecified() throws Exception {
-        addTaskParam("distro", distroFile);
+        addTaskParam("distro", distroFile.getAbsolutePath());
         addTaskParam("property", "custom.property");
         addTaskParam("version", "1.2.3");
 
         executeTask("add");
         assertSuccess();
 
-        DistroProperties distroProperties = DistroHelper.getDistroPropertiesFromFile(new File(distroFile));
+        DistroProperties distroProperties = DistroHelper.getDistroPropertiesFromFile(distroFile);
         assertTrue(distroProperties.getAllKeys().contains("custom.property"));
         assertEquals(distroProperties.getParam("custom.property"), "1.2.3");
 
@@ -110,11 +96,11 @@ public class AddDependencyTest extends AbstractSdkIntegrationTest {
 
     @Test
     public void shouldOverrideIfPropertyAlreadyExists() throws Exception {
-        DistroProperties distroProperties = DistroHelper.getDistroPropertiesFromFile(new File(distroFile));
+        DistroProperties distroProperties = DistroHelper.getDistroPropertiesFromFile(distroFile);
         assertNotNull(distroProperties);
         assertTrue(distroProperties.getAllKeys().contains("omod.uiframework"));
 
-        addTaskParam("distro", distroFile);
+        addTaskParam("distro", distroFile.getAbsolutePath());
         addTaskParam("type", "OMOD");
         addTaskParam("groupId", "org.openmrs.module");
         addTaskParam("artifactId", "uiframework");
@@ -123,15 +109,10 @@ public class AddDependencyTest extends AbstractSdkIntegrationTest {
         executeTask("add");
         assertSuccess();
 
-        distroProperties = DistroHelper.getDistroPropertiesFromFile(new File(distroFile));
+        distroProperties = DistroHelper.getDistroPropertiesFromFile(distroFile);
         assertNotNull(distroProperties);
 
         assertTrue(distroProperties.getAllKeys().contains("omod.uiframework"));
         assertEquals(distroProperties.getParam("omod.uiframework"), "2.30.0");
-    }
-
-    @After
-    public void reset() throws MojoExecutionException {
-        originalProperties.saveTo(new File(distroFile).getParentFile());
     }
 }
