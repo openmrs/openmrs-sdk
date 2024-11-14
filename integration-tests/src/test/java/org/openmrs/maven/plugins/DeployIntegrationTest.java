@@ -21,13 +21,10 @@ public class DeployIntegrationTest extends AbstractSdkIntegrationTest {
     private static String testServerId;
 
     @Before
-    public void setupServer() throws Exception{
+    @Override
+    public void setup() throws Exception {
+        super.setup();
         testServerId = setupTestServer();
-    }
-
-    @After
-    public void deleteServer() throws Exception {
-        deleteTestServer(testServerId);
     }
 
     @Test
