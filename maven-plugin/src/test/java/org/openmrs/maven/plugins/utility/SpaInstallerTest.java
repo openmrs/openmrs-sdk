@@ -85,6 +85,8 @@ public class SpaInstallerTest {
         distroProperties.setProperty("spa.artifactId", "openmrs-frontend-example");
         distroProperties.setProperty("spa.groupId", "org.openmrs.frontend");
         distroProperties.setProperty("spa.version", "1.2.3");
+        distroProperties.setProperty("spa.type", "jar");
+        distroProperties.setProperty("spa.includes", "openmrs-frontend-example-1.2.3");
         spaInstaller.installFromDistroProperties(appDataDir, new DistroProperties(distroProperties));
 
         String expectedOutputDir = new File(appDataDir, "frontend").getAbsolutePath();
@@ -100,10 +102,36 @@ public class SpaInstallerTest {
         assertThat(artifact.getArtifactId(), equalTo("openmrs-frontend-example"));
         assertThat(artifact.getGroupId(), equalTo("org.openmrs.frontend"));
         assertThat(artifact.getVersion(), equalTo("1.2.3"));
-        assertThat(artifact.getType(), equalTo(BaseSdkProperties.TYPE_ZIP));
+        assertThat(artifact.getType(), equalTo("jar"));
         assertThat(targetDirectoryCaptor.getValue().getAbsolutePath(), equalTo(expectedOutputDir));
+        assertThat(includesCaptor.getValue(), equalTo("openmrs-frontend-example-1.2.3"));
 
         // Validate that the build and install from node process did not run
         verifyNoInteractions(nodeHelper);
+    }
+
+    @Test(expected = MojoExecutionException.class)
+    public void spaInstall_shouldNotAllowBothArtifactAndBuildProperties() throws MojoExecutionException {
+        Properties distroProperties = new Properties();
+        distroProperties.setProperty("spa.artifactId", "openmrs-frontend-example");
+        distroProperties.setProperty("spa.groupId", "org.openmrs.frontend");
+        distroProperties.setProperty("spa.version", "1.2.3");
+        distroProperties.setProperty("spa.configUrls", "foo,bar,baz");
+        spaInstaller.installFromDistroProperties(appDataDir, new DistroProperties(distroProperties));
+    }
+
+    @Test
+    public void spaInstall_shouldDefaultArtifactTypeToZip() throws MojoExecutionException {
+        Properties distroProperties = new Properties();
+        distroProperties.setProperty("spa.artifactId", "openmrs-frontend-example");
+        distroProperties.setProperty("spa.groupId", "org.openmrs.frontend");
+        distroProperties.setProperty("spa.version", "1.2.3");
+        spaInstaller.installFromDistroProperties(appDataDir, new DistroProperties(distroProperties));
+        ArgumentCaptor<Artifact> artifactCaptor = ArgumentCaptor.forClass(Artifact.class);
+        ArgumentCaptor<File> targetDirectoryCaptor = ArgumentCaptor.forClass(File.class);
+        ArgumentCaptor<String> includesCaptor = ArgumentCaptor.forClass(String.class);
+        verify(moduleInstaller, times(1)).installAndUnpackModule(artifactCaptor.capture(), targetDirectoryCaptor.capture(), includesCaptor.capture());
+        Artifact artifact = artifactCaptor.getValue();
+        assertThat(artifact.getType(), equalTo(BaseSdkProperties.TYPE_ZIP));
     }
 }

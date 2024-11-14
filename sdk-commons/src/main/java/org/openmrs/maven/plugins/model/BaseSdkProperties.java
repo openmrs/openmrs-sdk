@@ -3,6 +3,7 @@ package org.openmrs.maven.plugins.model;
 import org.apache.commons.lang.StringUtils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +33,7 @@ public abstract class BaseSdkProperties {
     public static final String TYPE_CONFIG = "config";
     public static final String TYPE_ZIP = "zip";
     public static final String INCLUDES = "includes";
+    public static final List<String> SPA_ARTIFACT_PROPERTIES = Arrays.asList(ARTIFACT_ID, GROUP_ID, VERSION, TYPE, INCLUDES);
 
     protected Properties properties;
 
@@ -127,20 +129,15 @@ public abstract class BaseSdkProperties {
     }
 
     public Map<String, String> getSpaArtifactProperties() {
-        Map<String, String> ret = new HashMap<>();
-        Map<String, String> spaProperties = getSpaProperties();
-        ret.put(BaseSdkProperties.ARTIFACT_ID, spaProperties.get(BaseSdkProperties.ARTIFACT_ID));
-        ret.put(BaseSdkProperties.GROUP_ID, spaProperties.get(BaseSdkProperties.GROUP_ID));
-        ret.put(BaseSdkProperties.VERSION, spaProperties.get(BaseSdkProperties.VERSION));
-        ret.put(BaseSdkProperties.TYPE, spaProperties.get(BaseSdkProperties.TYPE));
-        ret.put(BaseSdkProperties.INCLUDES, spaProperties.get(BaseSdkProperties.INCLUDES));
-        return ret;
+        Map<String, String> properties = getSpaProperties();
+        properties.keySet().retainAll(SPA_ARTIFACT_PROPERTIES);
+        return properties;
     }
 
     public Map<String, String> getSpaBuildProperties() {
-        Map<String, String> spaProperties = getSpaProperties();
-        spaProperties.keySet().removeAll(getSpaArtifactProperties().values());
-        return spaProperties;
+        Map<String, String> properties = getSpaProperties();
+        SPA_ARTIFACT_PROPERTIES.forEach(properties.keySet()::remove);
+        return properties;
     }
 
     public List<Artifact> getSpaArtifacts() {

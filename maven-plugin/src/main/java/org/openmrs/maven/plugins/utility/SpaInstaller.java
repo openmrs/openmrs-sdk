@@ -83,8 +83,13 @@ public class SpaInstaller {
 			}
 		}
 
-		// If a maven artifact is defined, then we download the artifact and unpack it
 		Map<String, String> spaArtifactProperties = distroProperties.getSpaArtifactProperties();
+		Map<String, String> spaBuildProperties = distroProperties.getSpaBuildProperties();
+		if (!spaArtifactProperties.isEmpty() && !spaBuildProperties.isEmpty()) {
+			throw new MojoExecutionException("You cannot specify both spa artifact and build properties");
+		}
+
+		// If a maven artifact is defined, then we download the artifact and unpack it
 		List<Artifact> spaArtifacts = distroProperties.getSpaArtifacts();
 		if (!spaArtifacts.isEmpty()) {
 			if (spaArtifacts.size() > 1) {
@@ -108,28 +113,27 @@ public class SpaInstaller {
 
 		// First pull any optional properties that may be used to specify the core, node, or npm versions
 		// These properties are not passed to the build tool, but are used to specify the build execution itself
-		Map<String, String> spaProperties = distroProperties.getSpaBuildProperties();
-		String coreVersion = spaProperties.remove("core");
+		String coreVersion = spaBuildProperties.remove("core");
 		if (coreVersion == null) {
 			coreVersion = "next";
 		}
-		String nodeVersion = spaProperties.remove("node");
+		String nodeVersion = spaBuildProperties.remove("node");
 		if (nodeVersion == null) {
 			nodeVersion = NODE_VERSION;
 		}
-		String npmVersion = spaProperties.remove("npm");
+		String npmVersion = spaBuildProperties.remove("npm");
 		if (npmVersion == null) {
 			npmVersion = NPM_VERSION;
 		}
 
 		// If there are no remaining spa properties, then no spa configuration has been provided
-		if (spaProperties.isEmpty()) {
+		if (spaBuildProperties.isEmpty()) {
 			wizard.showMessage("No spa configuration found in the distro properties");
 			return;
 		}
 
 		// If there are remaining spa properties, then build and install using node
-		Map<String, Object> spaConfigJson = convertPropertiesToJSON(spaProperties);
+		Map<String, Object> spaConfigJson = convertPropertiesToJSON(spaBuildProperties);
 
 		File spaConfigFile = new File(appDataDir, "spa-build-config.json");
 		writeJSONObject(spaConfigFile, spaConfigJson);

@@ -19,7 +19,6 @@ public class BuildDistroIntegrationTest extends AbstractSdkIntegrationTest {
         assertFilePresent("target/web/startup.sh");
         assertFilePresent("target/web/wait-for-it.sh");
         assertFilePresent("target/web/modules");
-        assertFilePresent("target/web/frontend/index.html");
         assertFilePresent("target/web/owa");
         assertFilePresent("target/web/openmrs.war");
         assertFilePresent("target/web/openmrs-distro.properties");
