@@ -15,6 +15,9 @@ import java.util.stream.Collectors;
 @Mojo(name = "exclusion", requiresProject = false)
 public class AddExclusion extends AbstractTask {
 
+    public static final String WARNING_PROPERTY_NOT_IN_PARENT = "The property is not included in the parent distro";
+    public static final String WARNING_NO_PARENT_DISTRO = "This distro properties file does not contain a valid parent distro";
+
     /**
      * Path to the openmrs-distro.properties file to modify
      */
@@ -62,12 +65,12 @@ public class AddExclusion extends AbstractTask {
             }
             else {
                 if (!parentProperties.getPropertyNames().contains(property)) {
-                    wizard.showWarning("The property is not included in the parent distro");
+                    wizard.showWarning(WARNING_PROPERTY_NOT_IN_PARENT);
                 }
             }
         }
         else {
-            wizard.showWarning("This distro properties file does not contain a valid parent distro");
+            wizard.showWarning(WARNING_NO_PARENT_DISTRO);
             if (StringUtils.isBlank(property)) {
                 property = wizard.promptForValueIfMissing(null, "property to exclude");
                 if (StringUtils.isBlank(property)) {
