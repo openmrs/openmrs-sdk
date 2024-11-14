@@ -1,14 +1,8 @@
 package org.openmrs.maven.plugins;
 
-import org.apache.commons.io.FileUtils;
-import org.apache.maven.plugin.MojoExecutionException;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.utility.DistroHelper;
-
-import java.io.File;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -16,15 +10,6 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class AddExclusionIntegrationTest extends AbstractSdkIntegrationTest {
-
-    private File distroFile;
-    private DistroProperties originalProperties;
-
-    @Before
-    public void setUp() {
-        distroFile = new File(testDirectory, "openmrs-distro.properties");
-        originalProperties = DistroHelper.getDistroPropertiesFromFile(distroFile);
-    }
 
     @Test
     public void shouldAddExclusionIfNoParentDefined() throws Exception {
@@ -109,12 +94,7 @@ public class AddExclusionIntegrationTest extends AbstractSdkIntegrationTest {
         }
         executeTask("exclusion");
         assertSuccess();
-    }
-
-    @After
-    public void reset() throws MojoExecutionException {
-        if (distroFile != null) {
-            originalProperties.saveTo(distroFile.getParentFile());
-        }
+        distroProperties = DistroHelper.getDistroPropertiesFromFile(new File(distroFile));
+        assertTrue(distroProperties.getExclusions().contains("omod.uicommons"));
     }
 }

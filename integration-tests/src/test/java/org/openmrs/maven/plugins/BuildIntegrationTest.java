@@ -1,47 +1,33 @@
 package org.openmrs.maven.plugins;
 
-import org.apache.maven.it.Verifier;
-import org.apache.maven.it.util.ResourceExtractor;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.model.Project;
+import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 
 import java.io.File;
-import java.util.Arrays;
-import java.util.Objects;
 
 public class BuildIntegrationTest extends AbstractSdkIntegrationTest {
 
 	private String serverId;
 
+	void addTestResources() throws Exception {
+		includeTestResource("buildIT");
+	}
+
 	@Before
+	@Override
 	public void setup() throws Exception {
-		testDirectory = ResourceExtractor.simpleExtractResources(getClass(), TEST_DIRECTORY + File.separator + "buildIT");
-		testDirectoryPath = testDirectory.toPath();
-		verifier = new Verifier(testDirectory.getAbsolutePath());
-
-		testFilesToPersist = Arrays.asList(Objects.requireNonNull(testDirectory.listFiles()));
-
-		addTaskParam("openMRSPath", testDirectory.getAbsolutePath());
-
+		super.setup();
 		serverId = setupTestServer();
-
 		Server server = Server.loadServer(testDirectoryPath.resolve(serverId));
 		File firstDir = new File(testDirectory, "module1");
 		File secondDir = new File(testDirectory, "module2");
 		server.addWatchedProject(Project.loadProject(firstDir));
 		server.addWatchedProject(Project.loadProject(secondDir));
 		server.save();
-
 		clearParams();
-	}
-
-	@After
-	public void deleteServer() throws Exception {
-		deleteTestServer(serverId);
 	}
 
 	@Test

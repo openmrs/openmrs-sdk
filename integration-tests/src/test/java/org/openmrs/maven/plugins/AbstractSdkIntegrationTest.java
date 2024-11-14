@@ -32,7 +32,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
@@ -54,16 +53,11 @@ public abstract class AbstractSdkIntegrationTest {
     /**
      * contains name of directory in project's target dir, where integration tests are conducted
      */
-    static final String TEST_DIRECTORY = "/integration-test";
+    static final String TEST_DIRECTORY = "integration-test";
     static final String MOJO_OPTION_TMPL = "-D%s=\"%s\"";
     protected static final String BATCH_ANSWERS = "batchAnswers";
 
     protected final ArrayDeque<String> batchAnswers = new ArrayDeque<>();
-
-    /**
-     * contains files in test directory which are not created during tests and will not be cleaned up
-     */
-    List<File> testFilesToPersist;
 
     /**
      * maven utility for integration tests
@@ -77,38 +71,61 @@ public abstract class AbstractSdkIntegrationTest {
 
     Path testDirectoryPath;
 
-    public static String resolveSdkArtifact() throws MojoExecutionException {
-        InputStream sdkPom = AbstractSdkIntegrationTest.class.getClassLoader().getResourceAsStream("sdk.properties");
+    File distroFile;
+
+    public String resolveSdkArtifact() throws MojoExecutionException {
         Properties sdk = new Properties();
-        try {
+        try (InputStream sdkPom = getClass().getClassLoader().getResourceAsStream("sdk.properties")) {
             sdk.load(sdkPom);
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
            throw new MojoExecutionException(e.getMessage());
-        } finally {
-            IOUtils.closeQuietly(sdkPom);
         }
         return sdk.get("groupId")+":"+sdk.get("artifactId")+":"+sdk.get("version");
     }
 
+    void includeTestResource(String fileName) throws Exception {
+        File source = getTestFile(TEST_DIRECTORY, fileName);
+        File target = new File(testDirectory, fileName);
+        if (source.isDirectory()) {
+            FileUtils.copyDirectory(source, testDirectory);
+        }
+        else {
+            FileUtils.copyFile(source, target);
+        }
+    }
+
+    void includeDistroPropertiesFile(String fileName) throws Exception {
+        File source = getTestFile(TEST_DIRECTORY, fileName);
+        File target = new File(testDirectory, DistroProperties.DISTRO_FILE_NAME);
+        FileUtils.copyFile(source, target);
+    }
+
+    void addTestResources() throws Exception {
+        includeTestResource("pom.xml");
+        includeDistroPropertiesFile(DistroProperties.DISTRO_FILE_NAME);
+    }
+
     @Before
-    public void setup() throws Exception{
-        testDirectory = ResourceExtractor.simpleExtractResources(getClass(), TEST_DIRECTORY);
-        testDirectoryPath = testDirectory.toPath();
+    public void setup() throws Exception {
+        String tempDirPath = System.getProperty("maven.test.tmpdir", System.getProperty("java.io.tmpdir"));
+        String executionDirName = "openmrs-sdk-" + getClass().getSimpleName() + "-" + UUID.randomUUID();
+        testDirectoryPath = Paths.get(tempDirPath, executionDirName);
+        testDirectory = testDirectoryPath.toFile();
+        if (!testDirectory.mkdirs()) {
+            throw new RuntimeException("Unable to create test directory: " + testDirectory);
+        }
+        ResourceExtractor.extractResourcePath(getClass(), "/" + TEST_DIRECTORY, testDirectory, true);
+        addTestResources();
         verifier = new Verifier(testDirectory.getAbsolutePath());
         verifier.setAutoclean(false);
-
-        testFilesToPersist = new ArrayList<>(Arrays.asList(testDirectory.listFiles()));
-
-        addTaskParam("openMRSPath",testDirectory.getAbsolutePath());
+        addTaskParam("openMRSPath", testDirectory.getAbsolutePath());
+        distroFile = new File(testDirectory, DistroProperties.DISTRO_FILE_NAME);
     }
 
     @After
-    public void teardown() throws Exception {
-        for(File file : testDirectory.listFiles()){
-            if(!testFilesToPersist.contains(file)){
-                FileUtils.deleteQuietly(file);
-            }
-        }
+    public void teardown() {
+        FileUtils.deleteQuietly(testDirectory);
         cleanAnswers();
     }
 
@@ -136,11 +153,6 @@ public abstract class AbstractSdkIntegrationTest {
 
     private void cleanAnswers() {
         batchAnswers.clear();
-    }
-
-    public static void deleteTestServer(String serverId) throws Exception{
-        File testDir = ResourceExtractor.simpleExtractResources(AbstractSdkIntegrationTest.class, TEST_DIRECTORY);
-        FileUtils.deleteDirectory(new File(testDir, serverId));
     }
 
     /**

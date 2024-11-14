@@ -73,4 +73,43 @@ public class BuildDistroIntegrationTest extends AbstractSdkIntegrationTest {
 
         assertSuccess();
     }
+
+    @Test
+    public void testBuildDistroWithSpaBuildConfig() throws Exception {
+        includeDistroPropertiesFile("openmrs-distro-spa-build.properties");
+        addTaskParam("dir", "target");
+        addTaskParam("ignorePeerDependencies", "false");
+        executeTask("build-distro");
+
+        assertFilePresent("target/docker-compose.yml");
+        assertFilePresent("target/docker-compose.override.yml");
+        assertFilePresent("target/docker-compose.prod.yml");
+        assertFilePresent("target/.env");
+        assertFilePresent("target/web/Dockerfile");
+        assertFilePresent("target/web/setenv.sh");
+        assertFilePresent("target/web/startup.sh");
+        assertFilePresent("target/web/wait-for-it.sh");
+        assertFilePresent("target/web/modules");
+        assertFilePresent("target/web/frontend/index.html");
+        assertFilePresent("target/web/owa");
+        assertFilePresent("target/web/openmrs.war");
+        assertFilePresent("target/web/openmrs-distro.properties");
+        assertSuccess();
+    }
+
+    @Test
+    public void testBuildDistroWithSpaArtifacts() throws Exception {
+        includeDistroPropertiesFile("openmrs-distro-spa-artifacts.properties");
+        addTaskParam("dir", "target");
+        addTaskParam("ignorePeerDependencies", "false");
+        executeTask("build-distro");
+
+        assertFilePresent("target/docker-compose.yml");
+        assertFilePresent("target/web/openmrs_modules");
+        assertFilePresent("target/web/openmrs_spa/index.html");
+        assertFilePresent("target/web/openmrs_owas");
+        assertFilePresent("target/web/openmrs_core/openmrs.war");
+        assertFilePresent("target/web/openmrs-distro.properties");
+        assertSuccess();
+    }
 }

@@ -350,8 +350,9 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
     }
 
     @Test
-    public void setup_shouldInstallWithParentDistroSpecifiedInDistroProperties() throws Exception{
-        addTaskParam("distro", testDirectory.toString() + File.separator + "parent-distro-properties" + File.separator + "openmrs-distro.properties");
+    public void setup_shouldInstallWithParentDistroSpecifiedInDistroProperties() throws Exception {
+        includeDistroPropertiesFile("openmrs-distro-parent-distro.properties");
+        addTaskParam("distro", testDirectory.toString() + File.separator + "openmrs-distro.properties");
         addMockDbSettings();
 
         String serverId = UUID.randomUUID().toString();
@@ -367,8 +368,9 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
     }
 
     @Test
-    public void setup_shouldInstallWithSpaSpecifiedAsBuildProperties() throws Exception{
-        addTaskParam("distro", testDirectory.toString() + File.separator + "openmrs-distro-spa-build.properties");
+    public void setup_shouldInstallWithSpaSpecifiedAsBuildProperties() throws Exception {
+        includeDistroPropertiesFile("openmrs-distro-spa-build.properties");
+        addTaskParam("distro", testDirectory.toString() + File.separator + "openmrs-distro.properties");
         addMockDbSettings();
 
         String serverId = UUID.randomUUID().toString();
@@ -393,8 +395,9 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
     }
 
     @Test
-    public void setup_shouldInstallWithSpaSpecifiedAsMavenArtifacts() throws Exception{
-        addTaskParam("distro", testDirectory.toString() + File.separator + "openmrs-distro-spa-artifacts.properties");
+    public void setup_shouldInstallWithSpaSpecifiedAsMavenArtifacts() throws Exception {
+        includeDistroPropertiesFile("openmrs-distro-spa-artifacts.properties");
+        addTaskParam("distro", testDirectory.toString() + File.separator + "openmrs-distro.properties");
         addMockDbSettings();
 
         String serverId = UUID.randomUUID().toString();
