@@ -96,6 +96,83 @@ public class DistroPropertiesTest {
         distro.resolvePlaceholders(getProjectProperties());
     }
 
+    @Test
+    public void getParentDistroArtifact_shouldGetFromDistroWithImplicitArtifact() throws MojoExecutionException {
+        Properties properties = new Properties();
+        properties.setProperty("distro.pihemr", "2.1.0");
+        properties.setProperty("distro.pihemr.groupId", "org.pih.openmrs");
+        properties.setProperty("distro.pihemr.type", "zip");
+        DistroProperties distro = new DistroProperties(properties);
+        Artifact distroArtifact = distro.getParentDistroArtifact();
+        assertThat(distroArtifact, notNullValue());
+        assertThat(distroArtifact.getArtifactId(), equalTo("pihemr"));
+        assertThat(distroArtifact.getVersion(), equalTo("2.1.0"));
+        assertThat(distroArtifact.getGroupId(), equalTo("org.pih.openmrs"));
+        assertThat(distroArtifact.getType(), equalTo("zip"));
+    }
+
+    @Test
+    public void getParentDistroArtifact_shouldGetFromDistroWithExplicitArtifact() throws MojoExecutionException {
+        Properties properties = new Properties();
+        properties.setProperty("distro.foo", "2.1.0");
+        properties.setProperty("distro.foo.artifactId", "pihemr");
+        properties.setProperty("distro.foo.groupId", "org.pih.openmrs");
+        properties.setProperty("distro.foo.type", "zip");
+        DistroProperties distro = new DistroProperties(properties);
+        Artifact distroArtifact = distro.getParentDistroArtifact();
+        assertThat(distroArtifact, notNullValue());
+        assertThat(distroArtifact.getArtifactId(), equalTo("pihemr"));
+        assertThat(distroArtifact.getVersion(), equalTo("2.1.0"));
+        assertThat(distroArtifact.getGroupId(), equalTo("org.pih.openmrs"));
+        assertThat(distroArtifact.getType(), equalTo("zip"));
+    }
+
+    @Test
+    public void getParentDistroArtifact_shouldGetFromParent() throws MojoExecutionException {
+        Properties properties = new Properties();
+        properties.setProperty("parent.version", "2.1.0");
+        properties.setProperty("parent.artifactId", "pihemr");
+        properties.setProperty("parent.groupId", "org.pih.openmrs");
+        properties.setProperty("parent.type", "jar");
+        DistroProperties distro = new DistroProperties(properties);
+        Artifact distroArtifact = distro.getParentDistroArtifact();
+        assertThat(distroArtifact, notNullValue());
+        assertThat(distroArtifact.getArtifactId(), equalTo("pihemr"));
+        assertThat(distroArtifact.getVersion(), equalTo("2.1.0"));
+        assertThat(distroArtifact.getGroupId(), equalTo("org.pih.openmrs"));
+        assertThat(distroArtifact.getType(), equalTo("jar"));
+    }
+
+    @Test
+    public void getParentDistroArtifact_shouldGetFromParentAndDefaultToZipType() throws MojoExecutionException {
+        Properties properties = new Properties();
+        properties.setProperty("parent.version", "2.1.0");
+        properties.setProperty("parent.artifactId", "pihemr");
+        properties.setProperty("parent.groupId", "org.pih.openmrs");
+        DistroProperties distro = new DistroProperties(properties);
+        Artifact distroArtifact = distro.getParentDistroArtifact();
+        assertThat(distroArtifact, notNullValue());
+        assertThat(distroArtifact.getArtifactId(), equalTo("pihemr"));
+        assertThat(distroArtifact.getVersion(), equalTo("2.1.0"));
+        assertThat(distroArtifact.getGroupId(), equalTo("org.pih.openmrs"));
+        assertThat(distroArtifact.getType(), equalTo("zip"));
+    }
+
+    @Test
+    public void getParentDistroArtifact_shouldNormalizeArtifact() throws MojoExecutionException {
+        Properties properties = new Properties();
+        properties.setProperty("parent.version", "2.1.0");
+        properties.setProperty("parent.artifactId", "referenceapplication");
+        properties.setProperty("parent.groupId", "org.openmrs.distro");
+        DistroProperties distro = new DistroProperties(properties);
+        Artifact distroArtifact = distro.getParentDistroArtifact();
+        assertThat(distroArtifact, notNullValue());
+        assertThat(distroArtifact.getArtifactId(), equalTo("referenceapplication-package"));
+        assertThat(distroArtifact.getVersion(), equalTo("2.1.0"));
+        assertThat(distroArtifact.getGroupId(), equalTo("org.openmrs.distro"));
+        assertThat(distroArtifact.getType(), equalTo("jar"));
+    }
+
     private static Artifact findArtifactByArtifactId(List<Artifact> artifacts, String artifactId){
         for(Artifact artifact : artifacts){
             if(artifact.getArtifactId().equals(artifactId)){

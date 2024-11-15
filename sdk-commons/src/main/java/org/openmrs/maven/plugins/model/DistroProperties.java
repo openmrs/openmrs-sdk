@@ -138,7 +138,7 @@ public class DistroProperties extends BaseSdkProperties {
                 if (artifact != null) {
                     throw new MojoExecutionException("Only a single " + TYPE_DISTRO + " property can be added to indicate the parent distribution");
                 }
-                artifact = new Artifact(artifactId, version, groupId, type, Artifact.TYPE_JAR);
+                artifact = new Artifact(artifactId, version, groupId, type);
             }
         }
         String artifactId = getParam(TYPE_PARENT + "." + ARTIFACT_ID);
