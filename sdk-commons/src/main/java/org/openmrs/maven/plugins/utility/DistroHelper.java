@@ -548,7 +548,8 @@ public class DistroHelper {
 	}
 
 	public Properties getFrontendPropertiesForServer(Artifact artifact, File directory) throws MojoExecutionException {
-		if (artifact.getArtifactId().equals("referenceapplication-distro")) {
+		String artifactId = artifact.getArtifactId();
+		if (artifactId.equals(SDKConstants.REFAPP_DISTRO) || artifactId.equals(SDKConstants.REFAPP_DISTRO_EMR_CONFIGURATION)) {
 			if (new Version(artifact.getVersion()).higher(new Version("3.0.0-beta.16"))) {
 				return getFrontendProperties(artifact, directory);
 			} else {
