@@ -31,11 +31,10 @@ import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-import static org.openmrs.maven.plugins.model.BaseSdkProperties.ARTIFACT_ID;
-import static org.openmrs.maven.plugins.model.BaseSdkProperties.GROUP_ID;
 import static org.openmrs.maven.plugins.model.BaseSdkProperties.PROPERTY_DISTRO_ARTIFACT_ID;
 import static org.openmrs.maven.plugins.model.BaseSdkProperties.PROPERTY_DISTRO_GROUP_ID;
-import static org.openmrs.maven.plugins.model.BaseSdkProperties.TYPE;
+import static org.openmrs.maven.plugins.model.BaseSdkProperties.TYPE_DISTRO;
+import static org.openmrs.maven.plugins.model.BaseSdkProperties.TYPE_PARENT;
 import static org.twdata.maven.mojoexecutor.MojoExecutor.artifactId;
 import static org.twdata.maven.mojoexecutor.MojoExecutor.configuration;
 import static org.twdata.maven.mojoexecutor.MojoExecutor.element;
@@ -165,37 +164,59 @@ public class DistroHelper {
 	 */
 	public static Artifact parseDistroArtifact(String distro, VersionsHelper versionsHelper) throws MojoExecutionException {
 		String[] split = distro.split(":");
-
 		if (split.length > 3) {
 			throw new MojoExecutionException("Invalid distro: " + distro);
 		}
-
 		String groupId = split.length == 3 ? split[0] : Artifact.GROUP_DISTRO;
 		String artifactId = split[split.length - 2];
 		String version = split[split.length - 1];
+		return normalizeArtifact(new Artifact(artifactId, version, groupId), versionsHelper);
+	}
 
-		if (versionsHelper != null && version.contains(SDKConstants.LATEST_VERSION_BATCH_KEYWORD)) {
-			if (version.equalsIgnoreCase(SDKConstants.LATEST_SNAPSHOT_BATCH_KEYWORD)) {
-				version = versionsHelper.getLatestSnapshotVersion(new Artifact(artifactId, version, groupId));
-			} else if (version.equalsIgnoreCase((SDKConstants.LATEST_VERSION_BATCH_KEYWORD))) {
-				version = versionsHelper.getLatestReleasedVersion(new Artifact(artifactId, version, groupId));
+	public static Artifact normalizeArtifact(Artifact artifact, VersionsHelper versionsHelper) {
+		if (artifact == null) {
+			return null;
+		}
+		String artifactId = artifact.getArtifactId();
+		String groupId = artifact.getGroupId();
+		String version = artifact.getVersion();
+		String type = artifact.getType();
+
+		if (Artifact.GROUP_DISTRO.equals(groupId)) {
+			if ("referenceapplication".equals(artifactId)) {
+				Version v = new Version(version);
+				if (v.getMajorVersion() <= 2) {
+					artifactId += "-package";
+					type = "jar";
+				}
+				else {
+					artifactId += "-distro";
+					type = "zip";
+				}
 			}
 		}
 
-		Artifact artifact = new Artifact(inferDistroArtifactId(artifactId, groupId), version, groupId);
-
-		if (artifact.getGroupId().equals(Artifact.GROUP_MODULE)) {
-			artifact.setArtifactId(artifact.getArtifactId() + "-omod");
+		if (Artifact.GROUP_MODULE.equals(groupId) && !artifactId.endsWith("-omod")) {
+			artifactId += "-omod";
+			type = "jar";
 		}
 
-		return artifact;
-	}
+		if (versionsHelper != null) {
+			if (version.contains(SDKConstants.LATEST_VERSION_BATCH_KEYWORD)) {
+				if (version.equalsIgnoreCase(SDKConstants.LATEST_SNAPSHOT_BATCH_KEYWORD)) {
+					version = versionsHelper.getLatestSnapshotVersion(new Artifact(artifactId, version, groupId, type));
+				}
+				else if (version.equalsIgnoreCase((SDKConstants.LATEST_VERSION_BATCH_KEYWORD))) {
+					version = versionsHelper.getLatestReleasedVersion(new Artifact(artifactId, version, groupId, type));
+				}
+			}
+		}
 
-	private static String inferDistroArtifactId(String artifactId, String groupId) {
-		if (Artifact.GROUP_DISTRO.equals(groupId) && "referenceapplication".equals(artifactId)) {
-			return SDKConstants.REFERENCEAPPLICATION_ARTIFACT_ID;
-		} else
-			return artifactId;
+		artifact.setArtifactId(artifactId);
+		artifact.setGroupId(groupId);
+		artifact.setVersion(version);
+		artifact.setType(type);
+		return artifact;
 	}
 
 	/**
@@ -527,12 +548,15 @@ public class DistroHelper {
 	}
 
 	public Properties getFrontendPropertiesForServer(Artifact artifact, File directory) throws MojoExecutionException {
-		if (new Version(artifact.getVersion()).higher(new Version("3.0.0-beta.16"))) {
-			return getFrontendProperties(artifact, directory);
-		} else {
-			return PropertiesUtils.getFrontendPropertiesFromSpaConfigUrl(
-					"https://raw.githubusercontent.com/openmrs/openmrs-distro-referenceapplication/" + artifact.getVersion() + "/frontend/spa-build-config.json");
+		if (artifact.getArtifactId().equals("referenceapplication-distro")) {
+			if (new Version(artifact.getVersion()).higher(new Version("3.0.0-beta.16"))) {
+				return getFrontendProperties(artifact, directory);
+			} else {
+				return PropertiesUtils.getFrontendPropertiesFromSpaConfigUrl(
+						"https://raw.githubusercontent.com/openmrs/openmrs-distro-referenceapplication/" + artifact.getVersion() + "/frontend/spa-build-config.json");
+			}
 		}
+		return new Properties();
 	}
 
     public Properties getFrontendPropertiesForServer(Server server) throws MojoExecutionException {
@@ -553,6 +577,38 @@ public class DistroHelper {
 		}
 		properties.setProperty("omod.spa", versionHelper.getLatestSnapshotVersion(new Artifact("spa", "latest")));
 		return properties;
+	}
+
+	// TODO: This needs unit tests, but to do so will require more refactoring to allow downloadDistroProperties to be mocked.
+	public DistroProperties getDistroPropertiesForFullAncestry(DistroProperties distroProperties, File directory) throws MojoExecutionException {
+		Properties mergedProperties = new Properties();
+
+		// First we add the properties from any parent distributions, recursively, excluding any in the exclusions list
+		Artifact parentArtifact = distroProperties.getParentDistroArtifact();
+		if (parentArtifact != null) {
+			DistroProperties parentProperties = downloadDistroProperties(directory, parentArtifact);
+			DistroProperties parentFullAncestry = getDistroPropertiesForFullAncestry(parentProperties, directory);
+			List<String> exclusions = distroProperties.getExclusions();
+			for (Object key : parentFullAncestry.getAllKeys()) {
+				String keyStr = key.toString();
+				// TODO: Should we widen this to exclude anything that startsWith an exclusion, or allow wildcards?
+				if (!exclusions.contains(keyStr)) {
+					mergedProperties.put(key, parentFullAncestry.getParam(keyStr));
+				}
+			}
+		}
+
+		// Next, we add the properties from this distribution in.  These will override any defined in a parent
+		for (Object key : distroProperties.getAllKeys()) {
+			String keyStr = key.toString();
+			// We remove the parent distro properties once these have been applied
+			if (keyStr.startsWith(TYPE_PARENT + ".") || keyStr.startsWith(TYPE_DISTRO + ".")) {
+				continue;
+			}
+			mergedProperties.put(key, distroProperties.getParam(keyStr));
+		}
+
+		return new DistroProperties(mergedProperties);
 	}
 
 

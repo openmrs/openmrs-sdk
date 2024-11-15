@@ -109,46 +109,59 @@ public class DistroProperties extends BaseSdkProperties {
         }
     }
 
-    public Artifact getDistroArtifact() {
+    /**
+     * Allowed formats for artifactId and version
+     * distro.artifactId=version
+     * distro.artifactId.groupId=
+     * distro.artifactId.type=
+     * -OR-
+     * distro.anything=version
+     * distro.anything.artifactId=
+     * distro.anything.groupId=
+     * distro.anything.type=
+     * -OR-
+     * parent.artifactId=
+     * parent.groupId=
+     * parent.version=
+     * parent.type=
+     */
+    public Artifact getParentDistroArtifact() throws MojoExecutionException {
+        Artifact artifact = null;
         for (Object keyObject: getAllKeys()) {
             String key = keyObject.toString();
             String artifactType = getArtifactType(key);
-            if(artifactType.equals(TYPE_DISTRO)) {
-                return new Artifact(checkIfOverwritten(key, ARTIFACT_ID), getParam(key), checkIfOverwritten(key, GROUP_ID), checkIfOverwritten(key, TYPE), "jar");
+            if (artifactType.equals(TYPE_DISTRO)) {
+                String artifactId = checkIfOverwritten(key, ARTIFACT_ID);
+                String version = getParam(key);
+                String groupId = checkIfOverwritten(key, GROUP_ID);
+                String type = checkIfOverwritten(key, TYPE);
+                if (artifact != null) {
+                    throw new MojoExecutionException("Only a single " + TYPE_DISTRO + " property can be added to indicate the parent distribution");
+                }
+                artifact = new Artifact(artifactId, version, groupId, type);
             }
         }
-        return null;
-    }
-
-    public Artifact getParentArtifact() {
-        String parentArtifactId = getParam("parent.artifactId");
-        String parentGroupId = getParam("parent.groupId");
-        String parentVersion = getParam("parent.version");
-
-        int missingCount = 0;
-        if (StringUtils.isBlank(parentArtifactId)) {
-            missingCount++;
+        String artifactId = getParam(TYPE_PARENT + "." + ARTIFACT_ID);
+        String version = getParam(TYPE_PARENT + "." + VERSION);
+        String groupId = getParam(TYPE_PARENT + "." + GROUP_ID);
+        String type = getParam(TYPE_PARENT + "." + TYPE, TYPE_ZIP);
+        if (StringUtils.isNotBlank(artifactId)) {
+            if (artifact != null) {
+                throw new MojoExecutionException("Distro properties cannot define both a " + TYPE_DISTRO + " and a " + TYPE_PARENT + " property");
+            }
+            if (StringUtils.isBlank(version) || StringUtils.isBlank(groupId)) {
+                throw new MojoExecutionException("You must specify a " + TYPE_PARENT + " groupId and version if you specify and artifactId");
+            }
+            artifact = new Artifact(artifactId, version, groupId, type);
         }
-        if (StringUtils.isBlank(parentGroupId)) {
-            missingCount++;
-        }
-        if (StringUtils.isBlank(parentVersion)) {
-            missingCount++;
-        }
-
-        // We are only going to throw an error if only one or two parameters are missing
-        if (missingCount > 0 && missingCount < 3) {
-            throw new IllegalArgumentException("Missing arguments for the parent");
-        }
-
-        return new Artifact(parentArtifactId, parentVersion, parentGroupId, "zip");
+        return DistroHelper.normalizeArtifact(artifact, null);
     }
 
     public List<Artifact> getModuleArtifacts(DistroHelper distroHelper, File directory) throws MojoExecutionException {
         List<Artifact> childArtifacts = getModuleArtifacts();
         List<Artifact> parentArtifacts = new ArrayList<>();
 
-        Artifact artifact = getDistroArtifact();
+        Artifact artifact = getParentDistroArtifact();
         if (artifact != null) {
             DistroProperties distroProperties = distroHelper.downloadDistroProperties(directory, artifact);
             parentArtifacts.addAll(distroProperties.getModuleArtifacts(distroHelper, directory));
@@ -160,7 +173,7 @@ public class DistroProperties extends BaseSdkProperties {
         List<Artifact> childArtifacts = getOwaArtifacts();
         List<Artifact> parentArtifacts = new ArrayList<>();
 
-        Artifact artifact = getDistroArtifact();
+        Artifact artifact = getParentDistroArtifact();
         if (artifact != null) {
             DistroProperties distroProperties = distroHelper.downloadDistroProperties(directory, artifact);
             parentArtifacts.addAll(distroProperties.getOwaArtifacts(distroHelper, directory));
@@ -171,7 +184,7 @@ public class DistroProperties extends BaseSdkProperties {
     public Map<String, String> getSpaProperties(DistroHelper distroHelper, File directory) throws MojoExecutionException {
         Map<String, String> spaProperties = getSpaProperties();
 
-        Artifact artifact = getDistroArtifact();
+        Artifact artifact = getParentDistroArtifact();
         if (artifact != null) {
             DistroProperties distroProperties = distroHelper.downloadDistroProperties(directory, artifact);
             spaProperties.putAll(distroProperties.getSpaProperties(distroHelper, directory));
@@ -183,7 +196,7 @@ public class DistroProperties extends BaseSdkProperties {
         List<Artifact> childArtifacts = getWarArtifacts();
         List<Artifact> parentArtifacts = new ArrayList<>();
 
-        Artifact artifact = getDistroArtifact();
+        Artifact artifact = getParentDistroArtifact();
         if (artifact != null) {
             DistroProperties distroProperties = distroHelper.downloadDistroProperties(directory, artifact);
             parentArtifacts.addAll(distroProperties.getWarArtifacts(distroHelper, directory));
@@ -192,7 +205,7 @@ public class DistroProperties extends BaseSdkProperties {
     }
 
     public String getPlatformVersion(DistroHelper distroHelper, File directory) throws MojoExecutionException{
-        Artifact artifact = getDistroArtifact();
+        Artifact artifact = getParentDistroArtifact();
         if (artifact != null) {
             DistroProperties distroProperties = distroHelper.downloadDistroProperties(directory, artifact);
             return distroProperties.getPlatformVersion(distroHelper, directory);

@@ -213,8 +213,8 @@ public class Setup extends AbstractServerTask {
 					break;
 
 				default:  // distro properties from current directory
-					Artifact distroArtifact = distroProperties.getParentArtifact();
-					if (StringUtils.isNotBlank(distroArtifact.getArtifactId()) && StringUtils.isNotBlank(distroArtifact.getGroupId()) && StringUtils.isNotBlank(distroArtifact.getVersion())) {
+					Artifact distroArtifact = distroProperties.getParentDistroArtifact();
+					if (distroArtifact != null) {
 						distroProperties = distroHelper.resolveParentArtifact(distroArtifact, server, distroProperties, appShellVersion);
 					} else {
 						server.setPlatformVersion(
