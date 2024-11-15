@@ -542,15 +542,24 @@ public class DistroHelper {
 		return frontendProperties;
 	}
 
-	public Properties getFrontendPropertiesForServer(Artifact artifact, File directory) throws MojoExecutionException {
-		Version artifactVersion = new Version(artifact.getVersion());
-		if (artifact.getGroupId().startsWith("referenceapplication")) {
-			if (artifactVersion.higher(new Version("3.0.0-beta.16"))) {
-				return getFrontendProperties(artifact, directory);
-			}
-		}
-		return new Properties();
+	public Properties getFrontendProperties(Server server) throws MojoExecutionException {
+		Artifact artifact = new Artifact(server.getDistroArtifactId(), server.getVersion(), server.getDistroGroupId());
+		return getFrontendProperties(artifact, server.getServerDirectory());
 	}
+
+	public Properties getFrontendPropertiesForServer(Artifact artifact, File directory) throws MojoExecutionException {
+		if (new Version(artifact.getVersion()).higher(new Version("3.0.0-beta.16"))) {
+			return getFrontendProperties(artifact, directory);
+		} else {
+			return PropertiesUtils.getFrontendPropertiesFromSpaConfigUrl(
+					"https://raw.githubusercontent.com/openmrs/openmrs-distro-referenceapplication/" + artifact.getVersion() + "/frontend/spa-build-config.json");
+		}
+	}
+
+    public Properties getFrontendPropertiesForServer(Server server) throws MojoExecutionException {
+		Artifact artifact = new Artifact(server.getDistroArtifactId(), server.getVersion(), server.getDistroGroupId());
+  		return getFrontendPropertiesForServer(artifact, server.getServerDirectory());
+    }
 
 	public Properties getArtifactProperties(Artifact artifact, File directory, String appShellVersion) throws MojoExecutionException {
 		File file = downloadDistro(directory, artifact);
