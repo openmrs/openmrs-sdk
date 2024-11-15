@@ -548,12 +548,15 @@ public class DistroHelper {
 	}
 
 	public Properties getFrontendPropertiesForServer(Artifact artifact, File directory) throws MojoExecutionException {
-		if (new Version(artifact.getVersion()).higher(new Version("3.0.0-beta.16"))) {
-			return getFrontendProperties(artifact, directory);
-		} else {
-			return PropertiesUtils.getFrontendPropertiesFromSpaConfigUrl(
-					"https://raw.githubusercontent.com/openmrs/openmrs-distro-referenceapplication/" + artifact.getVersion() + "/frontend/spa-build-config.json");
+		if (artifact.getArtifactId().equals("referenceapplication-distro")) {
+			if (new Version(artifact.getVersion()).higher(new Version("3.0.0-beta.16"))) {
+				return getFrontendProperties(artifact, directory);
+			} else {
+				return PropertiesUtils.getFrontendPropertiesFromSpaConfigUrl(
+						"https://raw.githubusercontent.com/openmrs/openmrs-distro-referenceapplication/" + artifact.getVersion() + "/frontend/spa-build-config.json");
+			}
 		}
+		return new Properties();
 	}
 
     public Properties getFrontendPropertiesForServer(Server server) throws MojoExecutionException {
