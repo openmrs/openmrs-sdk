@@ -579,6 +579,7 @@ public class DistroHelper {
 		return properties;
 	}
 
+	// TODO: This needs unit tests, but to do so will require more refactoring to allow downloadDistroProperties to be mocked.
 	public DistroProperties getDistroPropertiesForFullAncestry(DistroProperties distroProperties, File directory) throws MojoExecutionException {
 		Properties mergedProperties = new Properties();
 
