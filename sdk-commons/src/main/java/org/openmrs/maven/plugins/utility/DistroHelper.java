@@ -149,37 +149,59 @@ public class DistroHelper {
 	 */
 	public static Artifact parseDistroArtifact(String distro, VersionsHelper versionsHelper) throws MojoExecutionException {
 		String[] split = distro.split(":");
-
 		if (split.length > 3) {
 			throw new MojoExecutionException("Invalid distro: " + distro);
 		}
-
 		String groupId = split.length == 3 ? split[0] : Artifact.GROUP_DISTRO;
 		String artifactId = split[split.length - 2];
 		String version = split[split.length - 1];
+		return normalizeArtifact(new Artifact(artifactId, version, groupId), versionsHelper);
+	}
 
-		if (versionsHelper != null && version.contains(SDKConstants.LATEST_VERSION_BATCH_KEYWORD)) {
-			if (version.equalsIgnoreCase(SDKConstants.LATEST_SNAPSHOT_BATCH_KEYWORD)) {
-				version = versionsHelper.getLatestSnapshotVersion(new Artifact(artifactId, version, groupId));
-			} else if (version.equalsIgnoreCase((SDKConstants.LATEST_VERSION_BATCH_KEYWORD))) {
-				version = versionsHelper.getLatestReleasedVersion(new Artifact(artifactId, version, groupId));
+	public static Artifact normalizeArtifact(Artifact artifact, VersionsHelper versionsHelper) {
+		if (artifact == null) {
+			return null;
+		}
+		String artifactId = artifact.getArtifactId();
+		String groupId = artifact.getGroupId();
+		String version = artifact.getVersion();
+		String type = artifact.getType();
+
+		if (Artifact.GROUP_DISTRO.equals(groupId)) {
+			if ("referenceapplication".equals(artifactId)) {
+				Version v = new Version(version);
+				if (v.getMajorVersion() <= 2) {
+					artifactId += "-package";
+					type = "jar";
+				}
+				else {
+					artifactId += "-distro";
+					type = "zip";
+				}
 			}
 		}
 
-		Artifact artifact = new Artifact(inferDistroArtifactId(artifactId, groupId), version, groupId);
-
-		if (artifact.getGroupId().equals(Artifact.GROUP_MODULE)) {
-			artifact.setArtifactId(artifact.getArtifactId() + "-omod");
+		if (Artifact.GROUP_MODULE.equals(groupId) && !artifactId.endsWith("-omod")) {
+			artifactId += "-omod";
+			type = "jar";
 		}
 
-		return artifact;
-	}
+		if (versionsHelper != null) {
+			if (version.contains(SDKConstants.LATEST_VERSION_BATCH_KEYWORD)) {
+				if (version.equalsIgnoreCase(SDKConstants.LATEST_SNAPSHOT_BATCH_KEYWORD)) {
+					version = versionsHelper.getLatestSnapshotVersion(new Artifact(artifactId, version, groupId, type));
+				}
+				else if (version.equalsIgnoreCase((SDKConstants.LATEST_VERSION_BATCH_KEYWORD))) {
+					version = versionsHelper.getLatestReleasedVersion(new Artifact(artifactId, version, groupId, type));
+				}
+			}
+		}
 
-	private static String inferDistroArtifactId(String artifactId, String groupId) {
-		if (Artifact.GROUP_DISTRO.equals(groupId) && "referenceapplication".equals(artifactId)) {
-			return SDKConstants.REFERENCEAPPLICATION_ARTIFACT_ID;
-		} else
-			return artifactId;
+		artifact.setArtifactId(artifactId);
+		artifact.setGroupId(groupId);
+		artifact.setVersion(version);
+		artifact.setType(type);
+		return artifact;
 	}
 
 	/**
@@ -438,12 +460,15 @@ public class DistroHelper {
 	}
 
 	public Properties getFrontendPropertiesForServer(Artifact artifact, File directory) throws MojoExecutionException {
-		if (new Version(artifact.getVersion()).higher(new Version("3.0.0-beta.16"))) {
-			return getFrontendProperties(artifact, directory);
-		} else {
-			return PropertiesUtils.getFrontendPropertiesFromSpaConfigUrl(
-					"https://raw.githubusercontent.com/openmrs/openmrs-distro-referenceapplication/" + artifact.getVersion() + "/frontend/spa-build-config.json");
+		if (artifact.getArtifactId().equals("referenceapplication-distro")) {
+			if (new Version(artifact.getVersion()).higher(new Version("3.0.0-beta.16"))) {
+				return getFrontendProperties(artifact, directory);
+			} else {
+				return PropertiesUtils.getFrontendPropertiesFromSpaConfigUrl(
+						"https://raw.githubusercontent.com/openmrs/openmrs-distro-referenceapplication/" + artifact.getVersion() + "/frontend/spa-build-config.json");
+			}
 		}
+		return new Properties();
 	}
 
     public Properties getFrontendPropertiesForServer(Server server) throws MojoExecutionException {

@@ -351,7 +351,7 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
 
     @Test
     public void setup_shouldInstallWithParentDistroSpecifiedInDistroProperties() throws Exception {
-        includeDistroPropertiesFile("openmrs-distro-parent-distro.properties");
+        includeDistroPropertiesFile("openmrs-distro-parent-as-distro.properties");
         addTaskParam("distro", testDirectory.toString() + File.separator + "openmrs-distro.properties");
         addMockDbSettings();
 
@@ -362,9 +362,9 @@ public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
 
         executeTask("setup");
 
-        assertFilePresent( serverId, "openmrs-2.0.1.war");
+        assertFilePresent( serverId, "openmrs-2.0.5.war");
         assertModulesInstalled(serverId, "htmlformentry-3.3.1.omod");
-        assertFileNotPresent(serverId, "modules", "htmlformentry-3.3.0.omod");
+        assertFileNotPresent(serverId, "modules", "htmlformentry-3.10.0.omod");
     }
 
     @Test

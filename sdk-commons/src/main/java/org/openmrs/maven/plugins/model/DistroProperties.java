@@ -3,6 +3,7 @@ package org.openmrs.maven.plugins.model;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.openmrs.maven.plugins.utility.DistroHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -137,7 +138,7 @@ public class DistroProperties extends BaseSdkProperties {
                 if (artifact != null) {
                     throw new MojoExecutionException("Only a single " + TYPE_DISTRO + " property can be added to indicate the parent distribution");
                 }
-                artifact = new Artifact(artifactId, version, groupId, type, Artifact.TYPE_JAR);
+                artifact = new Artifact(artifactId, version, groupId, type);
             }
         }
         String artifactId = getParam(TYPE_PARENT + "." + ARTIFACT_ID);
@@ -153,7 +154,7 @@ public class DistroProperties extends BaseSdkProperties {
             }
             artifact = new Artifact(artifactId, version, groupId, type);
         }
-        return artifact;
+        return DistroHelper.normalizeArtifact(artifact, null);
     }
 
     public void saveTo(File path) throws MojoExecutionException {
