@@ -74,16 +74,8 @@ public class GenerateDistro extends AbstractTask {
 
             case O3_DISTRIBUTION:
                 wizard.promptForO3RefAppVersionIfMissing(server, versionsHelper, GET_VERSION_PROMPT);
-                Artifact artifact = new Artifact(server.getDistroArtifactId(), server.getVersion(),
-                        server.getDistroGroupId(), "zip");
-                Properties frontendProperties;
-                if (new Version(server.getVersion()).higher(new Version("3.0.0-beta.16"))) {
-                    frontendProperties = distroHelper.getFrontendProperties(server);
-                }
-                else {
-                    frontendProperties = PropertiesUtils.getFrontendPropertiesFromSpaConfigUrl(
-                            "https://raw.githubusercontent.com/openmrs/openmrs-distro-referenceapplication/"+ server.getVersion() +"/frontend/spa-build-config.json");
-                }
+                Artifact artifact = new Artifact(server.getDistroArtifactId(), server.getVersion(), server.getDistroGroupId(), "zip");
+                Properties frontendProperties = distroHelper.getFrontendPropertiesForServer(artifact, server.getServerDirectory());
                 Properties configurationProperties = PropertiesUtils.getConfigurationProperty(artifact);
                 File file = distroHelper.downloadDistro(server.getServerDirectory(), artifact);
                 Properties backendProperties = PropertiesUtils.getDistroProperties(file);

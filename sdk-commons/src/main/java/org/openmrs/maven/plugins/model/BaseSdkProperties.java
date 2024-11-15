@@ -26,6 +26,7 @@ public abstract class BaseSdkProperties {
     public static final String VERSION = "version";
     public static final String TYPE_CONTENT = "content";
     public static final String TYPE_DISTRO = "distro";
+    public static final String TYPE_PARENT = "parent"; // This is an alternative to "distro"
     public static final String TYPE_OWA = "owa";
     public static final String TYPE_SPA = "spa";
     public static final String TYPE_CONFIG = "config";
