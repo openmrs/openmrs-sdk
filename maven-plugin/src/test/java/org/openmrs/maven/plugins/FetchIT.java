@@ -5,7 +5,7 @@ import org.junit.Test;
 
 import java.io.File;
 
-public class FetchIntegrationTest extends AbstractSdkIntegrationTest{
+public class FetchIT extends AbstractSdkIT {
 
     private final static String FETCH_DIRECTORY_NAME = "fetch";
 
