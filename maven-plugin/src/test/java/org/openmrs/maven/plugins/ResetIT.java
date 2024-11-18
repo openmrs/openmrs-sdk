@@ -1,17 +1,10 @@
 package org.openmrs.maven.plugins;
 
-import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.UUID;
-
-import org.apache.commons.io.FileUtils;
 import org.junit.Test;
 
-public class ResetIntegrationTest extends AbstractSdkIntegrationTest {
+public class ResetIT extends AbstractSdkIT {
 
 	@Test
 	public void reset_shouldResetExistingServer() throws Exception {
