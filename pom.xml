@@ -22,6 +22,7 @@
         <module>tomcat7-maven-plugin</module>
         <module>tomcat9-maven-plugin</module>
         <module>maven-plugin</module>
+        <module>integration-tests</module>
     </modules>
 
     <licenses>
@@ -546,31 +547,6 @@
     </build>
 
     <profiles>
-        <!--
-            The failsafe plugin will execute any tests that start with IT or ends with IT or ITCase
-            These are much slower to execute than unit tests, so they are only executed with the given profile
-            when full testing is desired.  Integration Tests should follow this convention
-        -->
-        <profile>
-            <id>integration-tests</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-failsafe-plugin</artifactId>
-                        <version>3.1.2</version>
-                        <executions>
-                            <execution>
-                                <goals>
-                                    <goal>integration-test</goal>
-                                    <goal>verify</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
         <profile>
             <id>release</id>
             <build>

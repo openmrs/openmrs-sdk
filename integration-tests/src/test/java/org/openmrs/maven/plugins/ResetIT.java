@@ -1,7 +1,5 @@
 package org.openmrs.maven.plugins;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-
 import org.junit.Test;
 
 public class ResetIT extends AbstractSdkIT {

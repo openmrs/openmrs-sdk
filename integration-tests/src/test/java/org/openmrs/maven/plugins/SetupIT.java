@@ -23,8 +23,8 @@ import static org.openmrs.maven.plugins.SdkMatchers.hasModuleVersion;
 import static org.openmrs.maven.plugins.SdkMatchers.hasPropertyEqualTo;
 import static org.openmrs.maven.plugins.SdkMatchers.hasPropertyThatContains;
 import static org.openmrs.maven.plugins.SdkMatchers.hasPropertyThatNotContains;
-import static org.openmrs.maven.plugins.SdkMatchers.serverHasName;
 import static org.openmrs.maven.plugins.SdkMatchers.serverHasDebugPort;
+import static org.openmrs.maven.plugins.SdkMatchers.serverHasName;
 import static org.openmrs.maven.plugins.SdkMatchers.serverHasVersion;
 
 public class SetupIT extends AbstractSdkIT {
