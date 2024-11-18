@@ -22,6 +22,7 @@
         <module>tomcat7-maven-plugin</module>
         <module>tomcat9-maven-plugin</module>
         <module>maven-plugin</module>
+        <module>integration-tests</module>
     </modules>
 
     <licenses>
@@ -529,10 +530,6 @@
                     <artifactId>maven-gpg-plugin</artifactId>
                     <version>3.1.0</version>
                 </plugin>
-                <!--
-                    The surefire plugin will execute any tests all classes whose name starts with Test,
-                    or ends with Test, Tests or TestCase.  Unit tests should follow this convention.
-                -->
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
@@ -546,31 +543,6 @@
     </build>
 
     <profiles>
-        <!--
-            The failsafe plugin will execute any tests that start with IT or ends with IT or ITCase
-            These are much slower to execute than unit tests, so they are only executed with the given profile
-            when full testing is desired.  Integration Tests should follow this convention
-        -->
-        <profile>
-            <id>integration-tests</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-failsafe-plugin</artifactId>
-                        <version>3.1.2</version>
-                        <executions>
-                            <execution>
-                                <goals>
-                                    <goal>integration-test</goal>
-                                    <goal>verify</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
         <profile>
             <id>release</id>
             <build>
@@ -578,7 +550,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-source-plugin</artifactId>
-                        <version>3.2.1</version>
+                        <version>3.3.0</version>
                         <executions>
                             <execution>
                                 <id>attach-sources</id>
@@ -591,7 +563,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-javadoc-plugin</artifactId>
-                        <version>3.4.1</version>
+                        <version>3.5.0</version>
                         <executions>
                             <execution>
                                 <id>attach-javadocs</id>

@@ -27,7 +27,7 @@ import static org.openmrs.maven.plugins.SdkMatchers.serverHasName;
 import static org.openmrs.maven.plugins.SdkMatchers.serverHasDebugPort;
 import static org.openmrs.maven.plugins.SdkMatchers.serverHasVersion;
 
-public class SetupIT extends AbstractSdkIT {
+public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
 
     @Test
     public void setup_shouldInstallRefapp2_3_1() throws Exception{

@@ -1,0 +1,12 @@
+*.iml
+target/
+.idea/
+*~
+/openmrs-sdk.bat
+
+*.class
+
+/.settings
+/.project
+/.classpath
+.DS_Store

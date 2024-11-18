@@ -5,7 +5,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-public class CreateProjectIT extends AbstractSdkIT {
+public class CreateProjectIntegrationTest extends AbstractSdkIntegrationTest {
 
     Model model;
 

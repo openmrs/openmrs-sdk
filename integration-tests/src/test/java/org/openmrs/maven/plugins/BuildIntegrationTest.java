@@ -8,7 +8,7 @@ import org.openmrs.maven.plugins.utility.SDKConstants;
 
 import java.io.File;
 
-public class BuildIT extends AbstractSdkIT {
+public class BuildIntegrationTest extends AbstractSdkIntegrationTest {
 
 	private String serverId;
 

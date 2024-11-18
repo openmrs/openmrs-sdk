@@ -1,6 +1,7 @@
 package org.openmrs.maven.plugins;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.it.VerificationException;
 import org.apache.maven.it.Verifier;
@@ -47,7 +48,7 @@ import static org.openmrs.maven.plugins.SdkMatchers.hasWarVersion;
 
 
 @RunWith(BlockJUnit4ClassRunner.class)
-public abstract class AbstractSdkIT {
+public abstract class AbstractSdkIntegrationTest {
 
     /**
      * contains name of directory in project's target dir, where integration tests are conducted
