@@ -16,8 +16,8 @@ public class MavenEnvironment {
 	private MavenProject mavenProject;
 	private MavenSession mavenSession;
 	private Settings settings;
-	ArtifactMetadataSource artifactMetadataSource;
-	ArtifactFactory artifactFactory;
-	BuildPluginManager pluginManager;
-	Wizard wizard;
+	private ArtifactMetadataSource artifactMetadataSource;
+	private ArtifactFactory artifactFactory;
+	private BuildPluginManager pluginManager;
+	private Wizard wizard;
 }
