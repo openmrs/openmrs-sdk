@@ -22,7 +22,7 @@ public abstract class AbstractMavenIT extends AbstractSdkIT {
 
 	@Override
 	void addTestResources() throws Exception {
-		includePomFile(TEST_DIRECTORY, "invokeIT", "pom.xml");
+		includePomFile("invokeIT", "pom.xml");
 	}
 
 	protected void executeTest(MavenEnvironmentFunction testFunction) throws Exception {
