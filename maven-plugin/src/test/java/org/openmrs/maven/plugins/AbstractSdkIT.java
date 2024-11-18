@@ -83,25 +83,18 @@ public abstract class AbstractSdkIT {
         return sdk.get("groupId")+":"+sdk.get("artifactId")+":"+sdk.get("version");
     }
 
-    void includeTestResource(String fileName) throws Exception {
-        File source = getTestFile(TEST_DIRECTORY, fileName);
-        File target = new File(testDirectory, fileName);
-        if (source.isDirectory()) {
-            FileUtils.copyDirectory(source, testDirectory);
-        }
-        else {
-            FileUtils.copyFile(source, target);
-        }
-    }
-
-    void includeDistroPropertiesFile(String fileName) throws Exception {
-        File source = getTestFile(TEST_DIRECTORY, fileName);
+    void includeDistroPropertiesFile(String path) throws Exception {
+        File source = getTestFile(TEST_DIRECTORY, path);
         File target = new File(testDirectory, DistroProperties.DISTRO_FILE_NAME);
         FileUtils.copyFile(source, target);
     }
 
+    void includePomFile(String... paths) throws Exception {
+        FileUtils.copyFile(getTestFile(paths), new File(testDirectory, "pom.xml"));
+    }
+
     void addTestResources() throws Exception {
-        includeTestResource("pom.xml");
+        includePomFile("pom.xml");
         includeDistroPropertiesFile(DistroProperties.DISTRO_FILE_NAME);
     }
 

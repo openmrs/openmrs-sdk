@@ -1,5 +1,6 @@
 package org.openmrs.maven.plugins;
 
+import lombok.Getter;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.artifact.factory.ArtifactFactory;
 import org.apache.maven.artifact.metadata.ArtifactMetadataSource;
@@ -12,14 +13,15 @@ import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.settings.Settings;
+import org.openmrs.maven.plugins.git.DefaultGitHelper;
+import org.openmrs.maven.plugins.git.GitHelper;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.utility.ConfigurationInstaller;
 import org.openmrs.maven.plugins.utility.DefaultJira;
 import org.openmrs.maven.plugins.utility.DistroHelper;
-import org.openmrs.maven.plugins.git.DefaultGitHelper;
-import org.openmrs.maven.plugins.git.GitHelper;
 import org.openmrs.maven.plugins.utility.DockerHelper;
 import org.openmrs.maven.plugins.utility.Jira;
+import org.openmrs.maven.plugins.utility.MavenEnvironment;
 import org.openmrs.maven.plugins.utility.ModuleInstaller;
 import org.openmrs.maven.plugins.utility.NodeHelper;
 import org.openmrs.maven.plugins.utility.OwaHelper;
@@ -140,10 +142,17 @@ public abstract class AbstractTask extends AbstractMojo {
 	 */
 	DockerHelper dockerHelper;
 
+	/**
+	 * provides access to the current Maven environment
+	 */
+	@Getter
+	private MavenEnvironment mavenEnvironment;
+
 	public AbstractTask() {
 	}
 
 	public AbstractTask(AbstractTask other) {
+		this.mavenEnvironment = other.mavenEnvironment;
 		this.mavenProject = other.mavenProject;
 		this.mavenSession = other.mavenSession;
 		this.wizard = other.wizard;
@@ -155,6 +164,7 @@ public abstract class AbstractTask extends AbstractMojo {
 		this.distroHelper = other.distroHelper;
 		this.owaHelper = other.owaHelper;
 		this.spaInstaller = other.spaInstaller;
+		this.configurationInstaller = other.configurationInstaller;
 		this.gitHelper = other.gitHelper;
 		this.dockerHelper = other.dockerHelper;
 		this.settings = other.settings;
@@ -166,6 +176,16 @@ public abstract class AbstractTask extends AbstractMojo {
 	}
 
 	public void initTask() {
+		if (mavenEnvironment == null) {
+			mavenEnvironment = new MavenEnvironment();
+			mavenEnvironment.setMavenProject(mavenProject);
+			mavenEnvironment.setMavenSession(mavenSession);
+			mavenEnvironment.setSettings(settings);
+			mavenEnvironment.setArtifactMetadataSource(artifactMetadataSource);
+			mavenEnvironment.setArtifactFactory(artifactFactory);
+			mavenEnvironment.setPluginManager(pluginManager);
+			mavenEnvironment.setWizard(wizard);
+		}
 		if (jira == null) {
 			jira = new DefaultJira();
 		}
