@@ -8,7 +8,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-public class RemoveDependencyTest extends AbstractSdkIntegrationTest {
+public class RemoveDependencyIT extends AbstractSdkIT {
 
     @Test
     public void shouldRemoveExistingDependency() throws Exception {

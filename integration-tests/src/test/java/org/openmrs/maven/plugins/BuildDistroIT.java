@@ -2,7 +2,7 @@ package org.openmrs.maven.plugins;
 
 import org.junit.Test;
 
-public class BuildDistroIntegrationTest extends AbstractSdkIntegrationTest {
+public class BuildDistroIT extends AbstractSdkIT {
 
     @Test
     public void testBuildDistroFromDistroFile() throws Exception {

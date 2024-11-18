@@ -11,7 +11,7 @@ import java.util.Set;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-public class CloneIntegrationTest extends AbstractSdkIntegrationTest {
+public class CloneIT extends AbstractSdkIT {
 
     @Test
     public void clone_shouldCloneRepository() throws Exception {
