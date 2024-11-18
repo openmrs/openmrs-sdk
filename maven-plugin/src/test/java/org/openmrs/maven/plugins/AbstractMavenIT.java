@@ -25,7 +25,7 @@ public abstract class AbstractMavenIT extends AbstractSdkIT {
 		includePomFile("invokeIT", "pom.xml");
 	}
 
-	protected void executeTest(MavenEnvironmentFunction testFunction) throws Exception {
+	protected void executeTest(MavenTestFunction testFunction) throws Exception {
 		StackTraceElement invoker = Thread.currentThread().getStackTrace()[2];
 		String className = invoker.getClassName();
 		String testMethod = invoker.getMethodName();
@@ -38,7 +38,7 @@ public abstract class AbstractMavenIT extends AbstractSdkIT {
 			verifier.executeGoal(plugin + ":" + InvokeMethod.NAME);
 		}
 		else {
-			testFunction.executeTest(mavenEnvironment);
+			testFunction.executeTest();
 		}
 	}
 
@@ -49,7 +49,7 @@ public abstract class AbstractMavenIT extends AbstractSdkIT {
 	/**
 	 * Simple interface that encapsulates a test that should be evaluated by tests that use this Mojo
 	 */
-	public interface MavenEnvironmentFunction {
-		void executeTest(MavenEnvironment mavenEnvironment) throws Exception;
+	public interface MavenTestFunction {
+		void executeTest() throws Exception;
 	}
 }

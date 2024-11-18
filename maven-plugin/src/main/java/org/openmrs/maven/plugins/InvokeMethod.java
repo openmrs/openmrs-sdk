@@ -1,6 +1,7 @@
 package org.openmrs.maven.plugins;
 
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
@@ -17,7 +18,7 @@ import java.lang.reflect.Method;
  *   it will then invoke the given testMethod on the testClass
  */
 @Mojo(name = InvokeMethod.NAME)
-@Data
+@Getter @Setter
 public class InvokeMethod extends AbstractTask {
 
     public static final String NAME = "invoke-method";
@@ -66,10 +67,10 @@ public class InvokeMethod extends AbstractTask {
             try {
                 setterMethod.invoke(instance, getMavenEnvironment());
                 wizard.showMessage("Instance populated with maven environment");
-        }
-        catch (Exception e) {
-                throw new MojoExecutionException("Unable to set MavenTestExecutor on class", e);
-        }
+            }
+            catch (Exception e) {
+                    throw new MojoExecutionException("Error executing method: " + methodName, e);
+            }
         }
 
         Method method;

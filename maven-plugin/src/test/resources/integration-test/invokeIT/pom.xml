@@ -10,6 +10,12 @@
     <version>1.0</version>
     <packaging>pom</packaging>
 
+    <!--
+        This makes the test classes defined within this project available on the Plugin classpath when it is executed
+        Any new test libraries that are referenced by tests that are use this pom (eg. those that extend AbstractMavenIT)
+        need to be added as dependencies must be added here so the plugin can load and execute the tests successfully
+        See:  https://maven.apache.org/guides/mini/guide-maven-classloading.html
+    -->
     <build>
         <plugins>
             <plugin>

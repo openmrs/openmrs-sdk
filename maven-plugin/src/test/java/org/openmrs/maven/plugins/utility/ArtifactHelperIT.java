@@ -17,8 +17,8 @@ public class ArtifactHelperIT extends AbstractMavenIT {
 
 	@Test
 	public void test_downloadModuleWithDefaultName() throws Exception {
-		executeTest(mavenEnvironment -> {
-			ArtifactHelper artifactHelper = new ArtifactHelper(mavenEnvironment);
+		executeTest(() -> {
+			ArtifactHelper artifactHelper = new ArtifactHelper(getMavenEnvironment());
 			Artifact artifact = new Artifact("idgen-omod", "4.14.0", "org.openmrs.module", "jar");
 			artifactHelper.downloadArtifact(artifact, getMavenTestDirectory(), null);
 			File expectedFile = new File(getMavenTestDirectory(), "idgen-omod-4.14.0.jar");
@@ -28,8 +28,8 @@ public class ArtifactHelperIT extends AbstractMavenIT {
 
 	@Test
 	public void downloadModuleWithSpecificName() throws Exception {
-		executeTest(mavenEnvironment -> {
-			ArtifactHelper artifactHelper = new ArtifactHelper(mavenEnvironment);
+		executeTest(() -> {
+			ArtifactHelper artifactHelper = new ArtifactHelper(getMavenEnvironment());
 			Artifact artifact = new Artifact("idgen-omod", "4.14.0", "org.openmrs.module", "jar");
 			artifactHelper.downloadArtifact(artifact, getMavenTestDirectory(), "idgen.omod");
 			File expectedFile = new File(getMavenTestDirectory(), "idgen.omod");
@@ -39,8 +39,8 @@ public class ArtifactHelperIT extends AbstractMavenIT {
 
 	@Test(expected = VerificationException.class)
 	public void downloadModuleThatDoesNotExist() throws Exception {
-		executeTest(mavenEnvironment -> {
-			ArtifactHelper artifactHelper = new ArtifactHelper(mavenEnvironment);
+		executeTest(() -> {
+			ArtifactHelper artifactHelper = new ArtifactHelper(getMavenEnvironment());
 			Artifact artifact = new Artifact("idgen-omod", "4.0.0", "org.openmrs.module", "jar");
 			artifactHelper.downloadArtifact(artifact, getMavenTestDirectory(), "idgen.omod");
 		});
