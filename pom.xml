@@ -78,6 +78,7 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <jline.version>3.20.0</jline.version>
         <jackson.version>2.13.4.2</jackson.version>
+        <lombokVersion>1.18.26</lombokVersion>
     </properties>
 
     <repositories>
@@ -467,6 +468,13 @@
                 <artifactId>guava</artifactId>
                 <version>32.1.2-jre</version>
             </dependency>
+
+            <!-- lombok -->
+            <dependency>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok</artifactId>
+                <version>${lombokVersion}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -540,6 +548,7 @@
                     <version>3.1.2</version>
                     <configuration>
                         <useSystemClassLoader>false</useSystemClassLoader>
+                        <failIfNoSpecifiedTests>false</failIfNoSpecifiedTests>
                     </configuration>
                 </plugin>
             </plugins>

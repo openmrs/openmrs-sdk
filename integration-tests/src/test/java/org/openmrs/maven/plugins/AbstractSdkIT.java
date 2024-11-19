@@ -4,7 +4,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.it.VerificationException;
 import org.apache.maven.it.Verifier;
-import org.apache.maven.it.util.ResourceExtractor;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 import org.apache.maven.model.io.xpp3.MavenXpp3Writer;
@@ -32,6 +31,7 @@ import java.nio.file.Paths;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.UUID;
 import java.util.zip.ZipFile;
@@ -52,10 +52,10 @@ public abstract class AbstractSdkIT {
     /**
      * contains name of directory in project's target dir, where integration tests are conducted
      */
+    static int counter = 0;
     static final String TEST_DIRECTORY = "integration-test";
     static final String MOJO_OPTION_TMPL = "-D%s=\"%s\"";
     protected static final String BATCH_ANSWERS = "batchAnswers";
-
     protected final ArrayDeque<String> batchAnswers = new ArrayDeque<>();
 
     /**
@@ -72,6 +72,9 @@ public abstract class AbstractSdkIT {
 
     File distroFile;
 
+    Path testBaseDir;
+    Path testResourceDir;
+
     public String resolveSdkArtifact() throws MojoExecutionException {
         Properties sdk = new Properties();
         try (InputStream sdkPom = getClass().getClassLoader().getResourceAsStream("sdk.properties")) {
@@ -83,38 +86,39 @@ public abstract class AbstractSdkIT {
         return sdk.get("groupId")+":"+sdk.get("artifactId")+":"+sdk.get("version");
     }
 
-    void includeTestResource(String fileName) throws Exception {
-        File source = getTestFile(TEST_DIRECTORY, fileName);
-        File target = new File(testDirectory, fileName);
-        if (source.isDirectory()) {
-            FileUtils.copyDirectory(source, testDirectory);
+    void includeDistroPropertiesFile(String... paths) throws Exception {
+        Path sourcePath = testResourceDir.resolve(TEST_DIRECTORY);
+        for (String path : paths) {
+            sourcePath = sourcePath.resolve(path);
         }
-        else {
-            FileUtils.copyFile(source, target);
-        }
+        Path targetPath = testDirectoryPath.resolve(DistroProperties.DISTRO_FILE_NAME);
+        FileUtils.copyFile(sourcePath.toFile(), targetPath.toFile());
     }
 
-    void includeDistroPropertiesFile(String fileName) throws Exception {
-        File source = getTestFile(TEST_DIRECTORY, fileName);
-        File target = new File(testDirectory, DistroProperties.DISTRO_FILE_NAME);
-        FileUtils.copyFile(source, target);
+    void includePomFile(String... paths) throws Exception {
+        Path sourcePath = testResourceDir.resolve(TEST_DIRECTORY);
+        for (String path : paths) {
+            sourcePath = sourcePath.resolve(path);
+        }
+        Path targetPath = testDirectoryPath.resolve("pom.xml");
+        FileUtils.copyFile(sourcePath.toFile(), targetPath.toFile());
     }
 
     void addTestResources() throws Exception {
-        includeTestResource("pom.xml");
+        includePomFile("pom.xml");
         includeDistroPropertiesFile(DistroProperties.DISTRO_FILE_NAME);
     }
 
     @Before
     public void setup() throws Exception {
-        String tempDirPath = System.getProperty("maven.test.tmpdir", System.getProperty("java.io.tmpdir"));
-        String executionDirName = "openmrs-sdk-" + getClass().getSimpleName() + "-" + UUID.randomUUID();
-        testDirectoryPath = Paths.get(tempDirPath, executionDirName);
+        Path classesPath = Paths.get(Objects.requireNonNull(getClass().getResource("/")).toURI());
+        testBaseDir = classesPath.resolveSibling("integration-test-base-dir");
+        testResourceDir = testBaseDir.resolve("test-resources");
+        testDirectoryPath = testBaseDir.resolve(getClass().getSimpleName() + "_" + nextCounter());
         testDirectory = testDirectoryPath.toFile();
         if (!testDirectory.mkdirs()) {
             throw new RuntimeException("Unable to create test directory: " + testDirectory);
         }
-        ResourceExtractor.extractResourcePath(getClass(), "/" + TEST_DIRECTORY, testDirectory, true);
         addTestResources();
         verifier = new Verifier(testDirectory.getAbsolutePath());
         verifier.setAutoclean(false);
@@ -126,6 +130,10 @@ public abstract class AbstractSdkIT {
     public void teardown() {
         FileUtils.deleteQuietly(testDirectory);
         cleanAnswers();
+    }
+
+    static synchronized int nextCounter() {
+        return counter++;
     }
 
     public String setupTestServer() throws Exception{
@@ -189,10 +197,6 @@ public abstract class AbstractSdkIT {
         addTaskParam("testMode", "true");
         String sdk = resolveSdkArtifact();
         verifier.executeGoal(sdk+":"+goal);
-    }
-
-    public File getLogFile(){
-        return new File(testDirectory, "log.txt");
     }
 
     protected void assertPlatformUpdated(String serverId, String version) throws MojoExecutionException {

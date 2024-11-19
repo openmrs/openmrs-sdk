@@ -1,5 +1,6 @@
 package org.openmrs.maven.plugins;
 
+import org.apache.commons.io.FileUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.openmrs.maven.plugins.model.Project;
@@ -7,13 +8,15 @@ import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 
 import java.io.File;
+import java.nio.file.Path;
 
 public class BuildIT extends AbstractSdkIT {
 
 	private String serverId;
 
 	void addTestResources() throws Exception {
-		includeTestResource("buildIT");
+		Path sourcePath = testResourceDir.resolve(TEST_DIRECTORY).resolve("buildIT");
+		FileUtils.copyDirectory(sourcePath.toFile(), testDirectory);
 	}
 
 	@Before
