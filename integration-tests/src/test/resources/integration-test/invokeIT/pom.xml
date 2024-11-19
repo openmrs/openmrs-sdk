@@ -69,10 +69,6 @@
 
     <repositories>
         <repository>
-            <id>integration-test-repo</id>
-            <url>file://${testMavenRepoDir}</url>
-        </repository>
-        <repository>
             <id>openmrs-repo</id>
             <name>OpenMRS repository</name>
             <url>https://mavenrepo.openmrs.org/nexus/content/repositories/public</url>

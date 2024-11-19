@@ -17,7 +17,6 @@
     <properties>
         <testBaseDir>${project.build.directory}/integration-test-base-dir</testBaseDir>
         <testResourceDir>${testBaseDir}/test-resources</testResourceDir>
-        <testMavenRepoDir>${testBaseDir}/test-maven-repo</testMavenRepoDir>
     </properties>
 
     <dependencies>
@@ -109,7 +108,7 @@
             </plugin>
 
             <!--
-                Add a local maven repository to the execution directory that contains the built jar
+                Install the test jar to the local Maven repository so it is available during integration testing
             -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -122,12 +121,8 @@
                             <goal>install-file</goal>
                         </goals>
                         <configuration>
-                            <groupId>${project.groupId}</groupId>
-                            <artifactId>${project.artifactId}</artifactId>
-                            <version>${project.version}</version>
-                            <packaging>jar</packaging>
-                            <localRepositoryPath>${testMavenRepoDir}</localRepositoryPath>
-                            <file>${project.build.directory}/${project.artifactId}-${project.version}.jar</file>
+                            <classifier>tests</classifier>
+                            <file>${project.build.directory}/${project.artifactId}-${project.version}-tests.jar</file>
                         </configuration>
                     </execution>
                 </executions>
