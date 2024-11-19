@@ -159,6 +159,12 @@
             <artifactId>dom4j</artifactId>
         </dependency>
 
+        <!-- lombok -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+        </dependency>
+
         <!--zip-->
         <dependency>
             <groupId>net.lingala.zip4j</groupId>
