@@ -34,3 +34,5 @@ jobs:
         run: mvn --batch-mode org.openmrs.maven.plugins:openmrs-sdk-maven-plugin:setup-sdk -DbatchAnswers=n
       - name: Build and run tests
         run: mvn test --batch-mode
+      - name: Build and run integration tests
+        run: mvn verify -Pintegration-tests
