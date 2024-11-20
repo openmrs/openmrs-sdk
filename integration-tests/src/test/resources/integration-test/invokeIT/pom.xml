@@ -62,6 +62,24 @@
                         <version>3.9.0</version>
                         <scope>compile</scope>
                     </dependency>
+                    <dependency>
+                        <groupId>org.apache.logging.log4j</groupId>
+                        <artifactId>log4j-api</artifactId>
+                        <version>2.24.1</version>
+                        <scope>compile</scope>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.apache.logging.log4j</groupId>
+                        <artifactId>log4j-core</artifactId>
+                        <version>2.24.1</version>
+                        <scope>compile</scope>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.apache.logging.log4j</groupId>
+                        <artifactId>log4j-slf4j2-impl</artifactId>
+                        <version>2.24.1</version>
+                        <scope>compile</scope>
+                    </dependency>
                 </dependencies>
             </plugin>
         </plugins>

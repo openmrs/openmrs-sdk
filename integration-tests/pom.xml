@@ -17,6 +17,8 @@
     <properties>
         <testBaseDir>${project.build.directory}/integration-test-base-dir</testBaseDir>
         <testResourceDir>${testBaseDir}/test-resources</testResourceDir>
+        <slf4jVersion>1.7.36</slf4jVersion>
+        <log4jVersion>2.22.1</log4jVersion>
     </properties>
 
     <dependencies>
@@ -50,6 +52,24 @@
         <dependency>
             <groupId>org.semver4j</groupId>
             <artifactId>semver4j</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-api</artifactId>
+            <version>2.24.1</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+            <version>2.24.1</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j2-impl</artifactId>
+            <version>2.24.1</version>
+            <scope>test</scope>
         </dependency>
         <!-- lombok -->
         <dependency>

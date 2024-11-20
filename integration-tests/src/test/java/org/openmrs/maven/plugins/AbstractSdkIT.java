@@ -18,6 +18,8 @@ import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.utility.SDKConstants;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -45,9 +47,10 @@ import static org.openmrs.maven.plugins.SdkMatchers.hasModuleVersionInDisstro;
 import static org.openmrs.maven.plugins.SdkMatchers.hasPlatformVersion;
 import static org.openmrs.maven.plugins.SdkMatchers.hasWarVersion;
 
-
 @RunWith(BlockJUnit4ClassRunner.class)
 public abstract class AbstractSdkIT {
+
+    public final Logger log = LoggerFactory.getLogger(getClass());
 
     /**
      * contains name of directory in project's target dir, where integration tests are conducted
@@ -74,6 +77,7 @@ public abstract class AbstractSdkIT {
 
     Path testBaseDir;
     Path testResourceDir;
+    boolean preserveTestOutput;
 
     public String resolveSdkArtifact() throws MojoExecutionException {
         Properties sdk = new Properties();
@@ -116,6 +120,7 @@ public abstract class AbstractSdkIT {
         testResourceDir = testBaseDir.resolve("test-resources");
         testDirectoryPath = testBaseDir.resolve(getClass().getSimpleName() + "_" + nextCounter());
         testDirectory = testDirectoryPath.toFile();
+        preserveTestOutput = Boolean.parseBoolean(System.getProperty("preserveTestOutput"));
         if (!testDirectory.mkdirs()) {
             throw new RuntimeException("Unable to create test directory: " + testDirectory);
         }
@@ -128,7 +133,13 @@ public abstract class AbstractSdkIT {
 
     @After
     public void teardown() {
-        FileUtils.deleteQuietly(testDirectory);
+        verifier.resetStreams();
+        if (preserveTestOutput) {
+            log.debug("Test output preserved: " + testDirectory.getName());
+        }
+        else {
+            FileUtils.deleteQuietly(testDirectory);
+        }
         cleanAnswers();
     }
 
@@ -139,22 +150,26 @@ public abstract class AbstractSdkIT {
     public String setupTestServer() throws Exception{
         Verifier setupServer = new Verifier(testDirectory.getAbsolutePath());
         String serverId = UUID.randomUUID().toString();
+        try {
+            addTaskParam(setupServer, "openMRSPath", testDirectory.getAbsolutePath());
+            addTaskParam(setupServer, "distro", "referenceapplication:2.2");
+            addTaskParam(setupServer, "debug", "1044");
+            addMockDbSettings(setupServer);
 
-        addTaskParam(setupServer, "openMRSPath", testDirectory.getAbsolutePath());
-        addTaskParam(setupServer, "distro", "referenceapplication:2.2");
-        addTaskParam(setupServer, "debug", "1044");
-        addMockDbSettings(setupServer);
+            addAnswer(serverId);
+            addAnswer(System.getProperty("java.home"));
+            addAnswer("8080");
+            addTaskParam(setupServer, BATCH_ANSWERS, getAnswers());
+            cleanAnswers();
 
-        addAnswer(serverId);
-        addAnswer(System.getProperty("java.home"));
-        addAnswer("8080");
-        addTaskParam(setupServer, BATCH_ANSWERS, getAnswers());
-        cleanAnswers();
-
-        String sdk = resolveSdkArtifact();
-        setupServer.executeGoal(sdk + ":setup");
-        assertFilePresent(serverId, "openmrs-server.properties");
-        new File(testDirectory, "log.txt").delete();
+            String sdk = resolveSdkArtifact();
+            setupServer.executeGoal(sdk + ":setup");
+            assertFilePresent(serverId, "openmrs-server.properties");
+            new File(testDirectory, "log.txt").delete();
+        }
+        finally {
+            verifier.resetStreams();
+        }
         return serverId;
     }
 
