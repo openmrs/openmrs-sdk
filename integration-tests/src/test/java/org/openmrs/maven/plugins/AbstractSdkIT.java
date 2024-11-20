@@ -1,11 +1,9 @@
 package org.openmrs.maven.plugins;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.it.VerificationException;
 import org.apache.maven.it.Verifier;
-import org.apache.maven.it.util.ResourceExtractor;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 import org.apache.maven.model.io.xpp3.MavenXpp3Writer;
@@ -20,6 +18,8 @@ import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.utility.SDKConstants;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -33,6 +33,7 @@ import java.nio.file.Paths;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.UUID;
 import java.util.zip.ZipFile;
@@ -46,17 +47,18 @@ import static org.openmrs.maven.plugins.SdkMatchers.hasModuleVersionInDisstro;
 import static org.openmrs.maven.plugins.SdkMatchers.hasPlatformVersion;
 import static org.openmrs.maven.plugins.SdkMatchers.hasWarVersion;
 
-
 @RunWith(BlockJUnit4ClassRunner.class)
-public abstract class AbstractSdkIntegrationTest {
+public abstract class AbstractSdkIT {
+
+    public final Logger log = LoggerFactory.getLogger(getClass());
 
     /**
      * contains name of directory in project's target dir, where integration tests are conducted
      */
+    static int counter = 0;
     static final String TEST_DIRECTORY = "integration-test";
     static final String MOJO_OPTION_TMPL = "-D%s=\"%s\"";
     protected static final String BATCH_ANSWERS = "batchAnswers";
-
     protected final ArrayDeque<String> batchAnswers = new ArrayDeque<>();
 
     /**
@@ -73,6 +75,10 @@ public abstract class AbstractSdkIntegrationTest {
 
     File distroFile;
 
+    Path testBaseDir;
+    Path testResourceDir;
+    boolean preserveTestOutput;
+
     public String resolveSdkArtifact() throws MojoExecutionException {
         Properties sdk = new Properties();
         try (InputStream sdkPom = getClass().getClassLoader().getResourceAsStream("sdk.properties")) {
@@ -84,38 +90,40 @@ public abstract class AbstractSdkIntegrationTest {
         return sdk.get("groupId")+":"+sdk.get("artifactId")+":"+sdk.get("version");
     }
 
-    void includeTestResource(String fileName) throws Exception {
-        File source = getTestFile(TEST_DIRECTORY, fileName);
-        File target = new File(testDirectory, fileName);
-        if (source.isDirectory()) {
-            FileUtils.copyDirectory(source, testDirectory);
+    void includeDistroPropertiesFile(String... paths) throws Exception {
+        Path sourcePath = testResourceDir.resolve(TEST_DIRECTORY);
+        for (String path : paths) {
+            sourcePath = sourcePath.resolve(path);
         }
-        else {
-            FileUtils.copyFile(source, target);
-        }
+        Path targetPath = testDirectoryPath.resolve(DistroProperties.DISTRO_FILE_NAME);
+        FileUtils.copyFile(sourcePath.toFile(), targetPath.toFile());
     }
 
-    void includeDistroPropertiesFile(String fileName) throws Exception {
-        File source = getTestFile(TEST_DIRECTORY, fileName);
-        File target = new File(testDirectory, DistroProperties.DISTRO_FILE_NAME);
-        FileUtils.copyFile(source, target);
+    void includePomFile(String... paths) throws Exception {
+        Path sourcePath = testResourceDir.resolve(TEST_DIRECTORY);
+        for (String path : paths) {
+            sourcePath = sourcePath.resolve(path);
+        }
+        Path targetPath = testDirectoryPath.resolve("pom.xml");
+        FileUtils.copyFile(sourcePath.toFile(), targetPath.toFile());
     }
 
     void addTestResources() throws Exception {
-        includeTestResource("pom.xml");
+        includePomFile("pom.xml");
         includeDistroPropertiesFile(DistroProperties.DISTRO_FILE_NAME);
     }
 
     @Before
     public void setup() throws Exception {
-        String tempDirPath = System.getProperty("maven.test.tmpdir", System.getProperty("java.io.tmpdir"));
-        String executionDirName = "openmrs-sdk-" + getClass().getSimpleName() + "-" + UUID.randomUUID();
-        testDirectoryPath = Paths.get(tempDirPath, executionDirName);
+        Path classesPath = Paths.get(Objects.requireNonNull(getClass().getResource("/")).toURI());
+        testBaseDir = classesPath.resolveSibling("integration-test-base-dir");
+        testResourceDir = testBaseDir.resolve("test-resources");
+        testDirectoryPath = testBaseDir.resolve(getClass().getSimpleName() + "_" + nextCounter());
         testDirectory = testDirectoryPath.toFile();
+        preserveTestOutput = Boolean.parseBoolean(System.getProperty("preserveTestOutput"));
         if (!testDirectory.mkdirs()) {
             throw new RuntimeException("Unable to create test directory: " + testDirectory);
         }
-        ResourceExtractor.extractResourcePath(getClass(), "/" + TEST_DIRECTORY, testDirectory, true);
         addTestResources();
         verifier = new Verifier(testDirectory.getAbsolutePath());
         verifier.setAutoclean(false);
@@ -125,29 +133,43 @@ public abstract class AbstractSdkIntegrationTest {
 
     @After
     public void teardown() {
-        FileUtils.deleteQuietly(testDirectory);
+        verifier.resetStreams();
+        if (preserveTestOutput) {
+            log.debug("Test output preserved: " + testDirectory.getName());
+        }
+        else {
+            FileUtils.deleteQuietly(testDirectory);
+        }
         cleanAnswers();
+    }
+
+    static synchronized int nextCounter() {
+        return counter++;
     }
 
     public String setupTestServer() throws Exception{
         Verifier setupServer = new Verifier(testDirectory.getAbsolutePath());
         String serverId = UUID.randomUUID().toString();
+        try {
+            addTaskParam(setupServer, "openMRSPath", testDirectory.getAbsolutePath());
+            addTaskParam(setupServer, "distro", "referenceapplication:2.2");
+            addTaskParam(setupServer, "debug", "1044");
+            addMockDbSettings(setupServer);
 
-        addTaskParam(setupServer, "openMRSPath", testDirectory.getAbsolutePath());
-        addTaskParam(setupServer, "distro", "referenceapplication:2.2");
-        addTaskParam(setupServer, "debug", "1044");
-        addMockDbSettings(setupServer);
+            addAnswer(serverId);
+            addAnswer(System.getProperty("java.home"));
+            addAnswer("8080");
+            addTaskParam(setupServer, BATCH_ANSWERS, getAnswers());
+            cleanAnswers();
 
-        addAnswer(serverId);
-        addAnswer(System.getProperty("java.home"));
-        addAnswer("8080");
-        addTaskParam(setupServer, BATCH_ANSWERS, getAnswers());
-        cleanAnswers();
-
-        String sdk = resolveSdkArtifact();
-        setupServer.executeGoal(sdk + ":setup");
-        assertFilePresent(serverId, "openmrs-server.properties");
-        new File(testDirectory, "log.txt").delete();
+            String sdk = resolveSdkArtifact();
+            setupServer.executeGoal(sdk + ":setup");
+            assertFilePresent(serverId, "openmrs-server.properties");
+            new File(testDirectory, "log.txt").delete();
+        }
+        finally {
+            verifier.resetStreams();
+        }
         return serverId;
     }
 
@@ -190,10 +212,6 @@ public abstract class AbstractSdkIntegrationTest {
         addTaskParam("testMode", "true");
         String sdk = resolveSdkArtifact();
         verifier.executeGoal(sdk+":"+goal);
-    }
-
-    public File getLogFile(){
-        return new File(testDirectory, "log.txt");
     }
 
     protected void assertPlatformUpdated(String serverId, String version) throws MojoExecutionException {

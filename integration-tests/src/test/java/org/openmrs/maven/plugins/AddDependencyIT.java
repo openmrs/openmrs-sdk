@@ -4,13 +4,11 @@ import org.junit.Test;
 import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.utility.DistroHelper;
 
-import java.io.File;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-public class AddDependencyTest extends AbstractSdkIntegrationTest {
+public class AddDependencyIT extends AbstractSdkIT {
 
     @Test
     public void shouldAddOmodDependency() throws Exception {

@@ -11,7 +11,7 @@ import org.openmrs.maven.plugins.model.Server;
 
 import java.io.File;
 
-public class PullIntegrationTest extends AbstractSdkIntegrationTest {
+public class PullIT extends AbstractSdkIT {
 
     private static final String OPENMRS_MODULE_IDGEN = "openmrs-module-idgen";
     private static final String PULL_GOAL = "pull";

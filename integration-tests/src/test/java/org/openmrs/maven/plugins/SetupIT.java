@@ -23,11 +23,11 @@ import static org.openmrs.maven.plugins.SdkMatchers.hasModuleVersion;
 import static org.openmrs.maven.plugins.SdkMatchers.hasPropertyEqualTo;
 import static org.openmrs.maven.plugins.SdkMatchers.hasPropertyThatContains;
 import static org.openmrs.maven.plugins.SdkMatchers.hasPropertyThatNotContains;
-import static org.openmrs.maven.plugins.SdkMatchers.serverHasName;
 import static org.openmrs.maven.plugins.SdkMatchers.serverHasDebugPort;
+import static org.openmrs.maven.plugins.SdkMatchers.serverHasName;
 import static org.openmrs.maven.plugins.SdkMatchers.serverHasVersion;
 
-public class SetupIntegrationTest extends AbstractSdkIntegrationTest {
+public class SetupIT extends AbstractSdkIT {
 
     @Test
     public void setup_shouldInstallRefapp2_3_1() throws Exception{

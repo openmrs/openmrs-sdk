@@ -12,7 +12,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-public class AddExclusionIntegrationTest extends AbstractSdkIntegrationTest {
+public class AddExclusionIT extends AbstractSdkIT {
 
     public DistroProperties getDistroProperties() {
         return DistroHelper.getDistroPropertiesFromFile(distroFile);
