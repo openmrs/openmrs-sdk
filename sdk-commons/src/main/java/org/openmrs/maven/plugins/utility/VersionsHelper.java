@@ -19,8 +19,8 @@ import java.util.Optional;
  */
 public class VersionsHelper {
 
-    private static final String RELEASE_VERSION_REGEX = "[0-9.]+(-alpha)?(-beta)?";
-    private static final String NO_VERSION_AVAILABLE_MSG = "No version is available in remote repositories!";
+    public static final String RELEASE_VERSION_REGEX = "[0-9.]+(-alpha)?(-beta)?";
+    public static final String NO_VERSION_AVAILABLE_MSG = "No version is available in remote repositories!";
 
     /**
      * The project currently being build.

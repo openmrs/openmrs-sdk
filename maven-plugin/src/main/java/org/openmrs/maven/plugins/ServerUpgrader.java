@@ -218,7 +218,7 @@ public class ServerUpgrader {
 
 	private void configureMissingDistroArtifact(Server server) {
 		if(server.getDistroArtifactId() == null){
-            server.setDistroArtifactId(SDKConstants.REFERENCEAPPLICATION_ARTIFACT_ID);
+            server.setDistroArtifactId(SDKConstants.REFAPP_2X_ARTIFACT_ID);
         }
 		if(server.getDistroGroupId() == null){
             server.setDistroGroupId(Artifact.GROUP_DISTRO);

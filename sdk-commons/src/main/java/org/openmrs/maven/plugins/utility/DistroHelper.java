@@ -225,7 +225,7 @@ public class DistroHelper {
 	 * @return
 	 */
 	public static boolean isRefapp2_3_1orLower(String artifactId, String version) {
-		if (artifactId != null && artifactId.equals(SDKConstants.REFERENCEAPPLICATION_ARTIFACT_ID)) {
+		if (artifactId != null && artifactId.equals(SDKConstants.REFAPP_2X_ARTIFACT_ID)) {
 			return SDKConstants.SUPPPORTED_REFAPP_VERSIONS_2_3_1_OR_LOWER.contains(version);
 		} else
 			return false;
@@ -236,7 +236,7 @@ public class DistroHelper {
 	}
 
 	public static boolean isRefappBelow2_1(String artifactId, String version) {
-		if (artifactId != null && artifactId.equals(SDKConstants.REFERENCEAPPLICATION_ARTIFACT_ID)) {
+		if (artifactId != null && artifactId.equals(SDKConstants.REFAPP_2X_ARTIFACT_ID)) {
 			return new Version(version).lower(new Version("2.1"));
 		} else
 			return false;
@@ -549,7 +549,7 @@ public class DistroHelper {
 
 	public Properties getFrontendPropertiesForServer(Artifact artifact, File directory) throws MojoExecutionException {
 		String artifactId = artifact.getArtifactId();
-		if (artifactId.equals(SDKConstants.REFAPP_DISTRO) || artifactId.equals(SDKConstants.REFAPP_DISTRO_EMR_CONFIGURATION)) {
+		if (artifactId.equals(SDKConstants.REFAPP_DISTRO) || artifactId.equals(SDKConstants.REFAPP_3X_ARTIFACT_ID)) {
 			if (new Version(artifact.getVersion()).higher(new Version("3.0.0-beta.16"))) {
 				return getFrontendProperties(artifact, directory);
 			} else {

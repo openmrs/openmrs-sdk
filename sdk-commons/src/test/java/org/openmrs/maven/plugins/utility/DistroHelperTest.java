@@ -42,7 +42,7 @@ public class DistroHelperTest {
         Artifact artifact = DistroHelper.parseDistroArtifact(distro, null);
 
         assertThat(artifact.getGroupId(), is(Artifact.GROUP_DISTRO));
-        assertThat(artifact.getArtifactId(), is(SDKConstants.REFERENCEAPPLICATION_ARTIFACT_ID));
+        assertThat(artifact.getArtifactId(), is(SDKConstants.REFAPP_2X_ARTIFACT_ID));
     }
 
     @Test

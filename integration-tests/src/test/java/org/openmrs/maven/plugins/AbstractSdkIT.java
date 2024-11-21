@@ -55,28 +55,28 @@ public abstract class AbstractSdkIT {
     /**
      * contains name of directory in project's target dir, where integration tests are conducted
      */
-    static int counter = 0;
-    static final String TEST_DIRECTORY = "integration-test";
-    static final String MOJO_OPTION_TMPL = "-D%s=\"%s\"";
+    protected static int counter = 0;
+    protected static final String TEST_DIRECTORY = "integration-test";
+    protected static final String MOJO_OPTION_TMPL = "-D%s=\"%s\"";
     protected static final String BATCH_ANSWERS = "batchAnswers";
     protected final ArrayDeque<String> batchAnswers = new ArrayDeque<>();
 
     /**
      * maven utility for integration tests
      */
-    Verifier verifier;
+    protected Verifier verifier;
 
     /**
      * test directory, contains mock files and files created during tests
      */
-    File testDirectory;
+    protected File testDirectory;
 
-    Path testDirectoryPath;
+    protected Path testDirectoryPath;
 
-    File distroFile;
+    protected File distroFile;
 
-    Path testBaseDir;
-    Path testResourceDir;
+    protected Path testBaseDir;
+    protected Path testResourceDir;
     boolean preserveTestOutput;
 
     public String resolveSdkArtifact() throws MojoExecutionException {
@@ -90,7 +90,7 @@ public abstract class AbstractSdkIT {
         return sdk.get("groupId")+":"+sdk.get("artifactId")+":"+sdk.get("version");
     }
 
-    void includeDistroPropertiesFile(String... paths) throws Exception {
+    protected void includeDistroPropertiesFile(String... paths) throws Exception {
         Path sourcePath = testResourceDir.resolve(TEST_DIRECTORY);
         for (String path : paths) {
             sourcePath = sourcePath.resolve(path);
@@ -99,7 +99,7 @@ public abstract class AbstractSdkIT {
         FileUtils.copyFile(sourcePath.toFile(), targetPath.toFile());
     }
 
-    void includePomFile(String... paths) throws Exception {
+    protected void includePomFile(String... paths) throws Exception {
         Path sourcePath = testResourceDir.resolve(TEST_DIRECTORY);
         for (String path : paths) {
             sourcePath = sourcePath.resolve(path);
@@ -108,7 +108,7 @@ public abstract class AbstractSdkIT {
         FileUtils.copyFile(sourcePath.toFile(), targetPath.toFile());
     }
 
-    void addTestResources() throws Exception {
+    protected void addTestResources() throws Exception {
         includePomFile("pom.xml");
         includeDistroPropertiesFile(DistroProperties.DISTRO_FILE_NAME);
     }

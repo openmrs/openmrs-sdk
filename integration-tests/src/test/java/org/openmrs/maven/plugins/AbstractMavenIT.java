@@ -21,7 +21,7 @@ public abstract class AbstractMavenIT extends AbstractSdkIT {
 	}
 
 	@Override
-	void addTestResources() throws Exception {
+	protected void addTestResources() throws Exception {
 		includePomFile("invokeIT", "pom.xml");
 	}
 
