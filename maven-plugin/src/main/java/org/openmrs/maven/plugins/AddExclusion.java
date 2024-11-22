@@ -50,7 +50,6 @@ public class AddExclusion extends AbstractTask {
 
         if (distribution.getParent() != null) {
             DistroProperties parentProperties = distribution.getParent().getEffectiveProperties();
-            parentProperties = distroHelper.getDistroPropertiesForFullAncestry(parentProperties, new File(distro).getParentFile());
             if (StringUtils.isBlank(property)) {
                 List<String> currentExclusions = distribution.getProperties().getExclusions();
                 List<String> options = parentProperties.getPropertyNames().stream().filter(prop -> !currentExclusions.contains(prop)).collect(Collectors.toList());

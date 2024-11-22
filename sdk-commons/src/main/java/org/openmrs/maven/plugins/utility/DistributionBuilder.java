@@ -50,7 +50,7 @@ public class DistributionBuilder {
 	public Distribution buildFromArtifact(Artifact artifact) throws MojoExecutionException {
 		mavenEnvironment.getWizard().showMessage("Building distribution from artifact: " + artifact);
 		Distribution distribution = new Distribution();
-		artifact = DistroHelper.normalizeArtifact(artifact, mavenEnvironment.getVersionsHelper()); // TODO: Move this in here?
+		artifact = DistroHelper.normalizeArtifact(artifact, mavenEnvironment.getVersionsHelper());
 		distribution.setArtifact(artifact);
 		ArtifactHelper artifactHelper = new ArtifactHelper(mavenEnvironment);
 		Properties properties = null;
@@ -98,53 +98,61 @@ public class DistributionBuilder {
 	 * Ideally this would not be needed
 	 */
 	protected void populateRefApp3xProperties(Distribution distribution, Properties properties) throws MojoExecutionException {
-		// Add in the latest spa omod
-		Artifact spaModule = new Artifact("spa", "latest", Artifact.GROUP_MODULE);
-		String latestSpaSnapshot = mavenEnvironment.getVersionsHelper().getLatestSnapshotVersion(spaModule);
-		if (VersionsHelper.NO_VERSION_AVAILABLE_MSG.equals(latestSpaSnapshot)) {
-			throw new MojoExecutionException("Unable to retrieve latest snapshot of the spa module");
-		}
-		properties.put("omod.spa", latestSpaSnapshot);
 
-		// Add distro artifact as the config artifact
 		String distroArtifactId = distribution.getArtifact().getArtifactId();
 		String distroGroupId = distribution.getArtifact().getGroupId();
 		String distroVersion = distribution.getArtifact().getVersion();
-		properties.put("config." + distroArtifactId, distroVersion);
-		properties.put("config." + distroArtifactId + ".groupId", distroGroupId);
 
-		// Add spa properties
-		Properties frontendProperties;
-		if (new Version(distroVersion).higher(new Version("3.0.0-beta.16"))) {
-			com.github.zafarkhaja.semver.Version v = com.github.zafarkhaja.semver.Version.parse(distroVersion);
-			String frontendArtifactId = v.satisfies(">=3.0.0") ? "distro-emr-frontend" : "referenceapplication-frontend";
-			Artifact frontendArtifact = new Artifact(frontendArtifactId, distroVersion, distroGroupId, "zip");
-			try (TempDirectory tempDir = TempDirectory.create(frontendArtifactId)) {
-				mavenEnvironment.getArtifactHelper().downloadArtifact(frontendArtifact, tempDir.getFile(), true);
-				File spaAssembleConfig = null;
-				for (File f : Objects.requireNonNull(tempDir.getFile().listFiles())) {
-					if (f.getName().equals("spa-assemble-config.json")) {
-						spaAssembleConfig = f;
+		DistroProperties includedProperties = new DistroProperties(properties);
+
+		// If the spa module is not included explicitly, include the latest snapshot
+		if (!includedProperties.contains("omod.spa")) {
+			Artifact spaModule = new Artifact("spa", "latest", Artifact.GROUP_MODULE);
+			String latestSpaSnapshot = mavenEnvironment.getVersionsHelper().getLatestSnapshotVersion(spaModule);
+			if (VersionsHelper.NO_VERSION_AVAILABLE_MSG.equals(latestSpaSnapshot)) {
+				throw new MojoExecutionException("Unable to retrieve latest snapshot of the spa module");
+			}
+			properties.put("omod.spa", latestSpaSnapshot);
+		}
+
+		// Add distro artifact as the config artifact if no config or content are included specifically
+		if (includedProperties.getConfigArtifacts().isEmpty() && includedProperties.getContentArtifacts().isEmpty()) {
+			properties.put("config." + distroArtifactId, distroVersion);
+			properties.put("config." + distroArtifactId + ".groupId", distroGroupId);
+		}
+
+		// Add spa properties if they are not included explicitly
+		if (includedProperties.getSpaProperties().isEmpty()) {
+			Properties frontendProperties;
+			if (new Version(distroVersion).higher(new Version("3.0.0-beta.16"))) {
+				com.github.zafarkhaja.semver.Version v = com.github.zafarkhaja.semver.Version.parse(distroVersion);
+				String frontendArtifactId = v.satisfies(">=3.0.0") ? "distro-emr-frontend" : "referenceapplication-frontend";
+				Artifact frontendArtifact = new Artifact(frontendArtifactId, distroVersion, distroGroupId, "zip");
+				try (TempDirectory tempDir = TempDirectory.create(frontendArtifactId)) {
+					mavenEnvironment.getArtifactHelper().downloadArtifact(frontendArtifact, tempDir.getFile(), true);
+					File spaAssembleConfig = null;
+					for (File f : Objects.requireNonNull(tempDir.getFile().listFiles())) {
+						if (f.getName().equals("spa-assemble-config.json")) {
+							spaAssembleConfig = f;
+						}
+					}
+					if (spaAssembleConfig == null) {
+						throw new MojoExecutionException("Unable to retrieve spa assemble config file from " + frontendArtifact);
+					}
+					try (FileInputStream inputStream = new FileInputStream(spaAssembleConfig)) {
+						frontendProperties = PropertiesUtils.getFrontendPropertiesFromJson(inputStream);
+					} catch (Exception e) {
+						throw new MojoExecutionException("Unable to load frontend config from file: " + spaAssembleConfig, e);
 					}
 				}
-				if (spaAssembleConfig == null) {
-					throw new MojoExecutionException("Unable to retrieve spa assemble config file from " + frontendArtifact);
-				}
-				try (FileInputStream inputStream = new FileInputStream(spaAssembleConfig)) {
-					frontendProperties = PropertiesUtils.getFrontendPropertiesFromJson(inputStream);
-				}
-				catch (Exception e) {
-					throw new MojoExecutionException("Unable to load frontend config from file: " + spaAssembleConfig, e);
-				}
+			} else {
+				String url = "https://raw.githubusercontent.com/openmrs/openmrs-distro-referenceapplication/" + distroVersion + "/frontend/spa-build-config.json";
+				frontendProperties = PropertiesUtils.getFrontendPropertiesFromSpaConfigUrl(url);
 			}
-		}
-		else {
-			String url = "https://raw.githubusercontent.com/openmrs/openmrs-distro-referenceapplication/" + distroVersion + "/frontend/spa-build-config.json";
-			frontendProperties = PropertiesUtils.getFrontendPropertiesFromSpaConfigUrl(url);
-		}
 
-		for (String propertyName : frontendProperties.stringPropertyNames()) {
-			properties.put(propertyName, frontendProperties.getProperty(propertyName));
+			for (String propertyName : frontendProperties.stringPropertyNames()) {
+				properties.put(propertyName, frontendProperties.getProperty(propertyName));
+			}
 		}
 	}
 
