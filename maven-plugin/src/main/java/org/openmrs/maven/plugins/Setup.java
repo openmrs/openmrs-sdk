@@ -43,6 +43,9 @@ import static org.openmrs.maven.plugins.utility.SDKConstants.PLATFORM_ARTIFACT_I
 import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_2X_ARTIFACT_ID;
 import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_2X_GROUP_ID;
 import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_2X_TYPE;
+import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_3X_ARTIFACT_ID;
+import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_3X_GROUP_ID;
+import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_3X_TYPE;
 import static org.openmrs.maven.plugins.utility.SDKConstants.SETUP_DEFAULT_PLATFORM_VERSION;
 
 
@@ -222,7 +225,7 @@ public class Setup extends AbstractServerTask {
 
 		if (O3_DISTRIBUTION.equals(choice)) {
 			wizard.promptForO3RefAppVersionIfMissing(server, versionsHelper);
-			Distribution distribution = builder.buildFromArtifact(new Artifact(REFAPP_2X_ARTIFACT_ID, server.getVersion(), REFAPP_2X_GROUP_ID, REFAPP_2X_TYPE));
+			Distribution distribution = builder.buildFromArtifact(new Artifact(REFAPP_3X_ARTIFACT_ID, server.getVersion(), REFAPP_3X_GROUP_ID, REFAPP_3X_TYPE));
 			return distribution.getEffectiveProperties();
 		}
 

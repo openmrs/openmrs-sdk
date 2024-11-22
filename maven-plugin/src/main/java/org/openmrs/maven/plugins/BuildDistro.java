@@ -38,6 +38,9 @@ import java.util.List;
 import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_2X_ARTIFACT_ID;
 import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_2X_GROUP_ID;
 import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_2X_TYPE;
+import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_3X_ARTIFACT_ID;
+import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_3X_GROUP_ID;
+import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_3X_TYPE;
 
 /**
  * Create docker configuration for distributions.
@@ -143,18 +146,12 @@ public class BuildDistro extends AbstractTask {
 				distribution = builder.buildFromFile(distroFile);
 			}
 			else if (Project.hasProject(userDir)) {
+				wizard.showMessage("Building distribution from the source at " + userDir + "...\n");
 				Project config = Project.loadProject(userDir);
 				String coordinates = config.getGroupId() + ":" + config.getArtifactId() + ":" + config.getVersion();
 				Artifact distroArtifact = DistroHelper.parseDistroArtifact(coordinates, versionsHelper);
-				wizard.showMessage("Building distribution from the source at " + userDir + "...\n");
 				new Build(this).buildProject(config);
-				distroFile = distroHelper.extractFileFromDistro(buildDirectory, distroArtifact, DistroProperties.DISTRO_FILE_NAME);
-				if (distroFile.exists()) {
-					distribution = builder.buildFromFile(distroFile);
-				}
-				else {
-					wizard.showMessage("Couldn't find " + DistroProperties.DISTRO_FILE_NAME + " in " + distroArtifact);
-				}
+				distribution = builder.buildFromArtifact(distroArtifact);
 			}
 		}
 		else if (StringUtils.isNotBlank(distro)) {
@@ -177,7 +174,7 @@ public class BuildDistro extends AbstractTask {
 					break;
 				case O3_DISTRIBUTION:
 					wizard.promptForO3RefAppVersionIfMissing(server, versionsHelper);
-					distribution = builder.buildFromArtifact(new Artifact(REFAPP_2X_ARTIFACT_ID, server.getVersion(), REFAPP_2X_GROUP_ID, REFAPP_2X_TYPE));
+					distribution = builder.buildFromArtifact(new Artifact(REFAPP_3X_ARTIFACT_ID, server.getVersion(), REFAPP_3X_GROUP_ID, REFAPP_3X_TYPE));
 			}
 		}
 

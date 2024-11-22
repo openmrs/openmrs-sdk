@@ -21,6 +21,9 @@ import java.util.List;
 import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_2X_ARTIFACT_ID;
 import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_2X_GROUP_ID;
 import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_2X_TYPE;
+import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_3X_ARTIFACT_ID;
+import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_3X_GROUP_ID;
+import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_3X_TYPE;
 
 /**
  * Generates an openmrs-distro.properties file for a specific version of OpenMRS Distro
@@ -72,7 +75,7 @@ public class GenerateDistro extends AbstractTask {
 
             case O3_DISTRIBUTION:
                 wizard.promptForO3RefAppVersionIfMissing(server, versionsHelper, GET_VERSION_PROMPT);
-                distribution = builder.buildFromArtifact(new Artifact(REFAPP_2X_ARTIFACT_ID, server.getVersion(), REFAPP_2X_GROUP_ID, REFAPP_2X_TYPE));
+                distribution = builder.buildFromArtifact(new Artifact(REFAPP_3X_ARTIFACT_ID, server.getVersion(), REFAPP_3X_GROUP_ID, REFAPP_3X_TYPE));
                 break;
         }
 
