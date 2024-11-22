@@ -29,6 +29,30 @@ public class DistributionBuilderIT extends AbstractMavenIT {
 	}
 
 	@Test
+	public void build_shouldBuildRefapp_2_1_0() throws Exception {
+		executeTest(() -> {
+			DistributionBuilder builder = new DistributionBuilder(getMavenEnvironment());
+			Artifact artifact = new Artifact(SDKConstants.REFAPP_2X_ARTIFACT_ID, "2.1", SDKConstants.REFAPP_2X_GROUP_ID, SDKConstants.REFAPP_2X_TYPE);
+			Distribution distribution = builder.buildFromArtifact(artifact);
+			assertNotNull(distribution);
+			assertThat(distribution.getName(), equalTo("Reference Application"));
+			assertThat(distribution.getVersion(), equalTo("2.1"));
+			assertNull(distribution.getParent());
+			assertThat(distribution.getArtifact(), equalTo(artifact));
+			assertNull(distribution.getArtifactPath());
+			assertThat(distribution.getResourcePath(), equalTo("openmrs-distro-2.1.properties"));
+			assertNull(distribution.getFile());
+			DistroProperties distroProperties = distribution.getProperties();
+			Properties allProperties = distroProperties.getAllProperties();
+			Properties expected = getExpectedPropertiesFromResource(artifact);
+			assertThat(allProperties.size(), equalTo(expected.size()));
+			for (String p : expected.stringPropertyNames()) {
+				assertThat(allProperties.getProperty(p), equalTo(expected.getProperty(p)));
+			}
+		});
+	}
+
+	@Test
 	public void build_shouldBuildRefapp_2_13_0() throws Exception {
 		executeTest(() -> {
 			DistributionBuilder builder = new DistributionBuilder(getMavenEnvironment());
@@ -87,8 +111,4 @@ public class DistributionBuilderIT extends AbstractMavenIT {
 		distroPath = distroPath.resolve(artifact.getArtifactId() + "-" + artifact.getVersion() + ".properties");
 		return PropertiesUtils.loadPropertiesFromFile(distroPath.toFile());
 	}
-
-
-
-
 }
