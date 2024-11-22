@@ -84,7 +84,7 @@ public class SpaInstaller {
 		}
 
 		// Retrieve the properties with a spa. prefix out of the distro properties
-		Map<String, String> spaProperties = distroProperties.getSpaProperties(distroHelper, appDataDir);
+		Map<String, String> spaProperties = distroProperties.getSpaProperties();
 
 		// If a maven artifact is defined, then we download the artifact and unpack it
 		String artifactId = spaProperties.remove(BaseSdkProperties.ARTIFACT_ID);

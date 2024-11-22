@@ -13,6 +13,11 @@ import java.util.Properties;
 
 import static org.openmrs.maven.plugins.model.BaseSdkProperties.TYPE_DISTRO;
 import static org.openmrs.maven.plugins.model.BaseSdkProperties.TYPE_PARENT;
+import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_2X_ARTIFACT_ID;
+import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_2X_GROUP_ID;
+import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_3X_ARTIFACT_ID;
+import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_3X_GROUP_ID;
+import static org.openmrs.maven.plugins.utility.SDKConstants.SUPPPORTED_REFAPP_VERSIONS_2_3_1_OR_LOWER;
 
 /**
  * The purpose of this class is to build OpenMRS distributions out of distro properties files
@@ -30,53 +35,57 @@ public class DistributionBuilder {
 	/**
 	 * Build from a distro properties file that is stored in the given file
 	 */
-	public Distribution build(File propertiesFile) throws MojoExecutionException {
+	public Distribution buildFromFile(File propertiesFile) throws MojoExecutionException {
+		mavenEnvironment.getWizard().showMessage("Building distribution from file: " + propertiesFile.getName());
 		Distribution distribution = new Distribution();
 		distribution.setFile(propertiesFile);
 		Properties properties = PropertiesUtils.loadPropertiesFromFile(propertiesFile);
-		return populateDistributionFromProperties(distribution, properties);
-	}
-
-	/**
-	 * Build from a distro properties file that is stored in the given classpath resource
-	 */
-	public Distribution build(String resourcePath) throws MojoExecutionException {
-		Distribution distribution = new Distribution();
-		distribution.setResourcePath(resourcePath);
-		Properties properties = PropertiesUtils.loadPropertiesFromResource(resourcePath);
-		return populateDistributionFromProperties(distribution, properties);
-	}
-
-	/**
-	 * Build from the provided properties
-	 */
-	public Distribution build(Properties properties) throws MojoExecutionException {
-		Distribution distribution = new Distribution();
+		PropertiesUtils.resolveMavenPropertyPlaceholders(properties, mavenEnvironment.getMavenProject());
 		return populateDistributionFromProperties(distribution, properties);
 	}
 
 	/**
 	 * Build from a distro properties file bundled in a zip or jar in Maven with the given artifact coordinates
 	 */
-	public Distribution build(Artifact artifact) throws MojoExecutionException {
+	public Distribution buildFromArtifact(Artifact artifact) throws MojoExecutionException {
+		mavenEnvironment.getWizard().showMessage("Building distribution from artifact: " + artifact);
 		Distribution distribution = new Distribution();
+		artifact = DistroHelper.normalizeArtifact(artifact, mavenEnvironment.getVersionsHelper()); // TODO: Move this in here?
 		distribution.setArtifact(artifact);
 		ArtifactHelper artifactHelper = new ArtifactHelper(mavenEnvironment);
 		Properties properties = null;
-		try (TempDirectory tempDir = TempDirectory.create(artifact.getArtifactId())) {
-			artifactHelper.downloadArtifact(artifact, tempDir.getFile(), true);
-			for (File f : Objects.requireNonNull(tempDir.getFile().listFiles())) {
-				if (f.getName().equals(SDKConstants.DISTRO_PROPERTIES_NAME) || f.getName().equals(SDKConstants.DISTRO_PROPERTIES_NAME_SHORT)) {
-					distribution.setArtifactPath(tempDir.getPath().relativize(f.toPath()).toString());
-					properties = PropertiesUtils.loadPropertiesFromFile(f);
+
+		// Special Handling for referenceapplication 2.x versions that are not published to Maven
+		if (REFAPP_2X_GROUP_ID.equals(artifact.getGroupId()) && REFAPP_2X_ARTIFACT_ID.equals(artifact.getArtifactId())) {
+			if (SUPPPORTED_REFAPP_VERSIONS_2_3_1_OR_LOWER.contains(artifact.getVersion())) {
+				String resourcePath = "openmrs-distro-" + artifact.getVersion() + ".properties";
+				distribution.setArtifact(artifact);
+				distribution.setResourcePath(resourcePath);
+				mavenEnvironment.getWizard().showMessage("This is an early refapp 2.x version, loading from: " + resourcePath);
+				properties = PropertiesUtils.loadPropertiesFromResource(resourcePath);
+			}
+		}
+
+		// Normal handling is to download the distro artifact from Maven, and extract the distro properties file
+		if (properties == null) {
+			try (TempDirectory tempDir = TempDirectory.create(artifact.getArtifactId())) {
+				artifactHelper.downloadArtifact(artifact, tempDir.getFile(), true);
+				for (File f : Objects.requireNonNull(tempDir.getFile().listFiles())) {
+					if (f.getName().equals(SDKConstants.DISTRO_PROPERTIES_NAME) || f.getName().equals(SDKConstants.DISTRO_PROPERTIES_NAME_SHORT)) {
+						distribution.setArtifactPath(tempDir.getPath().relativize(f.toPath()).toString());
+						properties = PropertiesUtils.loadPropertiesFromFile(f);
+					}
 				}
 			}
 		}
+
 		if (properties == null) {
 			throw new MojoExecutionException("Unable to build from artifact, no distro properties file found");
 		}
-		// Special handling for referenceapplication 3.x
-		if (artifact.getGroupId().equals(SDKConstants.REFAPP_3X_GROUP_ID) && artifact.getArtifactId().equals(SDKConstants.REFAPP_3X_ARTIFACT_ID)) {
+
+		// Special handling for referenceapplication 3.x, which does not define everything needed in the published distro properties file
+		if (REFAPP_3X_GROUP_ID.equals(artifact.getGroupId()) && REFAPP_3X_ARTIFACT_ID.equals(artifact.getArtifactId())) {
+			mavenEnvironment.getWizard().showMessage("This is a 3.x refapp, adding additional properties");
 			populateRefApp3xProperties(distribution, properties);
 		}
 		return populateDistributionFromProperties(distribution, properties);
@@ -147,22 +156,25 @@ public class DistributionBuilder {
 	protected Distribution populateDistributionFromProperties(Distribution distribution, Properties properties) throws MojoExecutionException {
 		distribution.setName(properties.getProperty("name"));
 		distribution.setVersion(properties.getProperty("version"));
+
 		DistroProperties distroProperties = new DistroProperties(properties);
 		distribution.setProperties(distroProperties);
-		Artifact parentArtifact = distroProperties.getParentDistroArtifact();
+
 		Properties effectiveProperties = new Properties();
+		Artifact parentArtifact = distroProperties.getParentDistroArtifact();
 		if (parentArtifact != null) {
-			distribution.setParent(build(parentArtifact));
+			distribution.setParent(buildFromArtifact(parentArtifact));
 			effectiveProperties.putAll(distribution.getParent().getEffectiveProperties().getAllProperties());
 			for (String exclusion : distroProperties.getExclusions()) {
 				effectiveProperties.remove(exclusion);
 			}
 		}
-		for (String property : effectiveProperties.stringPropertyNames()) {
+		for (String property : distroProperties.getAllProperties().stringPropertyNames()) {
 			if (!property.startsWith(TYPE_PARENT + ".") && !property.startsWith(TYPE_DISTRO + ".")) {
 				effectiveProperties.put(property, properties.getProperty(property));
 			}
 		}
+
 		distribution.setEffectiveProperties(new DistroProperties(effectiveProperties));
 		return distribution;
 	}

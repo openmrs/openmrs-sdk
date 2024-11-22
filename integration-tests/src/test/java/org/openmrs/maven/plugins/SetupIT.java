@@ -4,6 +4,7 @@ import org.apache.commons.io.FileUtils;
 import org.junit.Test;
 import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.Server;
+import org.openmrs.maven.plugins.utility.PropertiesUtils;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 
 import java.io.File;
@@ -48,7 +49,8 @@ public class SetupIT extends AbstractSdkIT {
         assertFilePresent(serverId, "modules");
         assertFileNotPresent(serverId, "tmp");
 
-        DistroProperties distroProperties = new DistroProperties("2.3.1");
+        Properties properties = PropertiesUtils.loadPropertiesFromResource("openmrs-distro-2.3.1.properties");
+        DistroProperties distroProperties = new DistroProperties(properties);
         assertModulesInstalled(serverId, distroProperties);
 
         Server.setServersPath(testDirectory.getAbsolutePath());

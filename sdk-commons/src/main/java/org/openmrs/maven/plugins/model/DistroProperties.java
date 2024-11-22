@@ -1,12 +1,10 @@
 package org.openmrs.maven.plugins.model;
 
-import static org.openmrs.maven.plugins.utility.PropertiesUtils.loadPropertiesFromFile;
-import static org.openmrs.maven.plugins.utility.PropertiesUtils.loadPropertiesFromResource;
-
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.openmrs.maven.plugins.utility.DistroHelper;
+import org.openmrs.maven.plugins.utility.PropertiesUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,9 +15,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+
+import static org.openmrs.maven.plugins.utility.PropertiesUtils.loadPropertiesFromFile;
 
 /**
  *
@@ -35,15 +34,6 @@ public class DistroProperties extends BaseSdkProperties {
 
 	private static final Logger log = LoggerFactory.getLogger(DistroProperties.class);
 
-    public DistroProperties(String version){
-        properties = new Properties();
-        try {
-            loadPropertiesFromResource(createFileName(version), properties);
-        } catch (MojoExecutionException e) {
-	        log.error(e.getMessage(), e);
-        }
-    }
-
     public DistroProperties(String name, String platformVersion){
         properties = new Properties();
         setName(name);
@@ -58,10 +48,6 @@ public class DistroProperties extends BaseSdkProperties {
     public DistroProperties(File file) throws MojoExecutionException{
         this.properties = new Properties();
         loadPropertiesFromFile(file, this.properties);
-    }
-
-    private String createFileName(String version){
-        return String.format(DEAFAULT_FILE_NAME, version);
     }
 
     public boolean isH2Supported(){
@@ -157,82 +143,6 @@ public class DistroProperties extends BaseSdkProperties {
         return DistroHelper.normalizeArtifact(artifact, null);
     }
 
-    public List<Artifact> getModuleArtifacts(DistroHelper distroHelper, File directory) throws MojoExecutionException {
-        List<Artifact> childArtifacts = getModuleArtifacts();
-        List<Artifact> parentArtifacts = new ArrayList<>();
-
-        Artifact artifact = getParentDistroArtifact();
-        if (artifact != null) {
-            DistroProperties distroProperties = distroHelper.downloadDistroProperties(directory, artifact);
-            parentArtifacts.addAll(distroProperties.getModuleArtifacts(distroHelper, directory));
-        }
-        return mergeArtifactLists(childArtifacts, parentArtifacts);
-    }
-
-    public List<Artifact> getOwaArtifacts(DistroHelper distroHelper, File directory) throws MojoExecutionException {
-        List<Artifact> childArtifacts = getOwaArtifacts();
-        List<Artifact> parentArtifacts = new ArrayList<>();
-
-        Artifact artifact = getParentDistroArtifact();
-        if (artifact != null) {
-            DistroProperties distroProperties = distroHelper.downloadDistroProperties(directory, artifact);
-            parentArtifacts.addAll(distroProperties.getOwaArtifacts(distroHelper, directory));
-        }
-        return mergeArtifactLists(childArtifacts, parentArtifacts);
-    }
-
-    public Map<String, String> getSpaProperties(DistroHelper distroHelper, File directory) throws MojoExecutionException {
-        Map<String, String> spaProperties = getSpaProperties();
-
-        Artifact artifact = getParentDistroArtifact();
-        if (artifact != null) {
-            DistroProperties distroProperties = distroHelper.downloadDistroProperties(directory, artifact);
-            spaProperties.putAll(distroProperties.getSpaProperties(distroHelper, directory));
-        }
-        return spaProperties;
-    }
-
-    public List<Artifact> getWarArtifacts(DistroHelper distroHelper, File directory) throws MojoExecutionException{
-        List<Artifact> childArtifacts = getWarArtifacts();
-        List<Artifact> parentArtifacts = new ArrayList<>();
-
-        Artifact artifact = getParentDistroArtifact();
-        if (artifact != null) {
-            DistroProperties distroProperties = distroHelper.downloadDistroProperties(directory, artifact);
-            parentArtifacts.addAll(distroProperties.getWarArtifacts(distroHelper, directory));
-        }
-        return mergeArtifactLists(childArtifacts, parentArtifacts);
-    }
-
-    public String getPlatformVersion(DistroHelper distroHelper, File directory) throws MojoExecutionException{
-        Artifact artifact = getParentDistroArtifact();
-        if (artifact != null) {
-            DistroProperties distroProperties = distroHelper.downloadDistroProperties(directory, artifact);
-            return distroProperties.getPlatformVersion(distroHelper, directory);
-        }
-        return getPlatformVersion();
-    }
-
-    private List<Artifact> mergeArtifactLists(List<Artifact> childArtifacts, List<Artifact> parentArtifacts) {
-        List<Artifact> artifactList = new ArrayList<>(childArtifacts);
-        for (Artifact parentArtifact : parentArtifacts) {
-            boolean found = false;
-            for (Artifact childArtifact : childArtifacts) {
-                boolean isGroupIdMatch = childArtifact.getGroupId().equals(parentArtifact.getGroupId());
-                boolean isArtifactIdMatch = childArtifact.getArtifactId().equals(parentArtifact.getArtifactId());
-                boolean isTypeMatch = childArtifact.getType().equals(parentArtifact.getType());
-                if (isGroupIdMatch && isArtifactIdMatch && isTypeMatch) {
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
-                artifactList.add(parentArtifact);
-            }
-        }
-        return artifactList;
-    }
-
     public void saveTo(File path) throws MojoExecutionException {
         FileOutputStream out = null;
         try {
@@ -249,24 +159,11 @@ public class DistroProperties extends BaseSdkProperties {
         }
     }
 
+    // This is no longer needed or used, keeping it here until unit test dependencies and coverage is resolved
+    // It has been moved to PropertyUtils and changed to a new implementation.  It is applied in DistibutionBuilder.
+    @Deprecated
     public void resolvePlaceholders(Properties projectProperties) throws MojoExecutionException {
-        for(Map.Entry<Object, Object> property: properties.entrySet()){
-            if(hasPlaceholder(property.getValue())){
-                try{
-                    Object placeholderValue = projectProperties.get(getPlaceholderKey((String)property.getValue()));
-                    if(placeholderValue == null){
-                        throw new MojoExecutionException(
-                                "Failed to resolve property placeholders in distro file, no property for key \"" +
-                                        property.getKey() + "\"");
-                    } else {
-                        property.setValue(putInPlaceholder((String)property.getValue(), (String)placeholderValue));
-                    }
-                } catch (ClassCastException e){
-                    throw new MojoExecutionException("Property with key \"" + property.getKey() + "\" and value \"" +
-                            property.getValue() + "\" is not placeholder.");
-                }
-            }
-        }
+        PropertiesUtils.resolvePlaceholders(properties, projectProperties);
     }
 
     public Set<Object> getAllKeys() {
@@ -304,27 +201,6 @@ public class DistroProperties extends BaseSdkProperties {
 
     public void addProperty(String property, String value) throws MojoExecutionException {
         properties.put(property, value);
-    }
-
-    private String getPlaceholderKey(String string){
-        int startIndex = string.indexOf("${")+2;
-        int endIndex = string.indexOf("}", startIndex);
-        return string.substring(startIndex, endIndex);
-    }
-
-    private String putInPlaceholder(String value, String placeholderValue) {
-        return value.replace("${"+getPlaceholderKey(value)+"}", placeholderValue);
-    }
-
-    private boolean hasPlaceholder(Object object){
-        String asString;
-        try{
-            asString = (String) object;
-        } catch(ClassCastException e){
-            return false;
-        }
-        int index = asString.indexOf("{");
-        return index != -1 && asString.substring(index).contains("}");
     }
 
     public boolean contains(String propertyName) {

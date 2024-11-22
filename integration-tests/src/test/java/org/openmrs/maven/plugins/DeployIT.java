@@ -6,8 +6,10 @@ import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.OwaId;
 import org.openmrs.maven.plugins.model.Server;
+import org.openmrs.maven.plugins.utility.PropertiesUtils;
 
 import java.io.File;
+import java.util.Properties;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItemInArray;
@@ -68,7 +70,8 @@ public class DeployIT extends AbstractSdkIT {
 
         assertSuccess();
         assertFilePresent(testServerId, "openmrs-1.11.5.war");
-        DistroProperties distroProperties = new DistroProperties("2.3.1");
+        Properties properties = PropertiesUtils.loadPropertiesFromResource("openmrs-distro-2.3.1.properties");
+        DistroProperties distroProperties = new DistroProperties(properties);
         assertModulesInstalled(testServerId, distroProperties);
         assertPlatformUpdated(testServerId, "1.11.5");
 
@@ -91,7 +94,8 @@ public class DeployIT extends AbstractSdkIT {
 
         assertSuccess();
         assertFilePresent(testServerId, "openmrs-1.10.0.war");
-        DistroProperties distroProperties = new DistroProperties("2.1");
+        Properties properties = PropertiesUtils.loadPropertiesFromResource("openmrs-distro-2.1.properties");
+        DistroProperties distroProperties = new DistroProperties(properties);
         assertModulesInstalled(testServerId, distroProperties);
         assertPlatformUpdated(testServerId, "1.10.0");
 

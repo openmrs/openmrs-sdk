@@ -14,7 +14,6 @@ import java.nio.file.Path;
 import java.util.Properties;
 
 import static org.hamcrest.Matchers.equalTo;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
@@ -34,7 +33,7 @@ public class DistributionBuilderIT extends AbstractMavenIT {
 		executeTest(() -> {
 			DistributionBuilder builder = new DistributionBuilder(getMavenEnvironment());
 			Artifact artifact = new Artifact(SDKConstants.REFAPP_2X_ARTIFACT_ID, "2.13.0", SDKConstants.REFAPP_2X_GROUP_ID, SDKConstants.REFAPP_2X_TYPE);
-			Distribution distribution = builder.build(artifact);
+			Distribution distribution = builder.buildFromArtifact(artifact);
 			assertNotNull(distribution);
 			assertThat(distribution.getName(), equalTo("Reference Application"));
 			assertThat(distribution.getVersion(), equalTo("2.13.0"));
@@ -58,7 +57,7 @@ public class DistributionBuilderIT extends AbstractMavenIT {
 		executeTest(() -> {
 			DistributionBuilder builder = new DistributionBuilder(getMavenEnvironment());
 			Artifact artifact = new Artifact(SDKConstants.REFAPP_3X_ARTIFACT_ID, "3.0.0", SDKConstants.REFAPP_3X_GROUP_ID, SDKConstants.REFAPP_3X_TYPE);
-			Distribution distribution = builder.build(artifact);
+			Distribution distribution = builder.buildFromArtifact(artifact);
 			assertNotNull(distribution);
 			assertThat(distribution.getName(), equalTo("Ref 3.x distro"));
 			assertThat(distribution.getVersion(), equalTo("3.0.0"));

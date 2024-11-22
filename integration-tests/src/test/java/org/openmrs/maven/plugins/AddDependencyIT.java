@@ -1,12 +1,13 @@
 package org.openmrs.maven.plugins;
 
 import org.junit.Test;
-import org.openmrs.maven.plugins.model.DistroProperties;
-import org.openmrs.maven.plugins.utility.DistroHelper;
+import org.openmrs.maven.plugins.utility.PropertiesUtils;
 
-import static org.junit.Assert.assertEquals;
+import java.util.Properties;
+
+import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertThat;
 
 public class AddDependencyIT extends AbstractSdkIT {
 
@@ -21,10 +22,9 @@ public class AddDependencyIT extends AbstractSdkIT {
         executeTask("add");
         assertSuccess();
 
-        DistroProperties distroProperties = DistroHelper.getDistroPropertiesFromFile(distroFile);
+        Properties distroProperties = PropertiesUtils.loadPropertiesFromFile(distroFile);
         assertNotNull(distroProperties);
-        assertTrue(distroProperties.getAllKeys().contains("omod.webservices.rest"));
-        assertEquals(distroProperties.getParam("omod.webservices.rest"), "2.30.0");
+        assertThat(distroProperties.getProperty("omod.webservices.rest"), equalTo("2.30.0"));
     }
 
     @Test
@@ -37,11 +37,9 @@ public class AddDependencyIT extends AbstractSdkIT {
         executeTask("add");
         assertSuccess();
 
-        DistroProperties distroProperties = DistroHelper.getDistroPropertiesFromFile(distroFile);
+        Properties distroProperties = PropertiesUtils.loadPropertiesFromFile(distroFile);
         assertNotNull(distroProperties);
-
-        assertTrue(distroProperties.getAllKeys().contains("spa.frontendModules.@openmrs/esm-system-admin-app"));
-        assertEquals(distroProperties.getParam("spa.frontendModules.@openmrs/esm-system-admin-app"), "4.0.3");
+        assertThat(distroProperties.getProperty("spa.frontendModules.@openmrs/esm-system-admin-app"), equalTo("4.0.3"));
     }
 
     @Test
@@ -54,11 +52,9 @@ public class AddDependencyIT extends AbstractSdkIT {
         executeTask("add");
         assertSuccess();
 
-        DistroProperties distroProperties = DistroHelper.getDistroPropertiesFromFile(distroFile);
+        Properties distroProperties = PropertiesUtils.loadPropertiesFromFile(distroFile);
         assertNotNull(distroProperties);
-
-        assertTrue(distroProperties.getAllKeys().contains("owa.sysadmin"));
-        assertEquals(distroProperties.getParam("owa.sysadmin"), "1.2.0");
+        assertThat(distroProperties.getProperty("owa.sysadmin"), equalTo("1.2.0"));
     }
 
     @Test
@@ -70,11 +66,9 @@ public class AddDependencyIT extends AbstractSdkIT {
         executeTask("add");
         assertSuccess();
 
-        DistroProperties distroProperties = DistroHelper.getDistroPropertiesFromFile(distroFile);
+        Properties distroProperties = PropertiesUtils.loadPropertiesFromFile(distroFile);
         assertNotNull(distroProperties);
-
-        assertTrue(distroProperties.getAllKeys().contains("war.openmrs"));
-        assertEquals(distroProperties.getParam("war.openmrs"), "2.6.1");
+        assertThat(distroProperties.getProperty("war.openmrs"), equalTo("2.6.1"));
     }
 
     @Test
@@ -86,17 +80,15 @@ public class AddDependencyIT extends AbstractSdkIT {
         executeTask("add");
         assertSuccess();
 
-        DistroProperties distroProperties = DistroHelper.getDistroPropertiesFromFile(distroFile);
-        assertTrue(distroProperties.getAllKeys().contains("custom.property"));
-        assertEquals(distroProperties.getParam("custom.property"), "1.2.3");
-
+        Properties distroProperties = PropertiesUtils.loadPropertiesFromFile(distroFile);
+        assertThat(distroProperties.getProperty("custom.property"), equalTo("1.2.3"));
     }
 
     @Test
     public void shouldOverrideIfPropertyAlreadyExists() throws Exception {
-        DistroProperties distroProperties = DistroHelper.getDistroPropertiesFromFile(distroFile);
+        Properties distroProperties = PropertiesUtils.loadPropertiesFromFile(distroFile);
         assertNotNull(distroProperties);
-        assertTrue(distroProperties.getAllKeys().contains("omod.uiframework"));
+        assertThat(distroProperties.getProperty("omod.uiframework"), equalTo("3.6"));
 
         addTaskParam("distro", distroFile.getAbsolutePath());
         addTaskParam("type", "OMOD");
@@ -107,10 +99,8 @@ public class AddDependencyIT extends AbstractSdkIT {
         executeTask("add");
         assertSuccess();
 
-        distroProperties = DistroHelper.getDistroPropertiesFromFile(distroFile);
+        distroProperties = PropertiesUtils.loadPropertiesFromFile(distroFile);
         assertNotNull(distroProperties);
-
-        assertTrue(distroProperties.getAllKeys().contains("omod.uiframework"));
-        assertEquals(distroProperties.getParam("omod.uiframework"), "2.30.0");
+        assertThat(distroProperties.getProperty("omod.uiframework"), equalTo("2.30.0"));
     }
 }

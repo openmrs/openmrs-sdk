@@ -5,11 +5,10 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.openmrs.maven.plugins.model.Artifact;
+import org.openmrs.maven.plugins.model.Distribution;
 import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.Server;
-import org.openmrs.maven.plugins.model.Version;
-import org.openmrs.maven.plugins.utility.DistroHelper;
-import org.openmrs.maven.plugins.utility.PropertiesUtils;
+import org.openmrs.maven.plugins.utility.DistributionBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,7 +17,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Properties;
+
+import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_2X_ARTIFACT_ID;
+import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_2X_GROUP_ID;
+import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_2X_TYPE;
 
 /**
  * Generates an openmrs-distro.properties file for a specific version of OpenMRS Distro
@@ -50,7 +52,8 @@ public class GenerateDistro extends AbstractTask {
         options.add(O3_DISTRIBUTION);
         String choice = wizard.promptForMissingValueWithOptions(GENERATE_DISTRO_PROMPT, null, null, options);
 
-        DistroProperties distroProperties;
+        DistributionBuilder builder = new DistributionBuilder(getMavenEnvironment());
+        Distribution distribution = null;
 
         Server server = new Server.ServerBuilder().build();
 
@@ -64,39 +67,22 @@ public class GenerateDistro extends AbstractTask {
         switch (choice) {
             case O2_DISTRIBUTION:
                 wizard.promptForRefAppVersionIfMissing(server, versionsHelper, GET_VERSION_PROMPT);
-                if (DistroHelper.isRefapp2_3_1orLower(server.getDistroArtifactId(), server.getVersion())) {
-                    distroProperties = new DistroProperties(server.getVersion());
-                } else {
-                    distroProperties = distroHelper.downloadDistroProperties(outputFile, server);
-                }
-                distroProperties.saveTo(outputFile);
+                distribution = builder.buildFromArtifact(new Artifact(REFAPP_2X_ARTIFACT_ID, server.getVersion(), REFAPP_2X_GROUP_ID, REFAPP_2X_TYPE));
                 break;
 
             case O3_DISTRIBUTION:
                 wizard.promptForO3RefAppVersionIfMissing(server, versionsHelper, GET_VERSION_PROMPT);
-                Artifact artifact = new Artifact(server.getDistroArtifactId(), server.getVersion(),
-                        server.getDistroGroupId(), "zip");
-                Properties frontendProperties;
-                if (new Version(server.getVersion()).higher(new Version("3.0.0-beta.16"))) {
-                    frontendProperties = distroHelper.getFrontendProperties(server);
-                }
-                else {
-                    frontendProperties = PropertiesUtils.getFrontendPropertiesFromSpaConfigUrl(
-                            "https://raw.githubusercontent.com/openmrs/openmrs-distro-referenceapplication/"+ server.getVersion() +"/frontend/spa-build-config.json");
-                }
-                Properties configurationProperties = PropertiesUtils.getConfigurationProperty(artifact);
-                File file = distroHelper.downloadDistro(server.getServerDirectory(), artifact);
-                Properties backendProperties = PropertiesUtils.getDistroProperties(file);
-                Properties spaModuleProperty = PropertiesUtils.getModuleProperty("https://raw.githubusercontent.com/openmrs/openmrs-module-spa/master/pom.xml");
-                Properties allProperties = new Properties();
-                allProperties.putAll(backendProperties);
-                allProperties.putAll(spaModuleProperty);
-                allProperties.putAll(frontendProperties);
-                allProperties.putAll(configurationProperties);
-                distroProperties = new DistroProperties(allProperties);
-                distroProperties.saveTo(outputFile);
+                distribution = builder.buildFromArtifact(new Artifact(REFAPP_2X_ARTIFACT_ID, server.getVersion(), REFAPP_2X_GROUP_ID, REFAPP_2X_TYPE));
                 break;
         }
+
+        if (distribution == null) {
+            throw new MojoFailureException("Distribution could not be generated, the specified distribution could not be found");
+        }
+
+        distribution.getEffectiveProperties().saveTo(outputFile);
         logger.info(String.format("openmrs-distro.properties file created successfully at %s", outputFile.getAbsolutePath() + File.separator + DistroProperties.DISTRO_FILE_NAME));
+
+
     }
 }

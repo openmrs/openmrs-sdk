@@ -1,8 +1,9 @@
 package org.openmrs.maven.plugins;
 
 import org.junit.Test;
-import org.openmrs.maven.plugins.model.DistroProperties;
-import org.openmrs.maven.plugins.utility.DistroHelper;
+import org.openmrs.maven.plugins.utility.PropertiesUtils;
+
+import java.util.Properties;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -12,10 +13,10 @@ public class RemoveDependencyIT extends AbstractSdkIT {
 
     @Test
     public void shouldRemoveExistingDependency() throws Exception {
-        DistroProperties distroProperties = DistroHelper.getDistroPropertiesFromFile(distroFile);
+        Properties distroProperties = PropertiesUtils.loadPropertiesFromFile(distroFile);
         assertNotNull(distroProperties);
 
-        assertTrue(distroProperties.getAllKeys().contains("omod.uicommons"));
+        assertTrue(distroProperties.containsKey("omod.uicommons"));
 
         addTaskParam("distro", distroFile.getAbsolutePath());
         addTaskParam("property", "omod.uicommons");
@@ -23,7 +24,7 @@ public class RemoveDependencyIT extends AbstractSdkIT {
         executeTask("remove");
         assertSuccess();
 
-        distroProperties = DistroHelper.getDistroPropertiesFromFile(distroFile);
-        assertFalse(distroProperties.getAllKeys().contains("omod.uicommons"));
+        distroProperties = PropertiesUtils.loadPropertiesFromFile(distroFile);
+        assertFalse(distroProperties.containsKey("omod.uicommons"));
     }
 }

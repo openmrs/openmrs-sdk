@@ -11,11 +11,13 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.openmrs.maven.plugins.model.Artifact;
+import org.openmrs.maven.plugins.model.Distribution;
 import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.Project;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.model.Version;
 import org.openmrs.maven.plugins.utility.ContentHelper;
+import org.openmrs.maven.plugins.utility.DistributionBuilder;
 import org.openmrs.maven.plugins.utility.DistroHelper;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 import org.slf4j.Logger;
@@ -32,6 +34,10 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_2X_ARTIFACT_ID;
+import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_2X_GROUP_ID;
+import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_2X_TYPE;
 
 /**
  * Create docker configuration for distributions.
@@ -127,40 +133,36 @@ public class BuildDistro extends AbstractTask {
 
 		File userDir = new File(System.getProperty("user.dir"));
 
-		Artifact distroArtifact = null;
-		DistroProperties distroProperties = null;
+		DistributionBuilder builder = new DistributionBuilder(getMavenEnvironment());
+		Distribution distribution = null;
 
 		if (distro == null) {
 			File distroFile = new File(userDir, DistroProperties.DISTRO_FILE_NAME);
 			if (distroFile.exists()) {
 				wizard.showMessage("Building distribution from the distro file at " + distroFile + "...\n");
-				distroProperties = new DistroProperties(distroFile);
-				distroArtifact = distroProperties.getParentDistroArtifact();
-				distroProperties = handleParentDistroProperties(distroArtifact, buildDirectory, distroProperties);
-			} else if (Project.hasProject(userDir)) {
+				distribution = builder.buildFromFile(distroFile);
+			}
+			else if (Project.hasProject(userDir)) {
 				Project config = Project.loadProject(userDir);
-				distroArtifact = DistroHelper
-						.parseDistroArtifact(config.getGroupId() + ":" + config.getArtifactId() + ":" + config.getVersion(),
-								versionsHelper);
-
+				String coordinates = config.getGroupId() + ":" + config.getArtifactId() + ":" + config.getVersion();
+				Artifact distroArtifact = DistroHelper.parseDistroArtifact(coordinates, versionsHelper);
 				wizard.showMessage("Building distribution from the source at " + userDir + "...\n");
 				new Build(this).buildProject(config);
-				distroFile = distroHelper
-						.extractFileFromDistro(buildDirectory, distroArtifact, DistroProperties.DISTRO_FILE_NAME);
-
+				distroFile = distroHelper.extractFileFromDistro(buildDirectory, distroArtifact, DistroProperties.DISTRO_FILE_NAME);
 				if (distroFile.exists()) {
-					distroProperties = new DistroProperties(distroFile);
-				} else {
+					distribution = builder.buildFromFile(distroFile);
+				}
+				else {
 					wizard.showMessage("Couldn't find " + DistroProperties.DISTRO_FILE_NAME + " in " + distroArtifact);
 				}
 			}
-		} else if (StringUtils.isNotBlank(distro)) {
-			distroProperties = distroHelper.resolveDistroPropertiesForStringSpecifier(distro, versionsHelper);
-			distroArtifact = distroProperties.getParentDistroArtifact();
-			distroProperties = handleParentDistroProperties(distroArtifact, buildDirectory, distroProperties);
+		}
+		else if (StringUtils.isNotBlank(distro)) {
+			Artifact distroArtifact = DistroHelper.parseDistroArtifact(distro, versionsHelper);
+			distribution = builder.buildFromArtifact(distroArtifact);
 		}
 
-		if (distroProperties == null) {
+		if (distribution == null) {
 			Server server = new Server.ServerBuilder().build();
 
 			List<String> options = new ArrayList<>();
@@ -171,40 +173,23 @@ public class BuildDistro extends AbstractTask {
 			switch (choice) {
 				case O2_DISTRIBUTION:
 					wizard.promptForRefAppVersionIfMissing(server, versionsHelper, DISTRIBUTION_VERSION_PROMPT);
-					if (DistroHelper.isRefapp2_3_1orLower(server.getDistroArtifactId(), server.getVersion())) {
-						distroProperties = new DistroProperties(server.getVersion());
-					} else {
-						distroProperties = distroHelper.downloadDistroProperties(buildDirectory, server);
-						distroArtifact = new Artifact(server.getDistroArtifactId(), server.getVersion(), server.getDistroGroupId(),
-								"jar");
-					}
+					distribution = builder.buildFromArtifact(new Artifact(REFAPP_2X_ARTIFACT_ID, server.getVersion(), REFAPP_2X_GROUP_ID, REFAPP_2X_TYPE));
 					break;
 				case O3_DISTRIBUTION:
 					wizard.promptForO3RefAppVersionIfMissing(server, versionsHelper);
-					server.setServerDirectory(buildDirectory);
-					distroArtifact = new Artifact(server.getDistroArtifactId(), server.getVersion(), server.getDistroGroupId(), "zip");
-					distroProperties = new DistroProperties(distroHelper.getArtifactProperties(distroArtifact, server, appShellVersion));
+					distribution = builder.buildFromArtifact(new Artifact(REFAPP_2X_ARTIFACT_ID, server.getVersion(), REFAPP_2X_GROUP_ID, REFAPP_2X_TYPE));
 			}
-
 		}
 
-		if (distroProperties == null) {
+		if (distribution == null) {
 			throw new MojoExecutionException("The distro you specified, '" + distro + "' could not be retrieved");
 		}
 
-		distroHelper.parseContentProperties(distroProperties);
-		String distroName = buildDistro(buildDirectory, distroArtifact, distroProperties);
+		String distroName = buildDistro(buildDirectory, distribution);
 
 		wizard.showMessage(
 				"The '" + distroName + "' distribution created! To start up the server run 'docker-compose up' from "
 						+ buildDirectory.getAbsolutePath() + "\n");
-	}
-
-	private DistroProperties handleParentDistroProperties(Artifact distroArtifact, File buildDirectory, DistroProperties distroProperties) throws MojoExecutionException {
-		if (distroArtifact != null) {
-			distroProperties = distroHelper.resolveParentArtifact(distroArtifact, buildDirectory, distroProperties, appShellVersion);
-		}
-		return distroProperties;
 	}
 
 	private File getBuildDirectory() throws MojoExecutionException {
@@ -270,8 +255,13 @@ public class BuildDistro extends AbstractTask {
 		}
 	}
 
-	private String buildDistro(File targetDirectory, Artifact distroArtifact, DistroProperties distroProperties)
-			throws MojoExecutionException {
+	private String buildDistro(File targetDirectory, Distribution distribution) throws MojoExecutionException {
+
+		DistroProperties distroProperties = distribution.getEffectiveProperties();
+
+		// First do content package validation
+		distroHelper.parseContentProperties(distroProperties);
+
 		InputStream dbDumpStream;
 		wizard.showMessage("Downloading modules...\n");
 
@@ -279,8 +269,7 @@ public class BuildDistro extends AbstractTask {
 		File web = new File(targetDirectory, WEB);
 		web.mkdirs();
 
-		moduleInstaller
-				.installModules(distroProperties.getWarArtifacts(distroHelper, targetDirectory), web.getAbsolutePath());
+		moduleInstaller.installModules(distroProperties.getWarArtifacts(), web.getAbsolutePath());
 		renameWebApp(web);
 
 		if (bundled) {
@@ -288,8 +277,7 @@ public class BuildDistro extends AbstractTask {
 				ZipFile warfile = new ZipFile(new File(web, OPENMRS_WAR));
 				File tempDir = new File(web, "WEB-INF");
 				tempDir.mkdir();
-				moduleInstaller.installModules(distroProperties.getModuleArtifacts(distroHelper, targetDirectory),
-						new File(tempDir, WAR_FILE_MODULES_DIRECTORY_NAME).getAbsolutePath());
+				moduleInstaller.installModules(distroProperties.getModuleArtifacts(), new File(tempDir, WAR_FILE_MODULES_DIRECTORY_NAME).getAbsolutePath());
 
 				File owasDir = new File(tempDir, "bundledOwas");
 				owasDir.mkdir();
@@ -314,8 +302,7 @@ public class BuildDistro extends AbstractTask {
 		} else {
 			File modulesDir = new File(web, "modules");
 			modulesDir.mkdir();
-			moduleInstaller.installModules(distroProperties.getModuleArtifacts(distroHelper, targetDirectory),
-					modulesDir.getAbsolutePath());
+			moduleInstaller.installModules(distroProperties.getModuleArtifacts(), modulesDir.getAbsolutePath());
 
 			File frontendDir = new File(web, "frontend");
 			frontendDir.mkdir();
@@ -359,7 +346,7 @@ public class BuildDistro extends AbstractTask {
 		distroProperties.saveTo(web);
 
 		dbDumpStream = getSqlDumpStream(StringUtils.isNotBlank(dbSql) ? dbSql : distroProperties.getSqlScriptPath(),
-				targetDirectory, distroArtifact);
+				targetDirectory, distribution.getArtifact());
 		if (dbDumpStream != null) {
 			copyDbDump(targetDirectory, dbDumpStream);
 		}
@@ -371,7 +358,7 @@ public class BuildDistro extends AbstractTask {
 
 	private void downloadOWAs(File targetDirectory, DistroProperties distroProperties, File owasDir)
 			throws MojoExecutionException {
-		List<Artifact> owas = distroProperties.getOwaArtifacts(distroHelper, targetDirectory);
+		List<Artifact> owas = distroProperties.getOwaArtifacts();
 		if (!owas.isEmpty()) {
 			wizard.showMessage("Downloading OWAs...\n");
 			for (Artifact owa : owas) {
@@ -389,7 +376,7 @@ public class BuildDistro extends AbstractTask {
 	}
 
 	private void copyDockerfile(File targetDirectory, DistroProperties distroProperties) throws MojoExecutionException {
-		Version platformVersion = new Version(distroProperties.getPlatformVersion(distroHelper, targetDirectory));
+		Version platformVersion = new Version(distroProperties.getPlatformVersion());
 		int majorVersion = platformVersion.getMajorVersion();
 		if (majorVersion == 1) {
 			if (bundled) {

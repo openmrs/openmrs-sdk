@@ -7,6 +7,7 @@ import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
 import org.openmrs.maven.plugins.model.Artifact;
+import org.openmrs.maven.plugins.model.Distribution;
 import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.PackageJson;
 import org.openmrs.maven.plugins.model.Server;
@@ -50,46 +51,34 @@ public class DistroHelper {
 
 	private static final String CONTENT_PROPERTIES = "content.properties";
 
-	private static final String CONTENT_PREFIX = "content.";
-
 	private static final Logger log = LoggerFactory.getLogger(DistroHelper.class);
-	/**
-	 * The project currently being build.
-	 */
+
+	final MavenEnvironment mavenEnvironment;
 	final MavenProject mavenProject;
-
-	/**
-	 * The current Maven session.
-	 */
 	final MavenSession mavenSession;
-
-	/**
-	 * The Maven BuildPluginManager component.
-	 */
 	final BuildPluginManager pluginManager;
-
-	/**
-	 *
-	 */
 	final Wizard wizard;
 
 	final VersionsHelper versionHelper;
 
-	public DistroHelper(MavenProject mavenProject, MavenSession mavenSession, BuildPluginManager pluginManager,
-	    Wizard wizard, VersionsHelper versionHelper) {
-		this.mavenProject = mavenProject;
-		this.mavenSession = mavenSession;
-		this.pluginManager = pluginManager;
-		this.wizard = wizard;
-		this.versionHelper = versionHelper;
+	public DistroHelper(MavenEnvironment mavenEnvironment) {
+		this.mavenEnvironment = mavenEnvironment;
+		this.mavenProject = mavenEnvironment.getMavenProject();
+		this.mavenSession = mavenEnvironment.getMavenSession();
+		this.pluginManager = mavenEnvironment.getPluginManager();
+		this.wizard = mavenEnvironment.getWizard();
+		this.versionHelper = mavenEnvironment.getVersionsHelper();
 	}
 
 	/**
 	 * @return distro properties from openmrs-distro.properties file in current directory or null if not exist
 	 */
-	public static DistroProperties getDistroPropertiesFromDir() {
+	public DistroProperties getDistroPropertiesFromDir() {
 		File distroFile = new File(new File(System.getProperty("user.dir")), "openmrs-distro.properties");
-		return getDistroPropertiesFromFile(distroFile);
+		if (distroFile.exists()) {
+			return getDistroPropertiesFromFile(distroFile);
+		}
+		return null;
 	}
 
 	/**
@@ -109,10 +98,14 @@ public class DistroHelper {
 	 * @param distroFile file which contains distro properties
 	 * @return distro properties loaded from specified file or null if file is not distro properties
 	 */
-	public static DistroProperties getDistroPropertiesFromFile(File distroFile) {
+	public DistroProperties getDistroPropertiesFromFile(File distroFile) {
 		if (distroFile.exists()) {
 			try {
-				return new DistroProperties(distroFile);
+				DistributionBuilder builder = new DistributionBuilder(mavenEnvironment);
+				Distribution distribution = builder.buildFromFile(distroFile);
+				if (distribution != null) {
+					return distribution.getEffectiveProperties();
+				}
 			}
 			catch (MojoExecutionException ignored) {
 			}
@@ -345,30 +338,37 @@ public class DistroHelper {
 	 * @param distro
 	 * @return
 	 */
-	public DistroProperties resolveDistroPropertiesForStringSpecifier(String distro, VersionsHelper versionsHelper)
-			throws MojoExecutionException {
-		DistroProperties result;
-		result = getDistroPropertiesFromFile(new File(distro));
-		if (result != null && mavenProject != null) {
-			result.resolvePlaceholders(getProjectProperties());
-		} else {
-			Artifact artifact = parseDistroArtifact(distro, versionsHelper);
-			if (isRefapp2_3_1orLower(artifact)) {
-				result = new DistroProperties(artifact.getVersion());
-			} else if (isRefappBelow2_1(artifact)) {
-				throw new MojoExecutionException("Reference Application versions below 2.1 are not supported!");
-			} else {
-				result = downloadDistroProperties(new File(System.getProperty("user.dir")), artifact);
-			}
+	public Distribution resolveDistributionForStringSpecifier(String distro, VersionsHelper versionsHelper) throws MojoExecutionException {
+		DistributionBuilder builder = new DistributionBuilder(mavenEnvironment);
+		File distroFile = new File(distro);
+		if (distroFile.exists()) {
+			return builder.buildFromFile(distroFile);
 		}
-		return result;
+		Artifact artifact = parseDistroArtifact(distro, versionsHelper);
+		if (isRefappBelow2_1(artifact)) {
+			throw new MojoExecutionException("Reference Application versions below 2.1 are not supported!");
+		}
+
+		Distribution distribution = builder.buildFromArtifact(artifact);
+		if (distribution == null) {
+			throw new MojoExecutionException("Distribution " + distro + " not found");
+		}
+		return distribution;
 	}
 
-	private Properties getProjectProperties() {
-		Properties properties = mavenProject.getProperties();
-		properties.setProperty("project.parent.version", mavenProject.getVersion());
-		properties.setProperty("project.version", mavenProject.getVersion());
-		return properties;
+	/**
+	 * Distro can be passed in two ways: either as maven artifact identifier or path to distro file
+	 * Returns null if string is invalid as path or identifier
+	 *
+	 * @param distro
+	 * @return
+	 */
+	public DistroProperties resolveDistroPropertiesForStringSpecifier(String distro, VersionsHelper versionsHelper) throws MojoExecutionException {
+		Distribution distribution = resolveDistributionForStringSpecifier(distro, versionsHelper);
+		if (distribution == null) {
+			throw new MojoExecutionException("Distribution " + distro + " not found");
+		}
+		return distribution.getEffectiveProperties();
 	}
 
 	/**
@@ -388,11 +388,9 @@ public class DistroHelper {
 	 * - updateMap include modules which are already on server with newer/equal SNAPSHOT version
 	 * - add modules which are not installed on server yet
 	 */
-	public static UpgradeDifferential calculateUpdateDifferential(DistroHelper distroHelper, Server server,
-																  DistroProperties distroProperties) throws MojoExecutionException {
-		List<Artifact> newList = new ArrayList<>(
-				distroProperties.getWarArtifacts(distroHelper, server.getServerDirectory()));
-		newList.addAll(distroProperties.getModuleArtifacts(distroHelper, server.getServerDirectory()));
+	public static UpgradeDifferential calculateUpdateDifferential(Server server, DistroProperties distroProperties) throws MojoExecutionException {
+		List<Artifact> newList = new ArrayList<>(distroProperties.getWarArtifacts());
+		newList.addAll(distroProperties.getModuleArtifacts());
 		return calculateUpdateDifferential(server.getServerModules(), newList);
 	}
 
