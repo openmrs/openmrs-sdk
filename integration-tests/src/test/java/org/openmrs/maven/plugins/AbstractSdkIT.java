@@ -243,13 +243,13 @@ public abstract class AbstractSdkIT {
     }
 
     /**
-     * asserts that file with given path is present in test directory
+     * asserts the number of files with the given prefix and suffix are present in the given directory
      */
-    public void assertNumFilesPresent(int numExpected, String path, String extension) {
-        File dir = testDirectoryPath.resolve(path).toFile();
-        assertTrue(dir.exists());
-        File[] files = dir.listFiles((dir1, name) -> extension == null || name.endsWith(extension));
-        assertThat(files.length, equalTo(numExpected));
+    public void assertNumFilesPresent(int numExpected, Path path, String prefix, String suffix) {
+        File directory = testDirectoryPath.resolve(path).toFile();
+        File[] files = directory.listFiles((dir1, name) -> (prefix == null || name.startsWith(prefix)) && (suffix == null || name.endsWith(suffix)));
+        int numFound = (files == null ? 0 : files.length);
+        assertThat(numFound, equalTo(numExpected));
     }
 
     /**

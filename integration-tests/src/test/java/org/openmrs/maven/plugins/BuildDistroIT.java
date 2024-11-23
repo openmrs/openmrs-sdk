@@ -5,6 +5,7 @@ import org.junit.Test;
 import org.openmrs.maven.plugins.model.DistroProperties;
 
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
 public class BuildDistroIT extends AbstractSdkIT {
 
@@ -43,10 +44,10 @@ public class BuildDistroIT extends AbstractSdkIT {
         addTaskParam("ignorePeerDependencies", "false");
         executeTask("build-distro");
         assertFileContains("war.openmrs=2.6.9", "distro", "web", "openmrs-distro.properties");
-        assertFilePresent("distro/web/openmrs-distro.properties");
-        assertFilePresent("distro/web/openmrs_core/openmrs.war");
-        assertFilePresent("distro/web/openmrs_modules");
-        assertNumFilesPresent(12, "distro/web/openmrs_modules", ".omod");
+        assertFilePresent("distro", "web", "openmrs-distro.properties");
+        assertFilePresent("distro", "web", "openmrs_core", "openmrs.war");
+        assertFilePresent("distro", "web", "openmrs_modules");
+        assertNumFilesPresent(12, Paths.get("distro", "web", "openmrs_modules"), null, ".omod");
         assertSuccess();
     }
 
@@ -68,7 +69,7 @@ public class BuildDistroIT extends AbstractSdkIT {
         assertFilePresent("referenceapplication/web/modules");
         assertFilePresent("referenceapplication/web/openmrs.war");
         assertFilePresent("referenceapplication/web/openmrs-distro.properties");
-        assertNumFilesPresent(36, "referenceapplication/web/modules", ".omod");
+        assertNumFilesPresent(36, Paths.get("referenceapplication", "web", "modules"), null, ".omod");
         assertFileContains("war.openmrs=1.11.5", "referenceapplication", "web", "openmrs-distro.properties");
         assertSuccess();
     }
@@ -89,7 +90,7 @@ public class BuildDistroIT extends AbstractSdkIT {
         assertFilePresent("referenceapplication/web/openmrs_core/openmrs.war");
         assertFileContains("war.openmrs=2.5.9", "referenceapplication", "web", "openmrs-distro.properties");
         assertFilePresent("referenceapplication/web/openmrs_modules");
-        assertNumFilesPresent(42, "referenceapplication/web/openmrs_modules", ".omod");
+        assertNumFilesPresent(42, Paths.get("referenceapplication", "web", "openmrs_modules"), null, ".omod");
         assertFilePresent("referenceapplication/web/openmrs_owas");
         assertFilePresent("referenceapplication/web/openmrs_owas/SystemAdministration.owa");
 
@@ -112,10 +113,10 @@ public class BuildDistroIT extends AbstractSdkIT {
         assertFilePresent("referenceapplication/web/openmrs_core/openmrs.war");
         assertFileContains("war.openmrs=2.6.7", "referenceapplication", "web", "openmrs-distro.properties");
         assertFilePresent("referenceapplication/web/openmrs_modules");
-        assertNumFilesPresent(24, "referenceapplication/web/openmrs_modules", null);
+        assertNumFilesPresent(24, Paths.get("referenceapplication", "web", "openmrs_modules"), null, ".omod");
         assertFileContains("omod.spa", "referenceapplication", "web", "openmrs-distro.properties");
         assertFilePresent("referenceapplication/web/openmrs_owas");
-        assertNumFilesPresent(0, "referenceapplication/web/openmrs_owas", null);
+        assertNumFilesPresent(0, Paths.get("referenceapplication", "web", "openmrs_owas"), null, null);
 
         assertSuccess();
     }

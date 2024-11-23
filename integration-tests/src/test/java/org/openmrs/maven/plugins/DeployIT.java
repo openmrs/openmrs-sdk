@@ -9,10 +9,12 @@ import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.utility.PropertiesUtils;
 
 import java.io.File;
+import java.nio.file.Paths;
 import java.util.Properties;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItemInArray;
+import static org.junit.Assert.assertFalse;
 import static org.openmrs.maven.plugins.SdkMatchers.hasNameStartingWith;
 import static org.openmrs.maven.plugins.SdkMatchers.hasUserOwa;
 import static org.openmrs.maven.plugins.SdkMatchers.serverHasVersion;
@@ -98,6 +100,41 @@ public class DeployIT extends AbstractSdkIT {
         Server.setServersPath(testDirectory.getAbsolutePath());
         Server server = Server.loadServer(testServerId);
         assertThat(server, serverHasVersion("2.1"));
+    }
+
+    @Override
+    public void teardown() {
+
+    }
+
+    @Test
+    public void deploy_shouldUpgradeDistroTo3_0_0() throws Exception {
+
+        addAnswer(testServerId);
+        addAnswer("Distribution");
+        addAnswer("referenceapplication:3.0.0");
+        addAnswer("y");
+
+        executeTask("deploy");
+
+        assertSuccess();
+        assertFilePresent(testServerId, "openmrs-2.6.7.war");
+        Properties properties = PropertiesUtils.loadPropertiesFromResource("integration-test/distributions/distro-emr-configuration-3.0.0.properties");
+        DistroProperties distroProperties = new DistroProperties(properties);
+        assertModulesInstalled(testServerId, distroProperties);
+        assertPlatformUpdated(testServerId, "2.6.7");
+        assertNumFilesPresent(0, Paths.get(testServerId, "owa"), null, null);
+
+        // Spa module added
+        assertFalse(properties.containsKey("omod.spa"));
+        assertFileContains("omod.spa", "openmrs-distro.properties");
+        assertNumFilesPresent(1, Paths.get(testServerId, "modules"), "spa-", ".omod");
+
+        // TODO: Deploy does not currently support installing or updating frontend or config or content.  This needs to be ticketed and fixed
+
+        Server.setServersPath(testDirectory.getAbsolutePath());
+        Server server = Server.loadServer(testServerId);
+        assertThat(server, serverHasVersion("3.0.0"));
     }
 
     @Test
