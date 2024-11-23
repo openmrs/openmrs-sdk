@@ -127,7 +127,7 @@ public class DeployIT extends AbstractSdkIT {
 
         // Spa module added
         assertFalse(properties.containsKey("omod.spa"));
-        assertFileContains("omod.spa", "openmrs-distro.properties");
+        assertFileContains("omod.spa", testServerId, "openmrs-distro.properties");
         assertNumFilesPresent(1, Paths.get(testServerId, "modules"), "spa-", ".omod");
 
         // TODO: Deploy does not currently support installing or updating frontend or config or content.  This needs to be ticketed and fixed
