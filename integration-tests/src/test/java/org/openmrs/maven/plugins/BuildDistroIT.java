@@ -1,11 +1,16 @@
 package org.openmrs.maven.plugins;
 
+import org.apache.commons.io.FileUtils;
 import org.junit.Test;
+import org.openmrs.maven.plugins.model.DistroProperties;
+
+import java.nio.file.Path;
 
 public class BuildDistroIT extends AbstractSdkIT {
 
     @Test
-    public void testBuildDistroFromDistroFile() throws Exception {
+    public void buildDistro_shouldBuildFromDistroPropertiesInCurrentDirectory() throws Exception {
+        includeDistroPropertiesFile(DistroProperties.DISTRO_FILE_NAME);
         addTaskParam("dir", "target");
         addTaskParam("ignorePeerDependencies", "false");
         executeTask("build-distro");
@@ -19,14 +24,34 @@ public class BuildDistroIT extends AbstractSdkIT {
         assertFilePresent("target/web/startup.sh");
         assertFilePresent("target/web/wait-for-it.sh");
         assertFilePresent("target/web/modules");
+        assertFilePresent("target/web/modules/uiframework-3.6.omod");
+        assertFilePresent("target/web/modules/uicommons-1.7.omod");
+        assertFilePresent("target/web/modules/owa-1.4.omod");
         assertFilePresent("target/web/owa");
         assertFilePresent("target/web/openmrs.war");
         assertFilePresent("target/web/openmrs-distro.properties");
+        assertFileContains("war.openmrs=1.11.5", "target", "web", "openmrs-distro.properties");
         assertSuccess();
     }
 
     @Test
-    public void testBuildDistroRefApp23() throws Exception {
+    public void buildDistro_shouldBuildFromDistroPropertiesInCurrentProject() throws Exception {
+        Path sourcePath = testResourceDir.resolve(TEST_DIRECTORY).resolve("buildDistroIT");
+        FileUtils.copyDirectory(sourcePath.toFile(), testDirectory);
+
+        addTaskParam("dir", "distro");
+        addTaskParam("ignorePeerDependencies", "false");
+        executeTask("build-distro");
+        assertFileContains("war.openmrs=2.6.9", "distro", "web", "openmrs-distro.properties");
+        assertFilePresent("distro/web/openmrs-distro.properties");
+        assertFilePresent("distro/web/openmrs_core/openmrs.war");
+        assertFilePresent("distro/web/openmrs_modules");
+        assertNumFilesPresent(12, "distro/web/openmrs_modules", ".omod");
+        assertSuccess();
+    }
+
+    @Test
+    public void buildDistro_shouldBuildFromRefapp23Artifact() throws Exception {
         addTaskParam("distro", "referenceapplication:2.3.1");
         addTaskParam("dir", "referenceapplication");
         addTaskParam("ignorePeerDependencies", "false");
@@ -43,6 +68,55 @@ public class BuildDistroIT extends AbstractSdkIT {
         assertFilePresent("referenceapplication/web/modules");
         assertFilePresent("referenceapplication/web/openmrs.war");
         assertFilePresent("referenceapplication/web/openmrs-distro.properties");
+        assertNumFilesPresent(36, "referenceapplication/web/modules", ".omod");
+        assertFileContains("war.openmrs=1.11.5", "referenceapplication", "web", "openmrs-distro.properties");
+        assertSuccess();
+    }
+
+    @Test
+    public void buildDistro_shouldBuildFromRefapp2xArtifact() throws Exception {
+        addTaskParam("distro", "referenceapplication:2.13.0");
+        addTaskParam("dir", "referenceapplication");
+        addTaskParam("ignorePeerDependencies", "false");
+        executeTask("build-distro");
+
+        assertFilePresent("referenceapplication/docker-compose.yml");
+        assertFilePresent("referenceapplication/docker-compose.override.yml");
+        assertFilePresent("referenceapplication/docker-compose.prod.yml");
+        assertFilePresent("referenceapplication/.env");
+        assertFilePresent("referenceapplication/web/Dockerfile");
+        assertFilePresent("referenceapplication/web/openmrs-distro.properties");
+        assertFilePresent("referenceapplication/web/openmrs_core/openmrs.war");
+        assertFileContains("war.openmrs=2.5.9", "referenceapplication", "web", "openmrs-distro.properties");
+        assertFilePresent("referenceapplication/web/openmrs_modules");
+        assertNumFilesPresent(42, "referenceapplication/web/openmrs_modules", ".omod");
+        assertFilePresent("referenceapplication/web/openmrs_owas");
+        assertFilePresent("referenceapplication/web/openmrs_owas/SystemAdministration.owa");
+
+        assertSuccess();
+    }
+
+    @Test
+    public void buildDistro_shouldBuildFromRefapp3xArtifact() throws Exception {
+        addTaskParam("distro", "referenceapplication:3.0.0");
+        addTaskParam("dir", "referenceapplication");
+        addTaskParam("ignorePeerDependencies", "false");
+        executeTask("build-distro");
+
+        assertFilePresent("referenceapplication/docker-compose.yml");
+        assertFilePresent("referenceapplication/docker-compose.override.yml");
+        assertFilePresent("referenceapplication/docker-compose.prod.yml");
+        assertFilePresent("referenceapplication/.env");
+        assertFilePresent("referenceapplication/web/Dockerfile");
+        assertFilePresent("referenceapplication/web/openmrs-distro.properties");
+        assertFilePresent("referenceapplication/web/openmrs_core/openmrs.war");
+        assertFileContains("war.openmrs=2.6.7", "referenceapplication", "web", "openmrs-distro.properties");
+        assertFilePresent("referenceapplication/web/openmrs_modules");
+        assertNumFilesPresent(24, "referenceapplication/web/openmrs_modules", null);
+        assertFileContains("omod.spa", "referenceapplication", "web", "openmrs-distro.properties");
+        assertFilePresent("referenceapplication/web/openmrs_owas");
+        assertNumFilesPresent(0, "referenceapplication/web/openmrs_owas", null);
+
         assertSuccess();
     }
 

@@ -83,12 +83,25 @@ public class DistributionBuilder {
 			throw new MojoExecutionException("Unable to build from artifact, no distro properties file found");
 		}
 
+		// Special handling for referenceapplication 2.x issues
+		if (REFAPP_2X_GROUP_ID.equals(artifact.getGroupId()) && REFAPP_2X_ARTIFACT_ID.equals(artifact.getArtifactId())) {
+			mavenEnvironment.getWizard().showMessage("This is a 2.x refapp distribution");
+			populateRefApp2xProperties(distribution, properties);
+		}
+
 		// Special handling for referenceapplication 3.x, which does not define everything needed in the published distro properties file
 		if (REFAPP_3X_GROUP_ID.equals(artifact.getGroupId()) && REFAPP_3X_ARTIFACT_ID.equals(artifact.getArtifactId())) {
-			mavenEnvironment.getWizard().showMessage("This is a 3.x refapp, adding additional properties");
+			mavenEnvironment.getWizard().showMessage("This is a 3.x refapp distribution");
 			populateRefApp3xProperties(distribution, properties);
 		}
 		return populateDistributionFromProperties(distribution, properties);
+	}
+
+	public void populateRefApp2xProperties(Distribution distribution, Properties properties) {
+		// Some refapp versions (eg. 2.13.0) include atlas version 2.2.6, which is not published in Maven.  Adjust this.
+		if ("2.2.6".equals(properties.getProperty("omod.atlas"))) {
+			properties.put("omod.atlas", "2.2.7");
+		}
 	}
 
 	/**

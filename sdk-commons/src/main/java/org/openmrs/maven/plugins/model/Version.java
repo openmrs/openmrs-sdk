@@ -34,7 +34,15 @@ public class Version extends DefaultArtifactVersion {
             return parts[parts.length - 1];
         }
     }
-    public boolean isSnapshot(){
-        return getQualifier()!= null && getQualifier().contains("SNAPSHOT");
+    public boolean isSnapshot() {
+        return getQualifier() != null && getQualifier().toUpperCase().contains("SNAPSHOT");
+    }
+
+    public boolean isAlpha() {
+        return getQualifier() != null && getQualifier().toLowerCase().contains("alpha");
+    }
+
+    public boolean isBeta() {
+        return getQualifier() != null && getQualifier().toLowerCase().contains("beta");
     }
 }

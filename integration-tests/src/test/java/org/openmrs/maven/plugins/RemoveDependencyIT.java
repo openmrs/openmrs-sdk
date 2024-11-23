@@ -1,6 +1,7 @@
 package org.openmrs.maven.plugins;
 
 import org.junit.Test;
+import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.utility.PropertiesUtils;
 
 import java.util.Properties;
@@ -13,6 +14,7 @@ public class RemoveDependencyIT extends AbstractSdkIT {
 
     @Test
     public void shouldRemoveExistingDependency() throws Exception {
+        includeDistroPropertiesFile(DistroProperties.DISTRO_FILE_NAME);
         Properties distroProperties = PropertiesUtils.loadPropertiesFromFile(distroFile);
         assertNotNull(distroProperties);
 

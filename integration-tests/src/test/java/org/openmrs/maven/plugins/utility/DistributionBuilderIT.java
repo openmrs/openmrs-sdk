@@ -71,7 +71,12 @@ public class DistributionBuilderIT extends AbstractMavenIT {
 			Properties expected = getExpectedPropertiesFromResource(artifact);
 			assertThat(allProperties.size(), equalTo(expected.size()));
 			for (String p : expected.stringPropertyNames()) {
-				assertThat(allProperties.getProperty(p), equalTo(expected.getProperty(p)));
+				if (p.equals("omod.atlas")) {
+					assertThat(allProperties.getProperty(p), equalTo("2.2.7"));
+				}
+				else {
+					assertThat(allProperties.getProperty(p), equalTo(expected.getProperty(p)));
+				}
 			}
 		});
 	}

@@ -117,6 +117,7 @@ public class SetupIT extends AbstractSdkIT {
     @Test
     public void setup_shouldInstallServerFromGivenDistroProperties() throws Exception{
         String serverId = UUID.randomUUID().toString();
+        includeDistroPropertiesFile(DistroProperties.DISTRO_FILE_NAME);
 
         addTaskParam("distro", testDirectory.getAbsolutePath() + File.separator + "openmrs-distro.properties");
         addTaskParam("debug", "1044");
@@ -147,6 +148,8 @@ public class SetupIT extends AbstractSdkIT {
     @Test
     public void setup_shouldInstallServerFromDistroPropertiesDir() throws Exception{
         String serverId = UUID.randomUUID().toString();
+        includeDistroPropertiesFile(DistroProperties.DISTRO_FILE_NAME);
+
         addTaskParam("serverId", serverId);
         addTaskParam("debug", "1044");
         addTaskParam("ignorePeerDependencies", "false");
@@ -182,8 +185,8 @@ public class SetupIT extends AbstractSdkIT {
         addMockDbSettings();
 
         addAnswer(serverId);
-        addAnswer("Distribution");
-        addAnswer("referenceapplication:2.2");
+        addAnswer("Platform");
+        addAnswer("2.6.1");
         addAnswer(System.getProperty("java.home"));
         addAnswer("8080");
 
@@ -198,7 +201,7 @@ public class SetupIT extends AbstractSdkIT {
         assertThat(javaHomeServerProperty, is(nullValue()));
 	}
 
-	@Test
+    @Test
     public void setup_shouldInstallServerWithSpecifiedLatestSnapshotDistroVersionByUsingKeywordInBatchMode() throws Exception {
         String keyword = "LATEST-SNAPSHOT";
 
@@ -324,8 +327,8 @@ public class SetupIT extends AbstractSdkIT {
         addTaskParam("ignorePeerDependencies", "false");
 
         addAnswer(serverId);
-        addAnswer("Distribution");
-        addAnswer("referenceapplication:2.2");
+        addAnswer("Platform");
+        addAnswer("2.6.1");
         addAnswer("8080");
         addAnswer("1044");
 

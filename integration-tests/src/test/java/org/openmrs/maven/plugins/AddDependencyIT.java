@@ -1,6 +1,7 @@
 package org.openmrs.maven.plugins;
 
 import org.junit.Test;
+import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.utility.PropertiesUtils;
 
 import java.util.Properties;
@@ -10,6 +11,12 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 
 public class AddDependencyIT extends AbstractSdkIT {
+
+    @Override
+    protected void addTestResources() throws Exception {
+        super.addTestResources();
+        includeDistroPropertiesFile(DistroProperties.DISTRO_FILE_NAME);
+    }
 
     @Test
     public void shouldAddOmodDependency() throws Exception {

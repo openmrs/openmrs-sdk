@@ -170,16 +170,23 @@ public class DistroHelper {
 		String version = artifact.getVersion();
 		String type = artifact.getType();
 
-		if (Artifact.GROUP_DISTRO.equals(groupId)) {
+		if (Artifact.GROUP_DISTRO.equals(groupId) || Artifact.GROUP_OPENMRS.equals(groupId)) {
 			if ("referenceapplication".equals(artifactId)) {
 				Version v = new Version(version);
 				if (v.getMajorVersion() <= 2) {
-					artifactId += "-package";
-					type = "jar";
+					groupId = SDKConstants.REFAPP_2X_GROUP_ID;
+					artifactId = SDKConstants.REFAPP_2X_ARTIFACT_ID;
+					type = SDKConstants.REFAPP_2X_TYPE;
+				}
+				else if (v.getMajorVersion() == 3 && (v.isAlpha() || v.isBeta() || v.isSnapshot())) {
+					groupId = SDKConstants.REFAPP_2X_GROUP_ID;
+					artifactId = SDKConstants.REFAPP_DISTRO;
+					type = Artifact.TYPE_ZIP;
 				}
 				else {
-					artifactId += "-distro";
-					type = "zip";
+					groupId = SDKConstants.REFAPP_3X_GROUP_ID;
+					artifactId = SDKConstants.REFAPP_3X_ARTIFACT_ID;
+					type = SDKConstants.REFAPP_3X_TYPE;
 				}
 			}
 		}

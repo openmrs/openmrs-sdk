@@ -15,6 +15,12 @@ import static org.junit.Assert.assertTrue;
 
 public class AddExclusionIT extends AbstractSdkIT {
 
+    @Override
+    protected void addTestResources() throws Exception {
+        super.addTestResources();
+        includeDistroPropertiesFile(DistroProperties.DISTRO_FILE_NAME);
+    }
+
     public DistroProperties getDistroProperties() throws Exception {
         Properties properties = PropertiesUtils.loadPropertiesFromFile(distroFile);
         return new DistroProperties(properties);

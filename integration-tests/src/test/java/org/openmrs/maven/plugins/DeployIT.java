@@ -60,8 +60,6 @@ public class DeployIT extends AbstractSdkIT {
     public void deploy_shouldUpgradeDistroTo2_3_1() throws Exception {
 
         addAnswer(testServerId);
-        addAnswer("n");
-        addAnswer("n");
         addAnswer("Distribution");
         addAnswer("referenceapplication:2.3.1");
         addAnswer("y");
@@ -84,8 +82,6 @@ public class DeployIT extends AbstractSdkIT {
     public void deploy_shouldDowngradeDistroTo2_1() throws Exception {
 
         addAnswer(testServerId);
-        addAnswer("n");
-        addAnswer("n");
         addAnswer("Distribution");
         addAnswer("referenceapplication:2.1");
         addAnswer("y");
@@ -106,6 +102,7 @@ public class DeployIT extends AbstractSdkIT {
 
     @Test
     public void deploy_shouldUpgradeDistroFromDistroProperties() throws Exception {
+        includeDistroPropertiesFile(DistroProperties.DISTRO_FILE_NAME);
         addAnswer(testServerId);
         addAnswer("y");
         addAnswer("y");
@@ -139,9 +136,8 @@ public class DeployIT extends AbstractSdkIT {
 
     @Test
     public void deploy_shouldInstallModuleFromPomInDir() throws Exception {
-
+        includePomFile("deployIT", "pom-owa-module.xml");
         addAnswer(testServerId);
-        addAnswer("n");
         addAnswer("y");
         executeTask("deploy");
 

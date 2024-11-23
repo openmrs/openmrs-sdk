@@ -148,9 +148,9 @@ public class BuildDistro extends AbstractTask {
 			else if (Project.hasProject(userDir)) {
 				wizard.showMessage("Building distribution from the source at " + userDir + "...\n");
 				Project config = Project.loadProject(userDir);
+				new Build(this).buildProject(config);
 				String coordinates = config.getGroupId() + ":" + config.getArtifactId() + ":" + config.getVersion();
 				Artifact distroArtifact = DistroHelper.parseDistroArtifact(coordinates, versionsHelper);
-				new Build(this).buildProject(config);
 				distribution = builder.buildFromArtifact(distroArtifact);
 			}
 		}

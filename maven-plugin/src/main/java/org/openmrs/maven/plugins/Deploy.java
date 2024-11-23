@@ -185,6 +185,7 @@ public class Deploy extends AbstractServerTask {
 					distro = wizard.promptForDistroVersion(server.getDistroGroupId(), server.getDistroArtifactId(),
 							server.getVersion(), server.getName(), versionsHelper);
 				}
+				wizard.showMessage("Deploying distribution: " + distro);
 				distroProperties = distroHelper.resolveDistroPropertiesForStringSpecifier(distro, versionsHelper);
 				upgrader.upgradeToDistro(server, distroProperties, ignorePeerDependencies, overrideReuseNodeCache);
 				break;

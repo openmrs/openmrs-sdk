@@ -39,9 +39,11 @@ import java.util.UUID;
 import java.util.zip.ZipFile;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.io.FileMatchers.anExistingFileOrDirectory;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.openmrs.maven.plugins.SdkMatchers.hasModuleVersion;
 import static org.openmrs.maven.plugins.SdkMatchers.hasModuleVersionInDisstro;
 import static org.openmrs.maven.plugins.SdkMatchers.hasPlatformVersion;
@@ -70,14 +72,11 @@ public abstract class AbstractSdkIT {
      * test directory, contains mock files and files created during tests
      */
     protected File testDirectory;
-
     protected Path testDirectoryPath;
-
     protected File distroFile;
-
     protected Path testBaseDir;
     protected Path testResourceDir;
-    boolean preserveTestOutput;
+    protected boolean preserveTestOutput;
 
     public String resolveSdkArtifact() throws MojoExecutionException {
         Properties sdk = new Properties();
@@ -110,7 +109,6 @@ public abstract class AbstractSdkIT {
 
     protected void addTestResources() throws Exception {
         includePomFile("pom.xml");
-        includeDistroPropertiesFile(DistroProperties.DISTRO_FILE_NAME);
     }
 
     @Before
@@ -242,6 +240,16 @@ public abstract class AbstractSdkIT {
 
     public File getTestFile(Path path) {
         return testDirectoryPath.resolve(path).toFile();
+    }
+
+    /**
+     * asserts that file with given path is present in test directory
+     */
+    public void assertNumFilesPresent(int numExpected, String path, String extension) {
+        File dir = testDirectoryPath.resolve(path).toFile();
+        assertTrue(dir.exists());
+        File[] files = dir.listFiles((dir1, name) -> extension == null || name.endsWith(extension));
+        assertThat(files.length, equalTo(numExpected));
     }
 
     /**

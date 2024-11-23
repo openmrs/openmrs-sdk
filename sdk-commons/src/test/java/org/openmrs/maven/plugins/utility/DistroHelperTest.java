@@ -170,9 +170,17 @@ public class DistroHelperTest {
     }
 
     @Test
-    public void normalizeArtifact_shouldNormalizeRefApp3() {
+    public void normalizeArtifact_shouldNormalizeRefApp3Beta() {
         Artifact artifact = DistroHelper.normalizeArtifact(new Artifact("referenceapplication", "3.0.0-alpha", "org.openmrs.distro"), versionsHelper);
         assertThat(artifact.getArtifactId(), equalTo("referenceapplication-distro"));
+        assertThat(artifact.getType(), equalTo("zip"));
+    }
+
+    @Test
+    public void normalizeArtifact_shouldNormalizeRefApp3() {
+        Artifact artifact = DistroHelper.normalizeArtifact(new Artifact("referenceapplication", "3.0.0", "org.openmrs.distro"), versionsHelper);
+        assertThat(artifact.getArtifactId(), equalTo("distro-emr-configuration"));
+        assertThat(artifact.getGroupId(), equalTo("org.openmrs"));
         assertThat(artifact.getType(), equalTo("zip"));
     }
 
