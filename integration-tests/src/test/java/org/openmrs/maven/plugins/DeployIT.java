@@ -102,11 +102,6 @@ public class DeployIT extends AbstractSdkIT {
         assertThat(server, serverHasVersion("2.1"));
     }
 
-    @Override
-    public void teardown() {
-
-    }
-
     @Test
     public void deploy_shouldUpgradeDistroTo3_0_0() throws Exception {
 
