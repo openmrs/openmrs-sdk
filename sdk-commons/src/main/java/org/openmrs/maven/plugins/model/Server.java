@@ -580,9 +580,8 @@ public class Server extends BaseSdkProperties {
         }
     }
 
-    public void setValuesFromDistroProperties(DistroHelper distroHelper, DistroProperties distroProperties) throws MojoExecutionException {
+    public void setValuesFromDistroProperties(DistroProperties distroProperties) {
         if (distroProperties != null) {
-            distroProperties = distroHelper.getDistroPropertiesForFullAncestry(distroProperties, getServerDirectory());
             for (Object property : distroProperties.getAllKeys()) {
                 String key = property.toString();
                 if (distroProperties.isBaseSdkProperty(key)) {

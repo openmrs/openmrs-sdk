@@ -10,39 +10,44 @@ import org.openmrs.maven.plugins.model.Artifact;
 
 import java.io.File;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @Getter @Setter
 public class ArtifactHelperIT extends AbstractMavenIT {
 
 	@Test
-	public void test_downloadModuleWithDefaultName() throws Exception {
+	public void downloadArtifact_shouldDownloadToSpecifiedDirectory() throws Exception {
 		executeTest(() -> {
 			ArtifactHelper artifactHelper = new ArtifactHelper(getMavenEnvironment());
 			Artifact artifact = new Artifact("idgen-omod", "4.14.0", "org.openmrs.module", "jar");
-			artifactHelper.downloadArtifact(artifact, getMavenTestDirectory(), null);
-			File expectedFile = new File(getMavenTestDirectory(), "idgen-omod-4.14.0.jar");
-			assertTrue(expectedFile.exists());
+			artifactHelper.downloadArtifact(artifact, getMavenTestDirectory(), false);
+			File downloadedArtifact = new File(getMavenTestDirectory(), "idgen-4.14.0.jar");
+			assertTrue(downloadedArtifact.exists());
 		});
 	}
 
 	@Test
-	public void downloadModuleWithSpecificName() throws Exception {
+	public void downloadArtifact_shouldUnpackToSpecifiedDirectory() throws Exception {
 		executeTest(() -> {
 			ArtifactHelper artifactHelper = new ArtifactHelper(getMavenEnvironment());
 			Artifact artifact = new Artifact("idgen-omod", "4.14.0", "org.openmrs.module", "jar");
-			artifactHelper.downloadArtifact(artifact, getMavenTestDirectory(), "idgen.omod");
-			File expectedFile = new File(getMavenTestDirectory(), "idgen.omod");
-			assertTrue(expectedFile.exists());
+			artifactHelper.downloadArtifact(artifact, getMavenTestDirectory(), true);
+			File downloadedArtifact = new File(getMavenTestDirectory(), "idgen-4.14.0.jar");
+			assertFalse(downloadedArtifact.exists());
+			File liquibaseXml = new File(getMavenTestDirectory(), "liquibase.xml");
+			assertTrue(liquibaseXml.exists());
+			File configXml = new File(getMavenTestDirectory(), "config.xml");
+			assertTrue(configXml.exists());
 		});
 	}
 
 	@Test(expected = VerificationException.class)
-	public void downloadModuleThatDoesNotExist() throws Exception {
+	public void downloadArtifact_shouldFailIfNoArtifactIsFound() throws Exception {
 		executeTest(() -> {
 			ArtifactHelper artifactHelper = new ArtifactHelper(getMavenEnvironment());
 			Artifact artifact = new Artifact("idgen-omod", "4.0.0", "org.openmrs.module", "jar");
-			artifactHelper.downloadArtifact(artifact, getMavenTestDirectory(), "idgen.omod");
+			artifactHelper.downloadArtifact(artifact, getMavenTestDirectory(), false);
 		});
 	}
 }

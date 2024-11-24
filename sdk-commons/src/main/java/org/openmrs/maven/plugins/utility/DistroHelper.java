@@ -1,12 +1,12 @@
 package org.openmrs.maven.plugins.utility;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.StringUtils;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
 import org.openmrs.maven.plugins.model.Artifact;
+import org.openmrs.maven.plugins.model.Distribution;
 import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.PackageJson;
 import org.openmrs.maven.plugins.model.Server;
@@ -32,8 +32,6 @@ import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-import static org.openmrs.maven.plugins.model.BaseSdkProperties.TYPE_DISTRO;
-import static org.openmrs.maven.plugins.model.BaseSdkProperties.TYPE_PARENT;
 import static org.twdata.maven.mojoexecutor.MojoExecutor.artifactId;
 import static org.twdata.maven.mojoexecutor.MojoExecutor.configuration;
 import static org.twdata.maven.mojoexecutor.MojoExecutor.element;
@@ -49,62 +47,47 @@ public class DistroHelper {
 
 	private static final String CONTENT_PROPERTIES = "content.properties";
 
-	private static final String CONTENT_PREFIX = "content.";
-
 	private static final Logger log = LoggerFactory.getLogger(DistroHelper.class);
-	/**
-	 * The project currently being build.
-	 */
+
+	final MavenEnvironment mavenEnvironment;
 	final MavenProject mavenProject;
-
-	/**
-	 * The current Maven session.
-	 */
 	final MavenSession mavenSession;
-
-	/**
-	 * The Maven BuildPluginManager component.
-	 */
 	final BuildPluginManager pluginManager;
-
-	/**
-	 *
-	 */
 	final Wizard wizard;
 
 	final VersionsHelper versionHelper;
 
-	public DistroHelper(MavenProject mavenProject, MavenSession mavenSession, BuildPluginManager pluginManager,
-	    Wizard wizard, VersionsHelper versionHelper) {
-		this.mavenProject = mavenProject;
-		this.mavenSession = mavenSession;
-		this.pluginManager = pluginManager;
-		this.wizard = wizard;
-		this.versionHelper = versionHelper;
+	public DistroHelper(MavenEnvironment mavenEnvironment) {
+		this.mavenEnvironment = mavenEnvironment;
+		this.mavenProject = mavenEnvironment.getMavenProject();
+		this.mavenSession = mavenEnvironment.getMavenSession();
+		this.pluginManager = mavenEnvironment.getPluginManager();
+		this.wizard = mavenEnvironment.getWizard();
+		this.versionHelper = mavenEnvironment.getVersionsHelper();
 	}
 
 	/**
 	 * @return distro properties from openmrs-distro.properties file in current directory or null if not exist
 	 */
-	public static DistroProperties getDistroPropertiesFromDir() {
+	public File getDistroPropertiesFileFromDir() {
 		File distroFile = new File(new File(System.getProperty("user.dir")), "openmrs-distro.properties");
-		return getDistroPropertiesFromFile(distroFile);
+		if (distroFile.exists()) {
+			return distroFile;
+		}
+		return null;
 	}
 
 	/**
-	 * @param distroFile file which contains distro properties
-	 * @return distro properties loaded from specified file or null if file is not distro properties
+	 * Creates a minimal distro properties for the current server configuration, which is
+	 * a platform installation. The database driver must have been configured before this is
+	 * called.
 	 */
-	public static DistroProperties getDistroPropertiesFromFile(File distroFile) {
-		if (distroFile.exists()) {
-			try {
-				return new DistroProperties(distroFile);
-			}
-			catch (MojoExecutionException ignored) {
-			}
+	public DistroProperties createDistroForPlatform(Server server) {
+		DistroProperties distroProperties = new DistroProperties(server.getServerId(), server.getPlatformVersion());
+		if (server.getDbDriver().equals(SDKConstants.DRIVER_H2)) {
+			distroProperties.setH2Support(true);
 		}
-
-		return null;
+		return distroProperties;
 	}
 
 	/**
@@ -137,6 +120,7 @@ public class DistroHelper {
 						}
 						server.setPropertyValue(propertyName, propertyValue);
 					}
+
 				}
 			}
 		}
@@ -167,16 +151,23 @@ public class DistroHelper {
 		String version = artifact.getVersion();
 		String type = artifact.getType();
 
-		if (Artifact.GROUP_DISTRO.equals(groupId)) {
+		if (Artifact.GROUP_DISTRO.equals(groupId) || Artifact.GROUP_OPENMRS.equals(groupId)) {
 			if ("referenceapplication".equals(artifactId)) {
 				Version v = new Version(version);
 				if (v.getMajorVersion() <= 2) {
-					artifactId += "-package";
-					type = "jar";
+					groupId = SDKConstants.REFAPP_2X_GROUP_ID;
+					artifactId = SDKConstants.REFAPP_2X_ARTIFACT_ID;
+					type = SDKConstants.REFAPP_2X_TYPE;
+				}
+				else if (v.getMajorVersion() == 3 && (v.isAlpha() || v.isBeta() || v.isSnapshot())) {
+					groupId = SDKConstants.REFAPP_2X_GROUP_ID;
+					artifactId = SDKConstants.REFAPP_DISTRO;
+					type = Artifact.TYPE_ZIP;
 				}
 				else {
-					artifactId += "-distro";
-					type = "zip";
+					groupId = SDKConstants.REFAPP_3X_GROUP_ID;
+					artifactId = SDKConstants.REFAPP_3X_ARTIFACT_ID;
+					type = SDKConstants.REFAPP_3X_TYPE;
 				}
 			}
 		}
@@ -204,24 +195,8 @@ public class DistroHelper {
 		return artifact;
 	}
 
-	/**
-	 * openmrs-sdk has hardcoded distro properties for certain versions of refapp which don't include them
-	 *
-	 * @return
-	 */
-	public static boolean isRefapp2_3_1orLower(String artifactId, String version) {
-		if (artifactId != null && artifactId.equals(SDKConstants.REFERENCEAPPLICATION_ARTIFACT_ID)) {
-			return SDKConstants.SUPPPORTED_REFAPP_VERSIONS_2_3_1_OR_LOWER.contains(version);
-		} else
-			return false;
-	}
-
-	public static boolean isRefapp2_3_1orLower(Artifact artifact) {
-		return isRefapp2_3_1orLower(artifact.getArtifactId(), artifact.getVersion());
-	}
-
 	public static boolean isRefappBelow2_1(String artifactId, String version) {
-		if (artifactId != null && artifactId.equals(SDKConstants.REFERENCEAPPLICATION_ARTIFACT_ID)) {
+		if (artifactId != null && artifactId.equals(SDKConstants.REFAPP_2X_ARTIFACT_ID)) {
 			return new Version(version).lower(new Version("2.1"));
 		} else
 			return false;
@@ -309,18 +284,29 @@ public class DistroHelper {
 		return distroProperties;
 	}
 
-	public DistroProperties downloadDistroProperties(File serverPath, Server server, String fileType) throws MojoExecutionException {
-		Artifact artifact = new Artifact(server.getDistroArtifactId(), server.getVersion(), server.getDistroGroupId(),
-				fileType);
-		if (StringUtils.isNotBlank(artifact.getArtifactId())) {
-			return downloadDistroProperties(serverPath, artifact);
-		} else {
-			return null;
+	/**
+	 * Distro can be passed in two ways: either as maven artifact identifier or path to distro file
+	 * Returns null if string is invalid as path or identifier
+	 *
+	 * @param distro
+	 * @return
+	 */
+	public Distribution resolveDistributionForStringSpecifier(String distro, VersionsHelper versionsHelper) throws MojoExecutionException {
+		DistributionBuilder builder = new DistributionBuilder(mavenEnvironment);
+		File distroFile = new File(distro);
+		if (distroFile.exists()) {
+			return builder.buildFromFile(distroFile);
 		}
-	}
+		Artifact artifact = parseDistroArtifact(distro, versionsHelper);
+		if (isRefappBelow2_1(artifact)) {
+			throw new MojoExecutionException("Reference Application versions below 2.1 are not supported!");
+		}
 
-	public DistroProperties downloadDistroProperties(File serverPath, Server server) throws MojoExecutionException {
-		return downloadDistroProperties(serverPath, server, "jar");
+		Distribution distribution = builder.buildFromArtifact(artifact);
+		if (distribution == null) {
+			throw new MojoExecutionException("Distribution " + distro + " not found");
+		}
+		return distribution;
 	}
 
 	/**
@@ -330,30 +316,12 @@ public class DistroHelper {
 	 * @param distro
 	 * @return
 	 */
-	public DistroProperties resolveDistroPropertiesForStringSpecifier(String distro, VersionsHelper versionsHelper)
-			throws MojoExecutionException {
-		DistroProperties result;
-		result = getDistroPropertiesFromFile(new File(distro));
-		if (result != null && mavenProject != null) {
-			result.resolvePlaceholders(getProjectProperties());
-		} else {
-			Artifact artifact = parseDistroArtifact(distro, versionsHelper);
-			if (isRefapp2_3_1orLower(artifact)) {
-				result = new DistroProperties(artifact.getVersion());
-			} else if (isRefappBelow2_1(artifact)) {
-				throw new MojoExecutionException("Reference Application versions below 2.1 are not supported!");
-			} else {
-				result = downloadDistroProperties(new File(System.getProperty("user.dir")), artifact);
-			}
+	public DistroProperties resolveDistroPropertiesForStringSpecifier(String distro, VersionsHelper versionsHelper) throws MojoExecutionException {
+		Distribution distribution = resolveDistributionForStringSpecifier(distro, versionsHelper);
+		if (distribution == null) {
+			throw new MojoExecutionException("Distribution " + distro + " not found");
 		}
-		return result;
-	}
-
-	private Properties getProjectProperties() {
-		Properties properties = mavenProject.getProperties();
-		properties.setProperty("project.parent.version", mavenProject.getVersion());
-		properties.setProperty("project.version", mavenProject.getVersion());
-		return properties;
+		return distribution.getEffectiveProperties();
 	}
 
 	/**
@@ -373,12 +341,10 @@ public class DistroHelper {
 	 * - updateMap include modules which are already on server with newer/equal SNAPSHOT version
 	 * - add modules which are not installed on server yet
 	 */
-	public UpgradeDifferential calculateUpdateDifferential(Server server, DistroProperties distroProperties) throws MojoExecutionException {
+	public UpgradeDifferential calculateUpdateDifferential(Server server, Distribution distribution) {
 
 		UpgradeDifferential upgradeDifferential = new UpgradeDifferential();
-
-		// Get the full ancestry of the distro properties applied, if not already done here
-		distroProperties = getDistroPropertiesForFullAncestry(distroProperties, server.getServerDirectory());
+		DistroProperties distroProperties = distribution.getEffectiveProperties();
 
 		// War File
 		List<Artifact> oldWars = server.getWarArtifacts();
@@ -415,97 +381,6 @@ public class DistroHelper {
 		upgradeDifferential.setContentChanges(new UpgradeDifferential.ArtifactChanges(oldContent, newContent));
 
 		return upgradeDifferential;
-	}
-
-
-	public Properties getFrontendProperties(Artifact distroArtifact, File directory) throws MojoExecutionException {
-		com.github.zafarkhaja.semver.Version v = com.github.zafarkhaja.semver.Version.parse(distroArtifact.getVersion());
-
-		Artifact artifact;
-		if (v.satisfies(">=3.0.0")) {
-			artifact = new Artifact("distro-emr-frontend", distroArtifact.getVersion(), distroArtifact.getGroupId(), "zip");
-		} else {
-			artifact = new Artifact("referenceapplication-frontend", distroArtifact.getVersion(), distroArtifact.getGroupId(), "zip");
-		}
-
-		File frontendDistroFile = downloadDistro(directory, artifact, "frontend.zip");
-		Properties frontendProperties = new Properties();
-
-		try (ZipFile zipFile = new ZipFile(frontendDistroFile)) {
-			Enumeration<? extends ZipEntry> entries = zipFile.entries();
-			while (entries.hasMoreElements()) {
-				ZipEntry zipEntry = entries.nextElement();
-				if ("spa-assemble-config.json".equals(zipEntry.getName())) {
-					try (InputStream inputStream = zipFile.getInputStream(zipEntry)){
-						frontendProperties = PropertiesUtils.getFrontendPropertiesFromJson(inputStream);
-					}
-					break;
-				}
-			}
-		}
-		catch (IOException e) {
-			throw new MojoExecutionException("Could not read \"" + frontendDistroFile.getAbsolutePath() + "\" " + e.getMessage(), e);
-		}
-		finally {
-			if (frontendDistroFile != null && frontendDistroFile.exists()) {
-				frontendDistroFile.delete();
-			}
-		}
-		return frontendProperties;
-	}
-
-	public Properties getFrontendProperties(Server server) throws MojoExecutionException {
-		Artifact artifact = new Artifact(server.getDistroArtifactId(), server.getVersion(), server.getDistroGroupId());
-		return getFrontendProperties(artifact, server.getServerDirectory());
-	}
-
-	public Properties getFrontendPropertiesForServer(Artifact artifact, File directory) throws MojoExecutionException {
-		String artifactId = artifact.getArtifactId();
-		if (artifactId.equals(SDKConstants.REFAPP_DISTRO) || artifactId.equals(SDKConstants.REFAPP_DISTRO_EMR_CONFIGURATION)) {
-			if (new Version(artifact.getVersion()).higher(new Version("3.0.0-beta.16"))) {
-				return getFrontendProperties(artifact, directory);
-			} else {
-				return PropertiesUtils.getFrontendPropertiesFromSpaConfigUrl(
-						"https://raw.githubusercontent.com/openmrs/openmrs-distro-referenceapplication/" + artifact.getVersion() + "/frontend/spa-build-config.json");
-			}
-		}
-		return new Properties();
-	}
-
-    public Properties getFrontendPropertiesForServer(Server server) throws MojoExecutionException {
-		Artifact artifact = new Artifact(server.getDistroArtifactId(), server.getVersion(), server.getDistroGroupId());
-  		return getFrontendPropertiesForServer(artifact, server.getServerDirectory());
-    }
-
-	public DistroProperties getDistroPropertiesForFullAncestry(DistroProperties distroProperties, File directory) throws MojoExecutionException {
-		Properties mergedProperties = new Properties();
-
-		// First we add the properties from any parent distributions, recursively, excluding any in the exclusions list
-		Artifact parentArtifact = distroProperties.getParentDistroArtifact();
-		if (parentArtifact != null) {
-			DistroProperties parentProperties = downloadDistroProperties(directory, parentArtifact);
-			DistroProperties parentFullAncestry = getDistroPropertiesForFullAncestry(parentProperties, directory);
-			List<String> exclusions = distroProperties.getExclusions();
-			for (Object key : parentFullAncestry.getAllKeys()) {
-				String keyStr = key.toString();
-				// TODO: Should we widen this to exclude anything that startsWith an exclusion, or allow wildcards?
-				if (!exclusions.contains(keyStr)) {
-					mergedProperties.put(key, parentFullAncestry.getParam(keyStr));
-				}
-			}
-		}
-
-		// Next, we add the properties from this distribution in.  These will override any defined in a parent
-		for (Object key : distroProperties.getAllKeys()) {
-			String keyStr = key.toString();
-			// We remove the parent distro properties once these have been applied
-			if (keyStr.startsWith(TYPE_PARENT + ".") || keyStr.startsWith(TYPE_DISTRO + ".")) {
-				continue;
-			}
-			mergedProperties.put(key, distroProperties.getParam(keyStr));
-		}
-
-		return new DistroProperties(mergedProperties);
 	}
 
 	/**

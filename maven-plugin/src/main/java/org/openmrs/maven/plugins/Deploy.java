@@ -9,11 +9,12 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.openmrs.maven.plugins.model.Artifact;
+import org.openmrs.maven.plugins.model.Distribution;
 import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.Project;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.model.Version;
-import org.openmrs.maven.plugins.utility.DistroHelper;
+import org.openmrs.maven.plugins.utility.DistributionBuilder;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 
 import java.io.File;
@@ -129,27 +130,25 @@ public class Deploy extends AbstractServerTask {
 
 		if ((platform == null && distro == null && owa == null) && artifactId == null) {
 			Artifact artifact = checkCurrentDirectoryForOpenmrsWebappUpdate(server);
-			DistroProperties distroProperties = checkCurrentDirectoryForDistroProperties();
+			Distribution distribution = checkCurrentDirectoryForDistribution();
 			if (artifact != null) {
 				deployOpenmrsFromDir(server, artifact);
-			} else if (distroProperties != null) {
-				serverUpgrader.upgradeToDistro(server, distroProperties, ignorePeerDependencies, overrideReuseNodeCache);
+			} else if (distribution != null) {
+				serverUpgrader.upgradeToDistro(server, distribution, ignorePeerDependencies, overrideReuseNodeCache);
 			} else if (checkCurrentDirForModuleProject()) {
 				deployModule(groupId, artifactId, version, server);
 			} else {
 				runInteractiveMode(server, serverUpgrader);
 			}
 		} else if (distro != null) {
-			DistroProperties distroProperties = distroHelper
-					.resolveDistroPropertiesForStringSpecifier(distro, versionsHelper);
-			serverUpgrader.upgradeToDistro(server, distroProperties, ignorePeerDependencies, overrideReuseNodeCache);
+			Distribution distribution = distroHelper.resolveDistributionForStringSpecifier(distro, versionsHelper);
+			serverUpgrader.upgradeToDistro(server, distribution, ignorePeerDependencies, overrideReuseNodeCache);
 		} else if (platform != null) {
 			deployOpenmrs(server, platform);
 		} else if (owa != null) {
 			String[] owaComponents = owa.split(":");
 			if (owaComponents.length != 2) {
-				throw new MojoExecutionException(
-						"Could not understand owa property " + owa + ". This should be in the format owa-name:version");
+				throw new MojoExecutionException("Could not understand owa property " + owa + ". This should be in the format owa-name:version");
 			}
 			deployOwa(server, owaComponents[0], owaComponents[1]);
 		} else {
@@ -179,8 +178,7 @@ public class Deploy extends AbstractServerTask {
 						server.getName(),
 						server.getVersion()));
 
-				if (server.getName().equals("Platform") || server.getDistroGroupId() == null
-						|| server.getDistroArtifactId() == null) {
+				if (server.getName().equals("Platform") || server.getDistroGroupId() == null || server.getDistroArtifactId() == null) {
 					// If its impossible to define distro, prompt refapp distro versions
 					distro = wizard.promptForRefAppVersion(versionsHelper);
 				} else {
@@ -188,8 +186,9 @@ public class Deploy extends AbstractServerTask {
 					distro = wizard.promptForDistroVersion(server.getDistroGroupId(), server.getDistroArtifactId(),
 							server.getVersion(), server.getName(), versionsHelper);
 				}
-				distroProperties = distroHelper.resolveDistroPropertiesForStringSpecifier(distro, versionsHelper);
-				upgrader.upgradeToDistro(server, distroProperties, ignorePeerDependencies, overrideReuseNodeCache);
+				wizard.showMessage("Deploying distribution: " + distro);
+				Distribution distribution = distroHelper.resolveDistributionForStringSpecifier(distro, versionsHelper);
+				upgrader.upgradeToDistro(server, distribution, ignorePeerDependencies, overrideReuseNodeCache);
 				break;
 			}
 			case (DEPLOY_PLATFORM_OPTION): {
@@ -317,9 +316,9 @@ public class Deploy extends AbstractServerTask {
 	}
 
 	private void deployOpenmrsPlatform(Server server, Artifact artifact) throws MojoExecutionException {
-		DistroProperties platformDistroProperties = distroHelper.downloadDistroProperties(server.getServerDirectory(), artifact);
-		platformDistroProperties = distroHelper.getDistroPropertiesForFullAncestry(platformDistroProperties, server.getServerDirectory());
-
+		DistributionBuilder builder = new DistributionBuilder(getMavenEnvironment());
+		Distribution distribution = builder.buildFromArtifact(artifact);
+		DistroProperties platformDistroProperties = distribution.getEffectiveProperties();
 		DistroProperties serverDistroProperties = server.getDistroProperties();
 
 		List<Artifact> warArtifacts = platformDistroProperties.getWarArtifacts();
@@ -328,7 +327,7 @@ public class Deploy extends AbstractServerTask {
 		serverDistroProperties.setArtifacts(warArtifacts, moduleArtifacts);
 		serverDistroProperties.saveTo(server.getServerDirectory());
 		ServerUpgrader serverUpgrader = new ServerUpgrader(this);
-		serverUpgrader.upgradeToDistro(server, serverDistroProperties, ignorePeerDependencies, overrideReuseNodeCache);
+		serverUpgrader.upgradeToDistro(server, distribution, ignorePeerDependencies, overrideReuseNodeCache);
 	}
 
 	/**
@@ -479,20 +478,25 @@ public class Deploy extends AbstractServerTask {
 		return null;
 	}
 
-	private DistroProperties checkCurrentDirectoryForDistroProperties() throws MojoExecutionException {
-		DistroProperties distroProperties = DistroHelper.getDistroPropertiesFromDir();
-		if (distroProperties != null) {
-			String message = String.format(
-					"Would you like to deploy %s %s from the current directory?",
-					distroProperties.getName(),
-					distroProperties.getVersion());
-
-			boolean agree = wizard.promptYesNo(message);
-			if (agree) {
-				return distroProperties;
+	private Distribution checkCurrentDirectoryForDistribution() throws MojoExecutionException {
+		File distroPropertiesFile = distroHelper.getDistroPropertiesFileFromDir();
+		if (distroPropertiesFile != null) {
+			Distribution distribution = null;
+			try {
+				DistributionBuilder builder = new DistributionBuilder(getMavenEnvironment());
+				distribution = builder.buildFromFile(distroPropertiesFile);
+			}
+			catch (Exception e) {
+				wizard.showWarning("Found " + distroPropertiesFile.getAbsolutePath() + " but unable to load this into a distribution:  " + e.getMessage());
+			}
+			if (distribution != null) {
+				String message = String.format("Would you like to deploy %s %s from the current directory?", distribution.getName(), distribution.getVersion());
+				boolean agree = wizard.promptYesNo(message);
+				if (agree) {
+					return distribution;
+				}
 			}
 		}
-
 		return null;
 	}
 

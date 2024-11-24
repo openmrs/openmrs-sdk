@@ -6,11 +6,15 @@ import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.OwaId;
 import org.openmrs.maven.plugins.model.Server;
+import org.openmrs.maven.plugins.utility.PropertiesUtils;
 
 import java.io.File;
+import java.nio.file.Paths;
+import java.util.Properties;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItemInArray;
+import static org.junit.Assert.assertFalse;
 import static org.openmrs.maven.plugins.SdkMatchers.hasNameStartingWith;
 import static org.openmrs.maven.plugins.SdkMatchers.hasUserOwa;
 import static org.openmrs.maven.plugins.SdkMatchers.serverHasVersion;
@@ -58,8 +62,6 @@ public class DeployIT extends AbstractSdkIT {
     public void deploy_shouldUpgradeDistroTo2_3_1() throws Exception {
 
         addAnswer(testServerId);
-        addAnswer("n");
-        addAnswer("n");
         addAnswer("Distribution");
         addAnswer("referenceapplication:2.3.1");
         addAnswer("y");
@@ -68,7 +70,8 @@ public class DeployIT extends AbstractSdkIT {
 
         assertSuccess();
         assertFilePresent(testServerId, "openmrs-1.11.5.war");
-        DistroProperties distroProperties = new DistroProperties("2.3.1");
+        Properties properties = PropertiesUtils.loadPropertiesFromResource("openmrs-distro-2.3.1.properties");
+        DistroProperties distroProperties = new DistroProperties(properties);
         assertModulesInstalled(testServerId, distroProperties);
         assertPlatformUpdated(testServerId, "1.11.5");
 
@@ -81,8 +84,6 @@ public class DeployIT extends AbstractSdkIT {
     public void deploy_shouldDowngradeDistroTo2_1() throws Exception {
 
         addAnswer(testServerId);
-        addAnswer("n");
-        addAnswer("n");
         addAnswer("Distribution");
         addAnswer("referenceapplication:2.1");
         addAnswer("y");
@@ -91,7 +92,8 @@ public class DeployIT extends AbstractSdkIT {
 
         assertSuccess();
         assertFilePresent(testServerId, "openmrs-1.10.0.war");
-        DistroProperties distroProperties = new DistroProperties("2.1");
+        Properties properties = PropertiesUtils.loadPropertiesFromResource("openmrs-distro-2.1.properties");
+        DistroProperties distroProperties = new DistroProperties(properties);
         assertModulesInstalled(testServerId, distroProperties);
         assertPlatformUpdated(testServerId, "1.10.0");
 
@@ -101,7 +103,38 @@ public class DeployIT extends AbstractSdkIT {
     }
 
     @Test
+    public void deploy_shouldUpgradeDistroTo3_0_0() throws Exception {
+
+        addAnswer(testServerId);
+        addAnswer("Distribution");
+        addAnswer("referenceapplication:3.0.0");
+        addAnswer("y");
+
+        executeTask("deploy");
+
+        assertSuccess();
+        assertFilePresent(testServerId, "openmrs-2.6.7.war");
+        Properties properties = PropertiesUtils.loadPropertiesFromResource("integration-test/distributions/distro-emr-configuration-3.0.0.properties");
+        DistroProperties distroProperties = new DistroProperties(properties);
+        assertModulesInstalled(testServerId, distroProperties);
+        assertPlatformUpdated(testServerId, "2.6.7");
+        assertNumFilesPresent(0, Paths.get(testServerId, "owa"), null, null);
+
+        // Spa module added
+        assertFalse(properties.containsKey("omod.spa"));
+        assertFileContains("omod.spa", testServerId, "openmrs-distro.properties");
+        assertNumFilesPresent(1, Paths.get(testServerId, "modules"), "spa-", ".omod");
+
+        // TODO: Deploy does not currently support installing or updating frontend or config or content.  This needs to be ticketed and fixed
+
+        Server.setServersPath(testDirectory.getAbsolutePath());
+        Server server = Server.loadServer(testServerId);
+        assertThat(server, serverHasVersion("3.0.0"));
+    }
+
+    @Test
     public void deploy_shouldUpgradeDistroFromDistroProperties() throws Exception {
+        includeDistroPropertiesFile(DistroProperties.DISTRO_FILE_NAME);
         addAnswer(testServerId);
         addAnswer("y");
         addAnswer("y");
@@ -135,9 +168,8 @@ public class DeployIT extends AbstractSdkIT {
 
     @Test
     public void deploy_shouldInstallModuleFromPomInDir() throws Exception {
-
+        includePomFile("deployIT", "pom-owa-module.xml");
         addAnswer(testServerId);
-        addAnswer("n");
         addAnswer("y");
         executeTask("deploy");
 

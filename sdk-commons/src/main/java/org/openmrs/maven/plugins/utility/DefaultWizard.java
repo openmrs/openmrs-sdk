@@ -790,7 +790,7 @@ public class DefaultWizard implements Wizard {
 		Map<String, String> optionsMap = new LinkedHashMap<>();
 
 		{
-			Artifact artifact = new Artifact(SDKConstants.REFAPP_DISTRO_EMR_CONFIGURATION, "3.0.0", "org.openmrs", "zip");
+			Artifact artifact = new Artifact(SDKConstants.REFAPP_3X_ARTIFACT_ID, "3.0.0", "org.openmrs", "zip");
 			for (ArtifactVersion version : versionsHelper.getAllVersions(artifact, MAX_OPTIONS_SIZE)) {
 				optionsMap.put(String.format(optionTemplate, version.toString()), artifact.getGroupId() + ":" + artifact.getArtifactId() + ":" + version);
 			}

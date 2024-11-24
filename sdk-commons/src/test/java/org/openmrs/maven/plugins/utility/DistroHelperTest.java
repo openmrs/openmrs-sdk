@@ -7,6 +7,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.openmrs.maven.plugins.model.Artifact;
+import org.openmrs.maven.plugins.model.Distribution;
 import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.model.UpgradeDifferential;
@@ -21,6 +22,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
 import static org.hamcrest.core.Is.is;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -28,6 +30,9 @@ public class DistroHelperTest {
 
     @Mock
     VersionsHelper versionsHelper;
+
+    @Mock
+    MavenEnvironment mavenEnvironment;
 
     @Before
     public void setupMocks() {
@@ -41,7 +46,7 @@ public class DistroHelperTest {
         Artifact artifact = DistroHelper.parseDistroArtifact(distro, null);
 
         assertThat(artifact.getGroupId(), is(Artifact.GROUP_DISTRO));
-        assertThat(artifact.getArtifactId(), is(SDKConstants.REFERENCEAPPLICATION_ARTIFACT_ID));
+        assertThat(artifact.getArtifactId(), is(SDKConstants.REFAPP_2X_ARTIFACT_ID));
     }
 
     @Test
@@ -177,9 +182,17 @@ public class DistroHelperTest {
     }
 
     @Test
-    public void normalizeArtifact_shouldNormalizeRefApp3() {
+    public void normalizeArtifact_shouldNormalizeRefApp3Beta() {
         Artifact artifact = DistroHelper.normalizeArtifact(new Artifact("referenceapplication", "3.0.0-alpha", "org.openmrs.distro"), versionsHelper);
         assertThat(artifact.getArtifactId(), equalTo("referenceapplication-distro"));
+        assertThat(artifact.getType(), equalTo("zip"));
+    }
+
+    @Test
+    public void normalizeArtifact_shouldNormalizeRefApp3() {
+        Artifact artifact = DistroHelper.normalizeArtifact(new Artifact("referenceapplication", "3.0.0", "org.openmrs.distro"), versionsHelper);
+        assertThat(artifact.getArtifactId(), equalTo("distro-emr-configuration"));
+        assertThat(artifact.getGroupId(), equalTo("org.openmrs"));
         assertThat(artifact.getType(), equalTo("zip"));
     }
 
@@ -204,9 +217,11 @@ public class DistroHelperTest {
         assertThat(artifact.getType(), equalTo("my-type"));
     }
 
-    private UpgradeDifferential calculateDifferential(Properties serverProperties, Properties distroProperties) throws MojoExecutionException{
-        DistroHelper distroHelper = new DistroHelper(null, null, null, null, null);
-        return distroHelper.calculateUpdateDifferential(new Server(null, serverProperties), new DistroProperties(distroProperties));
+    private UpgradeDifferential calculateDifferential(Properties serverProperties, Properties distroProperties) {
+        DistroHelper distroHelper = new DistroHelper(mavenEnvironment);
+        Distribution distribution = mock(Distribution.class);
+        when(distribution.getEffectiveProperties()).thenReturn(new DistroProperties(distroProperties));
+        return distroHelper.calculateUpdateDifferential(new Server(null, serverProperties), distribution);
     }
 
     private Properties getMockOldestArtifactList() {

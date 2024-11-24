@@ -39,6 +39,7 @@ import java.util.UUID;
 import java.util.zip.ZipFile;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.io.FileMatchers.anExistingFileOrDirectory;
 import static org.junit.Assert.assertNotNull;
@@ -55,29 +56,26 @@ public abstract class AbstractSdkIT {
     /**
      * contains name of directory in project's target dir, where integration tests are conducted
      */
-    static int counter = 0;
-    static final String TEST_DIRECTORY = "integration-test";
-    static final String MOJO_OPTION_TMPL = "-D%s=\"%s\"";
+    protected static int counter = 0;
+    protected static final String TEST_DIRECTORY = "integration-test";
+    protected static final String MOJO_OPTION_TMPL = "-D%s=\"%s\"";
     protected static final String BATCH_ANSWERS = "batchAnswers";
     protected final ArrayDeque<String> batchAnswers = new ArrayDeque<>();
 
     /**
      * maven utility for integration tests
      */
-    Verifier verifier;
+    protected Verifier verifier;
 
     /**
      * test directory, contains mock files and files created during tests
      */
-    File testDirectory;
-
-    Path testDirectoryPath;
-
-    File distroFile;
-
-    Path testBaseDir;
-    Path testResourceDir;
-    boolean preserveTestOutput;
+    protected File testDirectory;
+    protected Path testDirectoryPath;
+    protected File distroFile;
+    protected Path testBaseDir;
+    protected Path testResourceDir;
+    protected boolean preserveTestOutput;
 
     public String resolveSdkArtifact() throws MojoExecutionException {
         Properties sdk = new Properties();
@@ -90,7 +88,7 @@ public abstract class AbstractSdkIT {
         return sdk.get("groupId")+":"+sdk.get("artifactId")+":"+sdk.get("version");
     }
 
-    void includeDistroPropertiesFile(String... paths) throws Exception {
+    protected void includeDistroPropertiesFile(String... paths) throws Exception {
         Path sourcePath = testResourceDir.resolve(TEST_DIRECTORY);
         for (String path : paths) {
             sourcePath = sourcePath.resolve(path);
@@ -99,7 +97,7 @@ public abstract class AbstractSdkIT {
         FileUtils.copyFile(sourcePath.toFile(), targetPath.toFile());
     }
 
-    void includePomFile(String... paths) throws Exception {
+    protected void includePomFile(String... paths) throws Exception {
         Path sourcePath = testResourceDir.resolve(TEST_DIRECTORY);
         for (String path : paths) {
             sourcePath = sourcePath.resolve(path);
@@ -108,9 +106,8 @@ public abstract class AbstractSdkIT {
         FileUtils.copyFile(sourcePath.toFile(), targetPath.toFile());
     }
 
-    void addTestResources() throws Exception {
+    protected void addTestResources() throws Exception {
         includePomFile("pom.xml");
-        includeDistroPropertiesFile(DistroProperties.DISTRO_FILE_NAME);
     }
 
     @Before
@@ -242,6 +239,16 @@ public abstract class AbstractSdkIT {
 
     public File getTestFile(Path path) {
         return testDirectoryPath.resolve(path).toFile();
+    }
+
+    /**
+     * asserts the number of files with the given prefix and suffix are present in the given directory
+     */
+    public void assertNumFilesPresent(int numExpected, Path path, String prefix, String suffix) {
+        File directory = testDirectoryPath.resolve(path).toFile();
+        File[] files = directory.listFiles((dir1, name) -> (prefix == null || name.startsWith(prefix)) && (suffix == null || name.endsWith(suffix)));
+        int numFound = (files == null ? 0 : files.length);
+        assertThat(numFound, equalTo(numExpected));
     }
 
     /**

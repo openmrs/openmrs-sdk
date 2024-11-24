@@ -9,10 +9,13 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.openmrs.maven.plugins.model.Artifact;
+import org.openmrs.maven.plugins.model.Distribution;
 import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.model.Version;
+import org.openmrs.maven.plugins.utility.ContentHelper;
 import org.openmrs.maven.plugins.utility.DBConnector;
+import org.openmrs.maven.plugins.utility.DistributionBuilder;
 import org.openmrs.maven.plugins.utility.DistroHelper;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 import org.openmrs.maven.plugins.utility.ServerHelper;
@@ -34,6 +37,16 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.openmrs.maven.plugins.model.Artifact.GROUP_DISTRO;
+import static org.openmrs.maven.plugins.utility.SDKConstants.PLATFORM_ARTIFACT_ID;
+import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_2X_ARTIFACT_ID;
+import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_2X_GROUP_ID;
+import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_2X_TYPE;
+import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_3X_ARTIFACT_ID;
+import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_3X_GROUP_ID;
+import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_3X_TYPE;
+import static org.openmrs.maven.plugins.utility.SDKConstants.SETUP_DEFAULT_PLATFORM_VERSION;
 
 
 /**
@@ -176,72 +189,78 @@ public class Setup extends AbstractServerTask {
 	 * @throws MojoExecutionException
 	 */
 	private DistroProperties resolveDistroProperties(Server server) throws MojoExecutionException {
-		boolean platformMode;
-		DistroProperties distroProperties = null;
-		if (platform == null && distro == null) {
-			List<String> options = new ArrayList<>();
-			distroProperties = DistroHelper.getDistroPropertiesFromDir();
-			if (distroProperties != null) {
-				options.add(distroProperties.getName() + " " + distroProperties.getVersion() + " from current directory");
-			}
+		DistributionBuilder builder = new DistributionBuilder(getMavenEnvironment());
 
-			options.add(O3_DISTRIBUTION);
-			options.add(O2_DISTRIBUTION);
-			options.add(PLATFORM);
-			String choice = wizard.promptForMissingValueWithOptions(SETUP_SERVERS_PROMPT, null, null, options);
-
-			switch (choice) {
-				case PLATFORM:
-					platformMode = true;
-					break;
-				case O2_DISTRIBUTION:
-					wizard.promptForRefAppVersionIfMissing(server, versionsHelper);
-					if (DistroHelper.isRefapp2_3_1orLower(server.getDistroArtifactId(), server.getVersion())) {
-						distroProperties = new DistroProperties(server.getVersion());
-					} else {
-						distroProperties = distroHelper.downloadDistroProperties(server.getServerDirectory(), server);
-					}
-					platformMode = false;
-					break;
-				case O3_DISTRIBUTION:
-					wizard.promptForO3RefAppVersionIfMissing(server, versionsHelper);
-					Artifact artifact = new Artifact(server.getDistroArtifactId(), server.getVersion(), server.getDistroGroupId(), "zip");
-					distroProperties = distroHelper.downloadDistroProperties(server.getServerDirectory(), artifact);
-					platformMode = false;
-					break;
-				default:  // distro properties from current directory
-					platformMode = false;
-			}
-		} else if (platform != null) {
-			server.setPlatformVersion(platform);
-			platformMode = true;
-		} else {  // getting distro properties from distro parameter
-			distroProperties = distroHelper.resolveDistroPropertiesForStringSpecifier(distro, versionsHelper);
+		if (distro != null) {
+			DistroProperties distroProperties = distroHelper.resolveDistroPropertiesForStringSpecifier(distro, versionsHelper);
 			if (distroProperties == null) {
 				throw new MojoExecutionException("Distro " + distro + "could not be retrieved");
 			}
-			platformMode = false;
+			return distroProperties;
 		}
 
-		if (platformMode) {
-			Artifact platformArtifact = new Artifact(SDKConstants.PLATFORM_ARTIFACT_ID,
-					SDKConstants.SETUP_DEFAULT_PLATFORM_VERSION, Artifact.GROUP_DISTRO);
-			String version = wizard.promptForPlatformVersionIfMissing(server.getPlatformVersion(),
-					versionsHelper.getSuggestedVersions(platformArtifact, 6));
-			platformArtifact = DistroHelper
-					.parseDistroArtifact(Artifact.GROUP_DISTRO + ":" + SDKConstants.PLATFORM_ARTIFACT_ID + ":" + version,
-							versionsHelper);
-			server.setPlatformVersion(platformArtifact.getVersion());
+		if (platform != null) {
+			return resolveDistroPropertiesForPlatform(server, platform);
+		}
+
+		List<String> options = new ArrayList<>();
+
+		Distribution currentDirectoryDistribution = null;
+		File distroPropertiesFile = distroHelper.getDistroPropertiesFileFromDir();
+		if (distroPropertiesFile != null) {
 			try {
-				distroProperties = distroHelper.downloadDistroProperties(server.getServerDirectory(), platformArtifact);
-				// distroProperties could still be null at this point
+				currentDirectoryDistribution = builder.buildFromFile(distroPropertiesFile);
+				if (currentDirectoryDistribution != null) {
+					options.add(currentDirectoryDistribution.getName() + " " + currentDirectoryDistribution.getVersion() + " from current directory");
+				}
 			}
-			catch (MojoExecutionException e) {
-				distroProperties = null;
+			catch (Exception e) {
+				wizard.showWarning("Found " + distroPropertiesFile.getAbsolutePath() + " but unable to load this into a distribution:  " + e.getMessage());
 			}
 		}
 
-		return distroProperties;
+		options.add(O3_DISTRIBUTION);
+		options.add(O2_DISTRIBUTION);
+		options.add(PLATFORM);
+		String choice = wizard.promptForMissingValueWithOptions(SETUP_SERVERS_PROMPT, null, null, options);
+
+		if (PLATFORM.equals(choice)) {
+			return resolveDistroPropertiesForPlatform(server, platform);
+		}
+
+		if (O2_DISTRIBUTION.equals(choice)) {
+			wizard.promptForRefAppVersionIfMissing(server, versionsHelper);
+			Distribution distribution = builder.buildFromArtifact(new Artifact(REFAPP_2X_ARTIFACT_ID, server.getVersion(), REFAPP_2X_GROUP_ID, REFAPP_2X_TYPE));
+			return distribution.getEffectiveProperties();
+		}
+
+		if (O3_DISTRIBUTION.equals(choice)) {
+			wizard.promptForO3RefAppVersionIfMissing(server, versionsHelper);
+			Distribution distribution = builder.buildFromArtifact(new Artifact(REFAPP_3X_ARTIFACT_ID, server.getVersion(), REFAPP_3X_GROUP_ID, REFAPP_3X_TYPE));
+			return distribution.getEffectiveProperties();
+		}
+
+		// If here, it is because the option to set up from current directory was chosen, and these properties were already loaded, just return them
+		if (currentDirectoryDistribution == null) {
+			throw new MojoExecutionException("No valid distribution could be found");
+		}
+		return currentDirectoryDistribution.getEffectiveProperties();
+	}
+
+	private DistroProperties resolveDistroPropertiesForPlatform(Server server, String version) throws MojoExecutionException {
+		Artifact platformArtifact = new Artifact(PLATFORM_ARTIFACT_ID, SETUP_DEFAULT_PLATFORM_VERSION, GROUP_DISTRO);
+		version = wizard.promptForPlatformVersionIfMissing(version, versionsHelper.getSuggestedVersions(platformArtifact, 6));
+		platformArtifact = DistroHelper.parseDistroArtifact(GROUP_DISTRO + ":" + PLATFORM_ARTIFACT_ID + ":" + version, versionsHelper);
+		server.setPlatformVersion(platformArtifact.getVersion());
+		try {
+			DistributionBuilder builder = new DistributionBuilder(getMavenEnvironment());
+			Distribution distribution = builder.buildFromArtifact(platformArtifact);
+			if (distribution != null) {
+				return distribution.getEffectiveProperties();
+			}
+		}
+		catch (MojoExecutionException ignored) {}
+		return null;
 	}
 
 	/**
@@ -254,35 +273,44 @@ public class Setup extends AbstractServerTask {
 	 * @throws MojoExecutionException
 	 */
 	public void setup(Server server, DistroProperties distroProperties) throws MojoExecutionException {
-
-		// Copy any values from the distro properties with a `property.` prefix, and prompt for missing values as appropriate
 		if (distroProperties != null) {
-			// Get the full ancestry of the distro properties applied, if not already done here
-			distroProperties = distroHelper.getDistroPropertiesForFullAncestry(distroProperties, server.getServerDirectory());
+
+			// This is saving or prompting for any property values within the distro properties with a "property." prefix
 			distroHelper.savePropertiesToServer(distroProperties, server);
-			server.setVersion(distroProperties.getVersion());
-			server.setPlatformVersion(distroProperties.getPlatformVersion());
+
+			setServerVersionsFromDistroProperties(server, distroProperties);
+			distroHelper.parseContentProperties(distroProperties);
+			moduleInstaller.installModulesForDistro(server, distroProperties);
+
+			ContentHelper.downloadAndMoveContentBackendConfig(server.getServerDirectory(), distroProperties, moduleInstaller, wizard);						
+
+			if (spaInstaller != null) {
+				spaInstaller.installFromDistroProperties(server.getServerDirectory(), distroProperties, ignorePeerDependencies, overrideReuseNodeCache);
+			}
+
+			installOWAs(server, distroProperties);
+			configurationInstaller.installToServer(server, distroProperties);
+		} else {
+			moduleInstaller.installDefaultModules(server);
 		}
 
 		serverHelper = new ServerHelper(wizard);
+
 		setServerPort(server);
 		setDebugPort(server);
+
 		setupDatabase(server, distroProperties);
 
-		// If there's no distro at this point, we create a minimal one here, *after* having initialized server.isH2Supported in `setupDatabase` above.
+		// If there's no distro at this point, we create a minimal one here,
+		// *after* having initialized server.isH2Supported in `setupDatabase` above.
 		if (distroProperties == null) {
-			distroProperties = new DistroProperties(server.getServerId(), server.getPlatformVersion());
-			if (server.getDbDriver().equals(SDKConstants.DRIVER_H2)) {
-				distroProperties.setH2Support(true);
-			}
+			distroProperties = distroHelper.createDistroForPlatform(server);
 		}
+		distroProperties.saveTo(server.getServerDirectory());
 
 		setJdk(server);
 
-		ServerUpgrader serverUpgrader = new ServerUpgrader(this);
-		distroProperties.saveTo(server.getServerDirectory());
-		serverUpgrader.upgradeToDistro(server, distroProperties, ignorePeerDependencies, overrideReuseNodeCache);
-
+		server.setValuesFromDistroProperties(distroProperties);
 		server.setUnspecifiedToDefault();
 		server.save();
 	}
@@ -299,6 +327,26 @@ public class Setup extends AbstractServerTask {
 		}
 
 		wizard.promptForJavaHomeIfMissing(server);
+	}
+
+	private void installOWAs(Server server, DistroProperties distroProperties) throws MojoExecutionException {
+		if (distroProperties != null) {
+			File owasDir = new File(server.getServerDirectory(), "owa");
+			owasDir.mkdir();
+			downloadOWAs(server.getServerDirectory(), distroProperties, owasDir);
+		}
+	}
+
+	private void downloadOWAs(File targetDirectory, DistroProperties distroProperties, File owasDir)
+			throws MojoExecutionException {
+		List<Artifact> owas = distroProperties.getOwaArtifacts();
+		if (!owas.isEmpty()) {
+			wizard.showMessage("Downloading OWAs...\n");
+			for (Artifact owa : owas) {
+				wizard.showMessage("Downloading OWA: " + owa);
+				owaHelper.downloadOwa(owasDir, owa, moduleInstaller);
+			}
+		}
 	}
 
 	private void wipeDatabase(Server server) throws MojoExecutionException {
@@ -345,6 +393,15 @@ public class Setup extends AbstractServerTask {
 					server.setDebugPort(debug);
 				}
 			}
+		}
+	}
+
+	private void setServerVersionsFromDistroProperties(Server server, DistroProperties distroProperties) {
+		if (server.getPlatformVersion() == null) {
+			server.setPlatformVersion(distroProperties.getPlatformVersion());
+		}
+		if (server.getVersion() == null) {
+			server.setVersion(distroProperties.getVersion());
 		}
 	}
 

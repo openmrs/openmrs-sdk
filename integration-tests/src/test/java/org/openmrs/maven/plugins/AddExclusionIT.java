@@ -3,9 +3,10 @@ package org.openmrs.maven.plugins;
 import org.apache.commons.io.FileUtils;
 import org.junit.Test;
 import org.openmrs.maven.plugins.model.DistroProperties;
-import org.openmrs.maven.plugins.utility.DistroHelper;
+import org.openmrs.maven.plugins.utility.PropertiesUtils;
 
 import java.io.File;
+import java.util.Properties;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -14,8 +15,15 @@ import static org.junit.Assert.assertTrue;
 
 public class AddExclusionIT extends AbstractSdkIT {
 
-    public DistroProperties getDistroProperties() {
-        return DistroHelper.getDistroPropertiesFromFile(distroFile);
+    @Override
+    protected void addTestResources() throws Exception {
+        super.addTestResources();
+        includeDistroPropertiesFile(DistroProperties.DISTRO_FILE_NAME);
+    }
+
+    public DistroProperties getDistroProperties() throws Exception {
+        Properties properties = PropertiesUtils.loadPropertiesFromFile(distroFile);
+        return new DistroProperties(properties);
     }
 
     @Test

@@ -4,6 +4,7 @@ import org.apache.commons.io.FileUtils;
 import org.junit.Test;
 import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.Server;
+import org.openmrs.maven.plugins.utility.PropertiesUtils;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 
 import java.io.File;
@@ -16,6 +17,7 @@ import java.util.Properties;
 import java.util.UUID;
 
 import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -48,12 +50,87 @@ public class SetupIT extends AbstractSdkIT {
         assertFilePresent(serverId, "modules");
         assertFileNotPresent(serverId, "tmp");
 
-        DistroProperties distroProperties = new DistroProperties("2.3.1");
+        Properties properties = PropertiesUtils.loadPropertiesFromResource("openmrs-distro-2.3.1.properties");
+        DistroProperties distroProperties = new DistroProperties(properties);
         assertModulesInstalled(serverId, distroProperties);
 
         Server.setServersPath(testDirectory.getAbsolutePath());
         Server server = Server.loadServer(serverId);
         assertThat(server, serverHasVersion("2.3.1"));
+        assertThat(server, serverHasDebugPort("1044"));
+    }
+
+    @Test
+    public void setup_shouldInstallRefapp2_13_0() throws Exception{
+        String serverId = UUID.randomUUID().toString();
+
+        addTaskParam("distro", "referenceapplication:2.13.0");
+        addMockDbSettings();
+        addAnswer(serverId);
+        addAnswer("8080");
+        addAnswer("1044");
+        addAnswer(System.getProperty("java.home"));
+
+        executeTask("setup");
+
+        assertSuccess();
+        assertServerInstalled(serverId);
+        assertFilePresent(serverId, "openmrs-2.5.9.war");
+        assertFilePresent(serverId, "modules");
+        assertFileNotPresent(serverId, "tmp");
+
+        Properties properties = PropertiesUtils.loadPropertiesFromResource("integration-test/distributions/referenceapplication-package-2.13.0.properties");
+        assertThat(properties.get("omod.atlas"), equalTo("2.2.6"));
+        properties.put("omod.atlas", "2.2.7");
+        DistroProperties distroProperties = new DistroProperties(properties);
+        assertModulesInstalled(serverId, distroProperties);
+
+        assertNumFilesPresent(42, Paths.get(serverId, "modules"), null, ".omod");
+
+        assertFilePresent(serverId, "owa");
+        assertFilePresent(serverId, "owa", "SystemAdministration.owa");
+
+        Server.setServersPath(testDirectory.getAbsolutePath());
+        Server server = Server.loadServer(serverId);
+        assertThat(server, serverHasVersion("2.13.0"));
+        assertThat(server, serverHasDebugPort("1044"));
+    }
+
+    @Test
+    public void setup_shouldInstallRefapp3_0_0() throws Exception{
+        String serverId = UUID.randomUUID().toString();
+
+        addTaskParam("distro", "referenceapplication:3.0.0");
+        addMockDbSettings();
+        addAnswer(serverId);
+        addAnswer("8080");
+        addAnswer("1044");
+        addAnswer(System.getProperty("java.home"));
+
+        executeTask("setup");
+
+        assertSuccess();
+        assertServerInstalled(serverId);
+        assertFilePresent(serverId, "openmrs-2.6.7.war");
+        assertFilePresent(serverId, "modules");
+
+        Properties properties = PropertiesUtils.loadPropertiesFromResource("integration-test/distributions/distro-emr-configuration-3.0.0.properties");
+        DistroProperties distroProperties = new DistroProperties(properties);
+        assertModulesInstalled(serverId, distroProperties);
+
+        assertNumFilesPresent(24, Paths.get(serverId, "modules"), null, ".omod");
+        assertNumFilesPresent(0, Paths.get(serverId, "owa"), null, null);
+
+        assertFilePresent(serverId, "frontend");
+        assertFilePresent(serverId, "frontend", "index.html");
+        assertFilePresent(serverId, "frontend", "importmap.json");
+
+        assertFilePresent(serverId, "configuration");
+        assertFilePresent(serverId, "configuration", "conceptclasses", "conceptclasses-core_data.csv");
+
+        Server.setServersPath(testDirectory.getAbsolutePath());
+        Server server = Server.loadServer(serverId);
+        assertThat(server, serverHasVersion("3.0.0"));
         assertThat(server, serverHasDebugPort("1044"));
     }
 
@@ -115,6 +192,7 @@ public class SetupIT extends AbstractSdkIT {
     @Test
     public void setup_shouldInstallServerFromGivenDistroProperties() throws Exception{
         String serverId = UUID.randomUUID().toString();
+        includeDistroPropertiesFile(DistroProperties.DISTRO_FILE_NAME);
 
         addTaskParam("distro", testDirectory.getAbsolutePath() + File.separator + "openmrs-distro.properties");
         addTaskParam("debug", "1044");
@@ -145,6 +223,8 @@ public class SetupIT extends AbstractSdkIT {
     @Test
     public void setup_shouldInstallServerFromDistroPropertiesDir() throws Exception{
         String serverId = UUID.randomUUID().toString();
+        includeDistroPropertiesFile(DistroProperties.DISTRO_FILE_NAME);
+
         addTaskParam("serverId", serverId);
         addTaskParam("debug", "1044");
         addTaskParam("ignorePeerDependencies", "false");
@@ -180,8 +260,8 @@ public class SetupIT extends AbstractSdkIT {
         addMockDbSettings();
 
         addAnswer(serverId);
-        addAnswer("Distribution");
-        addAnswer("referenceapplication:2.2");
+        addAnswer("Platform");
+        addAnswer("2.6.1");
         addAnswer(System.getProperty("java.home"));
         addAnswer("8080");
 
@@ -196,7 +276,7 @@ public class SetupIT extends AbstractSdkIT {
         assertThat(javaHomeServerProperty, is(nullValue()));
 	}
 
-	@Test
+    @Test
     public void setup_shouldInstallServerWithSpecifiedLatestSnapshotDistroVersionByUsingKeywordInBatchMode() throws Exception {
         String keyword = "LATEST-SNAPSHOT";
 
@@ -322,8 +402,8 @@ public class SetupIT extends AbstractSdkIT {
         addTaskParam("ignorePeerDependencies", "false");
 
         addAnswer(serverId);
-        addAnswer("Distribution");
-        addAnswer("referenceapplication:2.2");
+        addAnswer("Platform");
+        addAnswer("2.6.1");
         addAnswer("8080");
         addAnswer("1044");
 

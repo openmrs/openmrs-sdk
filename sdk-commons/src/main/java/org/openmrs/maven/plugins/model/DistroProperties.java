@@ -4,6 +4,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.openmrs.maven.plugins.utility.DistroHelper;
+import org.openmrs.maven.plugins.utility.PropertiesUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,12 +15,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
 import static org.openmrs.maven.plugins.utility.PropertiesUtils.loadPropertiesFromFile;
-import static org.openmrs.maven.plugins.utility.PropertiesUtils.loadPropertiesFromResource;
 
 /**
  *
@@ -35,16 +34,7 @@ public class DistroProperties extends BaseSdkProperties {
 
 	private static final Logger log = LoggerFactory.getLogger(DistroProperties.class);
 
-    public DistroProperties(String version) {
-        properties = new Properties();
-        try {
-            loadPropertiesFromResource(createFileName(version), properties);
-        } catch (MojoExecutionException e) {
-	        log.error(e.getMessage(), e);
-        }
-    }
-
-    public DistroProperties(String name, String platformVersion) {
+    public DistroProperties(String name, String platformVersion){
         properties = new Properties();
         setName(name);
         setVersion("1.0");  // it's unclear what this means or why it is necessary, but it is tested for
@@ -58,10 +48,6 @@ public class DistroProperties extends BaseSdkProperties {
     public DistroProperties(File file) throws MojoExecutionException{
         this.properties = new Properties();
         loadPropertiesFromFile(file, this.properties);
-    }
-
-    private String createFileName(String version) {
-        return String.format(DEAFAULT_FILE_NAME, version);
     }
 
     public boolean isH2Supported(){
@@ -173,24 +159,11 @@ public class DistroProperties extends BaseSdkProperties {
         }
     }
 
+    // This is no longer needed or used, keeping it here until unit test dependencies and coverage is resolved
+    // It has been moved to PropertyUtils and changed to a new implementation.  It is applied in DistibutionBuilder.
+    @Deprecated
     public void resolvePlaceholders(Properties projectProperties) throws MojoExecutionException {
-        for(Map.Entry<Object, Object> property: properties.entrySet()){
-            if(hasPlaceholder(property.getValue())){
-                try{
-                    Object placeholderValue = projectProperties.get(getPlaceholderKey((String)property.getValue()));
-                    if(placeholderValue == null){
-                        throw new MojoExecutionException(
-                                "Failed to resolve property placeholders in distro file, no property for key \"" +
-                                        property.getKey() + "\"");
-                    } else {
-                        property.setValue(putInPlaceholder((String)property.getValue(), (String)placeholderValue));
-                    }
-                } catch (ClassCastException e){
-                    throw new MojoExecutionException("Property with key \"" + property.getKey() + "\" and value \"" +
-                            property.getValue() + "\" is not placeholder.");
-                }
-            }
-        }
+        PropertiesUtils.resolvePlaceholders(properties, projectProperties);
     }
 
     public Set<Object> getAllKeys() {
@@ -226,29 +199,8 @@ public class DistroProperties extends BaseSdkProperties {
         properties.setProperty("exclusions", exclusions + "," + exclusion);
     }
 
-    public void addProperty(String property, String value) {
+    public void addProperty(String property, String value) throws MojoExecutionException {
         properties.put(property, value);
-    }
-
-    private String getPlaceholderKey(String string){
-        int startIndex = string.indexOf("${")+2;
-        int endIndex = string.indexOf("}", startIndex);
-        return string.substring(startIndex, endIndex);
-    }
-
-    private String putInPlaceholder(String value, String placeholderValue) {
-        return value.replace("${"+getPlaceholderKey(value)+"}", placeholderValue);
-    }
-
-    private boolean hasPlaceholder(Object object){
-        String asString;
-        try{
-            asString = (String) object;
-        } catch(ClassCastException e){
-            return false;
-        }
-        int index = asString.indexOf("{");
-        return index != -1 && asString.substring(index).contains("}");
     }
 
     public boolean contains(String propertyName) {

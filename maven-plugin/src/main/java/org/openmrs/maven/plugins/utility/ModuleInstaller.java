@@ -7,6 +7,8 @@ import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
 import org.openmrs.maven.plugins.model.Artifact;
+import org.openmrs.maven.plugins.model.DistroProperties;
+import org.openmrs.maven.plugins.model.Server;
 import org.twdata.maven.mojoexecutor.MojoExecutor;
 
 import java.io.File;
@@ -59,6 +61,30 @@ public class ModuleInstaller {
 
     public ModuleInstaller(DistroHelper distroHelper) {
         this(distroHelper.mavenProject, distroHelper.mavenSession, distroHelper.pluginManager, distroHelper.versionHelper);
+    }
+
+    public void installDefaultModules(Server server) throws MojoExecutionException {
+        boolean isPlatform = server.getVersion() == null;  // this might be always true, in which case `getCoreModules` can be simplified
+        List<Artifact> coreModules = SDKConstants.getCoreModules(server.getPlatformVersion(), isPlatform);
+        if (coreModules == null) {
+            throw new MojoExecutionException(String.format("Invalid version: '%s'", server.getPlatformVersion()));
+        }
+        installModules(coreModules, server.getServerDirectory().getPath());
+    }
+
+    public void installModulesForDistro(Server server, DistroProperties properties) throws MojoExecutionException {
+        List<Artifact> coreModules;
+        // install other modules
+        coreModules = properties.getWarArtifacts();
+        if (coreModules == null) {
+            throw new MojoExecutionException(String.format("Invalid version: '%s'", server.getVersion()));
+        }
+        installModules(coreModules, server.getServerDirectory().getPath());
+        File modules = new File(server.getServerDirectory(), SDKConstants.OPENMRS_SERVER_MODULES);
+        modules.mkdirs();
+        List<Artifact> artifacts = properties.getModuleArtifacts();
+        // install modules for each version
+        installModules(artifacts, modules.getPath());
     }
 
     public void installModules(List<Artifact> artifacts, String outputDir) throws MojoExecutionException {

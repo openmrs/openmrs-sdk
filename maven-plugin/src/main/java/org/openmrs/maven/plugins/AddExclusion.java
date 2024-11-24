@@ -5,7 +5,7 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
-import org.openmrs.maven.plugins.model.Artifact;
+import org.openmrs.maven.plugins.model.Distribution;
 import org.openmrs.maven.plugins.model.DistroProperties;
 
 import java.io.File;
@@ -43,23 +43,15 @@ public class AddExclusion extends AbstractTask {
             }
         }
 
-        DistroProperties originalDistroProperties = null;
-
-        if (StringUtils.isNotBlank(distro)) {
-            originalDistroProperties = distroHelper.resolveDistroPropertiesForStringSpecifier(distro, versionsHelper);
-
-        }
-
-        if (originalDistroProperties == null) {
+        Distribution distribution = distroHelper.resolveDistributionForStringSpecifier(distro, versionsHelper);
+        if (distribution == null) {
             throw new MojoFailureException("Invalid distro file");
         }
 
-        Artifact parentDistro = originalDistroProperties.getParentDistroArtifact();
-        if (parentDistro != null) {
-            DistroProperties parentProperties = distroHelper.downloadDistroProperties(new File(distro).getParentFile(), parentDistro);
-            parentProperties = distroHelper.getDistroPropertiesForFullAncestry(parentProperties, new File(distro).getParentFile());
+        if (distribution.getParent() != null) {
+            DistroProperties parentProperties = distribution.getParent().getEffectiveProperties();
             if (StringUtils.isBlank(property)) {
-                List<String> currentExclusions = originalDistroProperties.getExclusions();
+                List<String> currentExclusions = distribution.getProperties().getExclusions();
                 List<String> options = parentProperties.getPropertyNames().stream().filter(prop -> !currentExclusions.contains(prop)).collect(Collectors.toList());
                 property = wizard.promptForMissingValueWithOptions("Enter the property you want to exclude", null, null, options);
             }
@@ -78,9 +70,9 @@ public class AddExclusion extends AbstractTask {
                 }
             }
         }
-        originalDistroProperties.addExclusion(property);
+        distribution.getProperties().addExclusion(property);
         wizard.showMessage(property + " is added to exclusions");
-        originalDistroProperties.saveTo(new File(distro).getParentFile());
+        distribution.getProperties().saveTo(new File(distro).getParentFile());
     }
 
 }

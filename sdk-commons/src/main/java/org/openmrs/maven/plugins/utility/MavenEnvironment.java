@@ -20,4 +20,12 @@ public class MavenEnvironment {
 	private ArtifactFactory artifactFactory;
 	private BuildPluginManager pluginManager;
 	private Wizard wizard;
+
+	public ArtifactHelper getArtifactHelper() {
+		return new ArtifactHelper(this);
+	}
+
+	public VersionsHelper getVersionsHelper() {
+		return new VersionsHelper(artifactFactory, mavenProject, mavenSession, artifactMetadataSource);
+	}
 }

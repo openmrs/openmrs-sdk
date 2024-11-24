@@ -5,6 +5,7 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.shared.utils.StringUtils;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.BaseSdkProperties;
+import org.openmrs.maven.plugins.model.Distribution;
 import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.model.UpgradeDifferential;
@@ -38,13 +39,10 @@ public class ServerUpgrader {
         parentTask.getLog().info(String.format("Server %s has been successfully upgraded to %s", server.getServerId(), version));
     }
 
-	public void upgradeToDistro(Server server, DistroProperties distroProperties, boolean ignorePeerDependencies, Boolean overrideReuseNodeCache) throws MojoExecutionException {
+	public void upgradeToDistro(Server server, Distribution distribution, boolean ignorePeerDependencies, Boolean overrideReuseNodeCache) throws MojoExecutionException {
 		boolean serverExists = server.getPropertiesFile().exists();
-
-		// Get the full ancestry of the distro properties applied, if not already done here
-		distroProperties = parentTask.distroHelper.getDistroPropertiesForFullAncestry(distroProperties, server.getServerDirectory());
-
-		UpgradeDifferential upgradeDifferential = parentTask.distroHelper.calculateUpdateDifferential(server, distroProperties);
+		UpgradeDifferential upgradeDifferential = parentTask.distroHelper.calculateUpdateDifferential(server, distribution);
+		DistroProperties distroProperties = distribution.getEffectiveProperties();
 		if (serverExists) {
 			boolean confirmed = parentTask.wizard.promptForConfirmDistroUpgrade(upgradeDifferential, server, distroProperties);
 			if (!confirmed) {
@@ -257,7 +255,7 @@ public class ServerUpgrader {
 				distroProperties.saveTo(serverPath.toAbsolutePath().toFile());
 			}
 			if(StringUtils.isNotBlank(server.getParam(Server.PROPERTY_PLATFORM))){
-				server.setValuesFromDistroProperties(parentTask.distroHelper, server.getDistroProperties());
+				server.setValuesFromDistroProperties(server.getDistroProperties());
 				updateModulesPropertiesWithUserModules(server);
 				server.removePlatformVersionProperty();
 				server.removeUserModulesProperty();
@@ -280,7 +278,7 @@ public class ServerUpgrader {
 
 	private void configureMissingDistroArtifact(Server server) {
 		if(server.getDistroArtifactId() == null){
-            server.setDistroArtifactId(SDKConstants.REFERENCEAPPLICATION_ARTIFACT_ID);
+            server.setDistroArtifactId(SDKConstants.REFAPP_2X_ARTIFACT_ID);
         }
 		if(server.getDistroGroupId() == null){
             server.setDistroGroupId(Artifact.GROUP_DISTRO);
