@@ -35,7 +35,7 @@ public class ServerUpgrader {
     }
 
 	public void upgradeToDistro(Server server, DistroProperties distroProperties, boolean ignorePeerDependencies, Boolean overrideReuseNodeCache) throws MojoExecutionException {
-        UpgradeDifferential upgradeDifferential = DistroHelper.calculateUpdateDifferential(parentTask.distroHelper, server, distroProperties);
+        UpgradeDifferential upgradeDifferential = DistroHelper.calculateUpdateDifferential(server, distroProperties);
         boolean confirmed = parentTask.wizard.promptForConfirmDistroUpgrade(upgradeDifferential, server, distroProperties);
 		if(confirmed){
 			server.saveBackupProperties();
@@ -192,8 +192,8 @@ public class ServerUpgrader {
 			}
 			if(StringUtils.isNotBlank(server.getParam(Server.PROPERTY_PLATFORM))){
 				server.setValuesFromDistroPropertiesModules(
-						server.getDistroProperties().getWarArtifacts(parentTask.distroHelper, server.getServerDirectory()),
-						server.getDistroProperties().getModuleArtifacts(parentTask.distroHelper, server.getServerDirectory()),
+						server.getDistroProperties().getWarArtifacts(),
+						server.getDistroProperties().getModuleArtifacts(),
 						server.getDistroProperties()
 				);
 				updateModulesPropertiesWithUserModules(server);
@@ -218,7 +218,7 @@ public class ServerUpgrader {
 
 	private void configureMissingDistroArtifact(Server server) {
 		if(server.getDistroArtifactId() == null){
-            server.setDistroArtifactId(SDKConstants.REFERENCEAPPLICATION_ARTIFACT_ID);
+            server.setDistroArtifactId(SDKConstants.REFAPP_2X_ARTIFACT_ID);
         }
 		if(server.getDistroGroupId() == null){
             server.setDistroGroupId(Artifact.GROUP_DISTRO);

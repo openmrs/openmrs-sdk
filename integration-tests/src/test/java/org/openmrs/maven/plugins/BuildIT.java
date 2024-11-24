@@ -14,7 +14,7 @@ public class BuildIT extends AbstractSdkIT {
 
 	private String serverId;
 
-	void addTestResources() throws Exception {
+	protected void addTestResources() throws Exception {
 		Path sourcePath = testResourceDir.resolve(TEST_DIRECTORY).resolve("buildIT");
 		FileUtils.copyDirectory(sourcePath.toFile(), testDirectory);
 	}

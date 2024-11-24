@@ -3,12 +3,14 @@ package org.openmrs.maven.plugins.utility;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.text.StrSubstitutor;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.project.MavenProject;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.Server;
 import org.slf4j.Logger;
@@ -138,6 +140,29 @@ public class PropertiesUtils {
 			properties.load(in);
 		} catch (IOException e) {
 			throw new MojoExecutionException(e.getMessage(), e);
+		}
+	}
+
+	public static void resolveMavenPropertyPlaceholders(Properties properties, MavenProject mavenProject) throws MojoExecutionException {
+		if (properties != null && mavenProject != null) {
+			Properties mavenProjectProperties = mavenProject.getProperties();
+			mavenProjectProperties.setProperty("project.parent.version", mavenProject.getVersion());
+			mavenProjectProperties.setProperty("project.version", mavenProject.getVersion());
+			resolvePlaceholders(properties, mavenProjectProperties);
+		}
+	}
+
+	public static void resolvePlaceholders(Properties properties, Properties replacementValues) throws MojoExecutionException {
+		if (properties != null && replacementValues != null) {
+			StrSubstitutor substitutor = new StrSubstitutor(replacementValues);
+			for (String property : properties.stringPropertyNames()) {
+				String originalValue = properties.getProperty(property);
+				String replacement = substitutor.replace(originalValue);
+				if (replacement.contains("${") && replacement.contains("}")) {
+					throw new MojoExecutionException("Failed to resolve placeholders in property: " + property + " = " + originalValue);
+				}
+				properties.put(property, replacement);
+			}
 		}
 	}
 

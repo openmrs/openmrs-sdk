@@ -42,7 +42,7 @@ public class DistroHelperTest {
         Artifact artifact = DistroHelper.parseDistroArtifact(distro, null);
 
         assertThat(artifact.getGroupId(), is(Artifact.GROUP_DISTRO));
-        assertThat(artifact.getArtifactId(), is(SDKConstants.REFERENCEAPPLICATION_ARTIFACT_ID));
+        assertThat(artifact.getArtifactId(), is(SDKConstants.REFAPP_2X_ARTIFACT_ID));
     }
 
     @Test
@@ -170,9 +170,17 @@ public class DistroHelperTest {
     }
 
     @Test
-    public void normalizeArtifact_shouldNormalizeRefApp3() {
+    public void normalizeArtifact_shouldNormalizeRefApp3Beta() {
         Artifact artifact = DistroHelper.normalizeArtifact(new Artifact("referenceapplication", "3.0.0-alpha", "org.openmrs.distro"), versionsHelper);
         assertThat(artifact.getArtifactId(), equalTo("referenceapplication-distro"));
+        assertThat(artifact.getType(), equalTo("zip"));
+    }
+
+    @Test
+    public void normalizeArtifact_shouldNormalizeRefApp3() {
+        Artifact artifact = DistroHelper.normalizeArtifact(new Artifact("referenceapplication", "3.0.0", "org.openmrs.distro"), versionsHelper);
+        assertThat(artifact.getArtifactId(), equalTo("distro-emr-configuration"));
+        assertThat(artifact.getGroupId(), equalTo("org.openmrs"));
         assertThat(artifact.getType(), equalTo("zip"));
     }
 

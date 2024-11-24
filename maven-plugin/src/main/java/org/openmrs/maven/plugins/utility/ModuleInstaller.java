@@ -72,17 +72,17 @@ public class ModuleInstaller {
         installModules(coreModules, server.getServerDirectory().getPath());
     }
 
-    public void installModulesForDistro(Server server, DistroProperties properties, DistroHelper distroHelper) throws MojoExecutionException {
+    public void installModulesForDistro(Server server, DistroProperties properties) throws MojoExecutionException {
         List<Artifact> coreModules;
         // install other modules
-        coreModules = properties.getWarArtifacts(distroHelper, server.getServerDirectory());
+        coreModules = properties.getWarArtifacts();
         if (coreModules == null) {
             throw new MojoExecutionException(String.format("Invalid version: '%s'", server.getVersion()));
         }
         installModules(coreModules, server.getServerDirectory().getPath());
         File modules = new File(server.getServerDirectory(), SDKConstants.OPENMRS_SERVER_MODULES);
         modules.mkdirs();
-        List<Artifact> artifacts = properties.getModuleArtifacts(distroHelper, server.getServerDirectory());
+        List<Artifact> artifacts = properties.getModuleArtifacts();
         // install modules for each version
         installModules(artifacts, modules.getPath());
     }

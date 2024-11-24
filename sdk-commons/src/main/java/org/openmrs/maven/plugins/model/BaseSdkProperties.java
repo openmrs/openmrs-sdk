@@ -173,6 +173,10 @@ public abstract class BaseSdkProperties {
 		return properties.keySet();
 	}
 
+    public Properties getAllProperties() {
+        return properties;
+    }
+
     protected String getArtifactType(String key) {
         String[] wordsArray = key.split("\\.");
         if(!(wordsArray[wordsArray.length-1].equals(TYPE) || wordsArray[wordsArray.length-1].equals(ARTIFACT_ID) || wordsArray[wordsArray.length-1].equals(GROUP_ID))){
