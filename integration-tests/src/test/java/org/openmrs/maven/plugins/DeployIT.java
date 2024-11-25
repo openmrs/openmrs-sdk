@@ -97,6 +97,30 @@ public class DeployIT extends AbstractSdkIT {
     }
 
     @Test
+    public void deploy_shouldUpgradeDistroTo2_13_0() throws Exception {
+        testServerId = setupTestServer("referenceapplication:2.3.1");
+        addAnswer(testServerId);
+        addAnswer("Distribution");
+        addAnswer("referenceapplication:2.13.0");
+        addAnswer("y");
+        executeTask("deploy");
+        assertSuccess();
+        assertFilePresent(testServerId, "openmrs-2.5.9.war");
+        Properties properties = PropertiesUtils.loadPropertiesFromResource("integration-test/distributions/referenceapplication-package-2.13.0.properties");
+        if ("2.2.6".equals(properties.get("omod.atlas"))) {
+            properties.setProperty("omod.atlas", "2.2.7");
+        }
+        DistroProperties distroProperties = new DistroProperties(properties);
+        assertOnlyModulesInstalled(testServerId, distroProperties);
+        assertPlatformUpdated(testServerId, "2.5.9");
+        assertFilePresent(testServerId, "owa");
+        assertFilePresent(testServerId, "owa", "SystemAdministration.owa");
+        Server.setServersPath(testDirectory.getAbsolutePath());
+        Server server = Server.loadServer(testServerId);
+        assertThat(server, serverHasVersion("2.13.0"));
+    }
+
+    @Test
     public void deploy_shouldUpgradeDistroTo3_0_0() throws Exception {
         testServerId = setupTestServer("referenceapplication:2.2");
         addAnswer(testServerId);
