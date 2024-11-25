@@ -20,9 +20,6 @@ public class DistroHelperTest {
     @Mock
     VersionsHelper versionsHelper;
 
-    @Mock
-    MavenEnvironment mavenEnvironment;
-
     @Before
     public void setupMocks() {
         when(versionsHelper.getLatestSnapshotVersion((Artifact) any())).thenReturn("RESOLVED-LATEST-SNAPSHOT");

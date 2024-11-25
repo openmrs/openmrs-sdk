@@ -114,8 +114,6 @@ public class SetupIT extends AbstractSdkIT {
         assertFilePresent(serverId, "openmrs-2.6.7.war");
         assertFilePresent(serverId, "modules");
 
-        Properties properties = PropertiesUtils.loadPropertiesFromResource("integration-test/distributions/distro-emr-configuration-3.0.0.properties");
-
         assertNumFilesPresent(24, Paths.get(serverId, "modules"), null, ".omod");
         assertNumFilesPresent(0, Paths.get(serverId, "owa"), null, null);
 
