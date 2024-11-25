@@ -15,6 +15,7 @@ import org.jline.reader.LineReaderBuilder;
 import org.jline.terminal.Terminal;
 import org.jline.terminal.TerminalBuilder;
 import org.openmrs.maven.plugins.model.Artifact;
+import org.openmrs.maven.plugins.model.Distribution;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.model.UpgradeDifferential;
 import org.openmrs.maven.plugins.model.Version;
@@ -1152,6 +1153,9 @@ public class DefaultWizard implements Wizard {
 	@Override
 	public boolean promptForConfirmDistroUpgrade(UpgradeDifferential upgradeDifferential) throws MojoExecutionException {
 
+		Server server = upgradeDifferential.getServer();
+		Distribution distribution = upgradeDifferential.getDistribution();
+
 		UpgradeDifferential.ArtifactChanges warChanges = upgradeDifferential.getWarChanges();
 		UpgradeDifferential.ArtifactChanges moduleChanges = upgradeDifferential.getModuleChanges();
 		UpgradeDifferential.ArtifactChanges owaChanges = upgradeDifferential.getOwaChanges();
@@ -1175,9 +1179,7 @@ public class DefaultWizard implements Wizard {
 			return false;
 		}
 
-		String name = upgradeDifferential.getDistribution().getName();
-		String version = upgradeDifferential.getDistribution().getVersion();
-		writer.printf((UPGRADE_CONFIRM_TMPL) + "%n", name, version);
+		writer.printf((UPGRADE_CONFIRM_TMPL) + "%n", distribution.getName(), distribution.getVersion());
 
 		if (warChanges.hasChanges()) {
 			writer.printf(
@@ -1191,14 +1193,33 @@ public class DefaultWizard implements Wizard {
 		promptForArtifactChangesIfNecessary(owaChanges);
 
 		if (spaArtifactChanges.hasChanges() || spaBuildChanges.hasChanges()) {
-			writer.print("Replaces the contents of the frontend directory with updated spa");
+			if (hasExistingFilesInDirectory(server, SDKConstants.OPENMRS_SERVER_FRONTEND)) {
+				writer.print("^ Updates frontend spa%n");
+			}
+			else {
+				writer.print("+ Adds frontend spa%n");
+			}
 		}
 
 		if (configChanges.hasChanges() || contentChanges.hasChanges()) {
-			writer.print("Replaces the contents of the configuration directory with updated configuration");
+			if (hasExistingFilesInDirectory(server, SDKConstants.OPENMRS_SERVER_CONFIGURATION)) {
+				writer.print("^ Updates frontend configuration%n");
+			}
+			else {
+				writer.print("+ Adds frontend configuration%n");
+			}
 		}
 
 		return promptYesNo(String.format("Would you like to apply those changes to '%s'?", upgradeDifferential.getServer().getServerId()));
+	}
+
+	protected boolean hasExistingFilesInDirectory(Server server, String directory) {
+		File frontendDir = new File(server.getServerDirectory(), directory);
+		if (frontendDir.exists()) {
+			File[] files = frontendDir.listFiles();
+            return files != null && files.length > 0;
+		}
+		return false;
 	}
 
 	protected void promptForArtifactChangesIfNecessary(UpgradeDifferential.ArtifactChanges artifactChanges) {

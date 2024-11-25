@@ -42,7 +42,9 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.io.FileMatchers.anExistingFileOrDirectory;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.openmrs.maven.plugins.SdkMatchers.hasModuleVersion;
 import static org.openmrs.maven.plugins.SdkMatchers.hasModuleVersionInDisstro;
 import static org.openmrs.maven.plugins.SdkMatchers.hasPlatformVersion;
@@ -380,5 +382,19 @@ public abstract class AbstractSdkIT {
         answers = StringUtils.removeEnd(answers, "]");
         answers = StringUtils.removeStart(answers, "[");
         return answers;
+    }
+
+    protected String getLogContents() throws Exception {
+        File logFile = new File(testDirectory, "log.txt");
+        assertTrue(logFile.exists());
+        return FileUtils.readFileToString(logFile, "UTF-8");
+    }
+
+    protected void assertLogContains(String message) throws Exception {
+        assertTrue(getLogContents().contains(message));
+    }
+
+    protected void assertLogDoesNotContain(String message) throws Exception {
+        assertFalse(getLogContents().contains(message));
     }
 }

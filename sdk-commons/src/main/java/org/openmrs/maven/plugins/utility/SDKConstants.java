@@ -55,6 +55,8 @@ public class SDKConstants {
     public static final String OPENMRS_SERVER_MODULES = "modules";
     public static final String OPENMRS_SERVER_OWA = "owa";
     public static final String OPENMRS_SERVER_CONFIGURATION = "configuration";
+    public static final String OPENMRS_SERVER_FRONTEND = "frontend";
+
     // properties names
     public static final String OPENMRS_SDK_PROPERTIES_JAVA_HOME_OPTIONS = "javaHomeOptions";
     // dbUri for different db

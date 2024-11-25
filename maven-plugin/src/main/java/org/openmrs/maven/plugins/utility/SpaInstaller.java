@@ -36,8 +36,6 @@ public class SpaInstaller {
 	
 	static final String NPM_VERSION = "10.8.2";
 	
-	static final String BUILD_TARGET_DIR = "frontend";	
-	
 	private final NodeHelper nodeHelper;
 	
 	private final DistroHelper distroHelper;
@@ -73,13 +71,13 @@ public class SpaInstaller {
 	public void installFromDistroProperties(File appDataDir, DistroProperties distroProperties, boolean ignorePeerDependencies, Boolean overrideReuseNodeCache)
 			throws MojoExecutionException {
 
-		File buildTargetDir = new File(appDataDir, BUILD_TARGET_DIR);
+		File buildTargetDir = new File(appDataDir, SDKConstants.OPENMRS_SERVER_FRONTEND);
 		if (buildTargetDir.exists()) {
 			try {
 				FileUtils.deleteDirectory(buildTargetDir);
 			}
 			catch (IOException e) {
-				throw new MojoExecutionException("Unable to delete existing " + BUILD_TARGET_DIR + " directory", e);
+				throw new MojoExecutionException("Unable to delete existing " + SDKConstants.OPENMRS_SERVER_FRONTEND + " directory", e);
 			}
 		}
 
@@ -101,7 +99,7 @@ public class SpaInstaller {
 			}
 			wizard.showMessage("Installing SPA from Maven artifact: " + artifact);
 			if (buildTargetDir.mkdirs()) {
-				wizard.showMessage("Created " + BUILD_TARGET_DIR + " directory: " + buildTargetDir.getAbsolutePath());
+				wizard.showMessage("Created " + SDKConstants.OPENMRS_SERVER_FRONTEND + " directory: " + buildTargetDir.getAbsolutePath());
 			}
 			String includes = spaArtifactProperties.get(BaseSdkProperties.INCLUDES);
 			moduleInstaller.installAndUnpackModule(artifact, buildTargetDir, includes);

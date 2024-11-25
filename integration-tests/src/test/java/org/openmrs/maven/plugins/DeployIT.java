@@ -127,6 +127,9 @@ public class DeployIT extends AbstractSdkIT {
         Server.setServersPath(testDirectory.getAbsolutePath());
         Server server = Server.loadServer(testServerId);
         assertThat(server, serverHasVersion("3.0.0"));
+
+        assertLogContains("+ Adds frontend spa");
+        assertLogContains("+ Adds frontend configuration");
     }
 
     @Test
@@ -142,6 +145,7 @@ public class DeployIT extends AbstractSdkIT {
         assertFilePresent(testServerId, "configuration", "addresshierarchy", "addresshierarchy-core_demo.csv");
         assertFilePresent(testServerId, "configuration", "conceptclasses", "conceptclasses-core_data.csv");
         assertFilePresent(testServerId, "configuration", "encountertypes", "encountertypes_core-demo.csv");
+        assertLogContains("+ Adds frontend configuration");
     }
 
     @Test
@@ -156,6 +160,7 @@ public class DeployIT extends AbstractSdkIT {
         assertFilePresent(testServerId, "configuration", "conceptclasses", "hiv", "conceptclasses.csv");
         assertFilePresent(testServerId, "configuration", "conceptsources", "hiv", "conceptsources.csv");
         assertFilePresent(testServerId, "configuration", "encountertypes", "hiv", "encountertypes.csv");
+        assertLogContains("+ Adds frontend configuration");
     }
 
     @Test
@@ -172,6 +177,7 @@ public class DeployIT extends AbstractSdkIT {
         assertFilePresent(testServerId, "configuration", "addresshierarchy", "addresshierarchy-core_demo.csv");
         assertFilePresent(testServerId, "configuration", "conceptclasses", "conceptclasses-core_data.csv");
         assertFilePresent(testServerId, "configuration", "encountertypes", "encountertypes_core-demo.csv");
+        assertLogContains("+ Adds frontend configuration");
 
         includeDistroPropertiesFile("openmrs-distro-content-package.properties");
         addAnswer(testServerId);
@@ -186,6 +192,7 @@ public class DeployIT extends AbstractSdkIT {
         assertFilePresent(testServerId, "configuration", "conceptclasses", "hiv", "conceptclasses.csv");
         assertFilePresent(testServerId, "configuration", "conceptsources", "hiv", "conceptsources.csv");
         assertFilePresent(testServerId, "configuration", "encountertypes", "hiv", "encountertypes.csv");
+        assertLogContains("^ Updates frontend configuration");
     }
 
     @Test
