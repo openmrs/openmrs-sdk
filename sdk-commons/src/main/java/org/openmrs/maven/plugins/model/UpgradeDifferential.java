@@ -182,7 +182,7 @@ public class UpgradeDifferential {
             for (String key : oldProperties.keySet()) {
                 String newValue = newProperties.get(key);
                 if (newValue != null) {
-                    if (!newValue.equals((oldProperties.get(key)))) {
+                    if (!newValue.equals((oldProperties.get(key))) || isUnresolvedVersion(newValue)) {
                         ret.put(key, newProperties.get(key));
                     }
                 }
@@ -190,17 +190,16 @@ public class UpgradeDifferential {
             return ret;
         }
 
-        public boolean hasUnresolvedVersions() {
-            for (String value : newProperties.values()) {
-                if (value.equalsIgnoreCase("next") || value.equalsIgnoreCase("snapshot")) {
-                    return true;
-                }
+        public boolean isUnresolvedVersion(String version) {
+            if (version == null) {
+                return false;
             }
-            return false;
+            version = version.toLowerCase();
+            return version.equals("next") || version.endsWith("-snapshot");
         }
 
         public boolean hasChanges() {
-            return !getAddedProperties().isEmpty() || !getRemovedProperties().isEmpty() || !getChangedProperties().isEmpty() || hasUnresolvedVersions();
+            return !getAddedProperties().isEmpty() || !getRemovedProperties().isEmpty() || !getChangedProperties().isEmpty();
         }
     }
 }
