@@ -70,7 +70,7 @@ public class DeployIT extends AbstractSdkIT {
         assertFilePresent(testServerId, "openmrs-1.11.5.war");
         Properties properties = PropertiesUtils.loadPropertiesFromResource("openmrs-distro-2.3.1.properties");
         DistroProperties distroProperties = new DistroProperties(properties);
-        assertModulesInstalled(testServerId, distroProperties);
+        assertOnlyModulesInstalled(testServerId, distroProperties);
         assertPlatformUpdated(testServerId, "1.11.5");
         Server.setServersPath(testDirectory.getAbsolutePath());
         Server server = Server.loadServer(testServerId);
@@ -89,7 +89,7 @@ public class DeployIT extends AbstractSdkIT {
         assertFilePresent(testServerId, "openmrs-1.10.0.war");
         Properties properties = PropertiesUtils.loadPropertiesFromResource("openmrs-distro-2.1.properties");
         DistroProperties distroProperties = new DistroProperties(properties);
-        assertModulesInstalled(testServerId, distroProperties);
+        assertOnlyModulesInstalled(testServerId, distroProperties);
         assertPlatformUpdated(testServerId, "1.10.0");
         Server.setServersPath(testDirectory.getAbsolutePath());
         Server server = Server.loadServer(testServerId);

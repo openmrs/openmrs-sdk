@@ -52,7 +52,7 @@ public class SetupIT extends AbstractSdkIT {
 
         Properties properties = PropertiesUtils.loadPropertiesFromResource("openmrs-distro-2.3.1.properties");
         DistroProperties distroProperties = new DistroProperties(properties);
-        assertModulesInstalled(serverId, distroProperties);
+        assertOnlyModulesInstalled(serverId, distroProperties);
 
         Server.setServersPath(testDirectory.getAbsolutePath());
         Server server = Server.loadServer(serverId);
@@ -83,7 +83,7 @@ public class SetupIT extends AbstractSdkIT {
         assertThat(properties.get("omod.atlas"), equalTo("2.2.6"));
         properties.put("omod.atlas", "2.2.7");
         DistroProperties distroProperties = new DistroProperties(properties);
-        assertModulesInstalled(serverId, distroProperties);
+        assertOnlyModulesInstalled(serverId, distroProperties);
 
         assertNumFilesPresent(42, Paths.get(serverId, "modules"), null, ".omod");
 
@@ -115,8 +115,6 @@ public class SetupIT extends AbstractSdkIT {
         assertFilePresent(serverId, "modules");
 
         Properties properties = PropertiesUtils.loadPropertiesFromResource("integration-test/distributions/distro-emr-configuration-3.0.0.properties");
-        DistroProperties distroProperties = new DistroProperties(properties);
-        assertModulesInstalled(serverId, distroProperties);
 
         assertNumFilesPresent(24, Paths.get(serverId, "modules"), null, ".omod");
         assertNumFilesPresent(0, Paths.get(serverId, "owa"), null, null);

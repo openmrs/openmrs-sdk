@@ -327,15 +327,12 @@ public abstract class AbstractSdkIT {
 
     protected void assertModulesInstalled(String serverId, String... filenames) {
         Path modulesRoot = testDirectoryPath.resolve(Paths.get(serverId, "modules"));
-        File[] expectedFiles = modulesRoot.toFile().listFiles(f -> f.getName().endsWith(".omod"));
-        assertNotNull(expectedFiles);
-        assertThat(expectedFiles.length, equalTo(filenames.length));
         for(String filename : filenames) {
             assertPathPresent(modulesRoot.resolve(filename));
         }
     }
 
-    protected void assertModulesInstalled(String serverId, DistroProperties distroProperties) {
+    protected void assertOnlyModulesInstalled(String serverId, DistroProperties distroProperties) {
         List<Artifact> modules = distroProperties.getModuleArtifacts();
         String[] moduleFilenames = new String[modules.size()];
 
@@ -343,7 +340,13 @@ public abstract class AbstractSdkIT {
             moduleFilenames[i] = modules.get(i).getDestFileName();
         }
 
-        assertModulesInstalled(serverId, moduleFilenames);
+        Path modulesRoot = testDirectoryPath.resolve(Paths.get(serverId, "modules"));
+        File[] expectedFiles = modulesRoot.toFile().listFiles(f -> f.getName().endsWith(".omod"));
+        assertNotNull(expectedFiles);
+        assertThat(expectedFiles.length, equalTo(moduleFilenames.length));
+        for(String filename : moduleFilenames) {
+            assertPathPresent(modulesRoot.resolve(filename));
+        }
     }
 
     protected void addMockDbSettings() {

@@ -45,7 +45,7 @@ public class ServerUpgrader {
 		UpgradeDifferential upgradeDifferential = calculateUpdateDifferential(server, distribution);
 		DistroProperties distroProperties = distribution.getEffectiveProperties();
 		if (serverExists) {
-			boolean confirmed = parentTask.wizard.promptForConfirmDistroUpgrade(upgradeDifferential, server, distroProperties);
+			boolean confirmed = parentTask.wizard.promptForConfirmDistroUpgrade(upgradeDifferential);
 			if (!confirmed) {
 				parentTask.wizard.showMessage("Server upgrade aborted");
 				return;
@@ -178,7 +178,7 @@ public class ServerUpgrader {
 	 */
 	public UpgradeDifferential calculateUpdateDifferential(Server server, Distribution distribution) {
 
-		UpgradeDifferential upgradeDifferential = new UpgradeDifferential();
+		UpgradeDifferential upgradeDifferential = new UpgradeDifferential(server, distribution);
 		DistroProperties distroProperties = distribution.getEffectiveProperties();
 
 		// War File

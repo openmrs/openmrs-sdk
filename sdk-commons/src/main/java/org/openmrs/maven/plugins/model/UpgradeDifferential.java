@@ -11,13 +11,20 @@ import java.util.Map;
 @Data
 public class UpgradeDifferential {
 
-    private ArtifactChanges warChanges;
-    private ArtifactChanges moduleChanges;
-    private ArtifactChanges owaChanges;
-    private ArtifactChanges spaArtifactChanges;
-    private PropertyChanges spaBuildChanges;
-    private ArtifactChanges configChanges;
-    private ArtifactChanges contentChanges;
+    private final Server server;
+    private final Distribution distribution;
+    private ArtifactChanges warChanges = new ArtifactChanges(null, null);
+    private ArtifactChanges moduleChanges = new ArtifactChanges(null, null);
+    private ArtifactChanges owaChanges = new ArtifactChanges(null, null);
+    private ArtifactChanges spaArtifactChanges = new ArtifactChanges(null, null);
+    private PropertyChanges spaBuildChanges = new PropertyChanges(null, null);
+    private ArtifactChanges configChanges = new ArtifactChanges(null, null);
+    private ArtifactChanges contentChanges = new ArtifactChanges(null, null);
+
+    public UpgradeDifferential(Server server, Distribution distribution) {
+        this.server = server;
+        this.distribution = distribution;
+    }
 
     @Data
     public static class ArtifactChanges {
