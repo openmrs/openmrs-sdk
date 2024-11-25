@@ -335,55 +335,6 @@ public class DistroHelper {
 	}
 
 	/**
-	 * should:
-	 * - ignore modules which are already on server, but not included in distro properties of upgrade
-	 * - keep new platform artifact if distro properties declares newer version
-	 * - updateMap include modules which are already on server with newer/equal SNAPSHOT version
-	 * - add modules which are not installed on server yet
-	 */
-	public UpgradeDifferential calculateUpdateDifferential(Server server, Distribution distribution) {
-
-		UpgradeDifferential upgradeDifferential = new UpgradeDifferential();
-		DistroProperties distroProperties = distribution.getEffectiveProperties();
-
-		// War File
-		List<Artifact> oldWars = server.getWarArtifacts();
-		List<Artifact> newWars = distroProperties.getWarArtifacts();
-		upgradeDifferential.setWarChanges(new UpgradeDifferential.ArtifactChanges(oldWars, newWars));
-
-		// Modules
-		List<Artifact> oldModules = server.getModuleArtifacts();
-		List<Artifact> newModules = distroProperties.getModuleArtifacts();
-		upgradeDifferential.setModuleChanges(new UpgradeDifferential.ArtifactChanges(oldModules, newModules));
-
-		// Owas
-		List<Artifact> oldOwas = server.getOwaArtifacts();
-		List<Artifact> newOwas = distroProperties.getOwaArtifacts();
-		upgradeDifferential.setOwaChanges(new UpgradeDifferential.ArtifactChanges(oldOwas, newOwas));
-
-		// Spa
-		List<Artifact> oldSpa = server.getSpaArtifacts();
-		List<Artifact> newSpa = distroProperties.getSpaArtifacts();
-		upgradeDifferential.setSpaArtifactChanges(new UpgradeDifferential.ArtifactChanges(oldSpa, newSpa));
-
-		Map<String, String> oldSpaProps = server.getSpaBuildProperties();
-		Map<String, String> newSpaProps = distroProperties.getSpaBuildProperties();
-		upgradeDifferential.setSpaBuildChanges(new UpgradeDifferential.PropertyChanges(oldSpaProps, newSpaProps));
-
-		// Config
-		List<Artifact> oldConfig = server.getConfigArtifacts();
-		List<Artifact> newConfig = distroProperties.getConfigArtifacts();
-		upgradeDifferential.setConfigChanges(new UpgradeDifferential.ArtifactChanges(oldConfig, newConfig));
-
-		// Content
-		List<Artifact> oldContent = server.getContentArtifacts();
-		List<Artifact> newContent = distroProperties.getContentArtifacts();
-		upgradeDifferential.setContentChanges(new UpgradeDifferential.ArtifactChanges(oldContent, newContent));
-
-		return upgradeDifferential;
-	}
-
-	/**
 	 * Parses and processes content properties from content packages defined in the given {@code DistroProperties} object.
 	 *
 	 * <p>This method creates a temporary directory to download and process content package ZIP files specified

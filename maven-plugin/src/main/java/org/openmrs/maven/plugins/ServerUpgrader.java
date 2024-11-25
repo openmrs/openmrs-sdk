@@ -17,10 +17,11 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 
 public class ServerUpgrader {
-    private final AbstractTask parentTask;
 
+    private final AbstractTask parentTask;
 
 	public ServerUpgrader(AbstractTask parentTask) {
         this.parentTask = parentTask;
@@ -41,7 +42,7 @@ public class ServerUpgrader {
 
 	public void upgradeToDistro(Server server, Distribution distribution, boolean ignorePeerDependencies, Boolean overrideReuseNodeCache) throws MojoExecutionException {
 		boolean serverExists = server.getPropertiesFile().exists();
-		UpgradeDifferential upgradeDifferential = parentTask.distroHelper.calculateUpdateDifferential(server, distribution);
+		UpgradeDifferential upgradeDifferential = calculateUpdateDifferential(server, distribution);
 		DistroProperties distroProperties = distribution.getEffectiveProperties();
 		if (serverExists) {
 			boolean confirmed = parentTask.wizard.promptForConfirmDistroUpgrade(upgradeDifferential, server, distroProperties);
@@ -152,6 +153,55 @@ public class ServerUpgrader {
 		deleteDependencyPluginMarker();
 		server.saveAndSynchronizeDistro();
 		parentTask.getLog().info("Server upgraded successfully");
+	}
+
+	/**
+	 * should:
+	 * - ignore modules which are already on server, but not included in distro properties of upgrade
+	 * - keep new platform artifact if distro properties declares newer version
+	 * - updateMap include modules which are already on server with newer/equal SNAPSHOT version
+	 * - add modules which are not installed on server yet
+	 */
+	public UpgradeDifferential calculateUpdateDifferential(Server server, Distribution distribution) {
+
+		UpgradeDifferential upgradeDifferential = new UpgradeDifferential();
+		DistroProperties distroProperties = distribution.getEffectiveProperties();
+
+		// War File
+		List<Artifact> oldWars = server.getWarArtifacts();
+		List<Artifact> newWars = distroProperties.getWarArtifacts();
+		upgradeDifferential.setWarChanges(new UpgradeDifferential.ArtifactChanges(oldWars, newWars));
+
+		// Modules
+		List<Artifact> oldModules = server.getModuleArtifacts();
+		List<Artifact> newModules = distroProperties.getModuleArtifacts();
+		upgradeDifferential.setModuleChanges(new UpgradeDifferential.ArtifactChanges(oldModules, newModules));
+
+		// Owas
+		List<Artifact> oldOwas = server.getOwaArtifacts();
+		List<Artifact> newOwas = distroProperties.getOwaArtifacts();
+		upgradeDifferential.setOwaChanges(new UpgradeDifferential.ArtifactChanges(oldOwas, newOwas));
+
+		// Spa
+		List<Artifact> oldSpa = server.getSpaArtifacts();
+		List<Artifact> newSpa = distroProperties.getSpaArtifacts();
+		upgradeDifferential.setSpaArtifactChanges(new UpgradeDifferential.ArtifactChanges(oldSpa, newSpa));
+
+		Map<String, String> oldSpaProps = server.getSpaBuildProperties();
+		Map<String, String> newSpaProps = distroProperties.getSpaBuildProperties();
+		upgradeDifferential.setSpaBuildChanges(new UpgradeDifferential.PropertyChanges(oldSpaProps, newSpaProps));
+
+		// Config
+		List<Artifact> oldConfig = server.getConfigArtifacts();
+		List<Artifact> newConfig = distroProperties.getConfigArtifacts();
+		upgradeDifferential.setConfigChanges(new UpgradeDifferential.ArtifactChanges(oldConfig, newConfig));
+
+		// Content
+		List<Artifact> oldContent = server.getContentArtifacts();
+		List<Artifact> newContent = distroProperties.getContentArtifacts();
+		upgradeDifferential.setContentChanges(new UpgradeDifferential.ArtifactChanges(oldContent, newContent));
+
+		return upgradeDifferential;
 	}
 
 	/**
