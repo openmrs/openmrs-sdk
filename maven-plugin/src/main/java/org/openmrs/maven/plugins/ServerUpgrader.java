@@ -123,24 +123,38 @@ public class ServerUpgrader {
 		UpgradeDifferential.PropertyChanges spaBuildChanges = upgradeDifferential.getSpaBuildChanges();
 		boolean updateSpa = spaArtifactChanges.hasChanges() || spaBuildChanges.hasChanges();
 		if (updateSpa) {
-			parentTask.spaInstaller.installFromDistroProperties(server.getServerDirectory(), distroProperties);
+			parentTask.spaInstaller.installFromDistroProperties(server.getServerDirectory(), distroProperties, ignorePeerDependencies, overrideReuseNodeCache);
 		}
 
-		// Upgrade config
+		// Upgrade config and content
 		UpgradeDifferential.ArtifactChanges configChanges = upgradeDifferential.getConfigChanges();
-		if (configChanges.hasChanges()) {
-			parentTask.configurationInstaller.installToServer(server, distroProperties);
-		}
-
-		// Upgrade content
-
-		// TODO: This needs refactoring.  The validation should really happen _before_ changes are made to the server, so that it doesn't get in a bad state
-		// TODO: This needs to be more interactive, prompting whether or not to add to distro properties
-		parentTask.distroHelper.parseContentProperties(distroProperties);
 		UpgradeDifferential.ArtifactChanges contentChanges = upgradeDifferential.getContentChanges();
-		if (contentChanges.hasChanges()) {
-			ContentHelper.downloadAndMoveContentBackendConfig(server.getServerDirectory(), distroProperties, parentTask.moduleInstaller, parentTask.wizard);
-			// TODO: The frontend config seems conspicuously missing here?
+
+		if (configChanges.hasChanges() || contentChanges.hasChanges()) {
+
+			// TODO: This should happen in a higher-level validation stage and this method needs refactoring
+			parentTask.distroHelper.parseContentProperties(distroProperties);
+
+			File configDir = new File(server.getServerDirectory(), SDKConstants.OPENMRS_SERVER_CONFIGURATION);
+			if (configDir.exists()) {
+				parentTask.wizard.showMessage("Removing existing configuration and content packages");
+				try {
+					FileUtils.deleteDirectory(configDir);
+				}
+				catch (IOException e) {
+					throw new MojoExecutionException("Unable to delete existing configuration directory", e);
+				}
+			}
+
+			if (configChanges.hasChanges()) {
+				parentTask.configurationInstaller.installToServer(server, distroProperties);
+			}
+
+			if (contentChanges.hasChanges()) {
+				ContentHelper.downloadAndMoveContentBackendConfig(server.getServerDirectory(), distroProperties, parentTask.moduleInstaller, parentTask.wizard);
+				// TODO: Where is the frontend config installation?
+			}
+
 		}
 
 		server.setVersion(distroProperties.getVersion());

@@ -88,7 +88,9 @@ public class ModuleInstaller {
     }
 
     public void installModules(List<Artifact> artifacts, String outputDir) throws MojoExecutionException {
-        prepareModules(artifacts.toArray(new Artifact[0]), outputDir, GOAL_COPY);
+        if (!artifacts.isEmpty()) {
+            prepareModules(artifacts.toArray(new Artifact[0]), outputDir, GOAL_COPY);
+        }
     }
 
     public void installModule(Artifact artifact, String outputDir) throws MojoExecutionException {

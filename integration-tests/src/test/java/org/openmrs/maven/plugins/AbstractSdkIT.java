@@ -144,12 +144,12 @@ public abstract class AbstractSdkIT {
         return counter++;
     }
 
-    public String setupTestServer() throws Exception{
+    public String setupTestServer(String distro) throws Exception{
         Verifier setupServer = new Verifier(testDirectory.getAbsolutePath());
         String serverId = UUID.randomUUID().toString();
         try {
             addTaskParam(setupServer, "openMRSPath", testDirectory.getAbsolutePath());
-            addTaskParam(setupServer, "distro", "referenceapplication:2.2");
+            addTaskParam(setupServer, "distro", distro);
             addTaskParam(setupServer, "debug", "1044");
             addMockDbSettings(setupServer);
 
@@ -325,9 +325,12 @@ public abstract class AbstractSdkIT {
         assertFilePresent(serverId, SDKConstants.OPENMRS_SERVER_PROPERTIES);
     }
 
-    protected void assertModulesInstalled(String serverId, String... filenames){
+    protected void assertModulesInstalled(String serverId, String... filenames) {
         Path modulesRoot = testDirectoryPath.resolve(Paths.get(serverId, "modules"));
-        for(String filename : filenames){
+        File[] expectedFiles = modulesRoot.toFile().listFiles(f -> f.getName().endsWith(".omod"));
+        assertNotNull(expectedFiles);
+        assertThat(expectedFiles.length, equalTo(filenames.length));
+        for(String filename : filenames) {
             assertPathPresent(modulesRoot.resolve(filename));
         }
     }

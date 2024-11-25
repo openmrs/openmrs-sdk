@@ -21,23 +21,22 @@ import static org.openmrs.maven.plugins.SdkMatchers.serverHasVersion;
 
 public class DeployIT extends AbstractSdkIT {
 
-    private static String testServerId;
+    private String testServerId;
 
     @Before
     @Override
     public void setup() throws Exception {
         super.setup();
-        testServerId = setupTestServer();
     }
 
     @Test
     public void deploy_shouldReplaceWebapp() throws Exception {
+        testServerId = setupTestServer("referenceapplication:2.2");
+        assertFilePresent(testServerId, "openmrs-1.11.2.war");
+        assertFileNotPresent(testServerId, "openmrs-1.11.5.war");
         addTaskParam("platform", "1.11.5");
-
         addAnswer(testServerId);
-
         executeTask("deploy");
-
         assertSuccess();
         assertFilePresent(testServerId, "openmrs-1.11.5.war");
         assertPlatformUpdated(testServerId, "1.11.5");
@@ -45,14 +44,15 @@ public class DeployIT extends AbstractSdkIT {
     }
 
     @Test
-    public void deploy_shouldReplaceDistroPlatform() throws Exception{
+    public void deploy_shouldReplaceDistroPlatform() throws Exception {
+        testServerId = setupTestServer("referenceapplication:2.2");
+        assertFilePresent(testServerId, "openmrs-1.11.2.war");
+        assertFileNotPresent(testServerId, "webservices.rest-2.16.omod");
+        assertFileNotPresent(testServerId, "openmrs-2.0.2.war");
         addTaskParam("platform", "2.0.2");
-
         addAnswer(testServerId);
         addAnswer("y");
-
         executeTask("deploy");
-
         assertSuccess();
         assertFilePresent(testServerId, "openmrs-2.0.2.war");
         assertModulesInstalled(testServerId, "webservices.rest-2.16.omod");
@@ -60,21 +60,18 @@ public class DeployIT extends AbstractSdkIT {
 
     @Test
     public void deploy_shouldUpgradeDistroTo2_3_1() throws Exception {
-
+        testServerId = setupTestServer("referenceapplication:2.2");
         addAnswer(testServerId);
         addAnswer("Distribution");
         addAnswer("referenceapplication:2.3.1");
         addAnswer("y");
-
         executeTask("deploy");
-
         assertSuccess();
         assertFilePresent(testServerId, "openmrs-1.11.5.war");
         Properties properties = PropertiesUtils.loadPropertiesFromResource("openmrs-distro-2.3.1.properties");
         DistroProperties distroProperties = new DistroProperties(properties);
         assertModulesInstalled(testServerId, distroProperties);
         assertPlatformUpdated(testServerId, "1.11.5");
-
         Server.setServersPath(testDirectory.getAbsolutePath());
         Server server = Server.loadServer(testServerId);
         assertThat(server, serverHasVersion("2.3.1"));
@@ -82,21 +79,18 @@ public class DeployIT extends AbstractSdkIT {
 
     @Test
     public void deploy_shouldDowngradeDistroTo2_1() throws Exception {
-
+        testServerId = setupTestServer("referenceapplication:2.2");
         addAnswer(testServerId);
         addAnswer("Distribution");
         addAnswer("referenceapplication:2.1");
         addAnswer("y");
-
         executeTask("deploy");
-
         assertSuccess();
         assertFilePresent(testServerId, "openmrs-1.10.0.war");
         Properties properties = PropertiesUtils.loadPropertiesFromResource("openmrs-distro-2.1.properties");
         DistroProperties distroProperties = new DistroProperties(properties);
         assertModulesInstalled(testServerId, distroProperties);
         assertPlatformUpdated(testServerId, "1.10.0");
-
         Server.setServersPath(testDirectory.getAbsolutePath());
         Server server = Server.loadServer(testServerId);
         assertThat(server, serverHasVersion("2.1"));
@@ -104,19 +98,17 @@ public class DeployIT extends AbstractSdkIT {
 
     @Test
     public void deploy_shouldUpgradeDistroTo3_0_0() throws Exception {
-
+        testServerId = setupTestServer("referenceapplication:2.2");
         addAnswer(testServerId);
         addAnswer("Distribution");
         addAnswer("referenceapplication:3.0.0");
         addAnswer("y");
-
         executeTask("deploy");
-
         assertSuccess();
         assertFilePresent(testServerId, "openmrs-2.6.7.war");
         Properties properties = PropertiesUtils.loadPropertiesFromResource("integration-test/distributions/distro-emr-configuration-3.0.0.properties");
-        DistroProperties distroProperties = new DistroProperties(properties);
-        assertModulesInstalled(testServerId, distroProperties);
+
+        assertNumFilesPresent(24, Paths.get(testServerId, "modules"), null, ".omod");
         assertPlatformUpdated(testServerId, "2.6.7");
         assertNumFilesPresent(0, Paths.get(testServerId, "owa"), null, null);
 
@@ -125,7 +117,12 @@ public class DeployIT extends AbstractSdkIT {
         assertFileContains("omod.spa", testServerId, "openmrs-distro.properties");
         assertNumFilesPresent(1, Paths.get(testServerId, "modules"), "spa-", ".omod");
 
-        // TODO: Deploy does not currently support installing or updating frontend or config or content.  This needs to be ticketed and fixed
+        assertFilePresent(testServerId, "frontend");
+        assertFilePresent(testServerId, "frontend", "index.html");
+        assertFilePresent(testServerId, "frontend", "importmap.json");
+
+        assertFilePresent(testServerId, "configuration");
+        assertFilePresent(testServerId, "configuration", "conceptclasses", "conceptclasses-core_data.csv");
 
         Server.setServersPath(testDirectory.getAbsolutePath());
         Server server = Server.loadServer(testServerId);
@@ -133,16 +130,73 @@ public class DeployIT extends AbstractSdkIT {
     }
 
     @Test
+    public void deploy_shouldUpgradeDistroWithConfigPackage() throws Exception {
+        testServerId = setupTestServer("referenceapplication:2.2");
+        includeDistroPropertiesFile("openmrs-distro-configuration.properties");
+        addAnswer(testServerId);
+        addAnswer("y");
+        addAnswer("y");
+        executeTask("deploy");
+        assertSuccess();
+        assertFilePresent(testServerId, "configuration", "addresshierarchy", "addressConfiguration-core_demo.xml");
+        assertFilePresent(testServerId, "configuration", "addresshierarchy", "addresshierarchy-core_demo.csv");
+        assertFilePresent(testServerId, "configuration", "conceptclasses", "conceptclasses-core_data.csv");
+        assertFilePresent(testServerId, "configuration", "encountertypes", "encountertypes_core-demo.csv");
+    }
+
+    @Test
+    public void deploy_shouldUpgradeDistroWithContentPackage() throws Exception {
+        testServerId = setupTestServer("referenceapplication:2.2");
+        includeDistroPropertiesFile("openmrs-distro-content-package.properties");
+        addAnswer(testServerId);
+        addAnswer("y");
+        addAnswer("y");
+        executeTask("deploy");
+        assertSuccess();
+        assertFilePresent(testServerId, "configuration", "conceptclasses", "hiv", "conceptclasses.csv");
+        assertFilePresent(testServerId, "configuration", "conceptsources", "hiv", "conceptsources.csv");
+        assertFilePresent(testServerId, "configuration", "encountertypes", "hiv", "encountertypes.csv");
+    }
+
+    @Test
+    public void deploy_shouldReplaceConfigurationAndContentIfChanged() throws Exception {
+        testServerId = setupTestServer("referenceapplication:2.2");
+
+        includeDistroPropertiesFile("openmrs-distro-configuration.properties");
+        addAnswer(testServerId);
+        addAnswer("y");
+        addAnswer("y");
+        executeTask("deploy");
+        assertSuccess();
+        assertFilePresent(testServerId, "configuration", "addresshierarchy", "addressConfiguration-core_demo.xml");
+        assertFilePresent(testServerId, "configuration", "addresshierarchy", "addresshierarchy-core_demo.csv");
+        assertFilePresent(testServerId, "configuration", "conceptclasses", "conceptclasses-core_data.csv");
+        assertFilePresent(testServerId, "configuration", "encountertypes", "encountertypes_core-demo.csv");
+
+        includeDistroPropertiesFile("openmrs-distro-content-package.properties");
+        addAnswer(testServerId);
+        addAnswer("y");
+        addAnswer("y");
+        executeTask("deploy");
+        assertSuccess();
+        assertFileNotPresent(testServerId, "configuration", "addresshierarchy", "addressConfiguration-core_demo.xml");
+        assertFileNotPresent(testServerId, "configuration", "addresshierarchy", "addresshierarchy-core_demo.csv");
+        assertFileNotPresent(testServerId, "configuration", "conceptclasses", "conceptclasses-core_data.csv");
+        assertFileNotPresent(testServerId, "configuration", "encountertypes", "encountertypes_core-demo.csv");
+        assertFilePresent(testServerId, "configuration", "conceptclasses", "hiv", "conceptclasses.csv");
+        assertFilePresent(testServerId, "configuration", "conceptsources", "hiv", "conceptsources.csv");
+        assertFilePresent(testServerId, "configuration", "encountertypes", "hiv", "encountertypes.csv");
+    }
+
+    @Test
     public void deploy_shouldUpgradeDistroFromDistroProperties() throws Exception {
+        testServerId = setupTestServer("referenceapplication:2.2");
         includeDistroPropertiesFile(DistroProperties.DISTRO_FILE_NAME);
         addAnswer(testServerId);
         addAnswer("y");
         addAnswer("y");
-
         assertFilePresent(testServerId, "modules", "appui-1.3.omod");
-
         executeTask("deploy");
-
         assertSuccess();
         assertFilePresent(testServerId, "openmrs-1.11.5.war");
         assertFileNotPresent(testServerId, "modules", "appui-1.3.omod");
@@ -152,15 +206,14 @@ public class DeployIT extends AbstractSdkIT {
 
     @Test
     public void deploy_shouldInstallModule() throws Exception {
+        testServerId = setupTestServer("referenceapplication:2.2");
         addTaskParam("artifactId", "owa");
         addTaskParam("groupId", Artifact.GROUP_MODULE);
         addTaskParam("version", "1.4");
-
         addAnswer(testServerId);
         addAnswer("y");
         addAnswer("y");
         executeTask("deploy");
-
         assertSuccess();
         assertModulesInstalled(testServerId, "owa-1.4.omod");
         assertModuleUpdated(testServerId, "owa", "1.4");
@@ -168,11 +221,11 @@ public class DeployIT extends AbstractSdkIT {
 
     @Test
     public void deploy_shouldInstallModuleFromPomInDir() throws Exception {
+        testServerId = setupTestServer("referenceapplication:2.2");
         includePomFile("deployIT", "pom-owa-module.xml");
         addAnswer(testServerId);
         addAnswer("y");
         executeTask("deploy");
-
         assertSuccess();
         assertModulesInstalled(testServerId, "owa-1.4.omod");
         assertModuleUpdated(testServerId, "owa", "1.4");
@@ -180,13 +233,11 @@ public class DeployIT extends AbstractSdkIT {
 
     @Test
     public void deploy_shouldInstallOwaAndOwaModule() throws Exception {
+        testServerId = setupTestServer("referenceapplication:2.2");
         addTaskParam("owa", "conceptdictionary:1.0.0");
-
         addAnswer(testServerId);
         addAnswer("y");
-
         executeTask("deploy");
-
         assertSuccess();
         assertFilePresent(testServerId, "owa");
         assertFilePresent(testServerId, "owa", "conceptdictionary.owa");

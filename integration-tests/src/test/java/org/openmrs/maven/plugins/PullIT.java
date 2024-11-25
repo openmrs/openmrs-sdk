@@ -25,7 +25,7 @@ public class PullIT extends AbstractSdkIT {
     @Override
     public void setup() throws Exception {
         super.setup();
-        serverId = setupTestServer();
+        serverId = setupTestServer("referenceapplication:2.2");
         cloneGitProject();
         verifier = new Verifier(new File(testDirectory, OPENMRS_MODULE_IDGEN).getAbsolutePath());
         addTaskParam("openMRSPath", testDirectory.getAbsolutePath());
