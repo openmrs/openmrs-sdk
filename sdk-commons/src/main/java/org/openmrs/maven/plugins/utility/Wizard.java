@@ -72,8 +72,7 @@ public interface Wizard {
 
     void showJdkErrorMessage(String jdk, String platform, String recommendedJdk, String pathToProps);
 
-    boolean promptForConfirmDistroUpgrade(UpgradeDifferential upgradeDifferential, Server server, DistroProperties distroProperties)
-            throws MojoExecutionException;
+    boolean promptForConfirmDistroUpgrade(UpgradeDifferential upgradeDifferential) throws MojoExecutionException;
 
     void setAnswers(ArrayDeque<String> batchAnswers);
 }

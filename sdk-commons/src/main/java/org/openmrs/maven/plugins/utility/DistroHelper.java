@@ -10,7 +10,6 @@ import org.openmrs.maven.plugins.model.Distribution;
 import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.PackageJson;
 import org.openmrs.maven.plugins.model.Server;
-import org.openmrs.maven.plugins.model.UpgradeDifferential;
 import org.openmrs.maven.plugins.model.Version;
 import org.semver4j.Semver;
 import org.semver4j.SemverException;
@@ -68,10 +67,10 @@ public class DistroHelper {
 	/**
 	 * @return distro properties from openmrs-distro.properties file in current directory or null if not exist
 	 */
-	public DistroProperties getDistroPropertiesFromDir() {
+	public File getDistroPropertiesFileFromDir() {
 		File distroFile = new File(new File(System.getProperty("user.dir")), "openmrs-distro.properties");
 		if (distroFile.exists()) {
-			return getDistroPropertiesFromFile(distroFile);
+			return distroFile;
 		}
 		return null;
 	}
@@ -87,26 +86,6 @@ public class DistroHelper {
 			distroProperties.setH2Support(true);
 		}
 		return distroProperties;
-	}
-
-	/**
-	 * @param distroFile file which contains distro properties
-	 * @return distro properties loaded from specified file or null if file is not distro properties
-	 */
-	public DistroProperties getDistroPropertiesFromFile(File distroFile) {
-		if (distroFile.exists()) {
-			try {
-				DistributionBuilder builder = new DistributionBuilder(mavenEnvironment);
-				Distribution distribution = builder.buildFromFile(distroFile);
-				if (distribution != null) {
-					return distribution.getEffectiveProperties();
-				}
-			}
-			catch (MojoExecutionException ignored) {
-			}
-		}
-
-		return null;
 	}
 
 	/**
@@ -351,129 +330,6 @@ public class DistroHelper {
 		if (distroProperties != null) {
 			distroProperties.saveTo(destination);
 		}
-	}
-
-	/**
-	 * should:
-	 * - ignore modules which are already on server, but not included in distro properties of upgrade
-	 * - keep new platform artifact if distro properties declares newer version
-	 * - updateMap include modules which are already on server with newer/equal SNAPSHOT version
-	 * - add modules which are not installed on server yet
-	 */
-	public static UpgradeDifferential calculateUpdateDifferential(Server server, DistroProperties distroProperties) throws MojoExecutionException {
-		List<Artifact> newList = new ArrayList<>(distroProperties.getWarArtifacts());
-		newList.addAll(distroProperties.getModuleArtifacts());
-		return calculateUpdateDifferential(server.getServerModules(), newList);
-	}
-
-	static UpgradeDifferential calculateUpdateDifferential(List<Artifact> oldList, List<Artifact> newList)
-			throws MojoExecutionException {
-		UpgradeDifferential upgradeDifferential = new UpgradeDifferential();
-		for (Artifact newListModule : newList) {
-			boolean toAdd = true;
-			for (Artifact oldListModule : oldList) {
-				if (isSameArtifact(oldListModule, newListModule)) {
-					if (isHigherVersion(oldListModule, newListModule)) {
-						if (isOpenmrsWebapp(newListModule)) {
-							upgradeDifferential.setPlatformArtifact(newListModule);
-							upgradeDifferential.setPlatformUpgraded(true);
-						} else {
-							upgradeDifferential.putUpdateEntry(oldListModule, newListModule);
-						}
-					} else if (isLowerVersion(oldListModule, newListModule)) {
-						if (isOpenmrsWebapp(newListModule)) {
-							upgradeDifferential.setPlatformArtifact(newListModule);
-							upgradeDifferential.setPlatformUpgraded(false);
-						} else {
-							upgradeDifferential.putDowngradeEntry(oldListModule, newListModule);
-						}
-					}
-					toAdd = false;
-					break;
-				}
-			}
-			if (toAdd) {
-				upgradeDifferential.addModuleToAdd(newListModule);
-			}
-		}
-		for (Artifact oldListModule : oldList) {
-			boolean moduleNotFound = true;
-			for (Artifact newListModule : newList) {
-				if (isSameArtifact(newListModule, oldListModule)) {
-					moduleNotFound = false;
-					break;
-				}
-			}
-			if (moduleNotFound) {
-				if (isOpenmrsWebapp(oldListModule)) {
-					throw new MojoExecutionException("You can delete only modules. Deleting openmrs core is not possible");
-				} else {
-					upgradeDifferential.addModuleToDelete(oldListModule);
-				}
-			}
-		}
-		return upgradeDifferential;
-	}
-
-	private static boolean isOpenmrsWebapp(Artifact artifact) {
-		return Artifact.TYPE_WAR.equals(artifact.getType()) && SDKConstants.WEBAPP_ARTIFACT_ID
-				.equals(artifact.getArtifactId());
-	}
-
-	private static boolean isSameArtifact(Artifact left, Artifact right) {
-		return getId(left.getDestFileName()).equals(getId(right.getDestFileName()));
-	}
-
-	private static String getId(String name) {
-		int index = name.indexOf('-');
-		if (index == -1)
-			return name;
-		return name.substring(0, index);
-	}
-
-	/**
-	 * checks if next artifact is higher version of the same artifact
-	 * returns true for equal version snapshots
-	 */
-	private static boolean isHigherVersion(Artifact previous, Artifact next) {
-		if (artifactsToCompareAreInvalid(previous, next)) {
-			return false;
-		}
-
-		Version previousVersion = new Version(previous.getVersion());
-		Version nextVersion = new Version(next.getVersion());
-
-		if (nextVersion.higher(previousVersion)) {
-			return true;
-		} else if (nextVersion.equal(previousVersion)) {
-			return (previousVersion.isSnapshot() && nextVersion.isSnapshot());
-		} else {
-			return false;
-		}
-	}
-
-	private static boolean isLowerVersion(Artifact previous, Artifact next) {
-		if (artifactsToCompareAreInvalid(previous, next)) {
-			return false;
-		}
-
-		Version previousVersion = new Version(previous.getVersion());
-		Version nextVersion = new Version(next.getVersion());
-
-		if (nextVersion.lower(previousVersion)) {
-			return true;
-		} else if (nextVersion.equal(previousVersion)) {
-			return (previousVersion.isSnapshot() && nextVersion.isSnapshot());
-		} else {
-			return false;
-		}
-	}
-
-	private static boolean artifactsToCompareAreInvalid(Artifact previous, Artifact next) {
-		return previous == null || next == null
-				|| previous.getArtifactId() == null || next.getArtifactId() == null
-				|| previous.getVersion() == null || next.getVersion() == null
-				|| !isSameArtifact(previous, next);
 	}
 
 	/**

@@ -23,7 +23,7 @@ public class BuildIT extends AbstractSdkIT {
 	@Override
 	public void setup() throws Exception {
 		super.setup();
-		serverId = setupTestServer();
+		serverId = setupTestServer("referenceapplication:2.2");
 		Server server = Server.loadServer(testDirectoryPath.resolve(serverId));
 		File firstDir = new File(testDirectory, "module1");
 		File secondDir = new File(testDirectory, "module2");

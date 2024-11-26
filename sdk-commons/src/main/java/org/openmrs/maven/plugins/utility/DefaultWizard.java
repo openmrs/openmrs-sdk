@@ -15,7 +15,7 @@ import org.jline.reader.LineReaderBuilder;
 import org.jline.terminal.Terminal;
 import org.jline.terminal.TerminalBuilder;
 import org.openmrs.maven.plugins.model.Artifact;
-import org.openmrs.maven.plugins.model.DistroProperties;
+import org.openmrs.maven.plugins.model.Distribution;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.model.UpgradeDifferential;
 import org.openmrs.maven.plugins.model.Version;
@@ -58,55 +58,55 @@ import static org.openmrs.maven.plugins.utility.PropertiesUtils.loadPropertiesFr
 @Component(role = Wizard.class)
 public class DefaultWizard implements Wizard {
 
-	private static final String EMPTY_STRING = "";
+	static final String EMPTY_STRING = "";
 
-	private static final String NONE = "(none)";
+	static final String NONE = "(none)";
 
-	private static final String DEFAULT_CHOICE_TMPL = "Which one do you choose?";
+	static final String DEFAULT_CHOICE_TMPL = "Which one do you choose?";
 
-	private static final String DEFAULT_OPTION_TMPL = "%d) %s";
+	static final String DEFAULT_OPTION_TMPL = "%d) %s";
 
-	private static final String DEFAULT_CUSTOM_OPTION_TMPL = "%d) Other...";
+	static final String DEFAULT_CUSTOM_OPTION_TMPL = "%d) Other...";
 
-	private static final String DEFAULT_SERVER_NAME = "server";
+	static final String DEFAULT_SERVER_NAME = "server";
 
-	private static final String DEFAULT_PROMPT_TMPL = "Please specify %s";
+	static final String DEFAULT_PROMPT_TMPL = "Please specify %s";
 
-	private static final String DEFAULT_VALUE_TMPL = " (default: '%s')";
+	static final String DEFAULT_VALUE_TMPL = " (default: '%s')";
 
-	private static final String DEFAULT_VALUE_TMPL_WITH_DEFAULT = "Please specify %s: (default: '%s')";
+	static final String DEFAULT_VALUE_TMPL_WITH_DEFAULT = "Please specify %s: (default: '%s')";
 
-	private static final String INVALID_SERVER = "Invalid server Id";
+	static final String INVALID_SERVER = "Invalid server Id";
 
-	private static final String YESNO = " [Y/n]";
+	static final String YESNO = " [Y/n]";
 
-	private static final String NOYES = " [N/y]";
+	static final String NOYES = " [N/y]";
 
-	private static final String REFERENCEAPPLICATION_2_4 = "org.openmrs.distro:referenceapplication-package:2.4";
+	static final String REFERENCEAPPLICATION_2_4 = "org.openmrs.distro:referenceapplication-package:2.4";
 
-	private static final String REFERENCEAPPLICATION_O3 = "org.openmrs:emr-distro-configuration:3.0.0";
+	static final String REFERENCEAPPLICATION_O3 = "org.openmrs:emr-distro-configuration:3.0.0";
 
-	private static final String SDK_PROPERTIES_FILE = "SDK Properties file";
+	static final String SDK_PROPERTIES_FILE = "SDK Properties file";
 
-	private static final String REFAPP_OPTION_TMPL = "Reference Application %s";
+	static final String REFAPP_OPTION_TMPL = "Reference Application %s";
 
-	private static final String REFAPP_ARTIFACT_TMPL = "org.openmrs.distro:referenceapplication-package:%s";
+	static final String REFAPP_ARTIFACT_TMPL = "org.openmrs.distro:referenceapplication-package:%s";
 
-	private static final String JDK_ERROR_TMPL = "\nThe JDK %s is not compatible with OpenMRS Platform %s. " +
+	static final String JDK_ERROR_TMPL = "\nThe JDK %s is not compatible with OpenMRS Platform %s. " +
 			"Please use %s to run this server.\n\nIf you are running " +
 			"in a forked mode, correct the java.home property in %s\n";
 
-	private static final String UPGRADE_CONFIRM_TMPL = "\nThe %s %s introduces the following changes:";
+	static final String UPGRADE_CONFIRM_TMPL = "\nThe %s %s introduces the following changes:";
 
-	private static final String UPDATE_MODULE_TMPL = "^ Updates %s %s to %s";
+	static final String UPDATE_ARTIFACT_TMPL = "^ Updates %s %s to %s";
 
-	private static final String DOWNGRADE_MODULE_TMPL = "v Downgrades %s %s to %s";
+	static final String DOWNGRADE_ARTIFACT_TMPL = "v Downgrades %s %s to %s";
 
-	private static final String ADD_MODULE_TMPL = "+ Adds %s %s";
+	static final String ADD_ARTIFACT_TMPL = "+ Adds %s %s";
 
-	private static final String DELETE_MODULE_TMPL = "- Deletes %s %s";
+	static final String DELETE_ARTIFACT_TMPL = "- Deletes %s %s";
 
-	private static final String NO_DIFFERENTIAL = "\nNo modules to update or add found";
+	static final String NO_DIFFERENTIAL = "\nNo distribution changes found";
 
 	public static final String PLATFORM_VERSION_PROMPT = "You can deploy the following versions of a platform";
 
@@ -1151,71 +1151,107 @@ public class DefaultWizard implements Wizard {
 	 * @return
 	 */
 	@Override
-	public boolean promptForConfirmDistroUpgrade(UpgradeDifferential upgradeDifferential, Server server,
-			DistroProperties distroProperties) throws MojoExecutionException {
-		if (upgradeDifferential.isEmpty()) {
+	public boolean promptForConfirmDistroUpgrade(UpgradeDifferential upgradeDifferential) throws MojoExecutionException {
+
+		Server server = upgradeDifferential.getServer();
+		Distribution distribution = upgradeDifferential.getDistribution();
+
+		UpgradeDifferential.ArtifactChanges warChanges = upgradeDifferential.getWarChanges();
+		UpgradeDifferential.ArtifactChanges moduleChanges = upgradeDifferential.getModuleChanges();
+		UpgradeDifferential.ArtifactChanges owaChanges = upgradeDifferential.getOwaChanges();
+		UpgradeDifferential.ArtifactChanges spaArtifactChanges = upgradeDifferential.getSpaArtifactChanges();
+		UpgradeDifferential.PropertyChanges spaBuildChanges = upgradeDifferential.getSpaBuildChanges();
+		UpgradeDifferential.ArtifactChanges configChanges = upgradeDifferential.getConfigChanges();
+		UpgradeDifferential.ArtifactChanges contentChanges = upgradeDifferential.getContentChanges();
+
+		boolean hasChanges = (
+			warChanges.hasChanges() ||
+			moduleChanges.hasChanges() ||
+			owaChanges.hasChanges() ||
+			spaArtifactChanges.hasChanges() ||
+			spaBuildChanges.hasChanges() ||
+			configChanges.hasChanges() ||
+			contentChanges.hasChanges()
+		);
+
+		if (!hasChanges) {
 			showMessage(NO_DIFFERENTIAL);
 			return false;
 		}
 
-		boolean needConfirmation = false;
+		writer.printf((UPGRADE_CONFIRM_TMPL) + "%n", distribution.getName(), distribution.getVersion());
 
-		if (upgradeDifferential.getPlatformArtifact() != null) {
-			needConfirmation = showUpdateHeader(distroProperties, needConfirmation);
+		if (warChanges.hasChanges()) {
 			writer.printf(
-					(upgradeDifferential.isPlatformUpgraded() ? UPDATE_MODULE_TMPL : DOWNGRADE_MODULE_TMPL) + "%n",
-					upgradeDifferential.getPlatformArtifact().getArtifactId(),
-					server.getPlatformVersion(),
-					upgradeDifferential.getPlatformArtifact().getVersion());
+					(warChanges.getDowngradedArtifacts().isEmpty() ? UPDATE_ARTIFACT_TMPL : DOWNGRADE_ARTIFACT_TMPL) + "%n",
+					warChanges.getNewArtifacts().get(0).getArtifactId(),
+					upgradeDifferential.getServer().getPlatformVersion(),
+					warChanges.getNewArtifacts().get(0).getVersion());
 		}
-		for (Entry<Artifact, Artifact> updateEntry : upgradeDifferential.getUpdateOldToNewMap().entrySet()) {
-			//update map should contain entry with equal versions only when they are same snapshots
-			//(e.g. update 'appui 0.2-SNAPSHOT' to 'appui 0.2-SNAPSHOT')
-			//updating to same SNAPSHOT doesn't require confirmation, they are not shown
-			if (!updateEntry.getKey().getVersion().equals(updateEntry.getValue().getVersion())) {
-				needConfirmation = showUpdateHeader(distroProperties, needConfirmation);
-				writer.printf((UPDATE_MODULE_TMPL) + "%n",
-						updateEntry.getKey().getArtifactId(),
-						updateEntry.getKey().getVersion(),
-						updateEntry.getValue().getVersion());
+
+		promptForArtifactChangesIfNecessary(moduleChanges);
+		promptForArtifactChangesIfNecessary(owaChanges);
+
+		if (spaArtifactChanges.hasChanges() || spaBuildChanges.hasChanges()) {
+			if (hasExistingFilesInDirectory(server, SDKConstants.OPENMRS_SERVER_FRONTEND)) {
+				writer.print("^ Updates frontend spa%n");
+			}
+			else {
+				writer.print("+ Adds frontend spa%n");
 			}
 		}
 
-		for (Entry<Artifact, Artifact> downgradeEntry : upgradeDifferential.getDowngradeNewToOldMap().entrySet()) {
-			if (!downgradeEntry.getKey().getVersion().equals(downgradeEntry.getValue().getVersion())) {
-				needConfirmation = showUpdateHeader(distroProperties, needConfirmation);
-				writer.printf((DOWNGRADE_MODULE_TMPL) + "%n",
-						downgradeEntry.getKey().getArtifactId(),
-						downgradeEntry.getKey().getVersion(),
-						downgradeEntry.getValue().getVersion());
+		if (configChanges.hasChanges() || contentChanges.hasChanges()) {
+			if (hasExistingFilesInDirectory(server, SDKConstants.OPENMRS_SERVER_CONFIGURATION)) {
+				writer.print("^ Updates frontend configuration%n");
+			}
+			else {
+				writer.print("+ Adds frontend configuration%n");
 			}
 		}
 
-		for (Artifact addArtifact : upgradeDifferential.getModulesToAdd()) {
-			needConfirmation = showUpdateHeader(distroProperties, needConfirmation);
-			writer.printf((ADD_MODULE_TMPL) + "%n",
-					addArtifact.getArtifactId(),
-					addArtifact.getVersion());
-		}
-
-		for (Artifact deleteArtifact : upgradeDifferential.getModulesToDelete()) {
-			needConfirmation = showUpdateHeader(distroProperties, needConfirmation);
-			writer.printf((DELETE_MODULE_TMPL) + "%n",
-					deleteArtifact.getArtifactId(),
-					deleteArtifact.getVersion());
-		}
-
-		if (needConfirmation) {
-			return promptYesNo(String.format("Would you like to apply those changes to '%s'?", server.getServerId()));
-		} else
-			return true;
+		return promptYesNo(String.format("Would you like to apply those changes to '%s'?", upgradeDifferential.getServer().getServerId()));
 	}
 
-	private boolean showUpdateHeader(DistroProperties distroProperties, boolean needConfirmation) {
-		if (!needConfirmation) {
-			writer.printf((UPGRADE_CONFIRM_TMPL) + "%n", distroProperties.getName(), distroProperties.getVersion());
+	protected boolean hasExistingFilesInDirectory(Server server, String directory) {
+		File frontendDir = new File(server.getServerDirectory(), directory);
+		if (frontendDir.exists()) {
+			File[] files = frontendDir.listFiles();
+            return files != null && files.length > 0;
 		}
-		return true;
+		return false;
+	}
+
+	protected void promptForArtifactChangesIfNecessary(UpgradeDifferential.ArtifactChanges artifactChanges) {
+		if (artifactChanges.hasChanges()) {
+			for (Entry<Artifact, Artifact> updateEntry : artifactChanges.getUpgradedArtifacts().entrySet()) {
+				if (!updateEntry.getKey().getVersion().equals(updateEntry.getValue().getVersion())) {
+					writer.printf((UPDATE_ARTIFACT_TMPL) + "%n",
+							updateEntry.getKey().getArtifactId(),
+							updateEntry.getKey().getVersion(),
+							updateEntry.getValue().getVersion());
+				}
+			}
+			for (Entry<Artifact, Artifact> downgradeEntry : artifactChanges.getDowngradedArtifacts().entrySet()) {
+				if (!downgradeEntry.getKey().getVersion().equals(downgradeEntry.getValue().getVersion())) {
+					writer.printf((DOWNGRADE_ARTIFACT_TMPL) + "%n",
+							downgradeEntry.getKey().getArtifactId(),
+							downgradeEntry.getKey().getVersion(),
+							downgradeEntry.getValue().getVersion());
+				}
+			}
+			for (Artifact addArtifact : artifactChanges.getAddedArtifacts()) {
+				writer.printf((ADD_ARTIFACT_TMPL) + "%n",
+						addArtifact.getArtifactId(),
+						addArtifact.getVersion());
+			}
+
+			for (Artifact deleteArtifact : artifactChanges.getRemovedArtifacts()) {
+				writer.printf((DELETE_ARTIFACT_TMPL) + "%n",
+						deleteArtifact.getArtifactId(),
+						deleteArtifact.getVersion());
+			}
+		}
 	}
 
 	@Override

@@ -263,6 +263,7 @@ public class BuildDistro extends AbstractTask {
 		wizard.showMessage("Downloading modules...\n");
 
 		String distroName = adjustImageName(distroProperties.getName());
+
 		File web = new File(targetDirectory, WEB);
 		web.mkdirs();
 
@@ -281,11 +282,12 @@ public class BuildDistro extends AbstractTask {
 				downloadOWAs(targetDirectory, distroProperties, owasDir);
 				spaInstaller.installFromDistroProperties(tempDir, distroProperties, ignorePeerDependencies, overrideReuseNodeCache);
 				File frontendDir = new File(tempDir, "frontend");
-				if(frontendDir.exists()) {
+				if (frontendDir.exists()) {
 					frontendDir.renameTo(new File(tempDir, "bundledFrontend"));
 				}
-
 				warfile.addFolder(tempDir, new ZipParameters());
+
+				// TODO: If the bundled war should have config and content, then add those here.
 				try {
 					FileUtils.deleteDirectory(tempDir);
 				}
@@ -296,7 +298,8 @@ public class BuildDistro extends AbstractTask {
 			catch (ZipException e) {
 				throw new MojoExecutionException("Failed to bundle modules into *.war file " + e.getMessage(), e);
 			}
-		} else {
+		}
+		else {
 			File modulesDir = new File(web, "modules");
 			modulesDir.mkdir();
 			moduleInstaller.installModules(distroProperties.getModuleArtifacts(), modulesDir.getAbsolutePath());
@@ -315,7 +318,6 @@ public class BuildDistro extends AbstractTask {
 			owasDir.mkdir();
 			downloadOWAs(targetDirectory, distroProperties, owasDir);
 		}
-
 
 		boolean isAbovePlatform2point0 = isAbovePlatformVersion(new Version(distroProperties.getPlatformVersion()), 2, 0);
 		if(isAbovePlatform2point0) {
@@ -487,8 +489,7 @@ public class BuildDistro extends AbstractTask {
 		}
 	}
 
-	private InputStream getSqlDumpStream(String sqlScriptPath, File targetDirectory, Artifact distroArtifact)
-			throws MojoExecutionException {
+	private InputStream getSqlDumpStream(String sqlScriptPath, File targetDirectory, Artifact distroArtifact) throws MojoExecutionException {
 		InputStream stream = null;
 
 		if (sqlScriptPath == null) {

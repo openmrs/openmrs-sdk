@@ -3,6 +3,7 @@ package org.openmrs.maven.plugins.model;
 import org.apache.commons.lang.StringUtils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +33,7 @@ public abstract class BaseSdkProperties {
     public static final String TYPE_CONFIG = "config";
     public static final String TYPE_ZIP = "zip";
     public static final String INCLUDES = "includes";
+    public static final List<String> SPA_ARTIFACT_PROPERTIES = Arrays.asList(ARTIFACT_ID, GROUP_ID, VERSION, TYPE, INCLUDES);
 
     protected Properties properties;
 
@@ -79,7 +81,7 @@ public abstract class BaseSdkProperties {
         return getParam("version");
     }
 
-    public void setVersion(String version){
+    public void setVersion(String version) {
         properties.setProperty("version", version);
     }
 
@@ -87,11 +89,11 @@ public abstract class BaseSdkProperties {
         return getParam("name", "openmrs");
     }
 
-    public void setName(String name){
+    public void setName(String name) {
         properties.setProperty("name", name);
     }
 
-    public List<Artifact> getModuleArtifacts(){
+    public List<Artifact> getModuleArtifacts() {
         List<Artifact> artifactList = new ArrayList<>();
         for (Object keyObject: getAllKeys()) {
             String key = keyObject.toString();
@@ -126,7 +128,32 @@ public abstract class BaseSdkProperties {
         return spaProperties;
     }
 
-    public List<Artifact> getWarArtifacts(){
+    public Map<String, String> getSpaArtifactProperties() {
+        Map<String, String> properties = getSpaProperties();
+        properties.keySet().retainAll(SPA_ARTIFACT_PROPERTIES);
+        return properties;
+    }
+
+    public Map<String, String> getSpaBuildProperties() {
+        Map<String, String> properties = getSpaProperties();
+        SPA_ARTIFACT_PROPERTIES.forEach(properties.keySet()::remove);
+        return properties;
+    }
+
+    public List<Artifact> getSpaArtifacts() {
+        List<Artifact> ret = new ArrayList<>();
+        Map<String, String> spaProperties = getSpaProperties();
+        String artifactId = spaProperties.get(BaseSdkProperties.ARTIFACT_ID);
+        if (artifactId != null) {
+            String groupId = spaProperties.get(BaseSdkProperties.GROUP_ID);
+            String version = spaProperties.get(BaseSdkProperties.VERSION);
+            String type = spaProperties.get(BaseSdkProperties.TYPE);
+            ret.add(new Artifact(artifactId, version, groupId, (type == null ? BaseSdkProperties.TYPE_ZIP : type)));
+        }
+        return ret;
+    }
+
+    public List<Artifact> getWarArtifacts() {
         List<Artifact> artifactList = new ArrayList<>();
         for (Object keyObject: getAllKeys()) {
             String key = keyObject.toString();
@@ -290,7 +317,6 @@ public abstract class BaseSdkProperties {
             setCustomModuleType(newModule);
         }
         setModule(newModule);
-
     }
 
     public void removeModuleProperties(Artifact artifact) {
@@ -310,6 +336,24 @@ public abstract class BaseSdkProperties {
             }
             properties = newProperties;
         }
+    }
+
+    public void removePropertiesForArtifact(String type, Artifact artifact) {
+        Properties newProperties = new Properties();
+        for (Object keyObject : properties.keySet()) {
+            String key = keyObject.toString();
+            if (!key.startsWith(type + "." + artifact.getArtifactId())) {
+                properties.put(key, properties.get(key));
+            }
+        }
+        properties = newProperties;
+    }
+
+    public void addPropertiesForArtifact(String type, Artifact artifact) {
+        String base = type + "." + artifact.getArtifactId();
+        properties.put(base, artifact.getVersion());
+        properties.put(base + "." + GROUP_ID, artifact.getGroupId());
+        properties.put(base + "." + TYPE, artifact.getType());
     }
 
     /**
@@ -353,8 +397,16 @@ public abstract class BaseSdkProperties {
         }
     }
 
-    private boolean isBaseSdkProperty(String key) {
-        return  (key.startsWith(TYPE_OMOD) || key.startsWith(TYPE_WAR) || key.equals(NAME) || key.equals(VERSION));
+    public boolean isBaseSdkProperty(String key) {
+        return (key.startsWith(TYPE_WAR) ||
+                key.startsWith(TYPE_OMOD) ||
+                key.startsWith(TYPE_OWA) ||
+                key.startsWith(TYPE_CONFIG) ||
+                key.startsWith(TYPE_CONTENT) ||
+                key.startsWith(TYPE_SPA) ||
+                key.equals(NAME) ||
+                key.equals(VERSION)
+        );
     }
 
 

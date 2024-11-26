@@ -7,7 +7,7 @@ public class ResetIT extends AbstractSdkIT {
 	@Test
 	public void reset_shouldResetExistingServer() throws Exception {
 		// create the server
-		String serverId = setupTestServer();
+		String serverId = setupTestServer("referenceapplication:2.2");
 
 		// now reset the server
 		addTaskParam("serverId", serverId);
