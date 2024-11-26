@@ -19,7 +19,6 @@ import java.util.Optional;
  */
 public class VersionsHelper {
 
-    public static final String RELEASE_VERSION_REGEX = "[0-9.]+(-alpha)?(-beta)?";
     public static final String NO_VERSION_AVAILABLE_MSG = "No version is available in remote repositories!";
 
     /**
@@ -143,8 +142,8 @@ public class VersionsHelper {
         return getSuggestedVersions(getVersions(artifact), maxReleases);
     }
 
-    public List<String> getSuggestedVersions(List<ArtifactVersion> allVersions, int maxSize){
-        if(allVersions.size() == 0){
+    public List<String> getSuggestedVersions(List<ArtifactVersion> allVersions, int maxSize) {
+        if(allVersions.isEmpty()){
             return Collections.emptyList();
         }
         sortDescending(allVersions);
@@ -156,46 +155,34 @@ public class VersionsHelper {
         advices.add(allVersions.get(0).toString());
         ArtifactVersion previous = allVersions.get(0);
         //start from second element
-        for(ArtifactVersion version : allVersions.subList(1, allVersions.size())){
-            if(isNotFeatureVersion(version)){
-                if(equalMinorAndMajor(previous, version)) {
-                    if(isSnapshot(previous) && !isSnapshot(version)){
-                        if(equalIncremental(previous, version)){
-                            advices.remove(advices.size()-1);
-                            advices.add(version.toString());
-                        } else {
-                            advices.add(version.toString());
-                        }
-                    } else if(isSnapshot(version) && !equalIncremental(previous, version)){
-                        advices.add(version.toString());
-                    }
-                } else {
+        for (int i=1; i<allVersions.size(); i++) {
+            ArtifactVersion version = allVersions.get(i);
+            if (!isSnapshot(version)) {
+                //add all releases unless there is already a later release with the same major.minor version
+                if (!equalMinorAndMajor(previous, version) || isSnapshot(previous)) {
                     advices.add(version.toString());
+                    previous = version;
                 }
-                previous = version;
             }
-            else if(!secondSnaphotAdded && isSnapshot(version)) {
-            	secondSnaphotAdded = true;
-            	advices.add(version.toString());
+            else {
+                //only add one snapshot prior to the latest snaphost
+                if (!equalMinorAndMajor(previous, version) && !secondSnaphotAdded) {
+                    advices.add(version.toString());
+                    secondSnaphotAdded = true;
+                }
             }
-            if(advices.size() >= maxSize) break;
+        }
+        if (advices.size() > maxSize) {
+            advices = advices.subList(0, maxSize);
         }
         return advices;
     }
 
-    private boolean equalIncremental(ArtifactVersion previous, ArtifactVersion version) {
-        return version.getIncrementalVersion() == previous.getIncrementalVersion();
-    }
-
-    private boolean isNotFeatureVersion(ArtifactVersion version) {
-        return version.toString().matches(RELEASE_VERSION_REGEX);
+    private boolean equalMinorAndMajor(ArtifactVersion left, ArtifactVersion right){
+        return left.getMajorVersion() == right.getMajorVersion() && left.getMinorVersion() == right.getMinorVersion();
     }
 
     private boolean isSnapshot(ArtifactVersion version){
-        return version.getQualifier()!= null && version.getQualifier().contains("SNAPSHOT");
-    }
-    private boolean equalMinorAndMajor(ArtifactVersion left, ArtifactVersion right){
-        return left.getMajorVersion()==right.getMajorVersion()
-                && left.getMinorVersion() == right.getMinorVersion();
+        return version.getQualifier() != null && version.getQualifier().contains("SNAPSHOT");
     }
 }
