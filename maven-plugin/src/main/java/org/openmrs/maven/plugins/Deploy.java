@@ -156,9 +156,8 @@ public class Deploy extends AbstractServerTask {
 		}
 	}
 
-	private void runInteractiveMode(Server server, ServerUpgrader upgrader)
-			throws MojoExecutionException, MojoFailureException {
-		DistroProperties distroProperties;
+	private void runInteractiveMode(Server server, ServerUpgrader upgrader) throws MojoExecutionException, MojoFailureException {
+
 		List<String> options = new ArrayList<>(Arrays.asList(
 				DEPLOY_MODULE_OPTION,
 				DEPLOY_OWA_OPTION,
@@ -178,27 +177,29 @@ public class Deploy extends AbstractServerTask {
 						server.getName(),
 						server.getVersion()));
 
+
+				Artifact artifact;
+
+				// If its impossible to define distro, prompt refapp distro versions
 				if (server.getName().equals("Platform") || server.getDistroGroupId() == null || server.getDistroArtifactId() == null) {
-					// If its impossible to define distro, prompt refapp distro versions
-					distro = wizard.promptForRefAppVersion(versionsHelper);
-				} else {
-					// If its possible to define distro, prompt that distro's versions
-					distro = wizard.promptForDistroVersion(server.getDistroGroupId(), server.getDistroArtifactId(),
-							server.getVersion(), server.getName(), versionsHelper);
+					artifact = wizard.promptForRefApp2xArtifact(versionsHelper);
 				}
-				wizard.showMessage("Deploying distribution: " + distro);
-				Distribution distribution = distroHelper.resolveDistributionForStringSpecifier(distro, versionsHelper);
+				else {
+					// If it is possible to define distro, prompt that distro's versions
+					artifact = new Artifact(server.getDistroArtifactId(), server.getVersion(), server.getDistroGroupId());
+					artifact.setVersion(wizard.promptForArtifactVersion("Please choose a " + server.getName() + " version", artifact, null, versionsHelper));
+				}
+
+				DistributionBuilder builder = new DistributionBuilder(getMavenEnvironment());
+				Distribution distribution = builder.buildFromArtifact(artifact);
+
+				wizard.showMessage("Deploying distribution: " + distribution.getName() + " " + distribution.getVersion());
 				upgrader.upgradeToDistro(server, distribution, ignorePeerDependencies, overrideReuseNodeCache);
 				break;
 			}
 			case (DEPLOY_PLATFORM_OPTION): {
-				wizard.showMessage(String.format(
-						TEMPLATE_CURRENT_VERSION,
-						"platform",
-						server.getPlatformVersion()));
-				Artifact webapp = new Artifact(SDKConstants.PLATFORM_ARTIFACT_ID,
-						SDKConstants.SETUP_DEFAULT_PLATFORM_VERSION, Artifact.GROUP_DISTRO);
-				platform = wizard.promptForPlatformVersion(versionsHelper.getSuggestedVersions(webapp, 3));
+				wizard.showMessage(String.format(TEMPLATE_CURRENT_VERSION, "platform", server.getPlatformVersion()));
+				platform = wizard.promptForPlatformVersion(versionsHelper);
 				deployOpenmrs(server, platform);
 				break;
 			}

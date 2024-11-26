@@ -86,13 +86,17 @@ public class SDKConstants {
     public static final String SETUP_DEFAULT_VERSION = "2.3";
     public static final String SETUP_DEFAULT_PLATFORM_VERSION = "1.11.5";
 
+    public static final String REFAPP_2X_PROMPT = "Reference Application 2.x";
     public static final String REFAPP_2X_GROUP_ID = "org.openmrs.distro";
     public static final String REFAPP_2X_ARTIFACT_ID = "referenceapplication-package";
     public static final String REFAPP_2X_TYPE = "jar";
 
+    public static final String REFAPP_3X_PROMPT = "Reference Application 3.x";
     public static final String REFAPP_3X_GROUP_ID = "org.openmrs";
     public static final String REFAPP_3X_ARTIFACT_ID = "distro-emr-configuration";
     public static final String REFAPP_3X_TYPE = "zip";
+
+    public static final String REFERENCEAPPLICATION_2_4 = "org.openmrs.distro:referenceapplication-package:2.4";
 
     public static final List<String> SUPPPORTED_REFAPP_VERSIONS_2_3_1_OR_LOWER = java.util.Arrays.asList("2.3.1", "2.2", "2.1");
     private final static String[] SUPPORTED_MODULE_EXTENSIONS = new String[]{Artifact.TYPE_WAR, Artifact.TYPE_JAR, Artifact.TYPE_OMOD};

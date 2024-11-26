@@ -7,9 +7,7 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.DistroProperties;
-
 import org.openmrs.maven.plugins.utility.NpmVersionHelper;
-import org.openmrs.maven.plugins.utility.SDKConstants;
 
 import java.io.File;
 import java.nio.file.Paths;
@@ -133,10 +131,8 @@ public class AddDependency extends AbstractTask {
                 distroProperties.addProperty("owa." + artifactId, version);
                 break;
             case WAR_OPTION:
-                Artifact platformArtifact = new Artifact(SDKConstants.PLATFORM_ARTIFACT_ID,
-                        SDKConstants.SETUP_DEFAULT_PLATFORM_VERSION, Artifact.GROUP_DISTRO);
                 if (StringUtils.isBlank(version)) {
-                    version = wizard.promptForPlatformVersion(versionsHelper.getSuggestedVersions(platformArtifact, 5));
+                    version = wizard.promptForPlatformVersion(versionsHelper);
                 }
                 distroProperties.addProperty("war.openmrs", version);
                 break;

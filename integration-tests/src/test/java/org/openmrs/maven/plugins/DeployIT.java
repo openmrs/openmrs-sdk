@@ -62,8 +62,7 @@ public class DeployIT extends AbstractSdkIT {
     public void deploy_shouldUpgradeDistroTo2_3_1() throws Exception {
         testServerId = setupTestServer("referenceapplication:2.2");
         addAnswer(testServerId);
-        addAnswer("Distribution");
-        addAnswer("referenceapplication:2.3.1");
+        addTaskParam("distro", "referenceapplication:2.3.1");
         addAnswer("y");
         executeTask("deploy");
         assertSuccess();
@@ -81,8 +80,7 @@ public class DeployIT extends AbstractSdkIT {
     public void deploy_shouldDowngradeDistroTo2_1() throws Exception {
         testServerId = setupTestServer("referenceapplication:2.2");
         addAnswer(testServerId);
-        addAnswer("Distribution");
-        addAnswer("referenceapplication:2.1");
+        addTaskParam("distro", "referenceapplication:2.1");
         addAnswer("y");
         executeTask("deploy");
         assertSuccess();
@@ -100,8 +98,7 @@ public class DeployIT extends AbstractSdkIT {
     public void deploy_shouldUpgradeDistroTo2_13_0() throws Exception {
         testServerId = setupTestServer("referenceapplication:2.3.1");
         addAnswer(testServerId);
-        addAnswer("Distribution");
-        addAnswer("referenceapplication:2.13.0");
+        addTaskParam("distro", "referenceapplication:2.13.0");
         addAnswer("y");
         executeTask("deploy");
         assertSuccess();
@@ -124,8 +121,7 @@ public class DeployIT extends AbstractSdkIT {
     public void deploy_shouldUpgradeDistroTo3_0_0() throws Exception {
         testServerId = setupTestServer("referenceapplication:2.2");
         addAnswer(testServerId);
-        addAnswer("Distribution");
-        addAnswer("referenceapplication:3.0.0");
+        addTaskParam("distro", "referenceapplication:3.0.0");
         addAnswer("y");
         executeTask("deploy");
         assertSuccess();

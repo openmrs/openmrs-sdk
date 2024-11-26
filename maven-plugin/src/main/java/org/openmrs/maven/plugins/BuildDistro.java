@@ -35,12 +35,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_2X_ARTIFACT_ID;
-import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_2X_GROUP_ID;
-import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_2X_TYPE;
-import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_3X_ARTIFACT_ID;
-import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_3X_GROUP_ID;
-import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_3X_TYPE;
+import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_2X_PROMPT;
+import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_3X_PROMPT;
 
 /**
  * Create docker configuration for distributions.
@@ -77,10 +73,6 @@ public class BuildDistro extends AbstractTask {
 	private static final String DOCKER_COMPOSE_PROD_YML = "docker-compose.prod.yml";
 
 	private static final String DOCKER_COMPOSE_OVERRIDE_YML = "docker-compose.override.yml";
-
-	private static final String O2_DISTRIBUTION = "2.x Distribution";
-
-	private static final String O3_DISTRIBUTION = "O3 Distribution";
 
 	private static final Logger log = LoggerFactory.getLogger(BuildDistro.class);
 
@@ -160,22 +152,21 @@ public class BuildDistro extends AbstractTask {
 		}
 
 		if (distribution == null) {
-			Server server = new Server.ServerBuilder().build();
 
 			List<String> options = new ArrayList<>();
-			options.add(O2_DISTRIBUTION);
-			options.add(O3_DISTRIBUTION);
+			options.add(REFAPP_2X_PROMPT);
+			options.add(REFAPP_3X_PROMPT);
 
+			Artifact artifact = null;
 			String choice = wizard.promptForMissingValueWithOptions("You can setup following servers", null, null, options);
 			switch (choice) {
-				case O2_DISTRIBUTION:
-					wizard.promptForRefAppVersionIfMissing(server, versionsHelper, DISTRIBUTION_VERSION_PROMPT);
-					distribution = builder.buildFromArtifact(new Artifact(REFAPP_2X_ARTIFACT_ID, server.getVersion(), REFAPP_2X_GROUP_ID, REFAPP_2X_TYPE));
+				case REFAPP_2X_PROMPT:
+					artifact = wizard.promptForRefApp2xArtifact(versionsHelper);
 					break;
-				case O3_DISTRIBUTION:
-					wizard.promptForO3RefAppVersionIfMissing(server, versionsHelper);
-					distribution = builder.buildFromArtifact(new Artifact(REFAPP_3X_ARTIFACT_ID, server.getVersion(), REFAPP_3X_GROUP_ID, REFAPP_3X_TYPE));
+				case REFAPP_3X_PROMPT:
+					artifact = wizard.promptForRefApp3xArtifact(versionsHelper);
 			}
+			distribution = builder.buildFromArtifact(artifact);
 		}
 
 		if (distribution == null) {
