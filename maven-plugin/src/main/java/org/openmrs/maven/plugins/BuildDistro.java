@@ -35,12 +35,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_2X_ARTIFACT_ID;
-import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_2X_GROUP_ID;
-import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_2X_TYPE;
-import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_3X_ARTIFACT_ID;
-import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_3X_GROUP_ID;
-import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_3X_TYPE;
+import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_3X_PROMPT;
 
 /**
  * Create docker configuration for distributions.
@@ -156,22 +151,21 @@ public class BuildDistro extends AbstractTask {
 		}
 
 		if (distribution == null) {
-			Server server = new Server.ServerBuilder().build();
 
 			List<String> options = new ArrayList<>();
 			options.add(SDKConstants.REFAPP_2X_PROMPT);
-			options.add(SDKConstants.REFAPP_3X_PROMPT);
+			options.add(REFAPP_3X_PROMPT);
 
+			Artifact artifact = null;
 			String choice = wizard.promptForMissingValueWithOptions("You can setup following servers", null, null, options);
 			switch (choice) {
 				case SDKConstants.REFAPP_2X_PROMPT:
-					wizard.promptForRefAppVersionIfMissing(server, versionsHelper, DISTRIBUTION_VERSION_PROMPT);
-					distribution = builder.buildFromArtifact(new Artifact(REFAPP_2X_ARTIFACT_ID, server.getVersion(), REFAPP_2X_GROUP_ID, REFAPP_2X_TYPE));
+					artifact = wizard.promptForRefApp2xArtifact(versionsHelper);
 					break;
-				case SDKConstants.REFAPP_3X_PROMPT:
-					wizard.promptForO3RefAppVersionIfMissing(server, versionsHelper);
-					distribution = builder.buildFromArtifact(new Artifact(REFAPP_3X_ARTIFACT_ID, server.getVersion(), REFAPP_3X_GROUP_ID, REFAPP_3X_TYPE));
+				case REFAPP_3X_PROMPT:
+					artifact = wizard.promptForRefApp3xArtifact(versionsHelper);
 			}
+			distribution = builder.buildFromArtifact(artifact);
 		}
 
 		if (distribution == null) {

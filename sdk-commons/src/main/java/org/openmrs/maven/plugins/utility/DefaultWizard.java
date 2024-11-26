@@ -5,10 +5,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.SystemUtils;
 import org.apache.http.client.utils.URIBuilder;
-import org.apache.maven.artifact.versioning.ArtifactVersion;
-import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.MojoFailureException;
 import org.codehaus.plexus.component.annotations.Component;
 import org.jline.reader.LineReader;
 import org.jline.reader.LineReaderBuilder;
@@ -21,7 +18,6 @@ import org.openmrs.maven.plugins.model.UpgradeDifferential;
 import org.openmrs.maven.plugins.model.Version;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
@@ -38,19 +34,24 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
-import java.util.Set;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static org.openmrs.maven.plugins.utility.PropertiesUtils.loadPropertiesFromFile;
+import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_2X_ARTIFACT_ID;
+import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_2X_GROUP_ID;
+import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_2X_PROMPT;
+import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_2X_TYPE;
+import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_3X_ARTIFACT_ID;
+import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_3X_GROUP_ID;
+import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_3X_PROMPT;
+import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_3X_TYPE;
 
 /**
  * Class for attribute helper functions
@@ -82,13 +83,7 @@ public class DefaultWizard implements Wizard {
 
 	static final String NOYES = " [N/y]";
 
-	static final String REFERENCEAPPLICATION_O3 = "org.openmrs:emr-distro-configuration:3.0.0";
-
 	static final String SDK_PROPERTIES_FILE = "SDK Properties file";
-
-	static final String REFAPP_OPTION_TMPL = "Reference Application %s";
-
-	static final String REFAPP_ARTIFACT_TMPL = "org.openmrs.distro:referenceapplication-package:%s";
 
 	static final String JDK_ERROR_TMPL = "\nThe JDK %s is not compatible with OpenMRS Platform %s. " +
 			"Please use %s to run this server.\n\nIf you are running " +
@@ -105,12 +100,6 @@ public class DefaultWizard implements Wizard {
 	static final String DELETE_ARTIFACT_TMPL = "- Deletes %s %s";
 
 	static final String NO_DIFFERENTIAL = "\nNo distribution changes found";
-
-	public static final String PLATFORM_VERSION_PROMPT = "You can deploy the following versions of a platform";
-
-	public static final String DISTRIBUTION_VERSION_PROMPT = "You can deploy the following versions of distribution";
-
-	public static final String O3_VERSION_PROMPT = "You can deploy the following versions of O3";
 
 	public static final String DB_OPTION_H2 = "H2";
 
@@ -129,6 +118,10 @@ public class DefaultWizard implements Wizard {
 	}};
 
 	public static final String DBNAME_URL_VARIABLE = "@DBNAME@";
+
+	public static final String HIGHER_VERSIONS = "Higher Versions...";
+
+	public static final String LOWER_VERSIONS = "Lower Versions...";
 
 	private static final int MAX_OPTIONS_SIZE = 5;
 
@@ -181,12 +174,6 @@ public class DefaultWizard implements Wizard {
 
 	/**
 	 * Prompt for a value if it not set, and default value is set
-	 *
-	 * @param message
-	 * @param value
-	 * @param parameterName
-	 * @param defValue
-	 * @return value
 	 */
 	@Override
 	public String promptForValueIfMissingWithDefault(String message, String value, String parameterName, String defValue)
@@ -229,6 +216,49 @@ public class DefaultWizard implements Wizard {
 	public String promptForMissingValueWithOptions(String message, String value, String parameterName,
 			List<String> options) throws MojoExecutionException {
 		return promptForMissingValueWithOptions(message, value, parameterName, options, null, null);
+	}
+
+	@Override
+	public String promptForArtifactVersion(String message, Artifact artifact, String otherMessage, VersionsHelper versionsHelper) throws MojoExecutionException  {
+		List<String> allVersions = versionsHelper.getSuggestedVersions(artifact, null);
+		if (SDKConstants.REFAPP_2X_GROUP_ID.equals(artifact.getGroupId()) && SDKConstants.REFAPP_2X_ARTIFACT_ID.equals(artifact.getArtifactId())) {
+			for (String version : SDKConstants.SUPPPORTED_REFAPP_VERSIONS_2_3_1_OR_LOWER) {
+				if (!allVersions.contains(version)) {
+					allVersions.add(version);
+				}
+			}
+		}
+		return promptForArtifactVersion(message, allVersions, 0, MAX_OPTIONS_SIZE, otherMessage);
+	}
+
+	protected String promptForArtifactVersion(String message, List<String> options, int pageNum, int pageSize, String otherMessage) throws MojoExecutionException {
+		int fromIndex = pageNum * pageSize;
+		int toIndex = fromIndex + pageSize - 1;
+		List<String> currentPage = new ArrayList<>();
+		for (int i = fromIndex; i <= toIndex && i < options.size(); i++) {
+			currentPage.add(options.get(i));
+		}
+		boolean isFirstPage = pageNum == 0;
+		boolean isLastPage = (pageNum + 1) * pageSize >= options.size();
+
+		if (!isFirstPage) {
+			currentPage.add(HIGHER_VERSIONS);
+		}
+		if (!isLastPage) {
+			currentPage.add(LOWER_VERSIONS);
+		}
+
+		String otherPrompt = (isLastPage ? otherMessage : null);
+		String answer = promptForMissingValueWithOptions(message, null, null, currentPage, otherPrompt, null);
+
+		if (HIGHER_VERSIONS.equals(answer)) {
+			return promptForArtifactVersion(message, options, pageNum - 1, pageSize, otherMessage);
+		}
+		else if (LOWER_VERSIONS.equals(answer)) {
+			return promptForArtifactVersion(message, options, pageNum + 1, pageSize, otherMessage);
+		}
+
+		return answer;
 	}
 
 	@Override
@@ -330,10 +360,6 @@ public class DefaultWizard implements Wizard {
 
 	/**
 	 * Prompt for a value if it not set, and default value is NOT set
-	 *
-	 * @param value
-	 * @param parameterName
-	 * @return
 	 */
 	@Override
 	public String promptForValueIfMissing(String value, String parameterName) throws MojoExecutionException {
@@ -384,9 +410,6 @@ public class DefaultWizard implements Wizard {
 
 	/**
 	 * Get path to server by serverId and prompt if missing
-	 *
-	 * @return
-	 * @throws MojoFailureException
 	 */
 	@Override
 	public String promptForExistingServerIdIfMissing(String serverId) throws MojoExecutionException {
@@ -411,15 +434,32 @@ public class DefaultWizard implements Wizard {
 	}
 
 	@Override
-	public String promptForPlatformVersionIfMissing(String version, List<String> versions) throws MojoExecutionException {
-		return promptForMissingValueWithOptions(PLATFORM_VERSION_PROMPT,
-				version, "version", versions, "Please specify platform version", null);
+	public String promptForPlatformVersion(VersionsHelper versionsHelper) throws MojoExecutionException {
+		return promptForPlatformArtifact(versionsHelper).getVersion();
 	}
 
 	@Override
-	public String promptForPlatformVersion(List<String> versions) throws MojoExecutionException {
-		return promptForMissingValueWithOptions(PLATFORM_VERSION_PROMPT,
-				null, "version", versions, "Please specify platform version", null);
+	public Artifact promptForPlatformArtifact(VersionsHelper versionsHelper) throws MojoExecutionException {
+		Artifact artifact = new Artifact(SDKConstants.PLATFORM_ARTIFACT_ID, SDKConstants.SETUP_DEFAULT_PLATFORM_VERSION, Artifact.GROUP_DISTRO);
+		String version = promptForArtifactVersion( "Please specify platform version", artifact, "Please specify platform version", versionsHelper);
+		artifact.setVersion(version);
+		return artifact;
+	}
+
+	@Override
+	public Artifact promptForRefApp2xArtifact(VersionsHelper versionsHelper) throws MojoExecutionException {
+		Artifact artifact = new Artifact(REFAPP_2X_ARTIFACT_ID, "2.3.1", REFAPP_2X_GROUP_ID, REFAPP_2X_TYPE);
+		String version = promptForArtifactVersion("Please choose a " + REFAPP_2X_PROMPT + " version", artifact, null, versionsHelper);
+		artifact.setVersion(version);
+		return artifact;
+	}
+
+	@Override
+	public Artifact promptForRefApp3xArtifact(VersionsHelper versionsHelper) throws MojoExecutionException {
+		Artifact artifact = new Artifact(REFAPP_3X_ARTIFACT_ID, "3.0.0", REFAPP_3X_GROUP_ID, REFAPP_3X_TYPE);
+		String version = promptForArtifactVersion("Please choose a " + REFAPP_3X_PROMPT + " version", artifact, null, versionsHelper);
+		artifact.setVersion(version);
+		return artifact;
 	}
 
 	@Override
@@ -640,175 +680,13 @@ public class DefaultWizard implements Wizard {
 
 	private void savePropertiesChangesToFile(Properties properties, File file)
 			throws MojoExecutionException {
-		try (OutputStream fos = new FileOutputStream(file)) {
+		try (OutputStream fos = Files.newOutputStream(file.toPath())) {
 			properties.store(fos, DefaultWizard.SDK_PROPERTIES_FILE + ":");
 		}
 		catch (IOException e) {
 			throw new MojoExecutionException(
 					"An exception occurred while saving properties to " + file.getAbsolutePath() + " " + e.getMessage(), e);
 		}
-	}
-
-	@Override
-	public void promptForRefAppVersionIfMissing(Server server, VersionsHelper versionsHelper) throws MojoExecutionException {
-		promptForRefAppVersionIfMissing(server, versionsHelper, null);
-	}
-
-	@Override
-	public void promptForRefAppVersionIfMissing(Server server, VersionsHelper versionsHelper, String customMessage)
-			throws MojoExecutionException {
-		if (server.getVersion() == null) {
-			String choice = promptForRefAppVersion(versionsHelper);
-			Artifact distro = DistroHelper.parseDistroArtifact(choice, versionsHelper);
-			server.setVersion(distro.getVersion());
-			server.setDistroArtifactId(distro.getArtifactId());
-			server.setDistroGroupId(distro.getGroupId());
-		}
-	}
-
-	@Override
-	public void promptForO3RefAppVersionIfMissing(Server server, VersionsHelper versionsHelper)
-			throws MojoExecutionException {
-		promptForO3RefAppVersionIfMissing(server, versionsHelper, null);
-	}
-
-	public void promptForO3RefAppVersionIfMissing(Server server, VersionsHelper versionsHelper, String customMessage)
-			throws MojoExecutionException {
-		if (server.getVersion() == null) {
-			String choice = promptForO3Version(versionsHelper, customMessage);
-			Artifact distro = DistroHelper.parseDistroArtifact(choice, versionsHelper);
-			server.setVersion(distro.getVersion());
-			server.setDistroArtifactId(distro.getArtifactId());
-			server.setDistroGroupId(distro.getGroupId());
-		}
-	}
-
-	public String promptForRefAppVersion(VersionsHelper versionsHelper) throws MojoExecutionException {
-		return promptForRefAppVersion(versionsHelper, null);
-	}
-
-	public String promptForO3Version(VersionsHelper versionsHelper, String customMessage) throws MojoExecutionException {
-		return promptForO3RefAppVersion(versionsHelper, customMessage);
-	}
-
-	public String promptForO3Version(VersionsHelper versionsHelper) throws MojoExecutionException {
-		return promptForO3Version(versionsHelper, null);
-	}
-
-	@Override
-	public String promptForDistroVersion(String distroGroupId, String distroArtifactId, String distroVersion,
-			String distroName, VersionsHelper versionsHelper) throws MojoExecutionException {
-		return promptForDistroVersion(distroGroupId, distroArtifactId, distroVersion, distroName, versionsHelper, null);
-	}
-
-	@Override
-	public String promptForDistroVersion(String distroGroupId, String distroArtifactId, String distroVersion,
-			String distroName, VersionsHelper versionsHelper, String customMessage) throws MojoExecutionException {
-		final String optionTemplate = distroName + " %s";
-		final String artifacttemplate = distroGroupId + ":" + distroArtifactId + ":" + "%s";
-
-		Set<String> versions = new LinkedHashSet<>(versionsHelper
-				.getSuggestedVersions(SDKConstants.getDistroModule(distroGroupId, distroArtifactId, distroVersion),
-						MAX_OPTIONS_SIZE));
-		Map<String, String> optionsMap = getDistroVersionsOptionsMap(versions, versionsHelper, optionTemplate,
-				artifacttemplate);
-
-		return promptForVersion(optionsMap, customMessage);
-	}
-
-	public String promptForRefAppVersion(VersionsHelper versionsHelper, String customMessage)
-			throws MojoExecutionException {
-		Set<String> versions = new LinkedHashSet<>(
-				versionsHelper.getSuggestedVersions(SDKConstants.getReferenceModule("2.3.1"), MAX_OPTIONS_SIZE));
-		versions.addAll(SDKConstants.SUPPPORTED_REFAPP_VERSIONS_2_3_1_OR_LOWER);
-		Map<String, String> optionsMap = getDistroVersionsOptionsMap(versions, versionsHelper, REFAPP_OPTION_TMPL,
-				REFAPP_ARTIFACT_TMPL);
-		return promptForVersion(optionsMap, customMessage);
-	}
-
-	public String promptForO3RefAppVersion(VersionsHelper versionsHelper, String customMessage)
-			throws MojoExecutionException {
-		Map<String, String> optionsMap = getO3VersionsOptionsMap(versionsHelper, REFAPP_OPTION_TMPL);
-		return promptForO3Version(optionsMap, customMessage);
-	}
-
-	private String promptForVersion(Map<String, String> optionsMap, String customMessage)
-			throws MojoExecutionException {
-		String message = customMessage != null ? customMessage : DISTRIBUTION_VERSION_PROMPT;
-		String version = promptForMissingValueWithOptions(message,
-				null, "distribution artifact", Lists.newArrayList(optionsMap.keySet()), "Please specify %s",
-				SDKConstants.REFERENCEAPPLICATION_2_4);
-
-		String artifact = optionsMap.get(version);
-		if (artifact != null) {
-			return artifact;
-		} else {
-			return version;
-		}
-	}
-
-	private String promptForO3Version(Map<String, String> optionsMap, String customMessage) throws MojoExecutionException {
-		String message = customMessage != null ? customMessage : O3_VERSION_PROMPT;
-		String version = promptForMissingValueWithOptions(message,
-				null, "O3 artifact", Lists.newArrayList(optionsMap.keySet()), "Please specify %s",
-				REFERENCEAPPLICATION_O3);
-
-		String artifact = optionsMap.get(version);
-		if (artifact != null) {
-			return artifact;
-		} else {
-			return version;
-		}
-	}
-
-	private Map<String, String> getDistroVersionsOptionsMap(Set<String> versions, VersionsHelper versionsHelper,
-			String optionTemplate, String artifactTemplate) {
-		Map<String, String> optionsMap = new LinkedHashMap<>();
-
-		List<ArtifactVersion> artifactVersions = new ArrayList<>();
-		for (String version : versions) {
-			artifactVersions.add(new DefaultArtifactVersion(version));
-		}
-		for (String version : versionsHelper.getSuggestedVersions(artifactVersions, MAX_OPTIONS_SIZE)) {
-			optionsMap.put(String.format(optionTemplate, version), String.format(artifactTemplate, version));
-			if (optionsMap.size() == MAX_OPTIONS_SIZE)
-				break;
-		}
-		return optionsMap;
-	}
-
-	/**
-	 * Returns a map of options based on the versions of O3
-	 *
-	 * @param versionsHelper   The VersionsHelper object to retrieve the artifact versions from.
-	 * @param optionTemplate   The template for generating option keys in the map.
-	 * @return A LinkedHashMap containing the generated options map.
-	 */
-	private Map<String, String> getO3VersionsOptionsMap(VersionsHelper versionsHelper, String optionTemplate) {
-		Map<String, String> optionsMap = new LinkedHashMap<>();
-
-		{
-			Artifact artifact = new Artifact(SDKConstants.REFAPP_3X_ARTIFACT_ID, "3.0.0", "org.openmrs", "zip");
-			for (ArtifactVersion version : versionsHelper.getAllVersions(artifact, MAX_OPTIONS_SIZE)) {
-				optionsMap.put(String.format(optionTemplate, version.toString()), artifact.getGroupId() + ":" + artifact.getArtifactId() + ":" + version);
-			}
-		}
-
-		if (optionsMap.size() == MAX_OPTIONS_SIZE) {
-			return optionsMap;
-		}
-
-		{
-			Artifact artifact = new Artifact(SDKConstants.REFAPP_DISTRO, "3.0.0", "org.openmrs.distro", "zip");
-			for (ArtifactVersion version : versionsHelper.getAllVersions(artifact, MAX_OPTIONS_SIZE)) {
-				if (!version.toString().endsWith("-SNAPSHOT") && optionsMap.size() < MAX_OPTIONS_SIZE) {
-					optionsMap.put(String.format(optionTemplate, version),
-							artifact.getGroupId() + ":" + artifact.getArtifactId() + ":" + version);
-				}
-			}
-		}
-
-		return optionsMap;
 	}
 
 	@Override
@@ -1051,17 +929,6 @@ public class DefaultWizard implements Wizard {
 		dockerHelper.runDbContainer(containerId, server.getDbUri(), username, password);
 	}
 
-	private String getDefaultUri(String dockerHost) {
-		if (SystemUtils.IS_OS_LINUX) {
-			return SDKConstants.URI_MYSQL;
-		} else {
-			int beginIndex = dockerHost.indexOf("//");
-			int endIndex = dockerHost.lastIndexOf(":");
-			String dockerMachineIp = dockerHost.substring(beginIndex + 2, endIndex);
-			return String.format(SDKConstants.URI_MYSQL_DOCKER, dockerMachineIp);
-		}
-	}
-
 	@Override
 	public void promptForDbCredentialsIfMissing(Server server) throws MojoExecutionException {
 		String defaultUser = "root";
@@ -1082,20 +949,12 @@ public class DefaultWizard implements Wizard {
 
 	/**
 	 * Get servers with recently used first
-	 *
-	 * @return
 	 */
 	@Override
 	public List<String> getListOfServers() throws MojoExecutionException {
 		Path openMRS = Server.getServersPath();
 		Map<Long, String> sortedMap = new TreeMap<>(Collections.reverseOrder());
-		try (DirectoryStream<Path> subDirectories = Files.newDirectoryStream(openMRS, new DirectoryStream.Filter<Path>() {
-
-			@Override
-			public boolean accept(Path entry) {
-				return entry.toFile().isDirectory();
-			}
-		})) {
+		try (DirectoryStream<Path> subDirectories = Files.newDirectoryStream(openMRS, entry -> entry.toFile().isDirectory())) {
 			for (Path dir : subDirectories) {
 				if (Server.hasServerConfig(dir)) {
 					sortedMap.put(dir.toFile().lastModified(), dir.getFileName().toString());
@@ -1145,8 +1004,6 @@ public class DefaultWizard implements Wizard {
 
 	/**
 	 * Show confirmation prompt if there is any change besides updating modules with SNAPSHOT versions
-	 *
-	 * @return
 	 */
 	@Override
 	public boolean promptForConfirmDistroUpgrade(UpgradeDifferential upgradeDifferential) throws MojoExecutionException {

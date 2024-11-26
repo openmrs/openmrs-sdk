@@ -19,12 +19,7 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_2X_ARTIFACT_ID;
-import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_2X_GROUP_ID;
-import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_2X_TYPE;
-import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_3X_ARTIFACT_ID;
-import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_3X_GROUP_ID;
-import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_3X_TYPE;
+import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_3X_PROMPT;
 
 /**
  * Generates an openmrs-distro.properties file for a specific version of OpenMRS Distro
@@ -64,25 +59,19 @@ public class GenerateDistro extends AbstractTask {
         }
 
         File outputFile = outputLocation != null ? new File(outputLocation) : new File(System.getProperty("user.dir"));
+        Artifact artifact = null;
         switch (choice) {
             case SDKConstants.REFAPP_2X_PROMPT:
-                wizard.promptForRefAppVersionIfMissing(server, versionsHelper, GET_VERSION_PROMPT);
-                distribution = builder.buildFromArtifact(new Artifact(REFAPP_2X_ARTIFACT_ID, server.getVersion(), REFAPP_2X_GROUP_ID, REFAPP_2X_TYPE));
-                break;
-
-            case SDKConstants.REFAPP_3X_PROMPT:
-                wizard.promptForO3RefAppVersionIfMissing(server, versionsHelper, GET_VERSION_PROMPT);
-                distribution = builder.buildFromArtifact(new Artifact(REFAPP_3X_ARTIFACT_ID, server.getVersion(), REFAPP_3X_GROUP_ID, REFAPP_3X_TYPE));
-                break;
+                artifact = wizard.promptForRefApp2xArtifact(versionsHelper);
+                 break;
+            case REFAPP_3X_PROMPT:
+                artifact = wizard.promptForRefApp3xArtifact(versionsHelper);
         }
-
+        distribution = builder.buildFromArtifact(artifact);
         if (distribution == null) {
             throw new MojoFailureException("Distribution could not be generated, the specified distribution could not be found");
         }
-
         distribution.getEffectiveProperties().saveTo(outputFile);
         logger.info(String.format("openmrs-distro.properties file created successfully at %s", outputFile.getAbsolutePath() + File.separator + DistroProperties.DISTRO_FILE_NAME));
-
-
     }
 }

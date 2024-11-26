@@ -16,7 +16,6 @@ import org.openmrs.maven.plugins.model.Version;
 import org.openmrs.maven.plugins.utility.ContentHelper;
 import org.openmrs.maven.plugins.utility.DBConnector;
 import org.openmrs.maven.plugins.utility.DistributionBuilder;
-import org.openmrs.maven.plugins.utility.DistroHelper;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 import org.openmrs.maven.plugins.utility.ServerHelper;
 
@@ -40,14 +39,8 @@ import java.util.List;
 
 import static org.openmrs.maven.plugins.model.Artifact.GROUP_DISTRO;
 import static org.openmrs.maven.plugins.utility.SDKConstants.PLATFORM_ARTIFACT_ID;
-import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_2X_ARTIFACT_ID;
-import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_2X_GROUP_ID;
 import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_2X_PROMPT;
-import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_2X_TYPE;
-import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_3X_ARTIFACT_ID;
-import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_3X_GROUP_ID;
 import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_3X_PROMPT;
-import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_3X_TYPE;
 import static org.openmrs.maven.plugins.utility.SDKConstants.SETUP_DEFAULT_PLATFORM_VERSION;
 
 
@@ -239,14 +232,14 @@ public class Setup extends AbstractServerTask {
 		}
 
 		if (REFAPP_2X_PROMPT.equals(choice)) {
-			wizard.promptForRefAppVersionIfMissing(server, versionsHelper);
-			Distribution distribution = builder.buildFromArtifact(new Artifact(REFAPP_2X_ARTIFACT_ID, server.getVersion(), REFAPP_2X_GROUP_ID, REFAPP_2X_TYPE));
+			Artifact artifact = wizard.promptForRefApp2xArtifact(versionsHelper);
+			Distribution distribution = builder.buildFromArtifact(artifact);
 			return distribution.getEffectiveProperties();
 		}
 
 		if (REFAPP_3X_PROMPT.equals(choice)) {
-			wizard.promptForO3RefAppVersionIfMissing(server, versionsHelper);
-			Distribution distribution = builder.buildFromArtifact(new Artifact(REFAPP_3X_ARTIFACT_ID, server.getVersion(), REFAPP_3X_GROUP_ID, REFAPP_3X_TYPE));
+			Artifact artifact = wizard.promptForRefApp3xArtifact(versionsHelper);
+			Distribution distribution = builder.buildFromArtifact(artifact);
 			return distribution.getEffectiveProperties();
 		}
 
@@ -257,9 +250,11 @@ public class Setup extends AbstractServerTask {
 
 	private DistroProperties resolveDistroPropertiesForPlatform(Server server, String version) throws MojoExecutionException {
 		Artifact platformArtifact = new Artifact(PLATFORM_ARTIFACT_ID, SETUP_DEFAULT_PLATFORM_VERSION, GROUP_DISTRO);
-		version = wizard.promptForPlatformVersionIfMissing(version, versionsHelper.getSuggestedVersions(platformArtifact, 6));
-		platformArtifact = DistroHelper.parseDistroArtifact(GROUP_DISTRO + ":" + PLATFORM_ARTIFACT_ID + ":" + version, versionsHelper);
-		server.setPlatformVersion(platformArtifact.getVersion());
+		if (StringUtils.isBlank(version)) {
+			version = wizard.promptForPlatformVersion(versionsHelper);
+		}
+		platformArtifact.setVersion(version);
+		server.setPlatformVersion(version);
 		try {
 			DistributionBuilder builder = new DistributionBuilder(getMavenEnvironment());
 			Distribution distribution = builder.buildFromArtifact(platformArtifact);

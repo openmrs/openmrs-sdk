@@ -138,11 +138,11 @@ public class VersionsHelper {
      * @param maxReleases upper limit of number of releases
      * @return list of suggested versions
      */
-    public List<String> getSuggestedVersions(Artifact artifact, int maxReleases){
+    public List<String> getSuggestedVersions(Artifact artifact, Integer maxReleases){
         return getSuggestedVersions(getVersions(artifact), maxReleases);
     }
 
-    public List<String> getSuggestedVersions(List<ArtifactVersion> allVersions, int maxSize) {
+    public List<String> getSuggestedVersions(List<ArtifactVersion> allVersions, Integer maxSize) {
         if(allVersions.isEmpty()){
             return Collections.emptyList();
         }
@@ -172,7 +172,7 @@ public class VersionsHelper {
                 }
             }
         }
-        if (advices.size() > maxSize) {
+        if (maxSize != null && advices.size() > maxSize) {
             advices = advices.subList(0, maxSize);
         }
         return advices;
