@@ -90,9 +90,6 @@ public class DistroHelper {
 
 	/**
 	 * Saves all custom properties from distroProperties starting with "property." to server
-	 *
-	 * @param properties
-	 * @param server
 	 */
 	public void savePropertiesToServer(DistroProperties properties, Server server) throws MojoExecutionException {
 		if (properties != null) {
@@ -245,7 +242,6 @@ public class DistroHelper {
 					FileUtils.copyInputStreamToFile(zipFile.getInputStream(zipEntry), resultFile);
 				}
 			}
-			zipFile.close();
 		}
 		catch (IOException e) {
 			throw new MojoExecutionException("Could not read \"" + distroFile.getAbsolutePath() + "\" to temp folder " + e.getMessage(), e);
@@ -257,37 +253,9 @@ public class DistroHelper {
 		return resultFile;
 	}
 
-	public DistroProperties downloadDistroProperties(File path, Artifact artifact) throws MojoExecutionException {
-		File file = downloadDistro(path, artifact);
-		DistroProperties distroProperties = null;
-		try (ZipFile zipFile = new ZipFile(file)) {
-			Enumeration<? extends ZipEntry> entries = zipFile.entries();
-
-			while (entries.hasMoreElements()) {
-				ZipEntry zipEntry = entries.nextElement();
-				if ("openmrs-distro.properties".equals(zipEntry.getName()) || "distro.properties".equals(zipEntry.getName())) {
-					Properties properties = new Properties();
-					properties.load(zipFile.getInputStream(zipEntry));
-					distroProperties = new DistroProperties(properties);
-				}
-			}
-		}
-		catch (IOException e) {
-			throw new MojoExecutionException("Could not read \"" + file.getAbsolutePath() + "\" " + e.getMessage(), e);
-		}
-		finally {
-			file.delete();
-		}
-
-		return distroProperties;
-	}
-
 	/**
 	 * Distro can be passed in two ways: either as maven artifact identifier or path to distro file
 	 * Returns null if string is invalid as path or identifier
-	 *
-	 * @param distro
-	 * @return
 	 */
 	public Distribution resolveDistributionForStringSpecifier(String distro, VersionsHelper versionsHelper) throws MojoExecutionException {
 		DistributionBuilder builder = new DistributionBuilder(mavenEnvironment);
@@ -310,9 +278,6 @@ public class DistroHelper {
 	/**
 	 * Distro can be passed in two ways: either as maven artifact identifier or path to distro file
 	 * Returns null if string is invalid as path or identifier
-	 *
-	 * @param distro
-	 * @return
 	 */
 	public DistroProperties resolveDistroPropertiesForStringSpecifier(String distro, VersionsHelper versionsHelper) throws MojoExecutionException {
 		Distribution distribution = resolveDistributionForStringSpecifier(distro, versionsHelper);

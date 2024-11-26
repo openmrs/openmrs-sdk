@@ -147,8 +147,7 @@ public class BuildDistro extends AbstractTask {
 			}
 		}
 		else if (StringUtils.isNotBlank(distro)) {
-			Artifact distroArtifact = DistroHelper.parseDistroArtifact(distro, versionsHelper);
-			distribution = builder.buildFromArtifact(distroArtifact);
+			distribution = distroHelper.resolveDistributionForStringSpecifier(distro, versionsHelper);
 		}
 
 		if (distribution == null) {
