@@ -212,8 +212,8 @@ public class Setup extends AbstractServerTask {
 			}
 		}
 
-		options.add(SDKConstants.REFAPP_2X_PROMPT);
-		options.add(SDKConstants.REFAPP_3X_PROMPT);
+		options.add(REFAPP_2X_PROMPT);
+		options.add(REFAPP_3X_PROMPT);
 		options.add(PLATFORM);
 
 		String customDistroMessage = "Please specify distribution artifact";
