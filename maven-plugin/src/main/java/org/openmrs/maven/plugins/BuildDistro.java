@@ -35,6 +35,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_2X_PROMPT;
 import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_3X_PROMPT;
 
 /**
@@ -153,13 +154,13 @@ public class BuildDistro extends AbstractTask {
 		if (distribution == null) {
 
 			List<String> options = new ArrayList<>();
-			options.add(SDKConstants.REFAPP_2X_PROMPT);
+			options.add(REFAPP_2X_PROMPT);
 			options.add(REFAPP_3X_PROMPT);
 
 			Artifact artifact = null;
 			String choice = wizard.promptForMissingValueWithOptions("You can setup following servers", null, null, options);
 			switch (choice) {
-				case SDKConstants.REFAPP_2X_PROMPT:
+				case REFAPP_2X_PROMPT:
 					artifact = wizard.promptForRefApp2xArtifact(versionsHelper);
 					break;
 				case REFAPP_3X_PROMPT:
