@@ -9,6 +9,7 @@ import org.openmrs.maven.plugins.model.Distribution;
 import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.utility.DistributionBuilder;
+import org.openmrs.maven.plugins.utility.SDKConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,10 +32,6 @@ import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_3X_TYPE;
 @Mojo(name = "generate-distro", requiresProject = false)
 public class GenerateDistro extends AbstractTask {
 
-    private static final String O2_DISTRIBUTION = "2.x Distribution";
-
-    private static final String O3_DISTRIBUTION = "O3 Distribution";
-
     private static final String GENERATE_DISTRO_PROMPT = "You can generate the distro.properties file for the following distributions";
 
     private static final String GET_VERSION_PROMPT = "You can generate the distro.properties file for the following versions";
@@ -51,8 +48,8 @@ public class GenerateDistro extends AbstractTask {
     @Override
     public void executeTask() throws MojoExecutionException, MojoFailureException {
         List<String> options = new ArrayList<>();
-        options.add(O2_DISTRIBUTION);
-        options.add(O3_DISTRIBUTION);
+        options.add(SDKConstants.REFAPP_2X_PROMPT);
+        options.add(SDKConstants.REFAPP_3X_PROMPT);
         String choice = wizard.promptForMissingValueWithOptions(GENERATE_DISTRO_PROMPT, null, null, options);
 
         DistributionBuilder builder = new DistributionBuilder(getMavenEnvironment());
@@ -68,12 +65,12 @@ public class GenerateDistro extends AbstractTask {
 
         File outputFile = outputLocation != null ? new File(outputLocation) : new File(System.getProperty("user.dir"));
         switch (choice) {
-            case O2_DISTRIBUTION:
+            case SDKConstants.REFAPP_2X_PROMPT:
                 wizard.promptForRefAppVersionIfMissing(server, versionsHelper, GET_VERSION_PROMPT);
                 distribution = builder.buildFromArtifact(new Artifact(REFAPP_2X_ARTIFACT_ID, server.getVersion(), REFAPP_2X_GROUP_ID, REFAPP_2X_TYPE));
                 break;
 
-            case O3_DISTRIBUTION:
+            case SDKConstants.REFAPP_3X_PROMPT:
                 wizard.promptForO3RefAppVersionIfMissing(server, versionsHelper, GET_VERSION_PROMPT);
                 distribution = builder.buildFromArtifact(new Artifact(REFAPP_3X_ARTIFACT_ID, server.getVersion(), REFAPP_3X_GROUP_ID, REFAPP_3X_TYPE));
                 break;

@@ -82,8 +82,6 @@ public class DefaultWizard implements Wizard {
 
 	static final String NOYES = " [N/y]";
 
-	static final String REFERENCEAPPLICATION_2_4 = "org.openmrs.distro:referenceapplication-package:2.4";
-
 	static final String REFERENCEAPPLICATION_O3 = "org.openmrs:emr-distro-configuration:3.0.0";
 
 	static final String SDK_PROPERTIES_FILE = "SDK Properties file";
@@ -739,7 +737,7 @@ public class DefaultWizard implements Wizard {
 		String message = customMessage != null ? customMessage : DISTRIBUTION_VERSION_PROMPT;
 		String version = promptForMissingValueWithOptions(message,
 				null, "distribution artifact", Lists.newArrayList(optionsMap.keySet()), "Please specify %s",
-				REFERENCEAPPLICATION_2_4);
+				SDKConstants.REFERENCEAPPLICATION_2_4);
 
 		String artifact = optionsMap.get(version);
 		if (artifact != null) {

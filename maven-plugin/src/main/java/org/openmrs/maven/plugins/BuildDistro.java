@@ -78,10 +78,6 @@ public class BuildDistro extends AbstractTask {
 
 	private static final String DOCKER_COMPOSE_OVERRIDE_YML = "docker-compose.override.yml";
 
-	private static final String O2_DISTRIBUTION = "2.x Distribution";
-
-	private static final String O3_DISTRIBUTION = "O3 Distribution";
-
 	private static final Logger log = LoggerFactory.getLogger(BuildDistro.class);
 
 	/**
@@ -163,16 +159,16 @@ public class BuildDistro extends AbstractTask {
 			Server server = new Server.ServerBuilder().build();
 
 			List<String> options = new ArrayList<>();
-			options.add(O2_DISTRIBUTION);
-			options.add(O3_DISTRIBUTION);
+			options.add(SDKConstants.REFAPP_2X_PROMPT);
+			options.add(SDKConstants.REFAPP_3X_PROMPT);
 
 			String choice = wizard.promptForMissingValueWithOptions("You can setup following servers", null, null, options);
 			switch (choice) {
-				case O2_DISTRIBUTION:
+				case SDKConstants.REFAPP_2X_PROMPT:
 					wizard.promptForRefAppVersionIfMissing(server, versionsHelper, DISTRIBUTION_VERSION_PROMPT);
 					distribution = builder.buildFromArtifact(new Artifact(REFAPP_2X_ARTIFACT_ID, server.getVersion(), REFAPP_2X_GROUP_ID, REFAPP_2X_TYPE));
 					break;
-				case O3_DISTRIBUTION:
+				case SDKConstants.REFAPP_3X_PROMPT:
 					wizard.promptForO3RefAppVersionIfMissing(server, versionsHelper);
 					distribution = builder.buildFromArtifact(new Artifact(REFAPP_3X_ARTIFACT_ID, server.getVersion(), REFAPP_3X_GROUP_ID, REFAPP_3X_TYPE));
 			}

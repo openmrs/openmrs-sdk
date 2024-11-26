@@ -42,9 +42,11 @@ import static org.openmrs.maven.plugins.model.Artifact.GROUP_DISTRO;
 import static org.openmrs.maven.plugins.utility.SDKConstants.PLATFORM_ARTIFACT_ID;
 import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_2X_ARTIFACT_ID;
 import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_2X_GROUP_ID;
+import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_2X_PROMPT;
 import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_2X_TYPE;
 import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_3X_ARTIFACT_ID;
 import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_3X_GROUP_ID;
+import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_3X_PROMPT;
 import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_3X_TYPE;
 import static org.openmrs.maven.plugins.utility.SDKConstants.SETUP_DEFAULT_PLATFORM_VERSION;
 
@@ -57,17 +59,13 @@ public class Setup extends AbstractServerTask {
 
 	public static final String SETTING_UP_A_NEW_SERVER = "Setting up a new server...";
 
-	public static final String SETUP_SERVERS_PROMPT = "You can setup the following servers";
+	public static final String SETUP_SERVERS_PROMPT = "You can setup the following distributions";
 
 	public static final String ENABLE_DEBUGGING_DEFAULT_MESSAGE =
 			"If you want to enable remote debugging by default when running the server, "
 					+ "\nspecify the %s here (e.g. 1044). Leave blank to disable debugging. \n(Do not do this on a production server)";
 
-	private static final String O2_DISTRIBUTION = "2.x Distribution";
-
 	private static final String PLATFORM = "Platform";
-
-	private static final String O3_DISTRIBUTION = "O3 Distribution";
 
 	private static final String CLASSPATH_SCRIPT_PREFIX = "classpath://";
 
@@ -205,13 +203,15 @@ public class Setup extends AbstractServerTask {
 
 		List<String> options = new ArrayList<>();
 
+		String currentDirectoryOption = null;
 		Distribution currentDirectoryDistribution = null;
 		File distroPropertiesFile = distroHelper.getDistroPropertiesFileFromDir();
 		if (distroPropertiesFile != null) {
 			try {
 				currentDirectoryDistribution = builder.buildFromFile(distroPropertiesFile);
 				if (currentDirectoryDistribution != null) {
-					options.add(currentDirectoryDistribution.getName() + " " + currentDirectoryDistribution.getVersion() + " from current directory");
+					currentDirectoryOption = currentDirectoryDistribution.getName() + " " + currentDirectoryDistribution.getVersion() + " from current directory";
+					options.add(currentDirectoryOption);
 				}
 			}
 			catch (Exception e) {
@@ -219,32 +219,40 @@ public class Setup extends AbstractServerTask {
 			}
 		}
 
-		options.add(O3_DISTRIBUTION);
-		options.add(O2_DISTRIBUTION);
+		options.add(SDKConstants.REFAPP_2X_PROMPT);
+		options.add(SDKConstants.REFAPP_3X_PROMPT);
 		options.add(PLATFORM);
-		String choice = wizard.promptForMissingValueWithOptions(SETUP_SERVERS_PROMPT, null, null, options);
 
+		String customDistroMessage = "Please specify distribution artifact";
+		String customDistroDefault = SDKConstants.REFERENCEAPPLICATION_2_4;
+
+		String choice = wizard.promptForMissingValueWithOptions(SETUP_SERVERS_PROMPT, null, null, options, customDistroMessage, customDistroDefault);
+
+		// Deploy from current directory if chosen
+		if (currentDirectoryOption != null && currentDirectoryOption.equals(choice)) {
+			return currentDirectoryDistribution.getEffectiveProperties();
+		}
+
+		// Deploy platform
 		if (PLATFORM.equals(choice)) {
 			return resolveDistroPropertiesForPlatform(server, platform);
 		}
 
-		if (O2_DISTRIBUTION.equals(choice)) {
+		if (REFAPP_2X_PROMPT.equals(choice)) {
 			wizard.promptForRefAppVersionIfMissing(server, versionsHelper);
 			Distribution distribution = builder.buildFromArtifact(new Artifact(REFAPP_2X_ARTIFACT_ID, server.getVersion(), REFAPP_2X_GROUP_ID, REFAPP_2X_TYPE));
 			return distribution.getEffectiveProperties();
 		}
 
-		if (O3_DISTRIBUTION.equals(choice)) {
+		if (REFAPP_3X_PROMPT.equals(choice)) {
 			wizard.promptForO3RefAppVersionIfMissing(server, versionsHelper);
 			Distribution distribution = builder.buildFromArtifact(new Artifact(REFAPP_3X_ARTIFACT_ID, server.getVersion(), REFAPP_3X_GROUP_ID, REFAPP_3X_TYPE));
 			return distribution.getEffectiveProperties();
 		}
 
-		// If here, it is because the option to set up from current directory was chosen, and these properties were already loaded, just return them
-		if (currentDirectoryDistribution == null) {
-			throw new MojoExecutionException("No valid distribution could be found");
-		}
-		return currentDirectoryDistribution.getEffectiveProperties();
+		// If here, it is because custom distribution was chosen and the choice reflects the Maven coordinates
+		Distribution distribution = distroHelper.resolveDistributionForStringSpecifier(choice, versionsHelper);
+		return distribution.getEffectiveProperties();
 	}
 
 	private DistroProperties resolveDistroPropertiesForPlatform(Server server, String version) throws MojoExecutionException {
