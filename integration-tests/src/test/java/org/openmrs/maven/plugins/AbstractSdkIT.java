@@ -42,6 +42,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.io.FileMatchers.anExistingFileOrDirectory;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.openmrs.maven.plugins.SdkMatchers.hasModuleVersion;
@@ -145,12 +146,12 @@ public abstract class AbstractSdkIT {
         return counter++;
     }
 
-    public String setupTestServer() throws Exception{
+    public String setupTestServer(String distro) throws Exception{
         Verifier setupServer = new Verifier(testDirectory.getAbsolutePath());
         String serverId = UUID.randomUUID().toString();
         try {
             addTaskParam(setupServer, "openMRSPath", testDirectory.getAbsolutePath());
-            addTaskParam(setupServer, "distro", "referenceapplication:2.2");
+            addTaskParam(setupServer, "distro", distro);
             addTaskParam(setupServer, "debug", "1044");
             addMockDbSettings(setupServer);
 
@@ -326,14 +327,14 @@ public abstract class AbstractSdkIT {
         assertFilePresent(serverId, SDKConstants.OPENMRS_SERVER_PROPERTIES);
     }
 
-    protected void assertModulesInstalled(String serverId, String... filenames){
+    protected void assertModulesInstalled(String serverId, String... filenames) {
         Path modulesRoot = testDirectoryPath.resolve(Paths.get(serverId, "modules"));
-        for(String filename : filenames){
+        for(String filename : filenames) {
             assertPathPresent(modulesRoot.resolve(filename));
         }
     }
 
-    protected void assertModulesInstalled(String serverId, DistroProperties distroProperties) {
+    protected void assertOnlyModulesInstalled(String serverId, DistroProperties distroProperties) {
         List<Artifact> modules = distroProperties.getModuleArtifacts();
         String[] moduleFilenames = new String[modules.size()];
 
@@ -341,7 +342,13 @@ public abstract class AbstractSdkIT {
             moduleFilenames[i] = modules.get(i).getDestFileName();
         }
 
-        assertModulesInstalled(serverId, moduleFilenames);
+        Path modulesRoot = testDirectoryPath.resolve(Paths.get(serverId, "modules"));
+        File[] expectedFiles = modulesRoot.toFile().listFiles(f -> f.getName().endsWith(".omod"));
+        assertNotNull(expectedFiles);
+        assertThat(expectedFiles.length, equalTo(moduleFilenames.length));
+        for(String filename : moduleFilenames) {
+            assertPathPresent(modulesRoot.resolve(filename));
+        }
     }
 
     protected void addMockDbSettings() {
@@ -375,5 +382,19 @@ public abstract class AbstractSdkIT {
         answers = StringUtils.removeEnd(answers, "]");
         answers = StringUtils.removeStart(answers, "[");
         return answers;
+    }
+
+    protected String getLogContents() throws Exception {
+        File logFile = new File(testDirectory, "log.txt");
+        assertTrue(logFile.exists());
+        return FileUtils.readFileToString(logFile, "UTF-8");
+    }
+
+    protected void assertLogContains(String message) throws Exception {
+        assertTrue(getLogContents().contains(message));
+    }
+
+    protected void assertLogDoesNotContain(String message) throws Exception {
+        assertFalse(getLogContents().contains(message));
     }
 }

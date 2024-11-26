@@ -10,7 +10,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
-import java.util.UUID;
 
 /**
  * Supports retrieving the configuration artifacts specified in the distribution
@@ -35,21 +34,15 @@ public class ConfigurationInstaller {
 	 */
 	public void installToServer(Server server, DistroProperties distroProperties) throws MojoExecutionException {
 		File directory = new File(server.getServerDirectory(), SDKConstants.OPENMRS_SERVER_CONFIGURATION);
-		File tempDir = new File(server.getServerTmpDirectory(), UUID.randomUUID().toString());
-		installToDirectory(directory, tempDir, distroProperties);
+		installToDirectory(directory, distroProperties);
 	}
 
 	public void installToDirectory(File installDir, DistroProperties distroProperties) throws MojoExecutionException {
-		File tempDir = new File(installDir.getParentFile(), UUID.randomUUID().toString());
-		installToDirectory(installDir, tempDir, distroProperties);
-	}
-
-	protected void installToDirectory(File installDir, File tempDir, DistroProperties distroProperties) throws MojoExecutionException {
 		if (distroProperties.getConfigArtifacts().isEmpty()) {
 			return;
 		}
 		if (installDir.mkdirs()) {
-			wizard.showMessage("Created configuration directory: " + installDir.getAbsolutePath());
+			wizard.showMessage("Created configuration directory");
 		}
 
 		wizard.showMessage("Downloading Configuration...\n");
@@ -58,13 +51,10 @@ public class ConfigurationInstaller {
 		for (Artifact configArtifact : configs) {
 			// Some config artifacts have their configuration packaged in an "openmrs_config" subfolder within the zip
 			// If such a folder is found in the downloaded artifact, use it.  Otherwise, use the entire zip contents
-			try {
-				if (!tempDir.mkdirs()) {
-					throw new MojoExecutionException("Unable to create temporary directory " + tempDir + "\n");
-				}
+			try (TempDirectory tempDir = TempDirectory.create(configArtifact.getArtifactId())){
 				moduleInstaller.installAndUnpackModule(configArtifact, tempDir.getAbsolutePath());
-				File directoryToCopy = tempDir;
-				for (File f : Objects.requireNonNull(tempDir.listFiles())) {
+				File directoryToCopy = tempDir.getFile();
+				for (File f : Objects.requireNonNull(tempDir.getFile().listFiles())) {
 					if (f.isDirectory() && f.getName().equals("openmrs_config")) {
 						directoryToCopy = f;
 					}
@@ -74,9 +64,6 @@ public class ConfigurationInstaller {
 				} catch (IOException e) {
 					throw new MojoExecutionException("Unable to copy config: " + directoryToCopy + "\n");
 				}
-			}
-			finally {
-				FileUtils.deleteQuietly(tempDir);
 			}
 		}
 	}

@@ -1,7 +1,5 @@
 package org.openmrs.maven.plugins.model;
 
-import static org.openmrs.maven.plugins.utility.PropertiesUtils.loadPropertiesFromFile;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
@@ -32,6 +30,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
+
+import static org.openmrs.maven.plugins.utility.PropertiesUtils.loadPropertiesFromFile;
 
 /**
  * Class for Server model
@@ -170,7 +170,7 @@ public class Server extends BaseSdkProperties {
         properties = new Properties();
     }
 
-    private Server(File file, Properties properties) {
+    public Server(File file, Properties properties) {
         if (file != null) {
             this.propertiesFile = new File(file, SDKConstants.OPENMRS_SERVER_PROPERTIES);
             this.serverDirectory = file;
@@ -537,16 +537,6 @@ public class Server extends BaseSdkProperties {
     }
 
     /**
-     * Get artifacts of core and all modules on server
-     */
-    public List<Artifact> getServerModules() {
-        List<Artifact> artifacts = new ArrayList<>();
-        artifacts.addAll(getModuleArtifacts());
-        artifacts.addAll(getWarArtifacts());
-        return artifacts;
-    }
-
-    /**
      * returns lists of baseArtifacts updated with updateArtifacts(add absent objects and update versions)
      *
      * @param baseArtifacts - main list
@@ -589,9 +579,14 @@ public class Server extends BaseSdkProperties {
         }
     }
 
-    public void setValuesFromDistroPropertiesModules(List<Artifact> warArtifacts, List<Artifact> moduleArtifacts, DistroProperties distroProperties) {
+    public void setValuesFromDistroProperties(DistroProperties distroProperties) {
         if (distroProperties != null) {
-            this.properties.putAll(distroProperties.getModuleAndWarProperties(warArtifacts, moduleArtifacts));
+            for (Object property : distroProperties.getAllKeys()) {
+                String key = property.toString();
+                if (distroProperties.isBaseSdkProperty(key)) {
+                    this.properties.put(key, distroProperties.getParam(key));
+                }
+            }
             setName(distroProperties.getName());
             setVersion(distroProperties.getVersion());
         }
@@ -872,6 +867,10 @@ public class Server extends BaseSdkProperties {
                 logger.error("Could not delete tmp directory", e);
             }
         }
+    }
+
+    public File getWarFile() {
+        return new File(getServerDirectory(), "openmrs-" + getPlatformVersion() + ".war");
     }
 
     public String getWebappVersionFromFilesystem() throws MojoExecutionException {

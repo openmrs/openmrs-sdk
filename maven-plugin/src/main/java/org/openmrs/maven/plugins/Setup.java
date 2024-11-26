@@ -204,10 +204,21 @@ public class Setup extends AbstractServerTask {
 		}
 
 		List<String> options = new ArrayList<>();
-		DistroProperties distroProperties = distroHelper.getDistroPropertiesFromDir();
-		if (distroProperties != null) {
-			options.add(distroProperties.getName() + " " + distroProperties.getVersion() + " from current directory");
+
+		Distribution currentDirectoryDistribution = null;
+		File distroPropertiesFile = distroHelper.getDistroPropertiesFileFromDir();
+		if (distroPropertiesFile != null) {
+			try {
+				currentDirectoryDistribution = builder.buildFromFile(distroPropertiesFile);
+				if (currentDirectoryDistribution != null) {
+					options.add(currentDirectoryDistribution.getName() + " " + currentDirectoryDistribution.getVersion() + " from current directory");
+				}
+			}
+			catch (Exception e) {
+				wizard.showWarning("Found " + distroPropertiesFile.getAbsolutePath() + " but unable to load this into a distribution:  " + e.getMessage());
+			}
 		}
+
 		options.add(O3_DISTRIBUTION);
 		options.add(O2_DISTRIBUTION);
 		options.add(PLATFORM);
@@ -230,7 +241,10 @@ public class Setup extends AbstractServerTask {
 		}
 
 		// If here, it is because the option to set up from current directory was chosen, and these properties were already loaded, just return them
-		return distroProperties;
+		if (currentDirectoryDistribution == null) {
+			throw new MojoExecutionException("No valid distribution could be found");
+		}
+		return currentDirectoryDistribution.getEffectiveProperties();
 	}
 
 	private DistroProperties resolveDistroPropertiesForPlatform(Server server, String version) throws MojoExecutionException {
@@ -296,9 +310,7 @@ public class Setup extends AbstractServerTask {
 
 		setJdk(server);
 
-		server.setValuesFromDistroPropertiesModules(
-				distroProperties.getWarArtifacts(),
-				distroProperties.getModuleArtifacts(), distroProperties);
+		server.setValuesFromDistroProperties(distroProperties);
 		server.setUnspecifiedToDefault();
 		server.save();
 	}

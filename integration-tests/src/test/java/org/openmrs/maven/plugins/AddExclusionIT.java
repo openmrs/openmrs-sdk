@@ -1,6 +1,5 @@
 package org.openmrs.maven.plugins;
 
-import org.apache.commons.io.FileUtils;
 import org.junit.Test;
 import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.utility.PropertiesUtils;
@@ -8,7 +7,6 @@ import org.openmrs.maven.plugins.utility.PropertiesUtils;
 import java.io.File;
 import java.util.Properties;
 
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -35,7 +33,7 @@ public class AddExclusionIT extends AbstractSdkIT {
         executeExclusionTask(distroFile, "omod.uicommons");
         assertNotNull(getDistroProperties());
         assertTrue(getDistroProperties().getExclusions().contains("omod.uicommons"));
-        assertTrue(getLogContents().contains(AddExclusion.WARNING_NO_PARENT_DISTRO));
+        assertLogContains(AddExclusion.WARNING_NO_PARENT_DISTRO);
     }
 
     @Test
@@ -47,8 +45,8 @@ public class AddExclusionIT extends AbstractSdkIT {
         executeExclusionTask(distroFile, "omod.uicommons");
         assertNotNull(getDistroProperties());
         assertTrue(getDistroProperties().getExclusions().contains("omod.uicommons"));
-        assertFalse(getLogContents().contains(AddExclusion.WARNING_NO_PARENT_DISTRO));
-        assertFalse(getLogContents().contains(AddExclusion.WARNING_PROPERTY_NOT_IN_PARENT));
+        assertLogDoesNotContain(AddExclusion.WARNING_NO_PARENT_DISTRO);
+        assertLogDoesNotContain(AddExclusion.WARNING_PROPERTY_NOT_IN_PARENT);
     }
 
     @Test
@@ -60,8 +58,8 @@ public class AddExclusionIT extends AbstractSdkIT {
         executeExclusionTask(distroFile, "omod.uicommons");
         assertNotNull(getDistroProperties());
         assertTrue(getDistroProperties().getExclusions().contains("omod.uicommons"));
-        assertFalse(getLogContents().contains(AddExclusion.WARNING_NO_PARENT_DISTRO));
-        assertFalse(getLogContents().contains(AddExclusion.WARNING_PROPERTY_NOT_IN_PARENT));
+        assertLogDoesNotContain(AddExclusion.WARNING_NO_PARENT_DISTRO);
+        assertLogDoesNotContain(AddExclusion.WARNING_PROPERTY_NOT_IN_PARENT);
     }
 
     @Test
@@ -73,14 +71,8 @@ public class AddExclusionIT extends AbstractSdkIT {
         executeExclusionTask(distroFile, "omod.invalidmodulename");
         assertNotNull(getDistroProperties());
         assertTrue(getDistroProperties().getExclusions().contains("omod.invalidmodulename"));
-        assertFalse(getLogContents().contains(AddExclusion.WARNING_NO_PARENT_DISTRO));
-        assertTrue(getLogContents().contains(AddExclusion.WARNING_PROPERTY_NOT_IN_PARENT));
-    }
-
-    private String getLogContents() throws Exception {
-        File logFile = new File(testDirectory, "log.txt");
-        assertTrue(logFile.exists());
-        return FileUtils.readFileToString(logFile, "UTF-8");
+        assertLogDoesNotContain(AddExclusion.WARNING_NO_PARENT_DISTRO);
+        assertLogContains(AddExclusion.WARNING_PROPERTY_NOT_IN_PARENT);
     }
 
     private void executeExclusionTask(File distroFile, String exclusion) throws Exception {
