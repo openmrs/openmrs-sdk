@@ -19,6 +19,8 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 
+import static org.openmrs.maven.plugins.utility.OwaHelper.OWA_PACKAGE_EXTENSION;
+
 public class ServerUpgrader {
 
     private final AbstractTask parentTask;
@@ -96,11 +98,12 @@ public class ServerUpgrader {
 				parentTask.wizard.showMessage("Created directory: " + owaDir.getName());
 			}
 			for (Artifact artifact : owaChanges.getArtifactsToRemove()) {
-				File owaFile = new File(owaDir, artifact.getDestFileName());
+				String owaBaseName = parentTask.owaHelper.getOwaBaseName(artifact);
+				File owaFile = new File(owaDir, owaBaseName + OWA_PACKAGE_EXTENSION);
 				if (owaFile.delete()) {
 					parentTask.wizard.showMessage("Removed owa file: " + owaFile.getName());
 				}
-				File owaExpandedDir = new File(owaDir, artifact.getArtifactId());
+				File owaExpandedDir = new File(owaDir, owaBaseName);
 				if (owaExpandedDir.exists()) {
 					try {
 						FileUtils.deleteDirectory(owaExpandedDir);
@@ -124,6 +127,7 @@ public class ServerUpgrader {
 		boolean updateSpa = spaArtifactChanges.hasChanges() || spaBuildChanges.hasChanges();
 		if (updateSpa) {
 			parentTask.spaInstaller.installFromDistroProperties(server.getServerDirectory(), distroProperties, ignorePeerDependencies, overrideReuseNodeCache);
+			server.replaceSpaProperties(distroProperties.getSpaProperties());
 		}
 
 		// Upgrade config and content
@@ -148,13 +152,24 @@ public class ServerUpgrader {
 
 			if (configChanges.hasChanges()) {
 				parentTask.configurationInstaller.installToServer(server, distroProperties);
+				for (Artifact artifact : configChanges.getArtifactsToRemove()) {
+					server.removePropertiesForArtifact(BaseSdkProperties.TYPE_CONFIG, artifact);
+				}
+				for (Artifact artifact : configChanges.getArtifactsToAdd()) {
+					server.addPropertiesForArtifact(BaseSdkProperties.TYPE_CONFIG, artifact);
+				}
 			}
 
 			if (contentChanges.hasChanges()) {
 				ContentHelper.downloadAndMoveContentBackendConfig(server.getServerDirectory(), distroProperties, parentTask.moduleInstaller, parentTask.wizard);
 				// TODO: Where is the frontend config installation?
+				for (Artifact artifact : contentChanges.getArtifactsToRemove()) {
+					server.removePropertiesForArtifact(BaseSdkProperties.TYPE_CONTENT, artifact);
+				}
+				for (Artifact artifact : contentChanges.getArtifactsToAdd()) {
+					server.addPropertiesForArtifact(BaseSdkProperties.TYPE_CONTENT, artifact);
+				}
 			}
-
 		}
 
 		server.setVersion(distroProperties.getVersion());

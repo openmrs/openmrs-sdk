@@ -106,15 +106,15 @@ public abstract class BaseSdkProperties {
     }
 
     public List<Artifact> getOwaArtifacts() {
-        List<Artifact> artifacts = new ArrayList<>();
+        List<Artifact> artifactList = new ArrayList<>();
         for (Object keyObject: getAllKeys()) {
             String key = keyObject.toString();
-            if (key.startsWith(TYPE_OWA + ".")) {
-                String artifactId = key.substring(TYPE_OWA.length() + 1);
-                artifacts.add(new Artifact(artifactId, getParam(key), Artifact.GROUP_OWA, Artifact.TYPE_ZIP));
+            String artifactType = getArtifactType(key);
+            if(artifactType.equals(TYPE_OWA)) {
+                artifactList.add(new Artifact(checkIfOverwritten(key, ARTIFACT_ID), getParam(key), checkIfOverwritten(key, GROUP_ID), checkIfOverwritten(key, TYPE)));
             }
         }
-        return artifacts;
+        return artifactList;
     }
 
     public Map<String, String> getSpaProperties() {
@@ -237,10 +237,12 @@ public abstract class BaseSdkProperties {
                                     return Artifact.GROUP_WEB;
                                 case TYPE_OMOD:
                                     return Artifact.GROUP_MODULE;
+                                case TYPE_OWA:
+                                    return Artifact.GROUP_OWA;
                                 case TYPE_DISTRO:
-	                        case TYPE_CONFIG:
-                                    return properties.getProperty(PROPERTY_DISTRO_GROUP_ID, Artifact.GROUP_DISTRO);
-	                        case TYPE_CONTENT:
+                                case TYPE_CONFIG:
+                                        return properties.getProperty(PROPERTY_DISTRO_GROUP_ID, Artifact.GROUP_DISTRO);
+                                case TYPE_CONTENT:
                                     return Artifact.GROUP_CONTENT;
                                 default:
                                     return "";
@@ -252,6 +254,7 @@ public abstract class BaseSdkProperties {
                                     return TYPE_JAR;
                                 case TYPE_WAR:
                                     return TYPE_WAR;
+                                case TYPE_OWA:
                                 case TYPE_CONFIG:
                                 case TYPE_CONTENT:
                                     return TYPE_ZIP;
@@ -340,10 +343,9 @@ public abstract class BaseSdkProperties {
 
     public void removePropertiesForArtifact(String type, Artifact artifact) {
         Properties newProperties = new Properties();
-        for (Object keyObject : properties.keySet()) {
-            String key = keyObject.toString();
+        for (String key : properties.stringPropertyNames()) {
             if (!key.startsWith(type + "." + artifact.getArtifactId())) {
-                properties.put(key, properties.get(key));
+                newProperties.put(key, properties.get(key));
             }
         }
         properties = newProperties;
@@ -354,6 +356,12 @@ public abstract class BaseSdkProperties {
         properties.put(base, artifact.getVersion());
         properties.put(base + "." + GROUP_ID, artifact.getGroupId());
         properties.put(base + "." + TYPE, artifact.getType());
+    }
+
+    public void replaceSpaProperties(Map<String, String> spaProperties) {
+        Set<String> existingSpaProperties = getSpaProperties().keySet();
+        properties.keySet().removeAll(existingSpaProperties);
+        properties.putAll(spaProperties);
     }
 
     /**

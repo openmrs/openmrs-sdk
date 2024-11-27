@@ -22,6 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.twdata.maven.mojoexecutor.MojoExecutor;
 
+import javax.annotation.Nullable;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
@@ -45,15 +46,13 @@ import static org.twdata.maven.mojoexecutor.MojoExecutor.groupId;
 import static org.twdata.maven.mojoexecutor.MojoExecutor.plugin;
 import static org.twdata.maven.mojoexecutor.MojoExecutor.version;
 
-import javax.annotation.Nullable;
-
 public class OwaHelper {
 
 	public static final String PACKAGE_JSON_FILENAME = "package.json";
 	public static final String NODE_VERSION_KEY = "node";
 	public static final String NPM_VERSION_KEY = "npm";
 
-	private static final String OWA_PACKAGE_EXTENSION = ".owa";
+	public static final String OWA_PACKAGE_EXTENSION = ".owa";
 
 	private MavenSession session;
 
@@ -98,12 +97,10 @@ public class OwaHelper {
 		this.session = session;
 	}
 
-	public void downloadOwa(File owaDir, Artifact owa, ModuleInstaller moduleInstaller)
-			throws MojoExecutionException {
-		boolean isSysAdmin = false;
+	public void downloadOwa(File owaDir, Artifact owa, ModuleInstaller moduleInstaller) throws MojoExecutionException {
+
 		if (owa.getArtifactId().startsWith("openmrs-owa-")) {
 			owa.setArtifactId(owa.getArtifactId().substring(12));
-			isSysAdmin = owa.getArtifactId().equalsIgnoreCase("sysadmin");
 		}
 
 		moduleInstaller.installModule(owa, owaDir.getAbsolutePath());
@@ -112,12 +109,7 @@ public class OwaHelper {
 			throw new MojoExecutionException("Unable to download OWA " + owa + " from Maven");
 		}
 
-		File renamedFile;
-		if (!isSysAdmin) {
-			renamedFile = new File(owaDir, owa.getArtifactId() + OWA_PACKAGE_EXTENSION);
-		} else {
-			renamedFile = new File(owaDir, "SystemAdministration" + OWA_PACKAGE_EXTENSION);
-		}
+		File renamedFile = new File(owaDir, getOwaBaseName(owa) + OWA_PACKAGE_EXTENSION);
 
 		if (renamedFile.exists()) {
 			renamedFile.delete();
@@ -129,6 +121,16 @@ public class OwaHelper {
 		catch (IOException ioe) {
 			throw new MojoExecutionException("Unable to move OWA file to " + renamedFile, ioe);
 		}
+	}
+
+	public String getOwaBaseName(Artifact owa) {
+		if (owa.getArtifactId().startsWith("openmrs-owa-")) {
+			owa.setArtifactId(owa.getArtifactId().substring(12));
+		}
+		if (owa.getArtifactId().equalsIgnoreCase("sysadmin")) {
+			return "SystemAdministration";
+		}
+		return owa.getArtifactId();
 	}
 
 	public void createOwaProject() throws MojoExecutionException {
