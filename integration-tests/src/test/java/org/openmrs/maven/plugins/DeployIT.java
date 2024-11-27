@@ -13,8 +13,10 @@ import java.nio.file.Paths;
 import java.util.Properties;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItemInArray;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.openmrs.maven.plugins.SdkMatchers.hasNameStartingWith;
 import static org.openmrs.maven.plugins.SdkMatchers.hasUserOwa;
 import static org.openmrs.maven.plugins.SdkMatchers.serverHasVersion;
@@ -148,8 +150,8 @@ public class DeployIT extends AbstractSdkIT {
         Server server = Server.loadServer(testServerId);
         assertThat(server, serverHasVersion("3.0.0"));
 
-        assertLogContains("+ Adds frontend spa");
-        assertLogContains("+ Adds frontend configuration");
+        assertLogContains("+ Assembles and builds new frontend spa");
+        assertLogContains("+ Adds config package distro-emr-configuration 3.0.0");
     }
 
     @Test
@@ -165,7 +167,7 @@ public class DeployIT extends AbstractSdkIT {
         assertFilePresent(testServerId, "configuration", "addresshierarchy", "addresshierarchy-core_demo.csv");
         assertFilePresent(testServerId, "configuration", "conceptclasses", "conceptclasses-core_data.csv");
         assertFilePresent(testServerId, "configuration", "encountertypes", "encountertypes_core-demo.csv");
-        assertLogContains("+ Adds frontend configuration");
+        assertLogContains("+ Adds config package distro-emr-configuration 3.0.0");
     }
 
     @Test
@@ -180,7 +182,7 @@ public class DeployIT extends AbstractSdkIT {
         assertFilePresent(testServerId, "configuration", "conceptclasses", "hiv", "conceptclasses.csv");
         assertFilePresent(testServerId, "configuration", "conceptsources", "hiv", "conceptsources.csv");
         assertFilePresent(testServerId, "configuration", "encountertypes", "hiv", "encountertypes.csv");
-        assertLogContains("+ Adds frontend configuration");
+        assertLogContains("+ Adds content package hiv 1.0.0");
     }
 
     @Test
@@ -197,7 +199,13 @@ public class DeployIT extends AbstractSdkIT {
         assertFilePresent(testServerId, "configuration", "addresshierarchy", "addresshierarchy-core_demo.csv");
         assertFilePresent(testServerId, "configuration", "conceptclasses", "conceptclasses-core_data.csv");
         assertFilePresent(testServerId, "configuration", "encountertypes", "encountertypes_core-demo.csv");
-        assertLogContains("+ Adds frontend configuration");
+        assertLogContains("+ Adds config package distro-emr-configuration 3.0.0");
+
+        Server server = Server.loadServer(testDirectoryPath.resolve(testServerId));
+        assertNotNull(server);
+        assertThat(server.getConfigArtifacts().size(), equalTo(1));
+        assertThat(server.getConfigArtifacts().get(0).getArtifactId(), equalTo("distro-emr-configuration"));
+        assertThat(server.getContentArtifacts().size(), equalTo(0));
 
         includeDistroPropertiesFile("openmrs-distro-content-package.properties");
         addAnswer(testServerId);
@@ -212,7 +220,14 @@ public class DeployIT extends AbstractSdkIT {
         assertFilePresent(testServerId, "configuration", "conceptclasses", "hiv", "conceptclasses.csv");
         assertFilePresent(testServerId, "configuration", "conceptsources", "hiv", "conceptsources.csv");
         assertFilePresent(testServerId, "configuration", "encountertypes", "hiv", "encountertypes.csv");
-        assertLogContains("^ Updates frontend configuration");
+        assertLogContains("- Removes existing configuration");
+        assertLogContains("+ Adds content package hiv 1.0.0");
+
+        server = Server.loadServer(testDirectoryPath.resolve(testServerId));
+        assertNotNull(server);
+        assertThat(server.getConfigArtifacts().size(), equalTo(0));
+        assertThat(server.getContentArtifacts().size(), equalTo(1));
+        assertThat(server.getContentArtifacts().get(0).getArtifactId(), equalTo("hiv"));
     }
 
     @Test
@@ -278,5 +293,44 @@ public class DeployIT extends AbstractSdkIT {
         Server.setServersPath(testDirectory.getAbsolutePath());
         Server server = Server.loadServer(testServerId);
         assertThat(server, hasUserOwa(new OwaId("conceptdictionary","1.0.0")));
+    }
+
+    @Test
+    public void deploy_shouldDeployOwas() throws Exception {
+        testServerId = setupTestServer("referenceapplication:2.2");
+        includeDistroPropertiesFile("openmrs-distro-owa1.properties");
+        addAnswer(testServerId);
+        addAnswer("y");
+        addAnswer("y");
+        executeTask("deploy");
+        assertSuccess();
+        assertFilePresent(testServerId, "owa");
+        assertFilePresent(testServerId, "owa", "addonmanager.owa");
+        assertFilePresent(testServerId, "owa", "SystemAdministration.owa");
+        assertFilePresent(testServerId, "owa", "orderentry.owa");
+        assertLogContains("+ Adds owa addonmanager 1.0.0");
+        assertLogContains("+ Adds owa sysadmin 1.2.0");
+        assertLogContains("+ Adds owa orderentry 1.2.4");
+
+        Server server = Server.loadServer(testDirectoryPath.resolve(testServerId));
+        assertNotNull(server);
+        assertThat(server.getOwaArtifacts().size(), equalTo(3));
+
+        // Re-deploy with a distro properties that includes additions, upgrades, downgrades, and removals
+        includeDistroPropertiesFile("openmrs-distro-owa2.properties");
+        executeTask("deploy");
+        assertSuccess();
+        assertFilePresent(testServerId, "owa");
+        assertFilePresent(testServerId, "owa", "addonmanager.owa");
+        assertFilePresent(testServerId, "owa", "SystemAdministration.owa");
+        assertFileNotPresent(testServerId, "owa", "orderentry.owa");
+        assertFilePresent(testServerId, "owa", "conceptdictionary.owa");
+        assertLogContains("^ Updates owa addonmanager 1.0.0 to 1.1.0");
+        assertLogContains("v Downgrades owa sysadmin 1.2.0 to 1.1.0");
+        assertLogContains("+ Adds owa conceptdictionary 1.0.0");
+        assertLogContains("- Deletes owa orderentry 1.2.4");
+
+        server = Server.loadServer(testDirectoryPath.resolve(testServerId));
+        assertThat(server.getOwaArtifacts().size(), equalTo(3));
     }
 }

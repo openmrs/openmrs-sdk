@@ -91,13 +91,13 @@ public class DefaultWizard implements Wizard {
 
 	static final String UPGRADE_CONFIRM_TMPL = "\nThe %s %s introduces the following changes:";
 
-	static final String UPDATE_ARTIFACT_TMPL = "^ Updates %s %s to %s";
+	static final String UPDATE_ARTIFACT_TMPL = "^ Updates %s %s %s to %s";
 
-	static final String DOWNGRADE_ARTIFACT_TMPL = "v Downgrades %s %s to %s";
+	static final String DOWNGRADE_ARTIFACT_TMPL = "v Downgrades %s %s %s to %s";
 
-	static final String ADD_ARTIFACT_TMPL = "+ Adds %s %s";
+	static final String ADD_ARTIFACT_TMPL = "+ Adds %s %s %s";
 
-	static final String DELETE_ARTIFACT_TMPL = "- Deletes %s %s";
+	static final String DELETE_ARTIFACT_TMPL = "- Deletes %s %s %s";
 
 	static final String NO_DIFFERENTIAL = "\nNo distribution changes found";
 
@@ -1037,31 +1037,38 @@ public class DefaultWizard implements Wizard {
 		writer.printf((UPGRADE_CONFIRM_TMPL) + "%n", distribution.getName(), distribution.getVersion());
 
 		if (warChanges.hasChanges()) {
-			writer.printf(
-					(warChanges.getDowngradedArtifacts().isEmpty() ? UPDATE_ARTIFACT_TMPL : DOWNGRADE_ARTIFACT_TMPL) + "%n",
-					warChanges.getNewArtifacts().get(0).getArtifactId(),
-					upgradeDifferential.getServer().getPlatformVersion(),
-					warChanges.getNewArtifacts().get(0).getVersion());
+			String template = (warChanges.getDowngradedArtifacts().isEmpty() ? UPDATE_ARTIFACT_TMPL : DOWNGRADE_ARTIFACT_TMPL) + "%n";
+			Artifact oldWar = warChanges.getOldArtifacts().get(0);
+			Artifact newWar = warChanges.getNewArtifacts().get(0);
+			writer.printf(template, "OpenMRS", "Core", oldWar.getVersion(), newWar.getVersion());
 		}
 
-		promptForArtifactChangesIfNecessary(moduleChanges);
-		promptForArtifactChangesIfNecessary(owaChanges);
+		promptForArtifactChangesIfNecessary("module", moduleChanges);
+		promptForArtifactChangesIfNecessary("owa", owaChanges);
 
 		if (spaArtifactChanges.hasChanges() || spaBuildChanges.hasChanges()) {
 			if (hasExistingFilesInDirectory(server, SDKConstants.OPENMRS_SERVER_FRONTEND)) {
-				writer.print("^ Updates frontend spa%n");
+				writer.println("- Removes existing spa");
 			}
-			else {
-				writer.print("+ Adds frontend spa%n");
+			if (spaBuildChanges.hasChanges()) {
+				writer.println("+ Assembles and builds new frontend spa");
+			}
+			if (spaArtifactChanges.hasChanges()) {
+				for (Artifact a : spaArtifactChanges.getNewArtifacts()) {
+					writer.printf(ADD_ARTIFACT_TMPL + "%n", "spa", a.getArtifactId(), a.getVersion());
+				}
 			}
 		}
 
 		if (configChanges.hasChanges() || contentChanges.hasChanges()) {
 			if (hasExistingFilesInDirectory(server, SDKConstants.OPENMRS_SERVER_CONFIGURATION)) {
-				writer.print("^ Updates frontend configuration%n");
+				writer.println("- Removes existing configuration");
 			}
-			else {
-				writer.print("+ Adds frontend configuration%n");
+			for (Artifact a : configChanges.getArtifactsToAdd()) {
+				writer.printf(ADD_ARTIFACT_TMPL + "%n", "config package", a.getArtifactId(), a.getVersion());
+			}
+			for (Artifact a : contentChanges.getArtifactsToAdd()) {
+				writer.printf(ADD_ARTIFACT_TMPL + "%n", "content package", a.getArtifactId(), a.getVersion());
 			}
 		}
 
@@ -1077,34 +1084,19 @@ public class DefaultWizard implements Wizard {
 		return false;
 	}
 
-	protected void promptForArtifactChangesIfNecessary(UpgradeDifferential.ArtifactChanges artifactChanges) {
+	protected void promptForArtifactChangesIfNecessary(String type, UpgradeDifferential.ArtifactChanges artifactChanges) {
 		if (artifactChanges.hasChanges()) {
-			for (Entry<Artifact, Artifact> updateEntry : artifactChanges.getUpgradedArtifacts().entrySet()) {
-				if (!updateEntry.getKey().getVersion().equals(updateEntry.getValue().getVersion())) {
-					writer.printf((UPDATE_ARTIFACT_TMPL) + "%n",
-							updateEntry.getKey().getArtifactId(),
-							updateEntry.getKey().getVersion(),
-							updateEntry.getValue().getVersion());
-				}
+			for (Entry<Artifact, Artifact> e : artifactChanges.getUpgradedArtifacts().entrySet()) {
+				writer.printf(UPDATE_ARTIFACT_TMPL + "%n", type, e.getKey().getArtifactId(), e.getKey().getVersion(), e.getValue().getVersion());
 			}
-			for (Entry<Artifact, Artifact> downgradeEntry : artifactChanges.getDowngradedArtifacts().entrySet()) {
-				if (!downgradeEntry.getKey().getVersion().equals(downgradeEntry.getValue().getVersion())) {
-					writer.printf((DOWNGRADE_ARTIFACT_TMPL) + "%n",
-							downgradeEntry.getKey().getArtifactId(),
-							downgradeEntry.getKey().getVersion(),
-							downgradeEntry.getValue().getVersion());
-				}
+			for (Entry<Artifact, Artifact> e : artifactChanges.getDowngradedArtifacts().entrySet()) {
+					writer.printf(DOWNGRADE_ARTIFACT_TMPL + "%n", type, e.getKey().getArtifactId(), e.getKey().getVersion(), e.getValue().getVersion());
 			}
-			for (Artifact addArtifact : artifactChanges.getAddedArtifacts()) {
-				writer.printf((ADD_ARTIFACT_TMPL) + "%n",
-						addArtifact.getArtifactId(),
-						addArtifact.getVersion());
+			for (Artifact a : artifactChanges.getAddedArtifacts()) {
+				writer.printf(ADD_ARTIFACT_TMPL + "%n", type, a.getArtifactId(), a.getVersion());
 			}
-
-			for (Artifact deleteArtifact : artifactChanges.getRemovedArtifacts()) {
-				writer.printf((DELETE_ARTIFACT_TMPL) + "%n",
-						deleteArtifact.getArtifactId(),
-						deleteArtifact.getVersion());
+			for (Artifact a : artifactChanges.getRemovedArtifacts()) {
+				writer.printf(DELETE_ARTIFACT_TMPL + "%n", type, a.getArtifactId(), a.getVersion());
 			}
 		}
 	}

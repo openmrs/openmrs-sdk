@@ -77,7 +77,7 @@ public abstract class AbstractSdkIT {
     protected File distroFile;
     protected Path testBaseDir;
     protected Path testResourceDir;
-    protected boolean preserveTestOutput;
+    protected boolean deleteTestArtifacts = false;
 
     public String resolveSdkArtifact() throws MojoExecutionException {
         Properties sdk = new Properties();
@@ -119,7 +119,7 @@ public abstract class AbstractSdkIT {
         testResourceDir = testBaseDir.resolve("test-resources");
         testDirectoryPath = testBaseDir.resolve(getClass().getSimpleName() + "_" + nextCounter());
         testDirectory = testDirectoryPath.toFile();
-        preserveTestOutput = Boolean.parseBoolean(System.getProperty("preserveTestOutput"));
+        FileUtils.deleteQuietly(testDirectory);
         if (!testDirectory.mkdirs()) {
             throw new RuntimeException("Unable to create test directory: " + testDirectory);
         }
@@ -128,15 +128,14 @@ public abstract class AbstractSdkIT {
         verifier.setAutoclean(false);
         addTaskParam("openMRSPath", testDirectory.getAbsolutePath());
         distroFile = new File(testDirectory, DistroProperties.DISTRO_FILE_NAME);
+        deleteTestArtifacts = Boolean.parseBoolean(System.getProperty("deleteTestArtifacts"));
     }
 
     @After
     public void teardown() {
         verifier.resetStreams();
-        if (preserveTestOutput) {
-            log.debug("Test output preserved: " + testDirectory.getName());
-        }
-        else {
+        if (deleteTestArtifacts) {
+            log.debug("Removing test artifacts: " + testDirectory);
             FileUtils.deleteQuietly(testDirectory);
         }
         cleanAnswers();
