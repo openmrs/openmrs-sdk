@@ -153,6 +153,9 @@ public class Setup extends AbstractServerTask {
 	@Parameter(property = "reuseNodeCache")
 	public Boolean overrideReuseNodeCache;
 
+	@Parameter(property = "spaConfigFile")
+	public String spaConfigFile;
+
 	private ServerHelper serverHelper;
 
 	public Setup() {
@@ -239,9 +242,10 @@ public class Setup extends AbstractServerTask {
 
 		if (REFAPP_3X_PROMPT.equals(choice)) {
 			Artifact artifact = wizard.promptForRefApp3xArtifact(versionsHelper);
-			Distribution distribution = builder.buildFromArtifact(artifact);
-			return distribution.getEffectiveProperties();
+			Distribution distribution = builder.buildFromArtifact(artifact, spaConfigFile);
+            return distribution.getEffectiveProperties();
 		}
+
 
 		// If here, it is because custom distribution was chosen and the choice reflects the Maven coordinates
 		Distribution distribution = distroHelper.resolveDistributionForStringSpecifier(choice, versionsHelper);

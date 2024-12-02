@@ -122,6 +122,9 @@ public class BuildDistro extends AbstractTask {
 	@Parameter(property = "appShellVersion")
 	private String appShellVersion;
 
+	@Parameter(property = "spaConfigFile")
+	private String spaConfigFile;
+
 	@Override
 	public void executeTask() throws MojoExecutionException, MojoFailureException {
 		File buildDirectory = getBuildDirectory();
@@ -165,7 +168,7 @@ public class BuildDistro extends AbstractTask {
 				case REFAPP_3X_PROMPT:
 					artifact = wizard.promptForRefApp3xArtifact(versionsHelper);
 			}
-			distribution = builder.buildFromArtifact(artifact);
+			distribution = builder.buildFromArtifact(artifact, spaConfigFile);
 		}
 
 		if (distribution == null) {
