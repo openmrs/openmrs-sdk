@@ -13,6 +13,7 @@ import java.util.Properties;
 
 import static org.openmrs.maven.plugins.model.BaseSdkProperties.TYPE_DISTRO;
 import static org.openmrs.maven.plugins.model.BaseSdkProperties.TYPE_PARENT;
+import static org.openmrs.maven.plugins.model.BaseSdkProperties.TYPE_ZIP;
 import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_2X_ARTIFACT_ID;
 import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_2X_GROUP_ID;
 import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_3X_ARTIFACT_ID;
@@ -132,6 +133,7 @@ public class DistributionBuilder {
 		if (includedProperties.getConfigArtifacts().isEmpty() && includedProperties.getContentArtifacts().isEmpty()) {
 			properties.put("config." + distroArtifactId, distroVersion);
 			properties.put("config." + distroArtifactId + ".groupId", distroGroupId);
+			properties.put("config." + distroArtifactId + ".type", TYPE_ZIP);
 		}
 
 		// Add spa properties if they are not included explicitly
