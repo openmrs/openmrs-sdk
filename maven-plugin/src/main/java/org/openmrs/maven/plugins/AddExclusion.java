@@ -52,11 +52,11 @@ public class AddExclusion extends AbstractTask {
             DistroProperties parentProperties = distribution.getParent().getEffectiveProperties();
             if (StringUtils.isBlank(property)) {
                 List<String> currentExclusions = distribution.getProperties().getExclusions();
-                List<String> options = parentProperties.getPropertyNames().stream().filter(prop -> !currentExclusions.contains(prop)).collect(Collectors.toList());
+                List<String> options = parentProperties.getAllKeys().stream().filter(prop -> !currentExclusions.contains(prop)).collect(Collectors.toList());
                 property = wizard.promptForMissingValueWithOptions("Enter the property you want to exclude", null, null, options);
             }
             else {
-                if (!parentProperties.getPropertyNames().contains(property)) {
+                if (!parentProperties.getAllKeys().contains(property)) {
                     wizard.showWarning(WARNING_PROPERTY_NOT_IN_PARENT);
                 }
             }

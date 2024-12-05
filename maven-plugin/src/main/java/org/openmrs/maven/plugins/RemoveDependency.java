@@ -51,7 +51,7 @@ public class RemoveDependency extends AbstractTask {
 
         if (StringUtils.isBlank(property)) {
             property = wizard.promptForMissingValueWithOptions("Enter the property you want to remove",
-                    null, null, new ArrayList<>(properties.getPropertyNames()));
+                    null, null, new ArrayList<>(properties.getAllKeys()));
         }
 
         if (StringUtils.isNotBlank(property)) {

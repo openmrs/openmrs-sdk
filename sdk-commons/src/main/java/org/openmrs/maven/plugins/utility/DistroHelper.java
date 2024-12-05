@@ -443,7 +443,7 @@ public class DistroHelper {
 			if (dependency.startsWith("omod.") || dependency.startsWith("owa.") || dependency.startsWith("war")
 					|| dependency.startsWith("spa.frontendModule") || dependency.startsWith("content.")) {
 				String versionRange = contentProperties.getProperty(dependency);
-				String distroVersion = distroProperties.get(dependency);
+				String distroVersion = distroProperties.getParam(dependency);
 
 				if (distroVersion == null) {
 					String latestVersion = findLatestMatchingVersion(dependency, versionRange);
@@ -451,7 +451,8 @@ public class DistroHelper {
 						throw new MojoExecutionException(
 								"No matching version found for dependency " + dependency + " in " + zipFileName);
 					}
-					distroProperties.add(dependency, latestVersion);
+
+					distroProperties.addProperty(dependency, latestVersion);
 				} else {
 					checkVersionInRange(dependency, versionRange, distroVersion, contentProperties.getProperty("name"));
 				}

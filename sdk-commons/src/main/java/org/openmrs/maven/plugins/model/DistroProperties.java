@@ -5,8 +5,6 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.openmrs.maven.plugins.utility.DistroHelper;
 import org.openmrs.maven.plugins.utility.PropertiesUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -20,19 +18,13 @@ import java.util.Set;
 
 import static org.openmrs.maven.plugins.utility.PropertiesUtils.loadPropertiesFromFile;
 
-/**
- *
- */
 public class DistroProperties extends BaseSdkProperties {
 
     public static final String PROPERTY_PROMPT_KEY = "property.%s.prompt";
-    private static final String DEAFAULT_FILE_NAME = "openmrs-distro-%s.properties";
     public static final String DISTRO_FILE_NAME = "openmrs-distro.properties";
     private static final String DB_SQL = "db.sql";
     public static final String PROPERTY_DEFAULT_VALUE_KEY = "property.%s.default";
     public static final String PROPERTY_KEY = "property.%s";
-
-	private static final Logger log = LoggerFactory.getLogger(DistroProperties.class);
 
     public DistroProperties(String name, String platformVersion){
         properties = new Properties();
@@ -76,9 +68,9 @@ public class DistroProperties extends BaseSdkProperties {
 
     public Set<String> getPropertiesNames(){
         Set<String> propertiesNames = new HashSet<>();
-        for(Object key: getAllKeys()){
-            if(key.toString().startsWith("property.")){
-                propertiesNames.add(extractPropertyName(key.toString()));
+        for(String key : getAllKeys()){
+            if(key.startsWith("property.")){
+                propertiesNames.add(extractPropertyName(key));
             }
         }
         return propertiesNames;
@@ -113,8 +105,7 @@ public class DistroProperties extends BaseSdkProperties {
      */
     public Artifact getParentDistroArtifact() throws MojoExecutionException {
         Artifact artifact = null;
-        for (Object keyObject: getAllKeys()) {
-            String key = keyObject.toString();
+        for (String key : getAllKeys()) {
             String artifactType = getArtifactType(key);
             if (artifactType.equals(TYPE_DISTRO)) {
                 String artifactId = checkIfOverwritten(key, ARTIFACT_ID);
@@ -166,20 +157,12 @@ public class DistroProperties extends BaseSdkProperties {
         PropertiesUtils.resolvePlaceholders(properties, projectProperties);
     }
 
-    public Set<Object> getAllKeys() {
-        return properties.keySet();
-    }
-
     public List<String> getExclusions() {
         String exclusions = getParam("exclusions");
         if(exclusions == null) {
             return new ArrayList<>();
         }
         return Arrays.asList(exclusions.split(","));
-    }
-
-    public Set<String> getPropertyNames() {
-        return properties.stringPropertyNames();
     }
 
     public void removeProperty(String property) throws MojoExecutionException {
@@ -198,41 +181,4 @@ public class DistroProperties extends BaseSdkProperties {
 
         properties.setProperty("exclusions", exclusions + "," + exclusion);
     }
-
-    public void addProperty(String property, String value) throws MojoExecutionException {
-        properties.put(property, value);
-    }
-
-    public boolean contains(String propertyName) {
-        return properties.containsKey(propertyName);
-    }
-
-    /**
-     * Adds a dependency with the specified version to the properties.
-     *
-     * @param dependency The name of the dependency.
-     * @param version The version of the dependency.
-     */
-    public void add(String dependency, String version) {
-        if (StringUtils.isBlank(dependency) || StringUtils.isBlank(version)) {
-            log.error("Dependency name or version cannot be blank");
-            return;
-        }
-
-        if (dependency.startsWith("omod.") || dependency.startsWith("owa.") || dependency.startsWith("war")
-                || dependency.startsWith("spa.frontendModule")) {
-            properties.setProperty(dependency, version);
-            log.info("Added dependency: {} with version: {}", dependency, version);
-        }
-    }
-
-    public String get(String contentDependencyKey) {
-        return properties.getProperty(contentDependencyKey);
-    }
-
-    @Override
-    public String checkIfOverwritten(String key, String param) {
-        return super.checkIfOverwritten(key, param);
-    }
-
 }

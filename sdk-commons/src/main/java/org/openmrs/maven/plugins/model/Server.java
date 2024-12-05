@@ -581,8 +581,7 @@ public class Server extends BaseSdkProperties {
 
     public void setValuesFromDistroProperties(DistroProperties distroProperties) {
         if (distroProperties != null) {
-            for (Object property : distroProperties.getAllKeys()) {
-                String key = property.toString();
+            for (String key : distroProperties.getAllKeys()) {
                 if (distroProperties.isBaseSdkProperty(key)) {
                     this.properties.put(key, distroProperties.getParam(key));
                 }
