@@ -2,7 +2,6 @@ package org.openmrs.maven.plugins.utility;
 
 import org.apache.commons.lang3.SystemUtils;
 import org.apache.maven.execution.MavenSession;
-import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
 import org.openmrs.maven.plugins.model.Server;
@@ -31,12 +30,7 @@ public class NodeHelper {
 
 	public static Path tempDir;
 
-	private final MavenSession mavenSession;
-
-	private final MavenProject mavenProject;
-
-	private final BuildPluginManager pluginManager;
-
+	private final MavenEnvironment mavenEnvironment;
 
 	private static final Logger logger = LoggerFactory.getLogger(NodeHelper.class);
 
@@ -44,10 +38,8 @@ public class NodeHelper {
 
 	private static final String _OPENMRS_SDK_NODE_CACHE = "_openmrs_sdk_node_cache";
 
-	public NodeHelper(MavenProject mavenProject, MavenSession mavenSession, BuildPluginManager pluginManager) {
-		this.mavenProject = mavenProject;
-		this.mavenSession = mavenSession;
-		this.pluginManager = pluginManager;
+	public NodeHelper(MavenEnvironment mavenEnvironment) {
+		this.mavenEnvironment = mavenEnvironment;
 	}
 
 	private static File getNodeCache() {
@@ -89,6 +81,7 @@ public class NodeHelper {
 		// it's a little weird to use a custom NPM cache for this; however, it seems to be necessary to get things working on Bamboo
 		// hack added in December 2021; it's use probably should be re-evaluated at some point
 		// additional hack: we do not use --cache on macs due to https://github.com/npm/cli/issues/3256
+		MavenProject mavenProject = mavenEnvironment.getMavenProject();
 		if (mavenProject != null && mavenProject.getBuild() != null && !SystemUtils.IS_OS_MAC_OSX) {
 			npmExec =
 					 npmArguments + " --cache=" + tempDir.resolve("npm-cache").toAbsolutePath() + " exec -- " + arguments;
@@ -110,6 +103,7 @@ public class NodeHelper {
 			throws MojoExecutionException {
 		// the proxy already works for installing node and npm; however, it does not work when running npm or npx
 		if (goal != null && !goal.equalsIgnoreCase("install-node-and-npm")) {
+			MavenSession mavenSession = mavenEnvironment.getMavenSession();
 			NodeProxyHelper.ProxyContext proxyContext = NodeProxyHelper.setupProxyContext(mavenSession);
 			proxyContext.applyProxyContext(configuration);
 		}
@@ -122,7 +116,11 @@ public class NodeHelper {
 				),
 				goal(goal),
 				configuration(configuration.toArray(new MojoExecutor.Element[0])),
-				executionEnvironment(mavenProject, mavenSession, pluginManager)
+				 executionEnvironment(
+						mavenEnvironment.getMavenProject(),
+						mavenEnvironment.getMavenSession(),
+						mavenEnvironment.getPluginManager()
+				)
 		);
 	}
 }

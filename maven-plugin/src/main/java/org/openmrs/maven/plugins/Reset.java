@@ -26,7 +26,7 @@ public class Reset extends AbstractServerTask {
     public void executeTask() throws MojoExecutionException {
         Server server = getServer();
         if (StringUtils.isNotBlank(server.getContainerId())){
-            new DockerHelper(mavenProject, mavenSession, pluginManager, wizard).runDbContainer(
+            new DockerHelper(getMavenEnvironment()).runDbContainer(
                     server.getContainerId(),
                     server.getMySqlPort(),
                     server.getDbUser(),

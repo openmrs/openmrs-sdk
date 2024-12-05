@@ -7,12 +7,11 @@ import com.github.zafarkhaja.semver.Parser;
 import com.github.zafarkhaja.semver.Version;
 import com.github.zafarkhaja.semver.expr.Expression;
 import com.github.zafarkhaja.semver.expr.ExpressionParser;
+import lombok.Setter;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.SystemUtils;
-import org.apache.maven.execution.MavenSession;
-import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
 import org.openmrs.maven.plugins.model.Artifact;
@@ -46,55 +45,25 @@ import static org.twdata.maven.mojoexecutor.MojoExecutor.groupId;
 import static org.twdata.maven.mojoexecutor.MojoExecutor.plugin;
 import static org.twdata.maven.mojoexecutor.MojoExecutor.version;
 
+@Setter
 public class OwaHelper {
+
+	private static final Logger logger = LoggerFactory.getLogger(OwaHelper.class);
 
 	public static final String PACKAGE_JSON_FILENAME = "package.json";
 	public static final String NODE_VERSION_KEY = "node";
 	public static final String NPM_VERSION_KEY = "npm";
-
 	public static final String OWA_PACKAGE_EXTENSION = ".owa";
 
-	private MavenSession session;
-
+	private MavenEnvironment mavenEnvironment;
+	private Wizard wizard;
 	private File installationDir;
 
-	private MavenProject mavenProject;
+	public OwaHelper() {}
 
-	private BuildPluginManager pluginManager;
-
-	private Wizard wizard;
-
-	private static final Logger logger = LoggerFactory.getLogger(OwaHelper.class);
-
-	//enable chaining
-	public OwaHelper setInstallationDir(File installationDir) {
-		this.installationDir = installationDir;
-		return this;
-	}
-
-	public OwaHelper(){}
-
-	public OwaHelper(MavenSession session, MavenProject mavenProject, BuildPluginManager pluginManager, Wizard wizard) {
-		this.session = session;
-		this.mavenProject = mavenProject;
-		this.pluginManager = pluginManager;
-		this.wizard = wizard;
-	}
-
-	public void setWizard(Wizard wizard) {
-		this.wizard = wizard;
-	}
-
-	public void setMavenProject(MavenProject mavenProject) {
-		this.mavenProject = mavenProject;
-	}
-
-	public void setPluginManager(BuildPluginManager pluginManager) {
-		this.pluginManager = pluginManager;
-	}
-
-	public void setSession(MavenSession session) {
-		this.session = session;
+	public OwaHelper(MavenEnvironment mavenEnvironment) {
+		this.mavenEnvironment = mavenEnvironment;
+		this.wizard = mavenEnvironment.getWizard();
 	}
 
 	public void downloadOwa(File owaDir, Artifact owa, ModuleInstaller moduleInstaller) throws MojoExecutionException {
@@ -454,6 +423,7 @@ public class OwaHelper {
 	public PackageJson getPackageJson(String jsonFilename) throws MojoExecutionException {
 		Reader reader = null;
 		File json;
+		MavenProject mavenProject = mavenEnvironment.getMavenProject();
 		if (mavenProject == null) {
 			json = new File(jsonFilename);
 		} else {
@@ -500,7 +470,11 @@ public class OwaHelper {
 				),
 				goal("npm"),
 				configuration(configuration.toArray(new MojoExecutor.Element[0])),
-				executionEnvironment(mavenProject, session, pluginManager)
+				executionEnvironment(
+						mavenEnvironment.getMavenProject(),
+						mavenEnvironment.getMavenSession(),
+						mavenEnvironment.getPluginManager()
+				)
 		);
 	}
 
@@ -525,7 +499,11 @@ public class OwaHelper {
 				),
 				goal("exec"),
 				configuration(configuration.toArray(new MojoExecutor.Element[0])),
-				executionEnvironment(mavenProject, session, pluginManager)
+				executionEnvironment(
+						mavenEnvironment.getMavenProject(),
+						mavenEnvironment.getMavenSession(),
+						mavenEnvironment.getPluginManager()
+				)
 		);
 	}
 
@@ -637,7 +615,11 @@ public class OwaHelper {
 				),
 				goal("install-node-and-npm"),
 				configuration(configuration.toArray(new MojoExecutor.Element[0])),
-				executionEnvironment(mavenProject, session, pluginManager)
+				executionEnvironment(
+						mavenEnvironment.getMavenProject(),
+						mavenEnvironment.getMavenSession(),
+						mavenEnvironment.getPluginManager()
+				)
 		);
 	}
 

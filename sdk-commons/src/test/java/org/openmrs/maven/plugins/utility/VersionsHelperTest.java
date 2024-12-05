@@ -19,7 +19,7 @@ public class VersionsHelperTest {
 
     @Before
     public void before() {
-        helper = new VersionsHelper(null, null, null, null);
+        helper = new VersionsHelper(null);
     }
 
     private List<ArtifactVersion> createTestVersions(String... versions) {

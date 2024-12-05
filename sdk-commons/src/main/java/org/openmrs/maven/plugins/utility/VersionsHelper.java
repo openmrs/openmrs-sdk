@@ -1,18 +1,13 @@
 package org.openmrs.maven.plugins.utility;
 
-import org.apache.maven.artifact.factory.ArtifactFactory;
 import org.apache.maven.artifact.versioning.ArtifactVersion;
 import org.apache.maven.artifact.versioning.ComparableVersion;
-import org.apache.maven.execution.MavenSession;
-import org.apache.maven.project.MavenProject;
 import org.apache.maven.repository.legacy.metadata.ArtifactMetadataRetrievalException;
-import org.apache.maven.repository.legacy.metadata.ArtifactMetadataSource;
 import org.openmrs.maven.plugins.model.Artifact;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Created by user on 27.05.16.
@@ -21,45 +16,22 @@ public class VersionsHelper {
 
     public static final String NO_VERSION_AVAILABLE_MSG = "No version is available in remote repositories!";
 
-    /**
-     * The project currently being build.
-     */
-    private final MavenProject mavenProject;
+    private final MavenEnvironment mavenEnvironment;
 
-    /**
-     * The current Maven session.
-
-     */
-    private final MavenSession mavenSession;
-
-    /**
-     * The artifact metadata source to use.
-
-     */
-    private final ArtifactMetadataSource artifactMetadataSource;
-
-    /**
-     * utility to create maven artifacts
-     */
-    private final ArtifactFactory artifactFactory;
-
-    public VersionsHelper(ArtifactFactory artifactFactory, MavenProject mavenProject, MavenSession mavenSession, ArtifactMetadataSource artifactMetadataSource) {
-        this.artifactFactory = artifactFactory;
-        this.mavenProject = mavenProject;
-        this.mavenSession = mavenSession;
-        this.artifactMetadataSource = artifactMetadataSource;
+    public VersionsHelper(MavenEnvironment mavenEnvironment) {
+        this.mavenEnvironment = mavenEnvironment;
     }
 
-    private List<ArtifactVersion> getVersions(Artifact artifact){
+    private List<ArtifactVersion> getVersions(Artifact artifact) {
         try {
-            return artifactMetadataSource.retrieveAvailableVersions(
-                    artifactFactory.createArtifact(
+            return mavenEnvironment.getArtifactMetadataSource().retrieveAvailableVersions(
+                    mavenEnvironment.getArtifactFactory().createArtifact(
                             artifact.getGroupId(),
                             artifact.getArtifactId(),
                             artifact.getVersion(),
                             "", ""),
-                    mavenSession.getLocalRepository(),
-                    mavenProject.getRemoteArtifactRepositories()
+                    mavenEnvironment.getMavenSession().getLocalRepository(),
+                    mavenEnvironment.getMavenProject().getRemoteArtifactRepositories()
             );
         } catch (ArtifactMetadataRetrievalException e) {
             //TODO
@@ -67,31 +39,15 @@ public class VersionsHelper {
         }
     }
 
-    public List<ArtifactVersion> getAllVersions(Artifact artifact, int maxSize) {
-        List<ArtifactVersion> versions = getVersions(artifact);
-        sortDescending(versions);
-        Optional<ArtifactVersion> firstNonSnapshotVersion = versions.stream()
-                .filter(version -> !version.toString().endsWith("-SNAPSHOT"))
-                .findFirst();
-
-        if (firstNonSnapshotVersion.isPresent()) {
-            ArtifactVersion firstNonSnapshot = firstNonSnapshotVersion.get();
-            versions.removeIf(version -> version.toString().endsWith("-SNAPSHOT")
-                    && new ComparableVersion(version.toString()).compareTo(new ComparableVersion(firstNonSnapshot.toString())) < 0);
-        }
-
-        return versions.subList(0, Math.min(versions.size(), maxSize));
-    }
-
-    private void sortDescending(List<ArtifactVersion> versions){
-        Collections.sort(versions, (v1, v2) -> new ComparableVersion(v2.toString()).compareTo(new ComparableVersion(v1.toString())));
+    private void sortDescending(List<ArtifactVersion> versions) {
+        versions.sort((v1, v2) -> new ComparableVersion(v2.toString()).compareTo(new ComparableVersion(v1.toString())));
     }
 
     /**
      * @param artifact the Maven artifact to get the latest released version of
      * @return latest released version. if none is available, return snapshot. If list is empty, returns error message
      */
-    public String getLatestReleasedVersion(Artifact artifact){
+    public String getLatestReleasedVersion(Artifact artifact) {
         return getLatestReleasedVersion(getVersions(artifact));
     }
 

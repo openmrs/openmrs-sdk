@@ -25,7 +25,7 @@ public class Delete extends AbstractServerTask {
 			FileUtils.deleteDirectory(server.getServerDirectory());
 
 			if (StringUtils.isNotBlank(server.getContainerId())) {
-				new DockerHelper(mavenProject, mavenSession, pluginManager, wizard).runDbContainer(
+				new DockerHelper(getMavenEnvironment()).runDbContainer(
 						server.getContainerId(),
 						server.getMySqlPort(),
 						server.getDbUser(),

@@ -61,9 +61,9 @@ public class AddFeature extends AbstractTask {
 	}
 
 	private void addOwaSubmodule() throws MojoExecutionException {
-		new OwaHelper(mavenSession, mavenProject, pluginManager, wizard)
-				.setInstallationDir(new File(mavenProject.getBasedir(), "owa"))
-				.createOwaProject();
+		OwaHelper owaHelper = new OwaHelper(getMavenEnvironment());
+		owaHelper.setInstallationDir(new File(mavenProject.getBasedir(), "owa"));
+		owaHelper.createOwaProject();
 
 		//apply changes to config.xml and main pom.xml
 		wizard.showMessage("Modifying pom.xml files...");

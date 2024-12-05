@@ -34,9 +34,6 @@ public class SpaInstallerTest {
     SpaInstaller spaInstaller;
 
     @Mock
-    DistroHelper distroHelper;
-
-    @Mock
     ModuleInstaller moduleInstaller;
 
     @Mock
@@ -51,7 +48,10 @@ public class SpaInstallerTest {
     public void setup() throws Exception {
         appDataDir = new File(ResourceExtractor.simpleExtractResources(getClass(), "/test-tmp"), "server1");
         appDataDir.mkdirs();
-        spaInstaller = new SpaInstaller(distroHelper, nodeHelper, moduleInstaller, wizard);
+        spaInstaller = new SpaInstaller();
+        spaInstaller.setModuleInstaller(moduleInstaller);
+        spaInstaller.setNodeHelper(nodeHelper);
+        spaInstaller.setWizard(wizard);
     }
 
     @After

@@ -51,11 +51,11 @@ public class DockerHelper {
     private final BuildPluginManager pluginManager;
     private final Wizard wizard;
 
-    public DockerHelper(MavenProject mavenProject, MavenSession mavenSession, BuildPluginManager pluginManager, Wizard wizard){
-        this.mavenProject = mavenProject;
-        this.mavenSession = mavenSession;
-        this.pluginManager = pluginManager;
-        this.wizard = wizard;
+    public DockerHelper(MavenEnvironment mavenEnvironment) {
+        this.mavenProject = mavenEnvironment.getMavenProject();
+        this.mavenSession = mavenEnvironment.getMavenSession();
+        this.pluginManager = mavenEnvironment.getPluginManager();
+        this.wizard = mavenEnvironment.getWizard();
     }
 
     private Properties getSdkProperties() throws MojoExecutionException {

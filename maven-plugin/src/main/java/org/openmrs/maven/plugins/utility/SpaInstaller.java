@@ -3,6 +3,7 @@ package org.openmrs.maven.plugins.utility;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.MoreFiles;
 import com.google.common.io.RecursiveDeleteOption;
+import lombok.Setter;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -25,6 +26,7 @@ import java.util.Set;
 
 import static org.openmrs.maven.plugins.utility.PropertiesUtils.getSdkProperties;
 
+@Setter
 public class SpaInstaller {
 	
 	static final String BAD_SPA_PROPERTIES_MESSAGE = "Distro properties file contains invalid 'spa.' elements. "
@@ -36,25 +38,20 @@ public class SpaInstaller {
 	
 	static final String NPM_VERSION = "10.8.2";
 	
-	private final NodeHelper nodeHelper;
-	
-	private final DistroHelper distroHelper;
-
-	private final ModuleInstaller moduleInstaller;
-
-	private final Wizard wizard;
+	private NodeHelper nodeHelper;
+	private ModuleInstaller moduleInstaller;
+	private ContentHelper contentHelper;
+	private Wizard wizard;
 
 	private static final Logger logger = LoggerFactory.getLogger(SpaInstaller.class);
-	
-	public SpaInstaller(DistroHelper distroHelper, NodeHelper nodeHelper) {
-		this(distroHelper, nodeHelper, new ModuleInstaller(distroHelper), distroHelper.wizard);
-	}
 
-	public SpaInstaller(DistroHelper distroHelper, NodeHelper nodeHelper, ModuleInstaller moduleInstaller, Wizard wizard) {
-		this.distroHelper = distroHelper;
-		this.nodeHelper = nodeHelper;
-		this.moduleInstaller = moduleInstaller;
-		this.wizard = wizard;
+	public SpaInstaller() {}
+	
+	public SpaInstaller(MavenEnvironment mavenEnvironment) {
+		this.nodeHelper = new NodeHelper(mavenEnvironment);
+		this.moduleInstaller = new ModuleInstaller(mavenEnvironment);
+		this.contentHelper = new ContentHelper(mavenEnvironment);
+		this.wizard = mavenEnvironment.getWizard();
 	}
 	
 	/**
@@ -149,7 +146,7 @@ public class SpaInstaller {
 			nodeHelper.runNpx(String.format("%s assemble --target %s --mode config --config %s", program, buildTargetDir,
 				spaConfigFile), legacyPeerDeps);
 		} else {
-			List<File> configFiles = ContentHelper.collectFrontendConfigs(distroProperties, moduleInstaller);
+			List<File> configFiles = contentHelper.collectFrontendConfigs(distroProperties);
 			String assembleCommand = assembleWithFrontendConfig(program, buildTargetDir, configFiles, spaConfigFile);
 			nodeHelper.runNpx(assembleCommand, legacyPeerDeps);
 		}

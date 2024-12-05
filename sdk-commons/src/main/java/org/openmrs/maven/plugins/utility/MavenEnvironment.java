@@ -13,6 +13,7 @@ import org.apache.maven.settings.Settings;
  */
 @Data
 public class MavenEnvironment {
+
 	private MavenProject mavenProject;
 	private MavenSession mavenSession;
 	private Settings settings;
@@ -26,6 +27,6 @@ public class MavenEnvironment {
 	}
 
 	public VersionsHelper getVersionsHelper() {
-		return new VersionsHelper(artifactFactory, mavenProject, mavenSession, artifactMetadataSource);
+		return new VersionsHelper(this);
 	}
 }

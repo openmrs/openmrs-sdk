@@ -13,7 +13,6 @@ import org.openmrs.maven.plugins.model.Distribution;
 import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.model.Version;
-import org.openmrs.maven.plugins.utility.ContentHelper;
 import org.openmrs.maven.plugins.utility.DBConnector;
 import org.openmrs.maven.plugins.utility.DistributionBuilder;
 import org.openmrs.maven.plugins.utility.SDKConstants;
@@ -285,7 +284,7 @@ public class Setup extends AbstractServerTask {
 			distroHelper.parseContentProperties(distroProperties);
 			moduleInstaller.installModulesForDistro(server, distroProperties);
 
-			ContentHelper.downloadAndMoveContentBackendConfig(server.getServerDirectory(), distroProperties, moduleInstaller, wizard);						
+			contentHelper.downloadAndMoveContentBackendConfig(server.getServerDirectory(), distroProperties);
 
 			if (spaInstaller != null) {
 				spaInstaller.installFromDistroProperties(server.getServerDirectory(), distroProperties, ignorePeerDependencies, overrideReuseNodeCache);

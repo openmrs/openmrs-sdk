@@ -10,7 +10,6 @@ import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.model.UpgradeDifferential;
 import org.openmrs.maven.plugins.model.Version;
-import org.openmrs.maven.plugins.utility.ContentHelper;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 
 import java.io.File;
@@ -161,7 +160,7 @@ public class ServerUpgrader {
 			}
 
 			if (contentChanges.hasChanges()) {
-				ContentHelper.downloadAndMoveContentBackendConfig(server.getServerDirectory(), distroProperties, parentTask.moduleInstaller, parentTask.wizard);
+				parentTask.contentHelper.downloadAndMoveContentBackendConfig(server.getServerDirectory(), distroProperties);
 				// TODO: Where is the frontend config installation?
 				for (Artifact artifact : contentChanges.getArtifactsToRemove()) {
 					server.removePropertiesForArtifact(BaseSdkProperties.TYPE_CONTENT, artifact);

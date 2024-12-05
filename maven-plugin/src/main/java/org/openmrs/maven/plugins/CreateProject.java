@@ -207,7 +207,7 @@ public class CreateProject extends AbstractTask {
 		setProjectType();
 
 		if (TYPE_OWA.equals(type)) {
-			new OwaHelper(mavenSession, mavenProject, pluginManager, wizard).createOwaProject();
+			new OwaHelper(getMavenEnvironment()).createOwaProject();
 		} else {
 			createModule();
 		}

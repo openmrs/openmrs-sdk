@@ -17,13 +17,13 @@ import org.openmrs.maven.plugins.git.DefaultGitHelper;
 import org.openmrs.maven.plugins.git.GitHelper;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.utility.ConfigurationInstaller;
+import org.openmrs.maven.plugins.utility.ContentHelper;
 import org.openmrs.maven.plugins.utility.DefaultJira;
 import org.openmrs.maven.plugins.utility.DistroHelper;
 import org.openmrs.maven.plugins.utility.DockerHelper;
 import org.openmrs.maven.plugins.utility.Jira;
 import org.openmrs.maven.plugins.utility.MavenEnvironment;
 import org.openmrs.maven.plugins.utility.ModuleInstaller;
-import org.openmrs.maven.plugins.utility.NodeHelper;
 import org.openmrs.maven.plugins.utility.OwaHelper;
 import org.openmrs.maven.plugins.utility.SpaInstaller;
 import org.openmrs.maven.plugins.utility.StatsManager;
@@ -113,6 +113,11 @@ public abstract class AbstractTask extends AbstractMojo {
 	DistroHelper distroHelper;
 
 	/**
+	 * handles content packages
+	 */
+	ContentHelper contentHelper;
+
+	/**
 	 * handles OWAs
 	 */
 	OwaHelper owaHelper;
@@ -162,6 +167,7 @@ public abstract class AbstractTask extends AbstractMojo {
 		this.moduleInstaller = other.moduleInstaller;
 		this.versionsHelper = other.versionsHelper;
 		this.distroHelper = other.distroHelper;
+		this.contentHelper = other.contentHelper;
 		this.owaHelper = other.owaHelper;
 		this.spaInstaller = other.spaInstaller;
 		this.configurationInstaller = other.configurationInstaller;
@@ -193,25 +199,28 @@ public abstract class AbstractTask extends AbstractMojo {
 			gitHelper = new DefaultGitHelper();
 		}
 		if (versionsHelper == null) {
-			versionsHelper = new VersionsHelper(artifactFactory, mavenProject, mavenSession, artifactMetadataSource);
+			versionsHelper = new VersionsHelper(mavenEnvironment);
 		}
 		if (moduleInstaller == null) {
-			moduleInstaller = new ModuleInstaller(mavenProject, mavenSession, pluginManager, versionsHelper);
+			moduleInstaller = new ModuleInstaller(mavenEnvironment);
 		}
 		if (distroHelper == null) {
 			distroHelper = new DistroHelper(mavenEnvironment);
 		}
 		if (owaHelper == null) {
-			owaHelper = new OwaHelper(mavenSession, mavenProject, pluginManager, wizard);
+			owaHelper = new OwaHelper(mavenEnvironment);
+		}
+		if (contentHelper == null) {
+			contentHelper = new ContentHelper(mavenEnvironment);
 		}
 		if (spaInstaller == null) {
-			spaInstaller = new SpaInstaller(distroHelper, new NodeHelper(mavenProject, mavenSession, pluginManager));
+			spaInstaller = new SpaInstaller(mavenEnvironment);
 		}
 		if (configurationInstaller == null) {
-			configurationInstaller = new ConfigurationInstaller(distroHelper);
+			configurationInstaller = new ConfigurationInstaller(mavenEnvironment);
 		}
 		if (dockerHelper == null) {
-			dockerHelper = new DockerHelper(mavenProject, mavenSession, pluginManager, wizard);
+			dockerHelper = new DockerHelper(mavenEnvironment);
 		}
 		if (StringUtils.isNotBlank(openMRSPath)) {
 			Server.setServersPath(openMRSPath);

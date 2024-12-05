@@ -1,5 +1,10 @@
 package org.openmrs.maven.plugins.utility;
 
+import org.apache.commons.io.FileUtils;
+import org.apache.maven.plugin.MojoExecutionException;
+import org.openmrs.maven.plugins.model.Artifact;
+import org.openmrs.maven.plugins.model.DistroProperties;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -7,11 +12,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-
-import org.apache.commons.io.FileUtils;
-import org.apache.maven.plugin.MojoExecutionException;
-import org.openmrs.maven.plugins.model.Artifact;
-import org.openmrs.maven.plugins.model.DistroProperties;
 
 /**
  * This class downloads and moves content backend config to respective configuration folders.
@@ -21,7 +21,15 @@ public class ContentHelper {
     public static final String FRONTEND_CONFIG_FOLDER = Paths.get("configs", "frontend_config").toString();
     public static final String BACKEND_CONFIG_FOLDER = Paths.get("configs", "backend_config").toString();
 
-    private static File unpackArtifact(Artifact contentArtifact, ModuleInstaller moduleInstaller) throws MojoExecutionException {
+    private final ModuleInstaller moduleInstaller;
+    private final Wizard wizard;
+
+    public ContentHelper(MavenEnvironment mavenEnvironment) {
+        this.moduleInstaller = new ModuleInstaller(mavenEnvironment);
+        this.wizard = mavenEnvironment.getWizard();
+    }
+
+    private File unpackArtifact(Artifact contentArtifact) throws MojoExecutionException {
         String artifactId = contentArtifact.getArtifactId();
         // create a temporary artifact folder
         File sourceDir;
@@ -37,8 +45,8 @@ public class ContentHelper {
         return sourceDir;
     }
 
-    private static void moveBackendConfig(Artifact contentArtifact, File targetDir, ModuleInstaller moduleInstaller) throws MojoExecutionException {
-        File sourceDir = unpackArtifact(contentArtifact, moduleInstaller);
+    private void moveBackendConfig(Artifact contentArtifact, File targetDir) throws MojoExecutionException {
+        File sourceDir = unpackArtifact(contentArtifact);
         try {
             File backendConfigFiles = sourceDir.toPath().resolve(BACKEND_CONFIG_FOLDER).toFile();
             Path targetPath = targetDir.toPath().toAbsolutePath();
@@ -62,8 +70,8 @@ public class ContentHelper {
         }
     }
 
-    public static List<File> extractAndGetAllContentFrontendConfigs(Artifact contentArtifact, ModuleInstaller moduleInstaller) throws MojoExecutionException {
-        File sourceDir = unpackArtifact(contentArtifact, moduleInstaller);
+    public List<File> extractAndGetAllContentFrontendConfigs(Artifact contentArtifact) throws MojoExecutionException {
+        File sourceDir = unpackArtifact(contentArtifact);
         List<File> configFiles = new ArrayList<>();
         File frontendConfigFiles = sourceDir.toPath().resolve(FRONTEND_CONFIG_FOLDER).toFile();
 
@@ -83,7 +91,7 @@ public class ContentHelper {
     }
 
     // This method now sets the static moduleInstaller
-    public static void downloadAndMoveContentBackendConfig(File serverDirectory, DistroProperties distroProperties, ModuleInstaller moduleInstaller, Wizard wizard) throws MojoExecutionException {
+    public void downloadAndMoveContentBackendConfig(File serverDirectory, DistroProperties distroProperties) throws MojoExecutionException {
         if (distroProperties != null) {
             File targetDir = new File(serverDirectory, SDKConstants.OPENMRS_SERVER_CONFIGURATION);
             List<Artifact> contents = distroProperties.getContentArtifacts();
@@ -91,19 +99,19 @@ public class ContentHelper {
             if (contents != null) {
                 for (Artifact content : contents) {
                     wizard.showMessage("Downloading Content: " + content + "\n");
-                    moveBackendConfig(content, targetDir, moduleInstaller);
+                    moveBackendConfig(content, targetDir);
                 }
             }
         }
     }
 
-    public static List<File> collectFrontendConfigs(DistroProperties distroProperties, ModuleInstaller moduleInstaller) throws MojoExecutionException {
+    public List<File> collectFrontendConfigs(DistroProperties distroProperties) throws MojoExecutionException {
         List<File> allConfigFiles = new ArrayList<>();
         if (distroProperties != null) {
             List<Artifact> contents = distroProperties.getContentArtifacts();
             if (contents != null) {
                 for (Artifact contentArtifact : contents) {
-                    allConfigFiles.addAll(extractAndGetAllContentFrontendConfigs(contentArtifact, moduleInstaller));
+                    allConfigFiles.addAll(extractAndGetAllContentFrontendConfigs(contentArtifact));
                 }
             }
         }

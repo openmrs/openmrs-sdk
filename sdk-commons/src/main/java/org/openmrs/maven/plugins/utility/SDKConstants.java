@@ -103,6 +103,7 @@ public class SDKConstants {
 
     public static final String REFAPP_DISTRO = "referenceapplication-distro";
 
+    public static final String CONTENT_PROPERTIES_NAME = "content.properties";
     public static final String DISTRO_PROPERTIES_NAME = "openmrs-distro.properties";
     public static final String DISTRO_PROPERTIES_NAME_SHORT = "distro.properties";
 

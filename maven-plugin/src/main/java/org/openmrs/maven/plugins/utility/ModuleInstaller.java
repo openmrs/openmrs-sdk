@@ -2,10 +2,7 @@ package org.openmrs.maven.plugins.utility;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.maven.execution.MavenSession;
-import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.project.MavenProject;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.Server;
@@ -41,26 +38,10 @@ public class ModuleInstaller {
 
     private static final String GOAL_UNPACK = "unpack";
 
-    final MavenProject mavenProject;
+    final MavenEnvironment mavenEnvironment;
 
-    final MavenSession mavenSession;
-
-    final BuildPluginManager pluginManager;
-
-    final VersionsHelper versionsHelper;
-
-    public ModuleInstaller(MavenProject mavenProject,
-                           MavenSession mavenSession,
-                           BuildPluginManager pluginManager,
-                           VersionsHelper versionsHelper) {
-        this.mavenProject = mavenProject;
-        this.mavenSession = mavenSession;
-        this.pluginManager = pluginManager;
-        this.versionsHelper = versionsHelper;
-    }
-
-    public ModuleInstaller(DistroHelper distroHelper) {
-        this(distroHelper.mavenProject, distroHelper.mavenSession, distroHelper.pluginManager, distroHelper.versionHelper);
+    public ModuleInstaller(MavenEnvironment mavenEnvironment) {
+        this.mavenEnvironment = mavenEnvironment;
     }
 
     public void installDefaultModules(Server server) throws MojoExecutionException {
@@ -178,7 +159,11 @@ public class ModuleInstaller {
                 ),
                 goal(goal),
                 configuration(configuration.toArray(new Element[0])),
-                executionEnvironment(mavenProject, mavenSession, pluginManager)
+                executionEnvironment(
+                        mavenEnvironment.getMavenProject(),
+                        mavenEnvironment.getMavenSession(),
+                        mavenEnvironment.getPluginManager()
+                )
         );
     }
 }

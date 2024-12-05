@@ -1,12 +1,5 @@
 package org.openmrs.maven.plugins;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import org.apache.catalina.Context;
 import org.apache.catalina.Lifecycle;
 import org.apache.catalina.LifecycleEvent;
@@ -16,6 +9,8 @@ import org.apache.catalina.loader.WebappLoader;
 import org.apache.catalina.startup.Tomcat;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.maven.artifact.factory.ArtifactFactory;
+import org.apache.maven.artifact.metadata.ArtifactMetadataSource;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.BuildPluginManager;
@@ -24,6 +19,7 @@ import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
+import org.apache.maven.settings.Settings;
 import org.codehaus.plexus.classworlds.ClassWorld;
 import org.codehaus.plexus.classworlds.realm.ClassRealm;
 import org.codehaus.plexus.classworlds.realm.DuplicateRealmException;
@@ -31,24 +27,41 @@ import org.openmrs.maven.plugins.model.Project;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.model.Version;
 import org.openmrs.maven.plugins.utility.DockerHelper;
+import org.openmrs.maven.plugins.utility.MavenEnvironment;
 import org.openmrs.maven.plugins.utility.OpenMRSSDKRedirectServlet;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 import org.openmrs.maven.plugins.utility.Wizard;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 @Mojo(name = "run-tomcat", requiresProject = false)
 public class RunTomcat extends AbstractMojo {
 
-	/**
-	 * The project currently being build.
-	 */
 	@Parameter(defaultValue = "${project}", readonly = true)
 	MavenProject mavenProject;
 
-	/**
-	 * The current Maven session.
-	 */
 	@Parameter(defaultValue = "${session}", readonly = true, required = true)
 	MavenSession mavenSession;
+
+	@Parameter(defaultValue = "${settings}", readonly = true)
+	Settings settings;
+
+	@Component
+	BuildPluginManager pluginManager;
+
+	@Component
+	ArtifactMetadataSource artifactMetadataSource;
+
+	@Component
+	ArtifactFactory artifactFactory;
+
+	@Component
+	private Wizard wizard;
 
 	@Parameter(property = "serverId")
 	private String serverId;
@@ -59,30 +72,24 @@ public class RunTomcat extends AbstractMojo {
 	@Parameter(property = "watchApi")
 	private Boolean watchApi;
 
-	/**
-	 * The Maven BuildPluginManager component.
-	 */
-	@Component
-	BuildPluginManager pluginManager;
+	MavenEnvironment mavenEnvironment;
 
-	@Component
-	private Wizard wizard;
-
-	public RunTomcat() {
-	}
-
-	public RunTomcat(String serverId, Integer port, MavenSession mavenSession, MavenProject mavenProject,
-			BuildPluginManager pluginManager, Wizard wizard) {
-		this.serverId = serverId;
-		this.port = port;
-		this.wizard = wizard;
-		this.mavenProject = mavenProject;
-		this.mavenSession = mavenSession;
-		this.pluginManager = pluginManager;
+	public void initTask() {
+		if (mavenEnvironment == null) {
+			mavenEnvironment = new MavenEnvironment();
+			mavenEnvironment.setMavenProject(mavenProject);
+			mavenEnvironment.setMavenSession(mavenSession);
+			mavenEnvironment.setSettings(settings);
+			mavenEnvironment.setArtifactMetadataSource(artifactMetadataSource);
+			mavenEnvironment.setArtifactFactory(artifactFactory);
+			mavenEnvironment.setPluginManager(pluginManager);
+			mavenEnvironment.setWizard(wizard);
+		}
 	}
 
 	@Override
 	public void execute() throws MojoExecutionException {
+		initTask();
 		wizard.showMessage("\nUsing JAVA_HOME: " + System.getProperty("java.home"));
 		wizard.showMessage("Using MAVEN_OPTS: " + System.getenv("MAVEN_OPTS"));
 
@@ -130,11 +137,12 @@ public class RunTomcat extends AbstractMojo {
 		}
 
 		if (StringUtils.isNotBlank(server.getContainerId())) {
-			new DockerHelper(mavenProject, mavenSession, pluginManager, wizard).runDbContainer(
+			new DockerHelper(mavenEnvironment).runDbContainer(
 					server.getContainerId(),
 					server.getDbUri(),
 					server.getDbUser(),
-					server.getDbPassword());
+					server.getDbPassword()
+			);
 		}
 
 		wizard.showMessage("Starting Tomcat...\n");

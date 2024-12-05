@@ -16,7 +16,6 @@ import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.Project;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.model.Version;
-import org.openmrs.maven.plugins.utility.ContentHelper;
 import org.openmrs.maven.plugins.utility.DistributionBuilder;
 import org.openmrs.maven.plugins.utility.DistroHelper;
 import org.openmrs.maven.plugins.utility.SDKConstants;
@@ -300,7 +299,7 @@ public class BuildDistro extends AbstractTask {
 			File configDir = new File(web, SDKConstants.OPENMRS_SERVER_CONFIGURATION);
 			configurationInstaller.installToDirectory(configDir, distroProperties);
 
-			ContentHelper.downloadAndMoveContentBackendConfig(web, distroProperties, moduleInstaller, wizard);
+			contentHelper.downloadAndMoveContentBackendConfig(web, distroProperties);
 
 			spaInstaller.installFromDistroProperties(web, distroProperties, ignorePeerDependencies, overrideReuseNodeCache);
 

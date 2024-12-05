@@ -18,12 +18,11 @@ import java.util.Objects;
 public class ConfigurationInstaller {
 
 	private final Wizard wizard;
-
 	private final ModuleInstaller moduleInstaller;
 
-	public ConfigurationInstaller(DistroHelper distroHelper) {
-		this.wizard = distroHelper.wizard;
-		this.moduleInstaller = new ModuleInstaller(distroHelper.mavenProject, distroHelper.mavenSession, distroHelper.pluginManager, distroHelper.versionHelper);
+	public ConfigurationInstaller(MavenEnvironment mavenEnvironment) {
+		this.wizard = mavenEnvironment.getWizard();
+		this.moduleInstaller = new ModuleInstaller(mavenEnvironment);
 	}
 
 	/**

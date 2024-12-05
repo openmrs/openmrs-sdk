@@ -13,6 +13,7 @@ import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.openmrs.maven.plugins.model.NodeDistro;
+import org.openmrs.maven.plugins.utility.MavenEnvironment;
 import org.openmrs.maven.plugins.utility.OwaHelper;
 import org.openmrs.maven.plugins.utility.OwaHelper.SemVersion;
 import org.openmrs.maven.plugins.utility.SDKConstants;
@@ -40,6 +41,9 @@ public class BuildOwaTest {
     private OwaHelper owaHelper;
 
     @Mock
+    private MavenEnvironment mavenEnvironment;
+
+    @Mock
     private Wizard wizard;
 
     private List<String> npmInstallArgs;
@@ -57,7 +61,8 @@ public class BuildOwaTest {
 
         build.wizard = wizard;
         build.owaHelper = owaHelper;
-        owaHelper.setWizard(wizard);
+        build.owaHelper.setWizard(wizard);
+        build.owaHelper.setMavenEnvironment(mavenEnvironment);
     }
 
     @Test
