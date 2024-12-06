@@ -187,4 +187,28 @@ public class BuildDistroIT extends AbstractSdkIT {
         assertFilePresent("target/web/openmrs-distro.properties");
         assertSuccess();
     }
+
+    @Test
+    public void testBuildDistroWithContentPackage() throws Exception {
+        includeDistroPropertiesFile("openmrs-distro-content-package.properties");
+        addTaskParam("dir", "target");
+        addTaskParam("ignorePeerDependencies", "false");
+        executeTask("build-distro");
+        assertFilePresent( "target", "web", "openmrs_core", "openmrs.war");
+        assertFilePresent("target", "web", "openmrs_config", "conceptclasses", "hiv", "conceptclasses.csv");
+        assertFilePresent("target", "web", "openmrs_config", "conceptsources", "hiv", "conceptsources.csv");
+        assertFilePresent("target", "web", "openmrs_config", "encountertypes", "hiv", "encountertypes.csv");
+    }
+
+    @Test
+    public void testBuildDistroWithWithContentPackageWithNoNamespace() throws Exception {
+        includeDistroPropertiesFile("openmrs-distro-content-package-no-namespace.properties");
+        addTaskParam("dir", "target");
+        addTaskParam("ignorePeerDependencies", "false");
+        executeTask("build-distro");
+        assertFilePresent( "target", "web", "openmrs_core", "openmrs.war");
+        assertFilePresent("target", "web", "openmrs_config", "conceptclasses", "conceptclasses.csv");
+        assertFilePresent("target", "web", "openmrs_config", "conceptsources", "conceptsources.csv");
+        assertFilePresent("target", "web", "openmrs_config", "encountertypes", "encountertypes.csv");
+    }
 }

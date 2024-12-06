@@ -58,18 +58,22 @@ public class DistroPropertiesTest {
         properties.setProperty("content.hiv", "1.0.0");
         properties.setProperty("content.tb", "2.3.4-SNAPSHOT");
         DistroProperties distro = new DistroProperties(properties);
-        List<Artifact> contentArtifacts = distro.getContentArtifacts();
-        assertThat(contentArtifacts, hasSize(2));
-        Artifact hiv = findArtifactByArtifactId(contentArtifacts, "hiv");
-        assertThat(hiv, notNullValue());
-        assertThat(hiv, hasVersion("1.0.0"));
-        assertThat(hiv.getGroupId(), equalTo(Artifact.GROUP_CONTENT));
-        assertThat(hiv.getType(), equalTo(Artifact.TYPE_ZIP));
-        Artifact tb = findArtifactByArtifactId(contentArtifacts, "tb");
-        assertThat(tb, notNullValue());
-        assertThat(tb, hasVersion("2.3.4-SNAPSHOT"));
-        assertThat(tb.getGroupId(), equalTo(Artifact.GROUP_CONTENT));
-        assertThat(tb.getType(), equalTo(Artifact.TYPE_ZIP));
+        List<ContentPackage> contentPackages = distro.getContentPackages();
+        assertThat(contentPackages, hasSize(2));
+        ContentPackage hivPackage = findContentPackageByArtifactId(contentPackages, "hiv");
+        assertThat(hivPackage, notNullValue());
+        assertThat(hivPackage.getArtifactId(), equalTo("hiv"));
+        assertThat(hivPackage.getVersion(), equalTo("1.0.0"));
+        assertThat(hivPackage.getGroupId(), equalTo(Artifact.GROUP_CONTENT));
+        assertThat(hivPackage.getType(), equalTo(Artifact.TYPE_ZIP));
+        assertThat(hivPackage.getNamespace(), equalTo("hiv"));
+        ContentPackage tbPackage = findContentPackageByArtifactId(contentPackages, "tb");
+        assertThat(tbPackage, notNullValue());
+        assertThat(tbPackage.getArtifactId(), equalTo("tb"));
+        assertThat(tbPackage.getVersion(), equalTo("2.3.4-SNAPSHOT"));
+        assertThat(tbPackage.getGroupId(), equalTo(Artifact.GROUP_CONTENT));
+        assertThat(tbPackage.getType(), equalTo(Artifact.TYPE_ZIP));
+        assertThat(tbPackage.getNamespace(), equalTo("tb"));
     }
 
     @Test
@@ -78,14 +82,17 @@ public class DistroPropertiesTest {
         properties.setProperty("content.hiv", "1.0.0");
         properties.setProperty("content.hiv.groupId", "org.openmrs.new");
         properties.setProperty("content.hiv.type", "gzip");
+        properties.setProperty("content.hiv.namespace", "");
         DistroProperties distro = new DistroProperties(properties);
-        List<Artifact> contentArtifacts = distro.getContentArtifacts();
-        assertThat(contentArtifacts, hasSize(1));
-        Artifact hiv = findArtifactByArtifactId(contentArtifacts, "hiv");
-        assertThat(hiv, notNullValue());
-        assertThat(hiv, hasVersion("1.0.0"));
-        assertThat(hiv.getGroupId(), equalTo("org.openmrs.new"));
-        assertThat(hiv.getType(), equalTo("gzip"));
+        List<ContentPackage> contentPackages = distro.getContentPackages();
+        assertThat(contentPackages, hasSize(1));
+        ContentPackage hivPackage = contentPackages.get(0);
+        assertThat(hivPackage, notNullValue());
+        assertThat(hivPackage.getArtifactId(), equalTo("hiv"));
+        assertThat(hivPackage.getVersion(), equalTo("1.0.0"));
+        assertThat(hivPackage.getGroupId(), equalTo("org.openmrs.new"));
+        assertThat(hivPackage.getType(), equalTo("gzip"));
+        assertThat(hivPackage.getNamespace(), equalTo(""));
     }
 
     @Test(expected = MojoExecutionException.class)
@@ -180,6 +187,15 @@ public class DistroPropertiesTest {
             }
         }
         return null;
+    }
+
+    private static ContentPackage findContentPackageByArtifactId(List<ContentPackage> contentPackages, String artifactId) {
+        for (ContentPackage contentPackage : contentPackages) {
+            if (contentPackage.getArtifact().getArtifactId().equals(artifactId)){
+                return contentPackage;
+            }
+        }
+        throw new RuntimeException("No package found with artifactId " + artifactId);
     }
 
     public static Matcher<Artifact> hasVersion(final String version) {

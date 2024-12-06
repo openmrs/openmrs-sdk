@@ -284,7 +284,8 @@ public class Setup extends AbstractServerTask {
 			distroHelper.parseContentProperties(distroProperties);
 			moduleInstaller.installModulesForDistro(server, distroProperties);
 
-			contentHelper.downloadAndMoveContentBackendConfig(server.getServerDirectory(), distroProperties);
+			File configurationDir = new File(server.getServerDirectory(), SDKConstants.OPENMRS_SERVER_CONFIGURATION);
+			contentHelper.installBackendConfig(distroProperties, configurationDir);
 
 			if (spaInstaller != null) {
 				spaInstaller.installFromDistroProperties(server.getServerDirectory(), distroProperties, ignorePeerDependencies, overrideReuseNodeCache);

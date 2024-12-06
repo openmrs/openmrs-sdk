@@ -298,9 +298,7 @@ public class BuildDistro extends AbstractTask {
 
 			File configDir = new File(web, SDKConstants.OPENMRS_SERVER_CONFIGURATION);
 			configurationInstaller.installToDirectory(configDir, distroProperties);
-
-			contentHelper.downloadAndMoveContentBackendConfig(web, distroProperties);
-
+			contentHelper.installBackendConfig(distroProperties, configDir);
 			spaInstaller.installFromDistroProperties(web, distroProperties, ignorePeerDependencies, overrideReuseNodeCache);
 
 			File owasDir = new File(web, "owa");
