@@ -6,6 +6,7 @@ import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
 import org.openmrs.maven.plugins.model.Artifact;
+import org.openmrs.maven.plugins.model.ContentPackage;
 import org.openmrs.maven.plugins.model.Distribution;
 import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.PackageJson;
@@ -360,8 +361,8 @@ public class DistroHelper {
 
 		Properties contentProperties = new Properties();
 
-		for (Artifact artifact : distroProperties.getContentArtifacts()) {
-
+		for (ContentPackage contentPackage : distroProperties.getContentPackages()) {
+			Artifact artifact = contentPackage.getArtifact();
 			String zipFileName = artifact.getArtifactId() + "-" + artifact.getVersion() + ".zip";
 			File zipFile = downloadDistro(contentPackageZipFile, artifact, zipFileName);
 

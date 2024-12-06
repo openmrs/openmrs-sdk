@@ -5,6 +5,7 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.shared.utils.StringUtils;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.BaseSdkProperties;
+import org.openmrs.maven.plugins.model.ContentPackage;
 import org.openmrs.maven.plugins.model.Distribution;
 import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.Server;
@@ -15,6 +16,7 @@ import org.openmrs.maven.plugins.utility.SDKConstants;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -120,15 +122,6 @@ public class ServerUpgrader {
 			}
 		}
 
-		// Upgrade spa
-		UpgradeDifferential.ArtifactChanges spaArtifactChanges = upgradeDifferential.getSpaArtifactChanges();
-		UpgradeDifferential.PropertyChanges spaBuildChanges = upgradeDifferential.getSpaBuildChanges();
-		boolean updateSpa = spaArtifactChanges.hasChanges() || spaBuildChanges.hasChanges();
-		if (updateSpa) {
-			parentTask.spaInstaller.installFromDistroProperties(server.getServerDirectory(), distroProperties, ignorePeerDependencies, overrideReuseNodeCache);
-			server.replaceSpaProperties(distroProperties.getSpaProperties());
-		}
-
 		// Upgrade config and content
 		UpgradeDifferential.ArtifactChanges configChanges = upgradeDifferential.getConfigChanges();
 		UpgradeDifferential.ArtifactChanges contentChanges = upgradeDifferential.getContentChanges();
@@ -160,8 +153,7 @@ public class ServerUpgrader {
 			}
 
 			if (contentChanges.hasChanges()) {
-				parentTask.contentHelper.downloadAndMoveContentBackendConfig(server.getServerDirectory(), distroProperties);
-				// TODO: Where is the frontend config installation?
+				parentTask.contentHelper.installBackendConfig(distroProperties, configDir);
 				for (Artifact artifact : contentChanges.getArtifactsToRemove()) {
 					server.removePropertiesForArtifact(BaseSdkProperties.TYPE_CONTENT, artifact);
 				}
@@ -169,6 +161,15 @@ public class ServerUpgrader {
 					server.addPropertiesForArtifact(BaseSdkProperties.TYPE_CONTENT, artifact);
 				}
 			}
+		}
+
+		// Upgrade spa if any of the spa artifacts, build properties, or content packages have changes
+		UpgradeDifferential.ArtifactChanges spaArtifactChanges = upgradeDifferential.getSpaArtifactChanges();
+		UpgradeDifferential.PropertyChanges spaBuildChanges = upgradeDifferential.getSpaBuildChanges();
+		boolean updateSpa = spaArtifactChanges.hasChanges() || spaBuildChanges.hasChanges() || contentChanges.hasChanges();
+		if (updateSpa) {
+			parentTask.spaInstaller.installFromDistroProperties(server.getServerDirectory(), distroProperties, ignorePeerDependencies, overrideReuseNodeCache);
+			server.replaceSpaProperties(distroProperties.getSpaProperties());
 		}
 
 		server.setVersion(distroProperties.getVersion());
@@ -225,8 +226,14 @@ public class ServerUpgrader {
 		upgradeDifferential.setConfigChanges(new UpgradeDifferential.ArtifactChanges(oldConfig, newConfig));
 
 		// Content
-		List<Artifact> oldContent = server.getContentArtifacts();
-		List<Artifact> newContent = distroProperties.getContentArtifacts();
+		List<Artifact> oldContent = new ArrayList<>();
+		for (ContentPackage contentPackage : server.getContentPackages()) {
+			oldContent.add(contentPackage.getArtifact());
+		}
+		List<Artifact> newContent = new ArrayList<>();
+		for (ContentPackage contentPackage : distroProperties.getContentPackages()) {
+			newContent.add(contentPackage.getArtifact());
+		}
 		upgradeDifferential.setContentChanges(new UpgradeDifferential.ArtifactChanges(oldContent, newContent));
 
 		return upgradeDifferential;

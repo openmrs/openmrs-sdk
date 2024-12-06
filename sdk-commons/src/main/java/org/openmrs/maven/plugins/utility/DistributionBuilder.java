@@ -130,7 +130,7 @@ public class DistributionBuilder {
 		}
 
 		// Add distro artifact as the config artifact if no config or content are included specifically
-		if (includedProperties.getConfigArtifacts().isEmpty() && includedProperties.getContentArtifacts().isEmpty()) {
+		if (includedProperties.getConfigArtifacts().isEmpty() && includedProperties.getContentPackages().isEmpty()) {
 			properties.put("config." + distroArtifactId, distroVersion);
 			properties.put("config." + distroArtifactId + ".groupId", distroGroupId);
 			properties.put("config." + distroArtifactId + ".type", TYPE_ZIP);

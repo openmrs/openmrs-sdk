@@ -489,6 +489,44 @@ public class SetupIT extends AbstractSdkIT {
         assertFileContains("@openmrs/esm-dispensing-app", serverId, "frontend", "importmap.json");
     }
 
+    @Test
+    public void setup_shouldInstallWithContentPackage() throws Exception {
+        includeDistroPropertiesFile("openmrs-distro-content-package.properties");
+        addTaskParam("distro", testDirectory.toString() + File.separator + "openmrs-distro.properties");
+        addMockDbSettings();
+
+        String serverId = UUID.randomUUID().toString();
+        addAnswer(serverId);
+        addAnswer("1044");
+        addAnswer("8080");
+
+        executeTask("setup");
+
+        assertFilePresent( serverId, "openmrs-2.6.9.war");
+        assertFilePresent(serverId, "configuration", "conceptclasses", "hiv", "conceptclasses.csv");
+        assertFilePresent(serverId, "configuration", "conceptsources", "hiv", "conceptsources.csv");
+        assertFilePresent(serverId, "configuration", "encountertypes", "hiv", "encountertypes.csv");
+    }
+
+    @Test
+    public void setup_shouldInstallWithContentPackageWithNoNamespace() throws Exception {
+        includeDistroPropertiesFile("openmrs-distro-content-package-no-namespace.properties");
+        addTaskParam("distro", testDirectory.toString() + File.separator + "openmrs-distro.properties");
+        addMockDbSettings();
+
+        String serverId = UUID.randomUUID().toString();
+        addAnswer(serverId);
+        addAnswer("1044");
+        addAnswer("8080");
+
+        executeTask("setup");
+
+        assertFilePresent( serverId, "openmrs-2.6.9.war");
+        assertFilePresent(serverId, "configuration", "conceptclasses", "conceptclasses.csv");
+        assertFilePresent(serverId, "configuration", "conceptsources", "conceptsources.csv");
+        assertFilePresent(serverId, "configuration", "encountertypes", "encountertypes.csv");
+    }
+
     private String readValueFromPropertyKey(File propertiesFile, String key) throws Exception {
 
         InputStream in = new FileInputStream(propertiesFile);

@@ -186,6 +186,21 @@ public class DeployIT extends AbstractSdkIT {
     }
 
     @Test
+    public void deploy_shouldUpgradeDistroWithContentPackageWithoutNamespace() throws Exception {
+        testServerId = setupTestServer("referenceapplication:2.2");
+        includeDistroPropertiesFile("openmrs-distro-content-package-no-namespace.properties");
+        addAnswer(testServerId);
+        addAnswer("y");
+        addAnswer("y");
+        executeTask("deploy");
+        assertSuccess();
+        assertFilePresent(testServerId, "configuration", "conceptclasses", "conceptclasses.csv");
+        assertFilePresent(testServerId, "configuration", "conceptsources", "conceptsources.csv");
+        assertFilePresent(testServerId, "configuration", "encountertypes", "encountertypes.csv");
+        assertLogContains("+ Adds content package hiv 1.0.0");
+    }
+
+    @Test
     public void deploy_shouldReplaceConfigurationAndContentIfChanged() throws Exception {
         testServerId = setupTestServer("referenceapplication:2.2");
 
@@ -205,7 +220,7 @@ public class DeployIT extends AbstractSdkIT {
         assertNotNull(server);
         assertThat(server.getConfigArtifacts().size(), equalTo(1));
         assertThat(server.getConfigArtifacts().get(0).getArtifactId(), equalTo("distro-emr-configuration"));
-        assertThat(server.getContentArtifacts().size(), equalTo(0));
+        assertThat(server.getContentPackages().size(), equalTo(0));
 
         includeDistroPropertiesFile("openmrs-distro-content-package.properties");
         addAnswer(testServerId);
@@ -226,8 +241,8 @@ public class DeployIT extends AbstractSdkIT {
         server = Server.loadServer(testDirectoryPath.resolve(testServerId));
         assertNotNull(server);
         assertThat(server.getConfigArtifacts().size(), equalTo(0));
-        assertThat(server.getContentArtifacts().size(), equalTo(1));
-        assertThat(server.getContentArtifacts().get(0).getArtifactId(), equalTo("hiv"));
+        assertThat(server.getContentPackages().size(), equalTo(1));
+        assertThat(server.getContentPackages().get(0).getArtifactId(), equalTo("hiv"));
     }
 
     @Test

@@ -9,6 +9,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.BaseSdkProperties;
+import org.openmrs.maven.plugins.model.ContentPackage;
 import org.openmrs.maven.plugins.model.DistroProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,6 +17,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -46,7 +48,7 @@ public class SpaInstaller {
 	private static final Logger logger = LoggerFactory.getLogger(SpaInstaller.class);
 
 	public SpaInstaller() {}
-	
+
 	public SpaInstaller(MavenEnvironment mavenEnvironment) {
 		this.nodeHelper = new NodeHelper(mavenEnvironment);
 		this.moduleInstaller = new ModuleInstaller(mavenEnvironment);
@@ -142,13 +144,18 @@ public class SpaInstaller {
 		// print frontend tool version number
 		nodeHelper.runNpx(String.format("%s --version", program), legacyPeerDeps);
 
-		if (distroProperties.getContentArtifacts().isEmpty()) {
+		if (distroProperties.getContentPackages().isEmpty()) {
 			nodeHelper.runNpx(String.format("%s assemble --target %s --mode config --config %s", program, buildTargetDir,
 				spaConfigFile), legacyPeerDeps);
 		} else {
-			List<File> configFiles = contentHelper.collectFrontendConfigs(distroProperties);
-			String assembleCommand = assembleWithFrontendConfig(program, buildTargetDir, configFiles, spaConfigFile);
-			nodeHelper.runNpx(assembleCommand, legacyPeerDeps);
+			try (TempDirectory configFileDir = TempDirectory.create("content-frontend-config")) {
+				List<File> configFiles = new ArrayList<>();
+				for (ContentPackage contentPackage : distroProperties.getContentPackages()) {
+					configFiles.addAll(contentHelper.installFrontendConfigs(contentPackage, configFileDir.getFile()));
+				}
+				String assembleCommand = assembleWithFrontendConfig(program, buildTargetDir, configFiles, spaConfigFile);
+				nodeHelper.runNpx(assembleCommand, legacyPeerDeps);
+			}
 		}
 		nodeHelper.runNpx(
 			String.format("%s build --target %s --build-config %s", program, buildTargetDir, spaConfigFile), legacyPeerDeps);
