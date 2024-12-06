@@ -8,6 +8,9 @@ import org.openmrs.maven.plugins.model.Version;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Objects;
 import java.util.Properties;
 
@@ -48,7 +51,7 @@ public class DistributionBuilder {
 	/**
 	 * Build from a distro properties file bundled in a zip or jar in Maven with the given artifact coordinates
 	 */
-	public Distribution buildFromArtifact(Artifact artifact) throws MojoExecutionException {
+	public Distribution buildFromArtifact(Artifact artifact, String spaConfigFile) throws MojoExecutionException {
 		mavenEnvironment.getWizard().showMessage("Building distribution from artifact: " + artifact);
 		Distribution distribution = new Distribution();
 		artifact = DistroHelper.normalizeArtifact(artifact, mavenEnvironment.getVersionsHelper());
@@ -93,9 +96,13 @@ public class DistributionBuilder {
 		// Special handling for referenceapplication 3.x, which does not define everything needed in the published distro properties file
 		if (REFAPP_3X_GROUP_ID.equals(artifact.getGroupId()) && REFAPP_3X_ARTIFACT_ID.equals(artifact.getArtifactId())) {
 			mavenEnvironment.getWizard().showMessage("This is a 3.x refapp distribution");
-			populateRefApp3xProperties(distribution, properties);
+			populateRefApp3xProperties(distribution, properties, spaConfigFile);
 		}
 		return populateDistributionFromProperties(distribution, properties);
+	}
+
+	public Distribution buildFromArtifact(Artifact artifact) throws MojoExecutionException {
+		return buildFromArtifact(artifact, null);
 	}
 
 	public void populateRefApp2xProperties(Distribution distribution, Properties properties) {
@@ -111,7 +118,7 @@ public class DistributionBuilder {
 	 * This encapsulates these and applies them only for distributions that match the 3.x refapp Maven coordinates
 	 * Ideally this would not be needed
 	 */
-	protected void populateRefApp3xProperties(Distribution distribution, Properties properties) throws MojoExecutionException {
+	protected void populateRefApp3xProperties(Distribution distribution, Properties properties, String spaConfigFile) throws MojoExecutionException {
 
 		String distroArtifactId = distribution.getArtifact().getArtifactId();
 		String distroGroupId = distribution.getArtifact().getGroupId();
@@ -139,7 +146,14 @@ public class DistributionBuilder {
 		// Add spa properties if they are not included explicitly
 		if (includedProperties.getSpaProperties().isEmpty()) {
 			Properties frontendProperties;
-			if (new Version(distroVersion).higher(new Version("3.0.0-beta.16"))) {
+			if (spaConfigFile != null) {
+                try {
+                    frontendProperties = PropertiesUtils.getFrontendPropertiesFromJson(Files.newInputStream(Paths.get(spaConfigFile)));
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+			else if (new Version(distroVersion).higher(new Version("3.0.0-beta.16"))) {
 				com.github.zafarkhaja.semver.Version v = com.github.zafarkhaja.semver.Version.parse(distroVersion);
 				String frontendArtifactId = v.satisfies(">=3.0.0") ? "distro-emr-frontend" : "referenceapplication-frontend";
 				Artifact frontendArtifact = new Artifact(frontendArtifactId, distroVersion, distroGroupId, "zip");
@@ -169,6 +183,10 @@ public class DistributionBuilder {
 				properties.put(propertyName, frontendProperties.getProperty(propertyName));
 			}
 		}
+	}
+
+	protected void populateRefApp3xProperties(Distribution distribution, Properties properties) throws MojoExecutionException {
+		populateRefApp3xProperties(distribution, properties, null);
 	}
 
 	/**
