@@ -30,6 +30,8 @@ public abstract class BaseSdkProperties {
     public static final String TYPE_CONFIG = "config";
     public static final String TYPE_ZIP = "zip";
     public static final String INCLUDES = "includes";
+    public static final String NAMESPACE = "namespace";
+    private static final List<String> PROPERTY_NAMES = Arrays.asList(ARTIFACT_ID, GROUP_ID, VERSION, TYPE, INCLUDES, NAMESPACE);
     public static final List<String> SPA_ARTIFACT_PROPERTIES = Arrays.asList(ARTIFACT_ID, GROUP_ID, VERSION, TYPE, INCLUDES);
 
     protected Properties properties;
@@ -139,20 +141,23 @@ public abstract class BaseSdkProperties {
 		return artifactList;
 	}
 
-	public List<Artifact> getContentArtifacts() {
-		List<Artifact> artifacts = new ArrayList<>();
+	public List<ContentPackage> getContentPackages() {
+		List<ContentPackage> contentPackages = new ArrayList<>();
 		for (String key : getAllKeys()) {
             String artifactType = getArtifactType(key);
 			if (artifactType.equals(TYPE_CONTENT)) {
-				artifacts.add(new Artifact(
-                        checkIfOverwritten(key, ARTIFACT_ID),
-                        getParam(key),
-				        checkIfOverwritten(key, GROUP_ID),
-                        checkIfOverwritten(key, TYPE)
-                ));
-			}
+                ContentPackage contentPackage = new ContentPackage();
+                contentPackage.setGroupId(checkIfOverwritten(key, GROUP_ID));
+                contentPackage.setArtifactId(checkIfOverwritten(key, ARTIFACT_ID));
+                contentPackage.setVersion(getParam(key));
+                contentPackage.setType(checkIfOverwritten(key, TYPE));
+                String namespaceKey = key + "." + NAMESPACE;
+                String namespace = contains(namespaceKey) ? getParam(namespaceKey) : contentPackage.getArtifactId();
+                contentPackage.setNamespace(namespace);
+                contentPackages.add(contentPackage);
+            }
 		}
-		return artifacts;
+		return contentPackages;
 	}
 
 	public Set<String> getAllKeys() {
@@ -173,13 +178,15 @@ public abstract class BaseSdkProperties {
 
     protected String getArtifactType(String key) {
         String[] wordsArray = key.split("\\.");
-        if(!(wordsArray[wordsArray.length-1].equals(TYPE) || wordsArray[wordsArray.length-1].equals(ARTIFACT_ID) || wordsArray[wordsArray.length-1].equals(GROUP_ID))){
-            if(key.contains(".")){
+        String lastElement = wordsArray[wordsArray.length - 1];
+        if (!PROPERTY_NAMES.contains(lastElement)) {
+            if (key.contains(".")) {
                 return key.substring(0, key.indexOf("."));
-            }else {
+            } else {
                 return "";
             }
-        }else {
+        }
+        else {
             return "";
         }
     }
