@@ -1,10 +1,9 @@
-package org.openmrs.maven.plugins;
+package org.openmrs.maven.plugins.utility;
 
 import org.junit.Test;
 import org.openmrs.maven.plugins.model.ContentPackage;
 import org.openmrs.maven.plugins.model.ContentProperties;
 import org.openmrs.maven.plugins.model.DistroProperties;
-import org.openmrs.maven.plugins.utility.ContentHelper;
 
 import java.util.LinkedHashMap;
 import java.util.List;
