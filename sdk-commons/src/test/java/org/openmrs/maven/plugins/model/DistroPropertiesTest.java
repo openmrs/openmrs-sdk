@@ -6,6 +6,7 @@ import org.hamcrest.Matcher;
 import org.junit.Test;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -178,6 +179,20 @@ public class DistroPropertiesTest {
         assertThat(distroArtifact.getVersion(), equalTo("2.1.0"));
         assertThat(distroArtifact.getGroupId(), equalTo("org.openmrs.distro"));
         assertThat(distroArtifact.getType(), equalTo("jar"));
+    }
+
+    @Test
+    public void getPropertiesWithPrefixRemoved_shouldGetProperties() throws MojoExecutionException {
+        Properties properties = new Properties();
+        properties.setProperty("content.hiv.var1", "val1");
+        properties.setProperty("content.hiv.var2", "val2");
+        properties.setProperty("content.tb", "val3");
+        DistroProperties distro = new DistroProperties(properties);
+        Map<String, String> m = distro.getPropertiesWithPrefixRemoved("content.hiv.");
+        assertThat(m, notNullValue());
+        assertThat(m.size(), equalTo(2));
+        assertThat(m.get("var1"), equalTo("val1"));
+        assertThat(m.get("var2"), equalTo("val2"));
     }
 
     private static Artifact findArtifactByArtifactId(List<Artifact> artifacts, String artifactId){

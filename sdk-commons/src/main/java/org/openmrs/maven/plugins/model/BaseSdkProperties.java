@@ -31,7 +31,8 @@ public abstract class BaseSdkProperties {
     public static final String TYPE_ZIP = "zip";
     public static final String INCLUDES = "includes";
     public static final String NAMESPACE = "namespace";
-    private static final List<String> PROPERTY_NAMES = Arrays.asList(ARTIFACT_ID, GROUP_ID, VERSION, TYPE, INCLUDES, NAMESPACE);
+    public static final String VARS = "vars";
+    private static final List<String> PROPERTY_NAMES = Arrays.asList(ARTIFACT_ID, GROUP_ID, VERSION, TYPE, INCLUDES, NAMESPACE, VARS);
     public static final List<String> SPA_ARTIFACT_PROPERTIES = Arrays.asList(ARTIFACT_ID, GROUP_ID, VERSION, TYPE, INCLUDES);
 
     protected Properties properties;
@@ -133,9 +134,7 @@ public abstract class BaseSdkProperties {
 		for (String key : getAllKeys()) {
 			String artifactType = getArtifactType(key);
 			if (artifactType.equals(TYPE_CONFIG)) {
-				artifactList.add(
-						new Artifact(checkIfOverwritten(key, ARTIFACT_ID), getParam(key), checkIfOverwritten(key, GROUP_ID),
-								checkIfOverwritten(key, TYPE)));
+				artifactList.add(new Artifact(checkIfOverwritten(key, ARTIFACT_ID), getParam(key), checkIfOverwritten(key, GROUP_ID), checkIfOverwritten(key, TYPE)));
 			}
 		}
 		return artifactList;
@@ -159,6 +158,19 @@ public abstract class BaseSdkProperties {
 		}
 		return contentPackages;
 	}
+
+    /**
+     * @return all properties that start with the given prefix, but in a new map in which the prefix has been removed
+     */
+    public Map<String, String> getPropertiesWithPrefixRemoved(String prefix) {
+        Map<String, String> ret = new HashMap<>();
+        for (String key : getAllKeys()) {
+            if (key.startsWith(prefix)) {
+                ret.put(key.substring(prefix.length()), getParam(key));
+            }
+        }
+        return ret;
+    }
 
 	public Set<String> getAllKeys() {
 		return properties.stringPropertyNames();
