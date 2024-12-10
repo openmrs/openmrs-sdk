@@ -281,7 +281,7 @@ public class Setup extends AbstractServerTask {
 			distroHelper.savePropertiesToServer(distroProperties, server);
 
 			setServerVersionsFromDistroProperties(server, distroProperties);
-			distroHelper.parseContentProperties(distroProperties);
+			distroHelper.validateDistribution(distroProperties);
 			moduleInstaller.installModulesForDistro(server, distroProperties);
 
 			File configurationDir = new File(server.getServerDirectory(), SDKConstants.OPENMRS_SERVER_CONFIGURATION);

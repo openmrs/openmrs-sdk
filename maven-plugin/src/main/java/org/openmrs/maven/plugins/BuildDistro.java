@@ -246,7 +246,7 @@ public class BuildDistro extends AbstractTask {
 		DistroProperties distroProperties = distribution.getEffectiveProperties();
 
 		// First do content package validation
-		distroHelper.parseContentProperties(distroProperties);
+		distroHelper.validateDistribution(distroProperties);
 
 		InputStream dbDumpStream;
 		wizard.showMessage("Downloading modules...\n");

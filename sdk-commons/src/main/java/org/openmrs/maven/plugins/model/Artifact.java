@@ -1,6 +1,7 @@
 package org.openmrs.maven.plugins.model;
 
 import com.google.common.base.Objects;
+import lombok.Data;
 import org.apache.commons.lang.StringUtils;
 
 import java.util.ArrayList;
@@ -12,7 +13,9 @@ import static org.twdata.maven.mojoexecutor.MojoExecutor.element;
 /**
  * Class for Artifact model
  */
+@Data
 public class Artifact {
+
     private String version;
     private String groupId;
     private String artifactId;
@@ -38,8 +41,6 @@ public class Artifact {
 
     /**
      * Constructor if type is not set, and groupId is default
-     * @param artifactId
-     * @param version
      */
     public Artifact(String artifactId, String version) {
         this(artifactId, version, GROUP_MODULE);
@@ -47,9 +48,6 @@ public class Artifact {
 
     /**
      * Constructor if type is not set
-     * @param artifactId
-     * @param version
-     * @param groupId
      */
     public Artifact(String artifactId, String version, String groupId) {
         this(artifactId, version, groupId, TYPE_JAR);
@@ -61,10 +59,6 @@ public class Artifact {
 
     /**
      * Default constructor for all parameters
-     * @param artifactId
-     * @param version
-     * @param groupId
-     * @param type
      */
     public Artifact(String artifactId, String version, String groupId, String type, String fileExtension) {
         this.groupId = groupId;
@@ -74,28 +68,6 @@ public class Artifact {
         this.fileExtension = fileExtension;
         classifier = null;
     }
-
-    public String getVersion() {
-        return version;
-    }
-
-    public void setVersion(String version) {
-        this.version = version;
-    }
-
-    public String getGroupId() { return groupId; }
-
-    public void setGroupId(String groupId) { this.groupId = groupId; }
-
-    public String getArtifactId() {
-        return artifactId;
-    }
-
-    public void setArtifactId(String artifactId) { this.artifactId = artifactId; }
-
-    public String getType() { return type; }
-
-    public void setType(String type) { this.type = type; }
 
     public String getDestFileName() {
         if (destFileName == null) {
@@ -119,31 +91,6 @@ public class Artifact {
         }
     }
 
-    public void setDestFileName(String destFileName) {
-        this.destFileName = destFileName;
-    }
-
-    public void setClassifier(String classifier) {
-        this.classifier = classifier;
-    }
-
-    public String getClassifier() {
-        return classifier;
-    }
-
-    public String getFileExtension() {
-        return fileExtension;
-    }
-
-    public void setFileExtension(String fileExtension) {
-        this.fileExtension = fileExtension;
-    }
-
-    /**
-     * Convert Artifact to Element
-     * String outputDir
-     * @return
-     */
     public Element toElement(String outputDir) {
         List<Element> attributes = new ArrayList<>();
         attributes.add(element("groupId", groupId));
@@ -179,6 +126,10 @@ public class Artifact {
     @Override
     public String toString() {
         return groupId + ':' + artifactId + ':' + version;
+    }
+
+    public String getGroupIdAndArtifactId() {
+        return groupId + ":" + artifactId;
     }
 
     public boolean isValid() {

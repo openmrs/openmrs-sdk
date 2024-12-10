@@ -54,6 +54,9 @@ public class ServerUpgrader {
 				return;
 			}
 		}
+
+		parentTask.distroHelper.validateDistribution(distroProperties);
+
 		server.saveBackupProperties();
 		server.deleteServerTmpDirectory();
 
@@ -127,9 +130,6 @@ public class ServerUpgrader {
 		UpgradeDifferential.ArtifactChanges contentChanges = upgradeDifferential.getContentChanges();
 
 		if (configChanges.hasChanges() || contentChanges.hasChanges()) {
-
-			// TODO: This should happen in a higher-level validation stage and this method needs refactoring
-			parentTask.distroHelper.parseContentProperties(distroProperties);
 
 			File configDir = new File(server.getServerDirectory(), SDKConstants.OPENMRS_SERVER_CONFIGURATION);
 			if (configDir.exists()) {
@@ -226,14 +226,8 @@ public class ServerUpgrader {
 		upgradeDifferential.setConfigChanges(new UpgradeDifferential.ArtifactChanges(oldConfig, newConfig));
 
 		// Content
-		List<Artifact> oldContent = new ArrayList<>();
-		for (ContentPackage contentPackage : server.getContentPackages()) {
-			oldContent.add(contentPackage.getArtifact());
-		}
-		List<Artifact> newContent = new ArrayList<>();
-		for (ContentPackage contentPackage : distroProperties.getContentPackages()) {
-			newContent.add(contentPackage.getArtifact());
-		}
+		List<Artifact> oldContent = server.getContentPackageArtifacts();
+		List<Artifact> newContent = distroProperties.getContentPackageArtifacts();
 		upgradeDifferential.setContentChanges(new UpgradeDifferential.ArtifactChanges(oldContent, newContent));
 
 		return upgradeDifferential;

@@ -348,4 +348,31 @@ public class DeployIT extends AbstractSdkIT {
         server = Server.loadServer(testDirectoryPath.resolve(testServerId));
         assertThat(server.getOwaArtifacts().size(), equalTo(3));
     }
+
+    @Test
+    public void testDeployWithMissingContentDependencies() throws Exception {
+        setupContentPackage("testpackage1");
+
+        testServerId = setupTestServer("referenceapplication:2.2");
+
+        includeDistroPropertiesFile("openmrs-distro-content-package-missing-dependencies.properties");
+        addAnswer(testServerId);
+        addAnswer("y");
+        addAnswer("y");
+
+        Exception exception = null;
+        try {
+            executeTask("deploy");
+        }
+        catch (Exception e) {
+            exception = e;
+        }
+        assertNotNull(exception);
+        assertLogContains("requires module org.openmrs.module:fhir2-omod version >=1.8.0");
+        assertLogContains("requires module org.openmrs.module:webservices.rest-omod version >=2.42.0");
+        assertLogContains("requires module org.openmrs.module:openconceptlab-omod version >=2.3.0");
+        assertLogContains("requires module org.openmrs.module:initializer-omod version >=2.5.2");
+        assertLogContains("requires module org.openmrs.module:o3forms-omod version >=2.2.0");
+        assertLogContains("requires esm @openmrs/esm-patient-chart-app version >=8.1.0");
+    }
 }

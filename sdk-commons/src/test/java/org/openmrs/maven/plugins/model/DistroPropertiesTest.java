@@ -6,6 +6,7 @@ import org.hamcrest.Matcher;
 import org.junit.Test;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -178,6 +179,20 @@ public class DistroPropertiesTest {
         assertThat(distroArtifact.getVersion(), equalTo("2.1.0"));
         assertThat(distroArtifact.getGroupId(), equalTo("org.openmrs.distro"));
         assertThat(distroArtifact.getType(), equalTo("jar"));
+    }
+
+    @Test
+    public void shouldGetSpaBuildFrontendModules() {
+        Properties properties = new Properties();
+        properties.setProperty("spa.frontendModules.@pih/esm-refapp-navbar-app", "1.2.3");
+        properties.setProperty("spa.frontendModules.@openmrs/esm-home-app", "5.5.2-pre.505");
+        properties.setProperty("spa.frontendModules.@openmrs/esm-login-app", "next");
+        DistroProperties distro = new DistroProperties(properties);
+        Map<String, String> modules = distro.getSpaBuildFrontendModules();
+        assertThat(modules.size(), equalTo(3));
+        assertThat(modules.get("@pih/esm-refapp-navbar-app"), equalTo("1.2.3"));
+        assertThat(modules.get("@openmrs/esm-home-app"), equalTo("5.5.2-pre.505"));
+        assertThat(modules.get("@openmrs/esm-login-app"), equalTo("next"));
     }
 
     private static Artifact findArtifactByArtifactId(List<Artifact> artifacts, String artifactId){

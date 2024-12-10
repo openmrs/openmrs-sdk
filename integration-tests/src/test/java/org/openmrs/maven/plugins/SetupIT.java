@@ -21,6 +21,7 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertNotNull;
 import static org.openmrs.maven.plugins.SdkMatchers.hasModuleVersion;
 import static org.openmrs.maven.plugins.SdkMatchers.hasPropertyEqualTo;
 import static org.openmrs.maven.plugins.SdkMatchers.hasPropertyThatContains;
@@ -525,6 +526,35 @@ public class SetupIT extends AbstractSdkIT {
         assertFilePresent(serverId, "configuration", "conceptclasses", "conceptclasses.csv");
         assertFilePresent(serverId, "configuration", "conceptsources", "conceptsources.csv");
         assertFilePresent(serverId, "configuration", "encountertypes", "encountertypes.csv");
+    }
+
+    @Test
+    public void testSetupWithMissingContentDependencies() throws Exception {
+        setupContentPackage("testpackage1");
+
+        includeDistroPropertiesFile("openmrs-distro-content-package-missing-dependencies.properties");
+        addTaskParam("distro", testDirectory.toString() + File.separator + "openmrs-distro.properties");
+        addMockDbSettings();
+
+        String serverId = UUID.randomUUID().toString();
+        addAnswer(serverId);
+        addAnswer("1044");
+        addAnswer("8080");
+
+        Exception exception = null;
+        try {
+            executeTask("setup");
+        }
+        catch (Exception e) {
+            exception = e;
+        }
+        assertNotNull(exception);
+        assertLogContains("requires module org.openmrs.module:fhir2-omod version >=1.8.0");
+        assertLogContains("requires module org.openmrs.module:webservices.rest-omod version >=2.42.0");
+        assertLogContains("requires module org.openmrs.module:openconceptlab-omod version >=2.3.0");
+        assertLogContains("requires module org.openmrs.module:initializer-omod version >=2.5.2");
+        assertLogContains("requires module org.openmrs.module:o3forms-omod version >=2.2.0");
+        assertLogContains("requires esm @openmrs/esm-patient-chart-app version >=8.1.0");
     }
 
     private String readValueFromPropertyKey(File propertiesFile, String key) throws Exception {
