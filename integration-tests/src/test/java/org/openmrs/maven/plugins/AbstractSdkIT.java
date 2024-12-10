@@ -145,7 +145,7 @@ public abstract class AbstractSdkIT {
         return counter++;
     }
 
-    public String setupTestServer(String distro) throws Exception{
+    public String setupTestServer(String distro) throws Exception {
         Verifier setupServer = new Verifier(testDirectory.getAbsolutePath());
         String serverId = UUID.randomUUID().toString();
         try {
@@ -169,6 +169,22 @@ public abstract class AbstractSdkIT {
             verifier.resetStreams();
         }
         return serverId;
+    }
+
+    public void setupContentPackage(String contentPackageDir) throws Exception {
+        Path sourcePath = testResourceDir.resolve(TEST_DIRECTORY).resolve("contentpackages").resolve(contentPackageDir);
+        Path targetPath = testDirectoryPath.resolve("contentpackages").resolve(contentPackageDir);
+        FileUtils.copyDirectory(sourcePath.toFile(), targetPath.toFile());
+        Verifier setupContentPackage = new Verifier(targetPath.toFile().getAbsolutePath());
+        try {
+            addAnswer("y");
+            addTaskParam(setupContentPackage, BATCH_ANSWERS, getAnswers());
+            setupContentPackage.executeGoal(resolveSdkArtifact() + ":build");
+        }
+        finally {
+            cleanAnswers();
+            verifier.resetStreams();
+        }
     }
 
     private void cleanAnswers() {
