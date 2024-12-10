@@ -7,6 +7,8 @@ import org.openmrs.maven.plugins.model.DistroProperties;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import static org.junit.Assert.assertNotNull;
+
 public class BuildDistroIT extends AbstractSdkIT {
 
     @Test
@@ -210,5 +212,28 @@ public class BuildDistroIT extends AbstractSdkIT {
         assertFilePresent("target", "web", "openmrs_config", "conceptclasses", "conceptclasses.csv");
         assertFilePresent("target", "web", "openmrs_config", "conceptsources", "conceptsources.csv");
         assertFilePresent("target", "web", "openmrs_config", "encountertypes", "encountertypes.csv");
+    }
+
+    @Test
+    public void testBuildDistroWithMissingContentDependencies() throws Exception {
+        setupContentPackage("testpackage1");
+
+        includeDistroPropertiesFile("openmrs-distro-content-package-missing-dependencies.properties");
+        addTaskParam("dir", "distro");
+        addTaskParam("ignorePeerDependencies", "false");
+        Exception exception = null;
+        try {
+            executeTask("build-distro");
+        }
+        catch (Exception e) {
+            exception = e;
+        }
+        assertNotNull(exception);
+        assertLogContains("requires module org.openmrs.module:fhir2-omod version >=1.8.0");
+        assertLogContains("requires module org.openmrs.module:webservices.rest-omod version >=2.42.0");
+        assertLogContains("requires module org.openmrs.module:openconceptlab-omod version >=2.3.0");
+        assertLogContains("requires module org.openmrs.module:initializer-omod version >=2.5.2");
+        assertLogContains("requires module org.openmrs.module:o3forms-omod version >=2.2.0");
+        assertLogContains("requires esm @openmrs/esm-patient-chart-app version >=8.1.0");
     }
 }

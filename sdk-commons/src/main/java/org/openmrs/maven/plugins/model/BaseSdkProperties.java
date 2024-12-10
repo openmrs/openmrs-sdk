@@ -5,6 +5,7 @@ import org.apache.commons.lang.StringUtils;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -31,6 +32,7 @@ public abstract class BaseSdkProperties {
     public static final String TYPE_ZIP = "zip";
     public static final String INCLUDES = "includes";
     public static final String NAMESPACE = "namespace";
+    public static final String FRONTEND_MODULES = "frontendModules";
     private static final List<String> PROPERTY_NAMES = Arrays.asList(ARTIFACT_ID, GROUP_ID, VERSION, TYPE, INCLUDES, NAMESPACE);
     public static final List<String> SPA_ARTIFACT_PROPERTIES = Arrays.asList(ARTIFACT_ID, GROUP_ID, VERSION, TYPE, INCLUDES);
 
@@ -104,6 +106,16 @@ public abstract class BaseSdkProperties {
         return properties;
     }
 
+    public Map<String, String> getSpaBuildFrontendModules() {
+        Map<String, String> ret = new LinkedHashMap<>();
+        for (Map.Entry<String, String> e : getSpaBuildProperties().entrySet()) {
+            if (e.getKey().startsWith(FRONTEND_MODULES + ".")) {
+                ret.put(e.getKey().substring(FRONTEND_MODULES.length() + 1), e.getValue());
+            }
+        }
+        return ret;
+    }
+
     public List<Artifact> getSpaArtifacts() {
         List<Artifact> ret = new ArrayList<>();
         Map<String, String> spaProperties = getSpaProperties();
@@ -159,6 +171,14 @@ public abstract class BaseSdkProperties {
 		}
 		return contentPackages;
 	}
+
+    public List<Artifact> getContentPackageArtifacts() {
+        List<Artifact> artifacts = new ArrayList<>();
+        for (ContentPackage contentPackage : getContentPackages()) {
+            artifacts.add(contentPackage.getArtifact());
+        }
+        return artifacts;
+    }
 
 	public Set<String> getAllKeys() {
 		return properties.stringPropertyNames();
