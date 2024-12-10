@@ -17,6 +17,7 @@ import org.junit.runners.BlockJUnit4ClassRunner;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.Server;
+import org.openmrs.maven.plugins.utility.PropertiesUtils;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -88,6 +89,13 @@ public abstract class AbstractSdkIT {
            throw new MojoExecutionException(e.getMessage());
         }
         return sdk.get("groupId")+":"+sdk.get("artifactId")+":"+sdk.get("version");
+    }
+
+    protected void includeDistroPropertiesFile(String name, String version, Properties properties) throws Exception {
+        File outputFile = testDirectoryPath.resolve(DistroProperties.DISTRO_FILE_NAME).toFile();
+        properties.setProperty("name", name);
+        properties.setProperty("version", version);
+        PropertiesUtils.savePropertiesChangesToFile(properties, outputFile);
     }
 
     protected void includeDistroPropertiesFile(String... paths) throws Exception {

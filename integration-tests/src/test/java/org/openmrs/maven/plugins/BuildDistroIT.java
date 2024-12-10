@@ -6,6 +6,7 @@ import org.openmrs.maven.plugins.model.DistroProperties;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Properties;
 
 import static org.junit.Assert.assertNotNull;
 
@@ -235,5 +236,58 @@ public class BuildDistroIT extends AbstractSdkIT {
         assertLogContains("requires module org.openmrs.module:initializer-omod version >=2.5.2");
         assertLogContains("requires module org.openmrs.module:o3forms-omod version >=2.2.0");
         assertLogContains("requires esm @openmrs/esm-patient-chart-app version >=8.1.0");
+    }
+
+    @Test
+    public void testBuildDistroWithContentPackageVariables() throws Exception {
+        setupContentPackage("testpackage2");
+        Properties distro = new Properties();
+        distro.setProperty("war.openmrs", "2.4.0");
+        distro.setProperty("omod.fhir2", "1.8.0");
+        distro.setProperty("omod.webservices.rest", "2.42.0");
+        distro.setProperty("omod.initializer", "2.5.2");
+        distro.setProperty("content.testpackage2", "1.0.0");
+        distro.setProperty("content.testpackage2.groupId", "org.openmrs.maven.sdk.test");
+        distro.setProperty("content.testpackage2.type", "zip");
+        distro.setProperty("content.testpackage2.namespace", "");
+        distro.setProperty("var.identifier.artNumber.format", "[0-9]");
+        distro.setProperty("var.concept.height.uuid", "height-uuid");
+        distro.setProperty("var.concept.weight.uuid", "weight-uuid");
+        includeDistroPropertiesFile("testdistro", "1.0.0", distro);
+        addTaskParam("dir", "distro");
+        addTaskParam("ignorePeerDependencies", "false");
+        executeTask("build-distro");
+        assertFilePresent("distro", "web", "openmrs_config", "patientidentifiertypes", "patientidentifiertypes.csv");
+        assertFilePresent("distro", "web", "openmrs_config", "globalproperties", "gp.xml");
+        assertFileContains("9d6d1eec-2cd6-4637-a981-4a46b4b8b41f,", "distro", "web", "openmrs_config", "patientidentifiertypes", "patientidentifiertypes.csv");
+        assertFileContains(",[0-9],", "distro", "web", "openmrs_config", "patientidentifiertypes", "patientidentifiertypes.csv");
+        assertFileContains("<value>height-uuid</value>", "distro", "web", "openmrs_config", "globalproperties", "gp.xml");
+        assertFileContains("<value>weight-uuid</value>", "distro", "web", "openmrs_config", "globalproperties", "gp.xml");
+    }
+
+    @Test
+    public void testBuildDistroThrowsErrorIfContentPackageVariablesAreMissing() throws Exception {
+        setupContentPackage("testpackage2");
+        Properties distro = new Properties();
+        distro.setProperty("war.openmrs", "2.4.0");
+        distro.setProperty("omod.fhir2", "1.8.0");
+        distro.setProperty("omod.webservices.rest", "2.42.0");
+        distro.setProperty("omod.initializer", "2.5.2");
+        distro.setProperty("content.testpackage2", "1.0.0");
+        distro.setProperty("content.testpackage2.groupId", "org.openmrs.maven.sdk.test");
+        distro.setProperty("content.testpackage2.type", "zip");
+        distro.setProperty("content.testpackage2.namespace", "");
+        includeDistroPropertiesFile("testdistro", "1.0.0", distro);
+        addTaskParam("dir", "distro");
+        addTaskParam("ignorePeerDependencies", "false");
+        Exception exception = null;
+        try {
+            executeTask("build-distro");
+        }
+        catch (Exception e) {
+            exception = e;
+        }
+        assertNotNull(exception);
+        assertLogContains("testpackage2 variable concept.weight.uuid must be assigned a value in the distro properties");
     }
 }

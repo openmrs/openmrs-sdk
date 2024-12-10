@@ -33,8 +33,8 @@ public abstract class BaseSdkProperties {
     public static final String INCLUDES = "includes";
     public static final String NAMESPACE = "namespace";
     public static final String FRONTEND_MODULES = "frontendModules";
-    public static final String VARS = "vars";
-    private static final List<String> PROPERTY_NAMES = Arrays.asList(ARTIFACT_ID, GROUP_ID, VERSION, TYPE, INCLUDES, NAMESPACE, VARS);
+    public static final String VAR = "var";
+    private static final List<String> PROPERTY_NAMES = Arrays.asList(ARTIFACT_ID, GROUP_ID, VERSION, TYPE, INCLUDES, NAMESPACE, VAR);
     public static final List<String> SPA_ARTIFACT_PROPERTIES = Arrays.asList(ARTIFACT_ID, GROUP_ID, VERSION, TYPE, INCLUDES);
 
     protected Properties properties;
@@ -191,7 +191,6 @@ public abstract class BaseSdkProperties {
         }
         return ret;
     }
-
 
     public Set<String> getAllKeys() {
 		return properties.stringPropertyNames();

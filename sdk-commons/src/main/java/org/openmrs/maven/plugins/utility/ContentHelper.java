@@ -227,19 +227,15 @@ public class ContentHelper {
     /**
      * This returns all values that will be used to replace variable references in files contained within the given content package for the given distribution
      * This first loads all defined variables from the content.properties file of the content package (defined as var.variableName=value)
-     * This then overrides the values of these with any values defined in the distro properties file.  This applies 2 replacement options:
-     * global replacements are applied first, and are defined as any matching properties (var.variableName=value).
-     * package specific replacements are applied second, and are defined as properties that match the package (content.artifactId.var.variableName=value)
+     * This then overrides the values of these with any values defined in the distro properties file  (defined as var.variableName=value).
      * If a content package defines a variable without a default value and the distribution does not provide this value, an exception is thrown
      * If the value is supposed to be empty, the distribution should define the variable with an empty value
      */
     public Map<String, String> getReplacementVariables(DistroProperties distroProperties, ContentPackage contentPackage) throws MojoExecutionException {
         ContentProperties contentProperties = getContentProperties(contentPackage);
-        String globalPrefix = BaseSdkProperties.VARS + ".";
-        String packagePrefix = BaseSdkProperties.TYPE_CONTENT + "." + contentPackage.getArtifactId() + "." + BaseSdkProperties.VARS + ".";
+        String globalPrefix = BaseSdkProperties.VAR + ".";
         Map<String, String> vars = new HashMap<>(contentProperties.getPropertiesWithPrefixRemoved(globalPrefix));
         Map<String, String> varsFromDistro = new HashMap<>(distroProperties.getPropertiesWithPrefixRemoved(globalPrefix));
-        varsFromDistro.putAll(distroProperties.getPropertiesWithPrefixRemoved(packagePrefix));
         for (String var : vars.keySet()) {
             String defaultValue = vars.get(var);
             if (varsFromDistro.containsKey(var)) {
