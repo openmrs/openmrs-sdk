@@ -156,7 +156,7 @@ public class ContentHelper {
                         }
                         else {
                             log.debug("Copying " + configFile + " to " + installDir);
-                            FileUtils.copyFile(configFile, installDir);
+                            FileUtils.copyFile(configFile, new File(installDir, configFile.getName()));
                         }
                     }
                 }
