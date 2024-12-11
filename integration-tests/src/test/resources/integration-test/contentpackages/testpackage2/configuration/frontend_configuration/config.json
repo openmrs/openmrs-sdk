@@ -1,0 +1,8 @@
+{
+  "@openmrs/esm-patient-biometrics-app": {
+    "concepts": {
+      "heightUuid": "${concept.height.uuid}",
+      "weightUuid": "${concept.weight.uuid}"
+    }
+  }
+}

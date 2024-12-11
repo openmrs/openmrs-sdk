@@ -1,0 +1,2 @@
+Uuid,Void/Retire,Name,Description,Required,Format,Format description,Validator,Location behavior,Uniqueness behavior
+${identifier.artNumber.uuid},,ART Unique Number,Unique ART number for patients on ART,FALSE,${identifier.artNumber.format},"Should be 3 digits then digit 0 or 1 lastly 8 digits. E.g. (333033333333)",,NOT_USED,UNIQUE

@@ -1,0 +1,14 @@
+<config>
+    <globalProperties>
+
+        <globalProperty>
+            <property>concept.height</property>
+            <value>${concept.height.uuid}</value>
+        </globalProperty>
+        <globalProperty>
+            <property>concept.weight</property>
+            <value>${concept.weight.uuid}</value>
+        </globalProperty>
+
+    </globalProperties>
+</config>

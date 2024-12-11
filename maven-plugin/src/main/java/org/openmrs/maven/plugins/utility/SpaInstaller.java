@@ -9,7 +9,6 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.BaseSdkProperties;
-import org.openmrs.maven.plugins.model.ContentPackage;
 import org.openmrs.maven.plugins.model.DistroProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,7 +16,6 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -149,10 +147,7 @@ public class SpaInstaller {
 				spaConfigFile), legacyPeerDeps);
 		} else {
 			try (TempDirectory configFileDir = TempDirectory.create("content-frontend-config")) {
-				List<File> configFiles = new ArrayList<>();
-				for (ContentPackage contentPackage : distroProperties.getContentPackages()) {
-					configFiles.addAll(contentHelper.installFrontendConfigs(contentPackage, configFileDir.getFile()));
-				}
+				List<File> configFiles = contentHelper.installFrontendConfig(distroProperties, configFileDir.getFile());
 				String assembleCommand = assembleWithFrontendConfig(program, buildTargetDir, configFiles, spaConfigFile);
 				nodeHelper.runNpx(assembleCommand, legacyPeerDeps);
 			}
