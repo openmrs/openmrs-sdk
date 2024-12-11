@@ -113,7 +113,7 @@ public class AddDependency extends AbstractTask {
             case SPA_OPTION:
                 moduleName = wizard.promptForValueIfMissing(moduleName, "frontend module name");
                 if (StringUtils.isBlank(version)) {
-                    List<String> versions =  new NpmVersionHelper().getPackageVersions(moduleName, 6);;
+                    List<String> versions =  new NpmVersionHelper().getPackageVersions(moduleName, 6);
                     version = wizard.promptForMissingValueWithOptions("Enter the module version", null, null, versions,
                             "Please specify the SPA version", null);
                 }

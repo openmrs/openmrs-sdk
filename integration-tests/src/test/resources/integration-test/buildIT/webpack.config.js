@@ -61,7 +61,7 @@ var getConfig = function () {
     } finally {
         return config;
     }
-    ;
+
 }
 var config = getConfig();
 

@@ -5,7 +5,6 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.shared.utils.StringUtils;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.BaseSdkProperties;
-import org.openmrs.maven.plugins.model.ContentPackage;
 import org.openmrs.maven.plugins.model.Distribution;
 import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.Server;
@@ -16,7 +15,6 @@ import org.openmrs.maven.plugins.utility.SDKConstants;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 

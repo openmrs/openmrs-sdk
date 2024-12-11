@@ -1,5 +1,6 @@
 package org.openmrs.maven.plugins.utility;
 
+import lombok.Getter;
 import org.apache.commons.io.IOUtils;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -20,6 +21,7 @@ import java.util.List;
 /**
  * Configure settings.xml
  */
+@Getter
 public class SettingsManager {
 
     private Settings settings;
@@ -46,9 +48,6 @@ public class SettingsManager {
 
     /**
      * Returns Settings from settings.xml in maven home
-     *
-     * @param mavenSession
-     * @throws MojoExecutionException
      */
     public SettingsManager(MavenSession mavenSession) throws MojoExecutionException {
         String localRepository = mavenSession.getSettings().getLocalRepository();
@@ -75,7 +74,6 @@ public class SettingsManager {
 
     /**
      * Update settings to default settings
-     * @param other
      */
     public void updateSettings(Settings other) {
         if (settings == null) {
@@ -83,21 +81,21 @@ public class SettingsManager {
         }
         String pluginGroup = other.getPluginGroups().get(0);
         if (settings.getPluginGroups() == null) {
-            settings.setPluginGroups(new ArrayList<String>());
+            settings.setPluginGroups(new ArrayList<>());
         }
         if (!settings.getPluginGroups().contains(pluginGroup)) {
             settings.addPluginGroup(pluginGroup);
         }
         String activeProfile = other.getActiveProfiles().get(0);
         if (settings.getActiveProfiles() == null) {
-            settings.setActiveProfiles(new ArrayList<String>());
+            settings.setActiveProfiles(new ArrayList<>());
         }
         if (!settings.getActiveProfiles().contains(activeProfile)) {
             settings.addActiveProfile(activeProfile);
         }
         Profile profile = other.getProfiles().get(0);
         if (settings.getProfiles() == null) {
-            settings.setProfiles(new ArrayList<Profile>());
+            settings.setProfiles(new ArrayList<>());
         }
         // remove already created OpenMRS profile
         List<Profile> profilesToRemove = new ArrayList<>();
@@ -113,20 +111,7 @@ public class SettingsManager {
     }
 
     /**
-     * Get settings object
-     * @return
-     */
-    public Settings getSettings() {
-        return settings;
-    }
-
-    public File getSettingsFile() {
-        return settingsFile;
-    }
-
-    /**
      * Write settings to file
-     * @param stream
      */
     public void apply(OutputStream stream) throws MojoExecutionException {
         if (settings != null) {

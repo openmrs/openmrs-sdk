@@ -165,8 +165,8 @@ public class Run extends AbstractServerTask {
 
 		if (server.hasWatchedProjects()) {
 			Path serversPath = Server.getServersPath();
-			File springloadedJar = serversPath.resolve("springloaded.jar").toFile();;
-			if (!springloadedJar.exists()) {
+			File springloadedJar = serversPath.resolve("springloaded.jar").toFile();
+            if (!springloadedJar.exists()) {
 				Artifact artifact = new Artifact("springloaded", "1.2.5.RELEASE", "org.springframework", "jar");
 				artifact.setDestFileName("springloaded.jar");
 				executeMojo(
