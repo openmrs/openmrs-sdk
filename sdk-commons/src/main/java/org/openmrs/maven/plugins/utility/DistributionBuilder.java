@@ -7,7 +7,8 @@ import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.Version;
 
 import java.io.File;
-import java.io.FileInputStream;
+import java.io.InputStream;
+import java.nio.file.Files;
 import java.util.Objects;
 import java.util.Properties;
 
@@ -154,7 +155,7 @@ public class DistributionBuilder {
 					if (spaAssembleConfig == null) {
 						throw new MojoExecutionException("Unable to retrieve spa assemble config file from " + frontendArtifact);
 					}
-					try (FileInputStream inputStream = new FileInputStream(spaAssembleConfig)) {
+					try (InputStream inputStream = Files.newInputStream(spaAssembleConfig.toPath())) {
 						frontendProperties = PropertiesUtils.getFrontendPropertiesFromJson(inputStream);
 					} catch (Exception e) {
 						throw new MojoExecutionException("Unable to load frontend config from file: " + spaAssembleConfig, e);

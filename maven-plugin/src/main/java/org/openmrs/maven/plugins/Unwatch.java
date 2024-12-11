@@ -54,7 +54,7 @@ public class Unwatch extends AbstractServerTask {
 	        		serverConfig.save();
 	        		wizard.showMessage("Stopped watching " + project.getPath() + " for changes.");
 	        	} else {
-	        		wizard.showMessage((groupId != null) ? (groupId + ":") : "" + artifactId + " has not been watched.");
+	        		wizard.showMessage((groupId != null) ? (groupId + ":") : artifactId + " has not been watched.");
 	        	}
         	}
         }

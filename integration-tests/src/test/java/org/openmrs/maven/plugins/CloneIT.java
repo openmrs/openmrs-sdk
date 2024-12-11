@@ -34,10 +34,10 @@ public class CloneIT extends AbstractSdkIT {
 
         // Check if upstream was added
         String absolutePath = new File(testDirectory.getAbsolutePath(), "openmrs-module-appui").getAbsolutePath();
-        Repository repository = new RepositoryBuilder().findGitDir(new File(absolutePath)).build();
-        Config storedConfig = repository.getConfig();
-        Set<String> remotes = storedConfig.getSubsections("remote");
-
-        assertThat(remotes, hasItem("upstream"));
+        try (Repository repository = new RepositoryBuilder().findGitDir(new File(absolutePath)).build()) {
+            Config storedConfig = repository.getConfig();
+            Set<String> remotes = storedConfig.getSubsections("remote");
+            assertThat(remotes, hasItem("upstream"));
+        }
     }
 }

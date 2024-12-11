@@ -1,17 +1,17 @@
 package org.openmrs.maven.plugins.model;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 import org.openmrs.maven.plugins.utility.Wizard;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.ParseException;
 import java.time.LocalDate;
@@ -100,11 +100,11 @@ public class SdkStatistics {
      * @throws IOException
      */
     private void postToGoogleForm() throws IOException {
-        HttpClient httpClient = HttpClients.createDefault();
-        String uri = buildUrl();
-        HttpPost httpPost = new HttpPost(uri);
-
-        HttpResponse response = httpClient.execute(httpPost);
+        try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
+            String uri = buildUrl();
+            HttpPost httpPost = new HttpPost(uri);
+            httpClient.execute(httpPost);
+        }
     }
 
     /**
@@ -289,7 +289,7 @@ public class SdkStatistics {
      * @throws MojoExecutionException
      */
     public void saveTo(File file) throws MojoExecutionException {
-        try (FileOutputStream out = new FileOutputStream(file)) {
+        try (OutputStream out = Files.newOutputStream(file.toPath())) {
             statistics.store(out, null);
         }
         catch (IOException e) {

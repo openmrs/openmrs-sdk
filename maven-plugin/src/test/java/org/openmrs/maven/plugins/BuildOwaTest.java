@@ -92,7 +92,7 @@ public class BuildOwaTest {
         when(build.owaHelper.getSystemNpmVersion()).thenReturn(null);
 
         Mockito.doNothing().when(build.owaHelper).installLocalNodeAndNpm(nullable(SemVersion.class), nullable(SemVersion.class), nullable(String.class));
-        Mockito.doNothing().when(build.owaHelper).runLocalNpmCommandWithArgs(ArgumentMatchers.<String>anyList());
+        Mockito.doNothing().when(build.owaHelper).runLocalNpmCommandWithArgs(ArgumentMatchers.anyList());
 
         build.buildNpmProject();
 
@@ -113,7 +113,7 @@ public class BuildOwaTest {
         when(build.owaHelper.getSystemNodeVersion()).thenReturn(batchNodeVersion);
         when(build.owaHelper.getSystemNpmVersion()).thenReturn(batchNpmVersion);
 
-        Mockito.doNothing().when(build.owaHelper).runSystemNpmCommandWithArgs(ArgumentMatchers.<String>anyList());
+        Mockito.doNothing().when(build.owaHelper).runSystemNpmCommandWithArgs(ArgumentMatchers.anyList());
 
         build.buildNpmProject();
 
@@ -149,7 +149,7 @@ public class BuildOwaTest {
         when(build.owaHelper.getSystemNodeVersion()).thenReturn(systemNpmVersion);
 
         Mockito.doNothing().when(build.owaHelper).installLocalNodeAndNpm(nullable(SemVersion.class), nullable(SemVersion.class), nullable(String.class));
-        Mockito.doNothing().when(build.owaHelper).runLocalNpmCommandWithArgs(ArgumentMatchers.<String>anyList());
+        Mockito.doNothing().when(build.owaHelper).runLocalNpmCommandWithArgs(ArgumentMatchers.anyList());
 
         build.buildNpmProject();
 
@@ -183,7 +183,7 @@ public class BuildOwaTest {
         doReturn(SemVersion.valueOf(projectNpmVersion)).when(build.owaHelper).getProjectNpmFromPackageJson();
 
         Mockito.doNothing().when(build.owaHelper).installLocalNodeAndNpm(nullable(SemVersion.class), nullable(SemVersion.class), nullable(String.class));
-        Mockito.doNothing().when(build.owaHelper).runLocalNpmCommandWithArgs(ArgumentMatchers.<String>anyList());
+        Mockito.doNothing().when(build.owaHelper).runLocalNpmCommandWithArgs(ArgumentMatchers.anyList());
 
         build.buildNpmProject();
 
@@ -216,7 +216,7 @@ public class BuildOwaTest {
         doReturn(SemVersion.valueOf(projectNodeVersion)).when(build.owaHelper).getProjectNodeFromPackageJson();
         doReturn(SemVersion.valueOf(projectNpmVersion)).when(build.owaHelper).getProjectNpmFromPackageJson();
 
-        Mockito.doNothing().when(build.owaHelper).runSystemNpmCommandWithArgs(ArgumentMatchers.<String>anyList());
+        Mockito.doNothing().when(build.owaHelper).runSystemNpmCommandWithArgs(ArgumentMatchers.anyList());
 
         build.buildNpmProject();
 
@@ -239,7 +239,7 @@ public class BuildOwaTest {
         doReturn(getNodeDistVersionsViaLocalResources()).when(build.owaHelper).getNodeDistros();
 
         Mockito.doNothing().when(build.owaHelper).runInstallLocalNodeAndNpm(nullable(String.class), nullable(String.class), nullable(String.class));
-        Mockito.doNothing().when(build.owaHelper).runLocalNpmCommandWithArgs(ArgumentMatchers.<String>anyList());
+        Mockito.doNothing().when(build.owaHelper).runLocalNpmCommandWithArgs(ArgumentMatchers.anyList());
 
         build.buildNpmProject();
 
@@ -282,7 +282,7 @@ public class BuildOwaTest {
         doReturn(SemVersion.valueOf(projectNpmVersion)).when(build.owaHelper).getProjectNpmFromPackageJson();
 
         Mockito.doNothing().when(build.owaHelper).installLocalNodeAndNpm(nullable(SemVersion.class), nullable(SemVersion.class), nullable(String.class));
-        Mockito.doNothing().when(build.owaHelper).runLocalNpmCommandWithArgs(ArgumentMatchers.<String>anyList());
+        Mockito.doNothing().when(build.owaHelper).runLocalNpmCommandWithArgs(ArgumentMatchers.anyList());
 
         build.buildNpmProject();
 

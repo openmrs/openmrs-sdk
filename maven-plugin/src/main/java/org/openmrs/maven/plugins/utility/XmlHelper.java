@@ -9,10 +9,10 @@ import org.dom4j.io.SAXReader;
 import org.dom4j.io.XMLWriter;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
+import java.nio.file.Files;
 
 public final class XmlHelper {
 
@@ -50,7 +50,7 @@ public final class XmlHelper {
 		}
 	}
 
-	protected static void applyModifications(Element modificationsRoot, Element targetRoot) {
+	static void applyModifications(Element modificationsRoot, Element targetRoot) {
 		for (Element modificationElement : modificationsRoot.elements()) {
 			String copy = modificationElement.attributeValue("sdk-copy");
 			if ("true".equals(copy)) {
@@ -65,26 +65,26 @@ public final class XmlHelper {
 		}
 	}
 
-	protected static void addChildren(Element modificationsRoot, Element targetRoot) {
+	static void addChildren(Element modificationsRoot, Element targetRoot) {
 		for (Element element : modificationsRoot.elements()) {
 			addModification(targetRoot, element);
 		}
 	}
 
-	protected static void addModification(Element targetRoot, Element modificationElement) {
+	static void addModification(Element targetRoot, Element modificationElement) {
 		Element targetElement = targetRoot.addElement(modificationElement.getName());
 		targetElement.setText(modificationElement.getText());
 		//add children values
 		addChildren(modificationElement, targetElement);
 	}
 
-	protected static Document getDocument(File file) throws IOException, DocumentException {
-		try (FileInputStream fis = new FileInputStream(file)) {
+	static Document getDocument(File file) throws IOException, DocumentException {
+		try (InputStream fis = Files.newInputStream(file.toPath())) {
 			return getDocument(fis);
 		}
 	}
 
-	protected static Document getDocument(InputStream stream) throws IOException, DocumentException {
+	static Document getDocument(InputStream stream) throws IOException, DocumentException {
 		return new SAXReader().read(stream);
 	}
 }

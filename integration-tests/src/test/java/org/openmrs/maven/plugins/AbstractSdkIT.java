@@ -23,10 +23,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -387,13 +386,17 @@ public abstract class AbstractSdkIT {
     }
 
     protected static Model getTestPom(File directory) throws IOException, XmlPullParserException {
-        MavenXpp3Reader reader = new MavenXpp3Reader();
-        return reader.read(new FileInputStream(new File(directory, "pom.xml")));
+        try (InputStream in = Files.newInputStream(new File(directory, "pom.xml").toPath())) {
+            MavenXpp3Reader reader = new MavenXpp3Reader();
+            return reader.read(in);
+        }
     }
 
     protected static void saveTestPom(File directory, Model model) throws IOException {
-        MavenXpp3Writer writer = new MavenXpp3Writer();
-        writer.write(new FileOutputStream(new File(directory, "pom.xml")), model);
+        try (OutputStream out = Files.newOutputStream(new File(directory, "pom.xml").toPath())) {
+            MavenXpp3Writer writer = new MavenXpp3Writer();
+            writer.write(out, model);
+        }
     }
 
     protected void addAnswer(String answer){

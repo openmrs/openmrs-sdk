@@ -32,13 +32,14 @@ import org.eclipse.jgit.transport.URIish;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.openmrs.maven.plugins.AbstractTask;
 import org.openmrs.maven.plugins.Pull;
-import org.openmrs.maven.plugins.utility.CompositeException;
 import org.openmrs.maven.plugins.model.Project;
+import org.openmrs.maven.plugins.utility.CompositeException;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -536,12 +537,12 @@ public class DefaultGitHelper implements GitHelper {
 	 */
 	private String getRemoteRepoUrlFromPom(String path) throws MojoExecutionException {
 		Model model;
-		try {
-			File pomFile = new File(path);
-			if (pomFile.isDirectory()) {
-				pomFile = new File(pomFile, "pom.xml");
-			}
-			model = new MavenXpp3Reader().read(new FileInputStream(pomFile));
+		File pomFile = new File(path);
+		if (pomFile.isDirectory()) {
+			pomFile = new File(pomFile, "pom.xml");
+		}
+		try (InputStream in = Files.newInputStream(pomFile.toPath())) {
+			model = new MavenXpp3Reader().read(in);
 		}
 		catch (IOException e) {
 			throw new MojoExecutionException("Failed to access file " + path, e);

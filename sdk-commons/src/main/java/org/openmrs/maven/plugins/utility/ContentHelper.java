@@ -79,7 +79,7 @@ public class ContentHelper {
             packages.put(contentPackage, getContentProperties(contentPackage));
         }
         int packagesRemaining = packages.size();
-        while (packagesRemaining > 0) {;
+        while (packagesRemaining > 0) {
             int packagesAtStart = packagesRemaining;
             for (ContentPackage contentPackage : packages.keySet()) {
                 ContentProperties contentProperties = packages.get(contentPackage);

@@ -19,7 +19,16 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.Element;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.artifactId;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.configuration;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.element;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.executeMojo;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.executionEnvironment;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.goal;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.groupId;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.plugin;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.version;
 
 /**
  * Clone any OpenMRS module repository
@@ -154,11 +163,7 @@ public class Clone extends AbstractTask {
 			throw new MojoExecutionException("Destination path \"" + localPath.getAbsolutePath() + "\" already exists.");
 		}
 
-		try {
-			Git.cloneRepository()
-					.setURI(GITHUB_BASE_URL + originUrl)
-					.setDirectory(localPath)
-					.call();
+		try (Git call = Git.cloneRepository().setURI(GITHUB_BASE_URL + originUrl).setDirectory(localPath).call()) {
 			Git git = new Git(gitHelper.getLocalRepository(localPath.getAbsolutePath()));
 			gitHelper.addRemoteUpstream(git, localPath.getAbsolutePath());
 		}

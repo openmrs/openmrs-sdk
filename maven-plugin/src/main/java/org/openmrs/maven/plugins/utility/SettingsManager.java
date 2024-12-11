@@ -1,27 +1,27 @@
 package org.openmrs.maven.plugins.utility;
 
+import lombok.Getter;
 import org.apache.commons.io.IOUtils;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.settings.Profile;
-import org.apache.maven.settings.Server;
 import org.apache.maven.settings.Settings;
 import org.apache.maven.settings.io.xpp3.SettingsXpp3Reader;
 import org.apache.maven.settings.io.xpp3.SettingsXpp3Writer;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Configure settings.xml
  */
+@Getter
 public class SettingsManager {
 
     private Settings settings;
@@ -48,38 +48,32 @@ public class SettingsManager {
 
     /**
      * Returns Settings from settings.xml in maven home
-     *
-     * @param mavenSession
-     * @throws MojoExecutionException
      */
     public SettingsManager(MavenSession mavenSession) throws MojoExecutionException {
         String localRepository = mavenSession.getSettings().getLocalRepository();
         File mavenHome = new File(localRepository).getParentFile();
         mavenHome.mkdirs();
         settingsFile = new File(mavenHome, SDKConstants.MAVEN_SETTINGS);
-        InputStream stream = null;
-        try{
+        try {
             if (settingsFile.exists()) {
-                stream = new FileInputStream(settingsFile);
-                settings = new SettingsXpp3Reader().read(stream);
+                try (InputStream in = Files.newInputStream(settingsFile.toPath())) {
+                    settings = new SettingsXpp3Reader().read(in);
+                }
             } else {
                 //this machine doesn't have any settings yet, create new...
                 settings = new Settings();
                 settingsFile.createNewFile();
-                OutputStream emptySettings = new FileOutputStream(settingsFile);
-                apply(emptySettings);
+                try (OutputStream emptySettings = Files.newOutputStream(settingsFile.toPath())) {
+                    apply(emptySettings);
+                }
             }
         } catch (IOException|XmlPullParserException e) {
             throw new MojoExecutionException("Failed to load settings.xml",e);
-        } finally {
-            IOUtils.closeQuietly(stream);
         }
-
     }
 
     /**
      * Update settings to default settings
-     * @param other
      */
     public void updateSettings(Settings other) {
         if (settings == null) {
@@ -87,21 +81,21 @@ public class SettingsManager {
         }
         String pluginGroup = other.getPluginGroups().get(0);
         if (settings.getPluginGroups() == null) {
-            settings.setPluginGroups(new ArrayList<String>());
+            settings.setPluginGroups(new ArrayList<>());
         }
         if (!settings.getPluginGroups().contains(pluginGroup)) {
             settings.addPluginGroup(pluginGroup);
         }
         String activeProfile = other.getActiveProfiles().get(0);
         if (settings.getActiveProfiles() == null) {
-            settings.setActiveProfiles(new ArrayList<String>());
+            settings.setActiveProfiles(new ArrayList<>());
         }
         if (!settings.getActiveProfiles().contains(activeProfile)) {
             settings.addActiveProfile(activeProfile);
         }
         Profile profile = other.getProfiles().get(0);
         if (settings.getProfiles() == null) {
-            settings.setProfiles(new ArrayList<Profile>());
+            settings.setProfiles(new ArrayList<>());
         }
         // remove already created OpenMRS profile
         List<Profile> profilesToRemove = new ArrayList<>();
@@ -117,20 +111,7 @@ public class SettingsManager {
     }
 
     /**
-     * Get settings object
-     * @return
-     */
-    public Settings getSettings() {
-        return settings;
-    }
-
-    public File getSettingsFile() {
-        return settingsFile;
-    }
-
-    /**
      * Write settings to file
-     * @param stream
      */
     public void apply(OutputStream stream) throws MojoExecutionException {
         if (settings != null) {
