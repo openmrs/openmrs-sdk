@@ -1,14 +1,14 @@
 package org.openmrs.maven.plugins.model;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.openmrs.maven.plugins.utility.DistroHelper;
 import org.openmrs.maven.plugins.utility.PropertiesUtils;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -135,18 +135,13 @@ public class DistroProperties extends BaseSdkProperties {
     }
 
     public void saveTo(File path) throws MojoExecutionException {
-        FileOutputStream out = null;
-        try {
-            out = new FileOutputStream(new File(path, DISTRO_FILE_NAME));
+        try (OutputStream out = Files.newOutputStream(new File(path, DISTRO_FILE_NAME).toPath())) {
             SortedProperties sortedProperties = new SortedProperties();
             sortedProperties.putAll(properties);
             sortedProperties.store(out, null);
         }
         catch (IOException e) {
             throw new MojoExecutionException(e.getMessage());
-        }
-        finally {
-            IOUtils.closeQuietly(out);
         }
     }
 

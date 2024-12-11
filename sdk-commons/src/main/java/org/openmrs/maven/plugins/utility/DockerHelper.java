@@ -9,8 +9,9 @@ import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.Server;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.file.Files;
 import java.util.Properties;
 
 import static org.openmrs.maven.plugins.utility.PropertiesUtils.loadPropertiesFromFile;
@@ -68,7 +69,7 @@ public class DockerHelper {
 
     private void saveSdkProperties(Properties properties) throws MojoExecutionException {
         File sdkFile = Server.getServersPath().resolve(SDKConstants.OPENMRS_SDK_PROPERTIES).toFile();
-        try (FileOutputStream out = new FileOutputStream(sdkFile)) {
+        try (OutputStream out = Files.newOutputStream(sdkFile.toPath())) {
             properties.store(out, null);
         } catch (IOException e) {
             throw new MojoExecutionException("Failed to save sdk.properties file from your openmrs directory", e);

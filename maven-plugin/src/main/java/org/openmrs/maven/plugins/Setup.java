@@ -19,13 +19,12 @@ import org.openmrs.maven.plugins.utility.SDKConstants;
 import org.openmrs.maven.plugins.utility.ServerHelper;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -516,18 +515,18 @@ public class Setup extends AbstractServerTask {
 						.extractFileFromDistro(server.getServerDirectory(), distroArtifact, sqlScript);
 				extractedSqlFile.deleteOnExit();
 				try {
-					sqlStream = new FileInputStream(extractedSqlFile);
+					sqlStream = Files.newInputStream(extractedSqlFile.toPath());
 				}
-				catch (FileNotFoundException e) {
+				catch (Exception e) {
 					throw new MojoExecutionException("Error during opening sql dump script file", e);
 				}
 			}
 		} else {
 			File scriptFile = new File(sqlScriptPath);
 			try {
-				sqlStream = new FileInputStream(scriptFile);
+				sqlStream = Files.newInputStream(scriptFile.toPath());
 			}
-			catch (FileNotFoundException e) {
+			catch (Exception e) {
 				throw new MojoExecutionException("SQL import script could not be found at \"" +
 						scriptFile.getAbsolutePath() + "\" " + e.getMessage() , e);
 			}

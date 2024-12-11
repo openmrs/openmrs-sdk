@@ -9,10 +9,10 @@ import org.openmrs.maven.plugins.utility.SDKConstants;
 import org.openmrs.maven.plugins.utility.SettingsManager;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Properties;
 
@@ -51,11 +51,13 @@ public class SetupSDK extends AbstractTask {
 		File mavenSettings = new File(mavenHome, SDKConstants.MAVEN_SETTINGS);
 		try {
 			SettingsManager settings = new SettingsManager(mavenSession);
-			InputStream settingsStream = getClass().getClassLoader().getResourceAsStream(SDKConstants.MAVEN_SETTINGS);
-			SettingsManager defaultSettings = new SettingsManager(settingsStream);
-			settings.updateSettings(defaultSettings.getSettings());
-			OutputStream out = new FileOutputStream(mavenSettings);
-			settings.apply(out);
+			try (InputStream settingsStream = getClass().getClassLoader().getResourceAsStream(SDKConstants.MAVEN_SETTINGS)) {
+				SettingsManager defaultSettings = new SettingsManager(settingsStream);
+				settings.updateSettings(defaultSettings.getSettings());
+			}
+			try (OutputStream out = Files.newOutputStream(mavenSettings.toPath())) {
+				settings.apply(out);
+			}
 			getLog().info(String.format(SUCCESS_TEMPLATE, mavenSettings.getPath()));
 			getLog().info(SDK_INFO);
 		}

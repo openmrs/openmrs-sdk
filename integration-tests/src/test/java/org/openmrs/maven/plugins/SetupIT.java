@@ -8,9 +8,9 @@ import org.openmrs.maven.plugins.utility.PropertiesUtils;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Properties;
@@ -558,11 +558,10 @@ public class SetupIT extends AbstractSdkIT {
     }
 
     private String readValueFromPropertyKey(File propertiesFile, String key) throws Exception {
-
-        InputStream in = new FileInputStream(propertiesFile);
         Properties sdkProperties = new Properties();
-        sdkProperties.load(in);
-
+        try (InputStream in = Files.newInputStream(propertiesFile.toPath())) {
+            sdkProperties.load(in);
+        }
         return sdkProperties.getProperty(key);
     }
 }

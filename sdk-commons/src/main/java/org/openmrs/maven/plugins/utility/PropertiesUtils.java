@@ -22,12 +22,11 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.Map;
@@ -64,7 +63,7 @@ public class PropertiesUtils {
 			throw new MojoExecutionException("The file to load the properties from must be supplied");
 		}
 
-		try (FileInputStream in = new FileInputStream(file)) {
+		try (InputStream in = Files.newInputStream(file.toPath())) {
 			loadPropertiesFromInputStream(in, properties);
 		} catch (IOException e) {
 			throw new MojoExecutionException(e.getMessage(), e);
@@ -300,7 +299,7 @@ public class PropertiesUtils {
 	 */
 	public static void savePropertiesChangesToFile(Properties properties, File file)
 			throws MojoExecutionException {
-		try (OutputStream fos = new FileOutputStream(file)) {
+		try (OutputStream fos = Files.newOutputStream(file.toPath())) {
 			properties.store(fos, "SDK Properties file");
 		}
 		catch (IOException e) {

@@ -24,13 +24,13 @@ import org.slf4j.LoggerFactory;
 
 import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -493,13 +493,13 @@ public class BuildDistro extends AbstractTask {
 					if (distroArtifact != null && distroArtifact.isValid()) {
 						File extractedSqlFile = distroHelper
 								.extractFileFromDistro(targetDirectory, distroArtifact, sqlScript);
-						stream = new FileInputStream(extractedSqlFile);
+						stream = Files.newInputStream(extractedSqlFile.toPath());
 					}
 				}
 			} else {
 				File scriptFile = new File(sqlScriptPath);
 				if (scriptFile.exists()) {
-					stream = new FileInputStream(scriptFile);
+					stream = Files.newInputStream(scriptFile.toPath());
 				} else {
 					throw new MojoExecutionException("Specified script \"" + scriptFile.getAbsolutePath() + "\" does not exist.");
 				}

@@ -1,7 +1,6 @@
 package org.openmrs.maven.plugins.model;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Writer;
@@ -11,10 +10,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -236,18 +235,13 @@ public class Server extends BaseSdkProperties {
      */
     public void saveTo(File path) throws MojoExecutionException {
         replaceDbNameInDbUri();
-        FileOutputStream out = null;
-        try {
-            out = new FileOutputStream(path);
+        try (OutputStream out = Files.newOutputStream(path.toPath())) {
             SortedProperties sortedProperties = new SortedProperties();
             sortedProperties.putAll(properties);
             sortedProperties.store(out, null);
         }
         catch (IOException e) {
             throw new MojoExecutionException(e.getMessage());
-        }
-        finally {
-            IOUtils.closeQuietly(out);
         }
     }
 

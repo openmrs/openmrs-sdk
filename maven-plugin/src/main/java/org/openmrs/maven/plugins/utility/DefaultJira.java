@@ -7,6 +7,7 @@ import com.atlassian.jira.rest.client.auth.AnonymousAuthenticationHandler;
 import com.atlassian.jira.rest.client.internal.async.AsynchronousJiraRestClientFactory;
 import org.apache.maven.plugin.MojoExecutionException;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 
@@ -24,8 +25,12 @@ public class DefaultJira implements Jira {
             throw new MojoExecutionException(OPENMRS_ISSUES_URI + " is not a valid URI " + e.getMessage(), e);
         }
         
-        JiraRestClient client = factory.create(jiraServerUri, new AnonymousAuthenticationHandler());
-        return client.getIssueClient().getIssue(issueId).claim();
+        try (JiraRestClient client = factory.create(jiraServerUri, new AnonymousAuthenticationHandler())) {
+            return client.getIssueClient().getIssue(issueId).claim();
+        }
+        catch (IOException e) {
+            throw new MojoExecutionException(e.getMessage(), e);
+        }
     }
 
     @Override

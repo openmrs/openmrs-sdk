@@ -4,18 +4,16 @@ import org.apache.commons.io.IOUtils;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.settings.Profile;
-import org.apache.maven.settings.Server;
 import org.apache.maven.settings.Settings;
 import org.apache.maven.settings.io.xpp3.SettingsXpp3Reader;
 import org.apache.maven.settings.io.xpp3.SettingsXpp3Writer;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -57,24 +55,22 @@ public class SettingsManager {
         File mavenHome = new File(localRepository).getParentFile();
         mavenHome.mkdirs();
         settingsFile = new File(mavenHome, SDKConstants.MAVEN_SETTINGS);
-        InputStream stream = null;
-        try{
+        try {
             if (settingsFile.exists()) {
-                stream = new FileInputStream(settingsFile);
-                settings = new SettingsXpp3Reader().read(stream);
+                try (InputStream in = Files.newInputStream(settingsFile.toPath())) {
+                    settings = new SettingsXpp3Reader().read(in);
+                }
             } else {
                 //this machine doesn't have any settings yet, create new...
                 settings = new Settings();
                 settingsFile.createNewFile();
-                OutputStream emptySettings = new FileOutputStream(settingsFile);
-                apply(emptySettings);
+                try (OutputStream emptySettings = Files.newOutputStream(settingsFile.toPath())) {
+                    apply(emptySettings);
+                }
             }
         } catch (IOException|XmlPullParserException e) {
             throw new MojoExecutionException("Failed to load settings.xml",e);
-        } finally {
-            IOUtils.closeQuietly(stream);
         }
-
     }
 
     /**
