@@ -43,7 +43,7 @@ public class NodeHelper implements AutoCloseable {
 	}
 
 	/**
-	 * Installs node and npm and returns the installation directory
+	 * Installs node and npm, creating a new installation directory if necessary
 	 */
 	public void installNodeAndNpm(String nodeVersion, String npmVersion, boolean reuseNodeCache) throws MojoExecutionException {
 		this.reuseNodeCache = reuseNodeCache;
