@@ -28,6 +28,7 @@ public class PullIT extends AbstractSdkIT {
         serverId = setupTestServer("referenceapplication:2.2");
         cloneGitProject();
         verifier = new Verifier(new File(testDirectory, OPENMRS_MODULE_IDGEN).getAbsolutePath());
+        verifier.setSystemProperty("nodeCacheDir", nodeCacheDir.getAbsolutePath());
         addTaskParam("openMRSPath", testDirectory.getAbsolutePath());
     }
 

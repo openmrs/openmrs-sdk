@@ -1,8 +1,6 @@
 package org.openmrs.maven.plugins.utility;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.io.MoreFiles;
-import com.google.common.io.RecursiveDeleteOption;
 import lombok.Setter;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
@@ -10,12 +8,9 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.BaseSdkProperties;
 import org.openmrs.maven.plugins.model.DistroProperties;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -37,13 +32,11 @@ public class SpaInstaller {
 	static final String NODE_VERSION = "20.17.0";
 	
 	static final String NPM_VERSION = "10.8.2";
-	
+
 	private NodeHelper nodeHelper;
 	private ModuleInstaller moduleInstaller;
 	private ContentHelper contentHelper;
 	private Wizard wizard;
-
-	private static final Logger logger = LoggerFactory.getLogger(SpaInstaller.class);
 
 	public SpaInstaller() {}
 
@@ -59,7 +52,6 @@ public class SpaInstaller {
 	 *
 	 * @param appDataDir The application data directory
 	 * @param distroProperties Non-null
-	 * @throws MojoExecutionException
 	 */
 	public void installFromDistroProperties(File appDataDir, DistroProperties distroProperties) throws MojoExecutionException {
 		installFromDistroProperties(appDataDir, distroProperties, false, null);
@@ -136,24 +128,21 @@ public class SpaInstaller {
 
 		Properties sdkProperties = getSdkProperties();
 		boolean reuseNodeCache = (overrideReuseNodeCache != null) ? overrideReuseNodeCache : Boolean.parseBoolean(sdkProperties.getProperty("reuseNodeCache"));
-		nodeHelper.installNodeAndNpm(nodeVersion, npmVersion, reuseNodeCache);
 
 		String program = "openmrs@" + coreVersion;
 		String legacyPeerDeps = ignorePeerDependencies ? "--legacy-peer-deps" : "";
 
-		nodeHelper.runNpx(String.format("%s --version", program), legacyPeerDeps);  // print frontend tool version number
-		nodeHelper.runNpx(String.format("%s assemble --target %s --mode config --config %s", program, buildTargetDir, spaConfigFile), legacyPeerDeps);
-		nodeHelper.runNpx(String.format("%s build --target %s --build-config %s", program, buildTargetDir, spaConfigFile), legacyPeerDeps);
-
-		Path nodeCache = NodeHelper.tempDir;
-		if (!reuseNodeCache) {
-			try {
-				if (nodeCache != null && nodeCache.toFile().exists()) {
-					MoreFiles.deleteRecursively(nodeCache, RecursiveDeleteOption.ALLOW_INSECURE);
-				}
-			} catch (IOException e) {
-				logger.error("Couldn't delete the temp file", e);
-			}
+		try {
+			nodeHelper.installNodeAndNpm(nodeVersion, npmVersion, reuseNodeCache);
+			nodeHelper.runNpx(String.format("%s --version", program), legacyPeerDeps);  // print frontend tool version number
+			nodeHelper.runNpx(String.format("%s assemble --target %s --mode config --config %s", program, buildTargetDir, spaConfigFile), legacyPeerDeps);
+			nodeHelper.runNpx(String.format("%s build --target %s --build-config %s", program, buildTargetDir, spaConfigFile), legacyPeerDeps);
+		}
+		catch (Exception e) {
+			throw new MojoExecutionException("Unable to install spa with node", e);
+		}
+		finally {
+			nodeHelper.close();
 		}
 	}
 	
@@ -186,8 +175,6 @@ public class SpaInstaller {
 	 * `{ "configUrls": ["qux"] }` because `configUrls` is known to be array-valued
 	 *
 	 * @param jsonObject the object being constructed
-	 * @param propertyKey
-	 * @param value
 	 */
 	private void addPropertyToJSONObject(Map<String, Object> jsonObject, String propertyKey, String value)
 	        throws MojoExecutionException {
