@@ -50,7 +50,7 @@ public class ContentHelper {
 
     public ContentProperties getContentProperties(ContentPackage contentPackage) throws MojoExecutionException {
         Artifact artifact = contentPackage.getArtifact();
-        log.debug("Retrieving content package: " + artifact);
+        log.debug("Retrieving content package: {}", artifact);
         try (TempDirectory tempDirectory = TempDirectory.create(artifact.getArtifactId() + "-content-package")) {
             mavenEnvironment.getArtifactHelper().downloadArtifact(artifact, tempDirectory.getFile(), true);
             Properties properties = new Properties();
@@ -107,7 +107,7 @@ public class ContentHelper {
     public void installBackendConfig(DistroProperties distroProperties, File installDir) throws MojoExecutionException {
         log.debug("Installing backend configuration for content packages in distribution");
         for (ContentPackage contentPackage : getContentPackagesInInstallationOrder(distroProperties)) {
-            log.debug("Installing content package " + contentPackage.getGroupIdAndArtifactId());
+            log.debug("Installing content package: {}", contentPackage.getGroupIdAndArtifactId());
             Map<String, String> vars = getReplacementVariables(distroProperties, contentPackage);
             installBackendConfig(contentPackage, vars, installDir);
         }
@@ -120,7 +120,7 @@ public class ContentHelper {
      * Any text files that contain variable references will have these references populated based on the given vars map
      */
     void installBackendConfig(ContentPackage contentPackage, Map<String, String> vars, File installDir) throws MojoExecutionException {
-        log.debug("Installing backend configuration for " + contentPackage + " to " + installDir);
+        log.debug("Installing backend configuration for {} to {}", contentPackage, installDir);
         Artifact artifact = contentPackage.getArtifact();
         try (TempDirectory tempDirectory = TempDirectory.create(artifact.getArtifactId() + "-content-package")) {
             mavenEnvironment.getArtifactHelper().downloadArtifact(artifact, tempDirectory.getFile(), true);
@@ -134,33 +134,9 @@ public class ContentHelper {
                 backendDir = tempDirectory.getFile();
             }
 
-            // Apply variable replacements to the downloaded files
+            // Apply variable replacements to the downloaded files and copy into the installDir
             applyVariableReplacements(vars, backendDir);
-
-            // If a namespace is passed in, then install backend configurations into namespaced subdirectories for each domain
-            String namespace = contentPackage.getNamespace();
-            boolean emptyNamespace = StringUtils.isBlank(namespace) || namespace.equals(".") || namespace.equals("/") || namespace.equals("false");
-            if (emptyNamespace) {
-                log.debug("Copying " + backendDir + " to " + installDir);
-                FileUtils.copyDirectory(backendDir, installDir);
-            }
-            else {
-                File[] configFiles = backendDir.listFiles();
-                if (configFiles != null) {
-                    for (File configFile : configFiles) {
-                        if (configFile.isDirectory()) {
-                            Path namespacedConfigDir = installDir.toPath().resolve(configFile.getName()).resolve(contentPackage.getNamespace());
-                            Files.createDirectories(namespacedConfigDir);
-                            log.debug("Copying " + configFile + " to " + namespacedConfigDir);
-                            FileUtils.copyDirectory(configFile, namespacedConfigDir.toFile());
-                        }
-                        else {
-                            log.debug("Copying " + configFile + " to " + installDir);
-                            FileUtils.copyFile(configFile, new File(installDir, configFile.getName()));
-                        }
-                    }
-                }
-            }
+            copyDirectory(backendDir, installDir, contentPackage.getNamespace());
         }
         catch (IOException e) {
             throw new MojoExecutionException("Unable to install backend configuration to " + installDir, e);
@@ -171,15 +147,13 @@ public class ContentHelper {
      * This installs the frontend configuration for all content packages defined in the distribution
      * Installation is done in the order in which they should be installed, with packages that are dependencies of other packages installed first
      */
-    public List<File> installFrontendConfig(DistroProperties distroProperties, File installDir) throws MojoExecutionException {
+    public void installFrontendConfig(DistroProperties distroProperties, File installDir) throws MojoExecutionException {
         log.debug("Installing frontend configuration for content packages in distribution");
-        List<File> files = new ArrayList<>();
         for (ContentPackage contentPackage : getContentPackagesInInstallationOrder(distroProperties)) {
-            log.debug("Installing content package " + contentPackage.getGroupIdAndArtifactId());
+            log.debug("Installing content package {}", contentPackage.getGroupIdAndArtifactId());
             Map<String, String> vars = getReplacementVariables(distroProperties, contentPackage);
-            files.addAll(installFrontendConfig(contentPackage, vars, installDir));
+            installFrontendConfig(contentPackage, vars, installDir);
         }
-        return files;
     }
 
     /**
@@ -188,10 +162,9 @@ public class ContentHelper {
      * To account for these, this will also attempt to look for frontend_config, if the preferred directory does not exist
      * Any text files that contain variable references will have these references populated based on the given vars map
      */
-    List<File> installFrontendConfig(ContentPackage contentPackage, Map<String, String> vars, File installDir) throws MojoExecutionException {
-        log.debug("Installing frontend configuration for " + contentPackage + " to " + installDir);
+    void installFrontendConfig(ContentPackage contentPackage, Map<String, String> vars, File installDir) throws MojoExecutionException {
+        log.debug("Installing frontend configuration for {} to {}", contentPackage, installDir);
         Artifact artifact = contentPackage.getArtifact();
-        List<File> ret = new ArrayList<>();
         try (TempDirectory tempDirectory = TempDirectory.create(artifact.getArtifactId() + "-content-package")) {
             mavenEnvironment.getArtifactHelper().downloadArtifact(artifact, tempDirectory.getFile(), true);
 
@@ -201,28 +174,44 @@ public class ContentHelper {
                 frontendDir = tempDirectory.getPath().resolve("configs").resolve("frontend_config").toFile();
             }
 
-            // Apply variable replacements to the downloaded files
+            // Apply variable replacements to the downloaded files and copy into the installDir
             applyVariableReplacements(vars, frontendDir);
-
-            // If a frontend directory is found, copy files within it to target directory, in a subdirectory for the current content package
-            if (frontendDir.exists() && frontendDir.isDirectory()) {
-                File targetDir = new File(installDir, artifact.getArtifactId());
-                Files.createDirectory(targetDir.toPath());
-                log.debug("Copying " + frontendDir + " to " + targetDir);
-                FileUtils.copyDirectory(frontendDir, targetDir);
-                ret = Arrays.asList(Objects.requireNonNull(targetDir.listFiles()));
-            }
-            else {
-                log.warn("No frontend configuration found in content package");
-            }
-
-            return ret;
+            copyDirectory(frontendDir, installDir, contentPackage.getNamespace());
         }
         catch (IOException e) {
             throw new MojoExecutionException("Unable to install frontend configuration to " + installDir, e);
         }
     }
 
+    /**
+     * Copies the contents of the sourceDir into the targetDir.
+     * If namespace is passed in, files are added to a namespaced subdirectory within each copied directory
+     */
+    void copyDirectory(File sourceDir, File targetDir, String namespace) throws IOException {
+        boolean emptyNamespace = StringUtils.isBlank(namespace) || namespace.equals(".") || namespace.equals("/") || namespace.equals("false");
+        if (emptyNamespace) {
+            log.debug("Copying {} to {}", sourceDir, targetDir);
+            FileUtils.copyDirectory(sourceDir, targetDir);
+        }
+        else {
+            File[] configFiles = sourceDir.listFiles();
+            if (configFiles != null) {
+                for (File configFile : configFiles) {
+                    if (configFile.isDirectory()) {
+                        Path namespacedConfigDir = targetDir.toPath().resolve(configFile.getName()).resolve(namespace);
+                        Files.createDirectories(namespacedConfigDir);
+                        log.debug("Copying {} to {}", configFile, namespacedConfigDir);
+                        FileUtils.copyDirectory(configFile, namespacedConfigDir.toFile());
+                    }
+                    else {
+                        File targetFile = targetDir.toPath().resolve(namespace).resolve(configFile.getName()).toFile();
+                        log.debug("Copying {} to {}", configFile, targetFile);
+                        FileUtils.copyFile(configFile, targetFile);
+                    }
+                }
+            }
+        }
+    }
 
     /**
      * This returns all values that will be used to replace variable references in files contained within the given content package for the given distribution
