@@ -204,8 +204,9 @@ public class ContentHelper {
                         FileUtils.copyDirectory(configFile, namespacedConfigDir.toFile());
                     }
                     else {
-                        log.debug("Copying " + configFile + " to " + targetDir);
-                        FileUtils.copyFile(configFile, new File(targetDir, configFile.getName()));
+                        File targetFile = targetDir.toPath().resolve(namespace).resolve(configFile.getName()).toFile();
+                        log.debug("Copying " + configFile + " to " + targetFile);
+                        FileUtils.copyFile(configFile, targetFile);
                     }
                 }
             }
