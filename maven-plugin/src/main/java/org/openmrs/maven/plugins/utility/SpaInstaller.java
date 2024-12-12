@@ -65,8 +65,7 @@ public class SpaInstaller {
 		installFromDistroProperties(appDataDir, distroProperties, false, null);
 	}
 	
-	public void installFromDistroProperties(File appDataDir, DistroProperties distroProperties, boolean ignorePeerDependencies, Boolean overrideReuseNodeCache)
-			throws MojoExecutionException {
+	public void installFromDistroProperties(File appDataDir, DistroProperties distroProperties, boolean ignorePeerDependencies, Boolean overrideReuseNodeCache) throws MojoExecutionException {
 
 		File buildTargetDir = new File(appDataDir, SDKConstants.OPENMRS_SERVER_FRONTEND);
 		if (buildTargetDir.exists()) {
@@ -77,6 +76,8 @@ public class SpaInstaller {
 				throw new MojoExecutionException("Unable to delete existing " + SDKConstants.OPENMRS_SERVER_FRONTEND + " directory", e);
 			}
 		}
+
+		contentHelper.installFrontendConfig(distroProperties, buildTargetDir);
 
 		Map<String, String> spaArtifactProperties = distroProperties.getSpaArtifactProperties();
 		Map<String, String> spaBuildProperties = distroProperties.getSpaBuildProperties();
@@ -139,21 +140,10 @@ public class SpaInstaller {
 
 		String program = "openmrs@" + coreVersion;
 		String legacyPeerDeps = ignorePeerDependencies ? "--legacy-peer-deps" : "";
-		// print frontend tool version number
-		nodeHelper.runNpx(String.format("%s --version", program), legacyPeerDeps);
 
-		if (distroProperties.getContentPackages().isEmpty()) {
-			nodeHelper.runNpx(String.format("%s assemble --target %s --mode config --config %s", program, buildTargetDir,
-				spaConfigFile), legacyPeerDeps);
-		} else {
-			try (TempDirectory configFileDir = TempDirectory.create("content-frontend-config")) {
-				List<File> configFiles = contentHelper.installFrontendConfig(distroProperties, configFileDir.getFile());
-				String assembleCommand = assembleWithFrontendConfig(program, buildTargetDir, configFiles, spaConfigFile);
-				nodeHelper.runNpx(assembleCommand, legacyPeerDeps);
-			}
-		}
-		nodeHelper.runNpx(
-			String.format("%s build --target %s --build-config %s", program, buildTargetDir, spaConfigFile), legacyPeerDeps);
+		nodeHelper.runNpx(String.format("%s --version", program), legacyPeerDeps);  // print frontend tool version number
+		nodeHelper.runNpx(String.format("%s assemble --target %s --mode config --config %s", program, buildTargetDir, spaConfigFile), legacyPeerDeps);
+		nodeHelper.runNpx(String.format("%s build --target %s --build-config %s", program, buildTargetDir, spaConfigFile), legacyPeerDeps);
 
 		Path nodeCache = NodeHelper.tempDir;
 		if (!reuseNodeCache) {
@@ -166,22 +156,6 @@ public class SpaInstaller {
 			}
 		}
 	}
-	
-	private String assembleWithFrontendConfig(String program, File buildTargetDir, List<File> configFiles, File spaConfigFile) {
-        StringBuilder command = new StringBuilder();
-		command.append(program)
-				.append(" assemble --target ")
-				.append(buildTargetDir)
-				.append(" --mode config --config ")
-				.append(spaConfigFile);
-
-        for (File configFile : configFiles) {
-            command.append(" --config-file ").append(configFile.getAbsolutePath());
-        }
-
-        return command.toString();
-    }
-
 	
 	private Map<String, Object> convertPropertiesToJSON(Map<String, String> properties) throws MojoExecutionException {
 		Set<String> foundPropertySetKeys = new HashSet<>();

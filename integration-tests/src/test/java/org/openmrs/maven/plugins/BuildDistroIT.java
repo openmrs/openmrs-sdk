@@ -263,6 +263,9 @@ public class BuildDistroIT extends AbstractSdkIT {
         assertFileContains(",[0-9],", "distro", "web", "openmrs_config", "patientidentifiertypes", "patientidentifiertypes.csv");
         assertFileContains("<value>height-uuid</value>", "distro", "web", "openmrs_config", "globalproperties", "gp.xml");
         assertFileContains("<value>weight-uuid</value>", "distro", "web", "openmrs_config", "globalproperties", "gp.xml");
+        assertFilePresent("distro", "web", "openmrs_spa", "config.json");
+        assertFileContains("\"heightUuid\": \"height-uuid\"", "distro", "web", "openmrs_spa", "config.json");
+        assertFileContains("\"weightUuid\": \"weight-uuid\"", "distro", "web", "openmrs_spa", "config.json");
     }
 
     @Test
