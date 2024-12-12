@@ -40,6 +40,9 @@ public class SpaInstallerTest {
     Wizard wizard;
 
     @Mock
+    ContentHelper contentHelper;
+
+    @Mock
     NodeHelper nodeHelper;
 
     File appDataDir;
@@ -51,6 +54,7 @@ public class SpaInstallerTest {
         spaInstaller = new SpaInstaller();
         spaInstaller.setModuleInstaller(moduleInstaller);
         spaInstaller.setNodeHelper(nodeHelper);
+        spaInstaller.setContentHelper(contentHelper);
         spaInstaller.setWizard(wizard);
     }
 
