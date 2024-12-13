@@ -172,6 +172,7 @@ public class DeployIT extends AbstractSdkIT {
 
     @Test
     public void deploy_shouldUpgradeDistroWithContentPackage() throws Exception {
+        setupContentPackage("testpackage2");
         testServerId = setupTestServer("referenceapplication:2.2");
         includeDistroPropertiesFile("openmrs-distro-content-package.properties");
         addAnswer(testServerId);
@@ -179,14 +180,14 @@ public class DeployIT extends AbstractSdkIT {
         addAnswer("y");
         executeTask("deploy");
         assertSuccess();
-        assertFilePresent(testServerId, "configuration", "conceptclasses", "hiv", "conceptclasses.csv");
-        assertFilePresent(testServerId, "configuration", "conceptsources", "hiv", "conceptsources.csv");
-        assertFilePresent(testServerId, "configuration", "encountertypes", "hiv", "encountertypes.csv");
-        assertLogContains("+ Adds content package hiv 1.0.0");
+        assertFilePresent(testServerId, "configuration", "globalproperties", "testpackage2", "gp.xml");
+        assertFilePresent(testServerId, "configuration", "patientidentifiertypes", "testpackage2", "patientidentifiertypes.csv");
+        assertLogContains("+ Adds content package testpackage2 1.0.0");
     }
 
     @Test
     public void deploy_shouldUpgradeDistroWithContentPackageWithoutNamespace() throws Exception {
+        setupContentPackage("testpackage2");
         testServerId = setupTestServer("referenceapplication:2.2");
         includeDistroPropertiesFile("openmrs-distro-content-package-no-namespace.properties");
         addAnswer(testServerId);
@@ -194,10 +195,9 @@ public class DeployIT extends AbstractSdkIT {
         addAnswer("y");
         executeTask("deploy");
         assertSuccess();
-        assertFilePresent(testServerId, "configuration", "conceptclasses", "conceptclasses.csv");
-        assertFilePresent(testServerId, "configuration", "conceptsources", "conceptsources.csv");
-        assertFilePresent(testServerId, "configuration", "encountertypes", "encountertypes.csv");
-        assertLogContains("+ Adds content package hiv 1.0.0");
+        assertFilePresent(testServerId, "configuration", "globalproperties", "gp.xml");
+        assertFilePresent(testServerId, "configuration", "patientidentifiertypes", "patientidentifiertypes.csv");
+        assertLogContains("+ Adds content package testpackage2 1.0.0");
     }
 
     @Test
@@ -232,17 +232,17 @@ public class DeployIT extends AbstractSdkIT {
         assertFileNotPresent(testServerId, "configuration", "addresshierarchy", "addresshierarchy-core_demo.csv");
         assertFileNotPresent(testServerId, "configuration", "conceptclasses", "conceptclasses-core_data.csv");
         assertFileNotPresent(testServerId, "configuration", "encountertypes", "encountertypes_core-demo.csv");
-        assertFilePresent(testServerId, "configuration", "conceptclasses", "hiv", "conceptclasses.csv");
-        assertFilePresent(testServerId, "configuration", "conceptsources", "hiv", "conceptsources.csv");
-        assertFilePresent(testServerId, "configuration", "encountertypes", "hiv", "encountertypes.csv");
+        assertFilePresent(testServerId, "configuration", "globalproperties", "testpackage2", "gp.xml");
+        assertFilePresent(testServerId, "configuration", "patientidentifiertypes", "testpackage2", "patientidentifiertypes.csv");
+
         assertLogContains("- Removes existing configuration");
-        assertLogContains("+ Adds content package hiv 1.0.0");
+        assertLogContains("+ Adds content package testpackage2 1.0.0");
 
         server = Server.loadServer(testDirectoryPath.resolve(testServerId));
         assertNotNull(server);
         assertThat(server.getConfigArtifacts().size(), equalTo(0));
         assertThat(server.getContentPackages().size(), equalTo(1));
-        assertThat(server.getContentPackages().get(0).getArtifactId(), equalTo("hiv"));
+        assertThat(server.getContentPackages().get(0).getArtifactId(), equalTo("testpackage2"));
     }
 
     @Test
