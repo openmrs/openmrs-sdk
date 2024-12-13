@@ -77,6 +77,7 @@ public abstract class AbstractSdkIT {
     protected File distroFile;
     protected Path testBaseDir;
     protected Path testResourceDir;
+    protected File nodeCacheDir;
     protected boolean deleteTestArtifacts = false;
 
     public String resolveSdkArtifact() throws MojoExecutionException {
@@ -123,6 +124,7 @@ public abstract class AbstractSdkIT {
     public void setup() throws Exception {
         Path classesPath = Paths.get(Objects.requireNonNull(getClass().getResource("/")).toURI());
         testBaseDir = classesPath.resolveSibling("integration-test-base-dir");
+        nodeCacheDir = testBaseDir.resolve("node-cache").toFile();
         testResourceDir = testBaseDir.resolve("test-resources");
         testDirectoryPath = testBaseDir.resolve(getClass().getSimpleName() + "_" + nextCounter());
         testDirectory = testDirectoryPath.toFile();
@@ -133,6 +135,7 @@ public abstract class AbstractSdkIT {
         addTestResources();
         verifier = new Verifier(testDirectory.getAbsolutePath());
         verifier.setAutoclean(false);
+        verifier.setSystemProperty("nodeCacheDir", nodeCacheDir.getAbsolutePath());
         addTaskParam("openMRSPath", testDirectory.getAbsolutePath());
         distroFile = new File(testDirectory, DistroProperties.DISTRO_FILE_NAME);
         deleteTestArtifacts = Boolean.parseBoolean(System.getProperty("deleteTestArtifacts"));
@@ -154,6 +157,7 @@ public abstract class AbstractSdkIT {
 
     public String setupTestServer(String distro) throws Exception {
         Verifier setupServer = new Verifier(testDirectory.getAbsolutePath());
+        setupServer.setSystemProperty("nodeCacheDir", nodeCacheDir.getAbsolutePath());
         String serverId = UUID.randomUUID().toString();
         try {
             addTaskParam(setupServer, "openMRSPath", testDirectory.getAbsolutePath());
@@ -183,6 +187,7 @@ public abstract class AbstractSdkIT {
         Path targetPath = testDirectoryPath.resolve("contentpackages").resolve(contentPackageDir);
         FileUtils.copyDirectory(sourcePath.toFile(), targetPath.toFile());
         Verifier setupContentPackage = new Verifier(targetPath.toFile().getAbsolutePath());
+        setupContentPackage.setSystemProperty("nodeCacheDir", nodeCacheDir.getAbsolutePath());
         try {
             addAnswer("y");
             addTaskParam(setupContentPackage, BATCH_ANSWERS, getAnswers());

@@ -193,32 +193,31 @@ public class BuildDistroIT extends AbstractSdkIT {
 
     @Test
     public void testBuildDistroWithContentPackage() throws Exception {
+        setupContentPackage("testpackage2");
         includeDistroPropertiesFile("openmrs-distro-content-package.properties");
         addTaskParam("dir", "target");
         addTaskParam("ignorePeerDependencies", "false");
         executeTask("build-distro");
         assertFilePresent( "target", "web", "openmrs_core", "openmrs.war");
-        assertFilePresent("target", "web", "openmrs_config", "conceptclasses", "hiv", "conceptclasses.csv");
-        assertFilePresent("target", "web", "openmrs_config", "conceptsources", "hiv", "conceptsources.csv");
-        assertFilePresent("target", "web", "openmrs_config", "encountertypes", "hiv", "encountertypes.csv");
+        assertFilePresent("target", "web", "openmrs_config", "globalproperties", "testpackage2", "gp.xml");
+        assertFilePresent("target", "web", "openmrs_config", "patientidentifiertypes", "testpackage2", "patientidentifiertypes.csv");
     }
 
     @Test
     public void testBuildDistroWithWithContentPackageWithNoNamespace() throws Exception {
+        setupContentPackage("testpackage2");
         includeDistroPropertiesFile("openmrs-distro-content-package-no-namespace.properties");
         addTaskParam("dir", "target");
         addTaskParam("ignorePeerDependencies", "false");
         executeTask("build-distro");
         assertFilePresent( "target", "web", "openmrs_core", "openmrs.war");
-        assertFilePresent("target", "web", "openmrs_config", "conceptclasses", "conceptclasses.csv");
-        assertFilePresent("target", "web", "openmrs_config", "conceptsources", "conceptsources.csv");
-        assertFilePresent("target", "web", "openmrs_config", "encountertypes", "encountertypes.csv");
+        assertFilePresent("target", "web", "openmrs_config", "globalproperties", "gp.xml");
+        assertFilePresent("target", "web", "openmrs_config", "patientidentifiertypes", "patientidentifiertypes.csv");
     }
 
     @Test
     public void testBuildDistroWithMissingContentDependencies() throws Exception {
         setupContentPackage("testpackage1");
-
         includeDistroPropertiesFile("openmrs-distro-content-package-missing-dependencies.properties");
         addTaskParam("dir", "distro");
         addTaskParam("ignorePeerDependencies", "false");

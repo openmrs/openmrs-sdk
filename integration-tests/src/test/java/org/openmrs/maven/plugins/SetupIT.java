@@ -492,6 +492,7 @@ public class SetupIT extends AbstractSdkIT {
 
     @Test
     public void setup_shouldInstallWithContentPackage() throws Exception {
+        setupContentPackage("testpackage2");
         includeDistroPropertiesFile("openmrs-distro-content-package.properties");
         addTaskParam("distro", testDirectory.toString() + File.separator + "openmrs-distro.properties");
         addMockDbSettings();
@@ -504,13 +505,13 @@ public class SetupIT extends AbstractSdkIT {
         executeTask("setup");
 
         assertFilePresent( serverId, "openmrs-2.6.9.war");
-        assertFilePresent(serverId, "configuration", "conceptclasses", "hiv", "conceptclasses.csv");
-        assertFilePresent(serverId, "configuration", "conceptsources", "hiv", "conceptsources.csv");
-        assertFilePresent(serverId, "configuration", "encountertypes", "hiv", "encountertypes.csv");
+        assertFilePresent(serverId, "configuration", "globalproperties", "testpackage2", "gp.xml");
+        assertFilePresent(serverId, "configuration", "patientidentifiertypes", "testpackage2", "patientidentifiertypes.csv");
     }
 
     @Test
     public void setup_shouldInstallWithContentPackageWithNoNamespace() throws Exception {
+        setupContentPackage("testpackage2");
         includeDistroPropertiesFile("openmrs-distro-content-package-no-namespace.properties");
         addTaskParam("distro", testDirectory.toString() + File.separator + "openmrs-distro.properties");
         addMockDbSettings();
@@ -523,9 +524,8 @@ public class SetupIT extends AbstractSdkIT {
         executeTask("setup");
 
         assertFilePresent( serverId, "openmrs-2.6.9.war");
-        assertFilePresent(serverId, "configuration", "conceptclasses", "conceptclasses.csv");
-        assertFilePresent(serverId, "configuration", "conceptsources", "conceptsources.csv");
-        assertFilePresent(serverId, "configuration", "encountertypes", "encountertypes.csv");
+        assertFilePresent(serverId, "configuration", "globalproperties", "gp.xml");
+        assertFilePresent(serverId, "configuration", "patientidentifiertypes", "patientidentifiertypes.csv");
     }
 
     @Test
