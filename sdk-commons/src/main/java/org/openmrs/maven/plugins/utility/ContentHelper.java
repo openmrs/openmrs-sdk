@@ -115,8 +115,6 @@ public class ContentHelper {
 
     /**
      * The standard content package template places the backend config into a folder within the zip archive at `configuration/backend_configuration`
-     * However, other initial content packages did not follow this pattern.
-     * To account for these, this will also attempt to look for backend_config in other directories, if the preferred directories does not exist
      * Any text files that contain variable references will have these references populated based on the given vars map
      */
     void installBackendConfig(ContentPackage contentPackage, Map<String, String> vars, File installDir) throws MojoExecutionException {
@@ -125,18 +123,13 @@ public class ContentHelper {
         try (TempDirectory tempDirectory = TempDirectory.create(artifact.getArtifactId() + "-content-package")) {
             mavenEnvironment.getArtifactHelper().downloadArtifact(artifact, tempDirectory.getFile(), true);
 
-            // Get the backend directory.  If not found, fall back to some alternatives for compatibility with existing artifacts
+            // Install the backend configuration directory, if it exists
             File backendDir = tempDirectory.getPath().resolve("configuration").resolve("backend_configuration").toFile();
-            if (!backendDir.exists() || !backendDir.isDirectory()) {
-                backendDir = tempDirectory.getPath().resolve("configs").resolve("backend_config").toFile();
+            if (backendDir.exists() && backendDir.isDirectory()) {
+                // Apply variable replacements to the downloaded files and copy into the installDir
+                applyVariableReplacements(vars, backendDir);
+                copyDirectory(backendDir, installDir, contentPackage.getNamespace());
             }
-            if (!backendDir.exists() || !backendDir.isDirectory()) {
-                backendDir = tempDirectory.getFile();
-            }
-
-            // Apply variable replacements to the downloaded files and copy into the installDir
-            applyVariableReplacements(vars, backendDir);
-            copyDirectory(backendDir, installDir, contentPackage.getNamespace());
         }
         catch (IOException e) {
             throw new MojoExecutionException("Unable to install backend configuration to " + installDir, e);
@@ -158,8 +151,6 @@ public class ContentHelper {
 
     /**
      * The standard content package template places the backend config into a folder within the zip archive at `configuration/frontend_configuration`
-     * However, other initial content packages did not follow this pattern.
-     * To account for these, this will also attempt to look for frontend_config, if the preferred directory does not exist
      * Any text files that contain variable references will have these references populated based on the given vars map
      */
     void installFrontendConfig(ContentPackage contentPackage, Map<String, String> vars, File installDir) throws MojoExecutionException {
@@ -168,15 +159,13 @@ public class ContentHelper {
         try (TempDirectory tempDirectory = TempDirectory.create(artifact.getArtifactId() + "-content-package")) {
             mavenEnvironment.getArtifactHelper().downloadArtifact(artifact, tempDirectory.getFile(), true);
 
-            // Get the frontend directory.  If not found, fall back to some alternatives for compatibility with existing artifacts
+            // Install the frontend configuration directory, if it exists
             File frontendDir = tempDirectory.getPath().resolve("configuration").resolve("frontend_configuration").toFile();
-            if (!frontendDir.exists() || !frontendDir.isDirectory()) {
-                frontendDir = tempDirectory.getPath().resolve("configs").resolve("frontend_config").toFile();
+            if (frontendDir.exists() && frontendDir.isDirectory()) {
+                // Apply variable replacements to the downloaded files and copy into the installDir
+                applyVariableReplacements(vars, frontendDir);
+                copyDirectory(frontendDir, installDir, contentPackage.getNamespace());
             }
-
-            // Apply variable replacements to the downloaded files and copy into the installDir
-            applyVariableReplacements(vars, frontendDir);
-            copyDirectory(frontendDir, installDir, contentPackage.getNamespace());
         }
         catch (IOException e) {
             throw new MojoExecutionException("Unable to install frontend configuration to " + installDir, e);
