@@ -33,6 +33,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -123,7 +124,7 @@ public class Setup extends AbstractServerTask {
 	 * To remove a property from the distro.properties file
 	 */
 	@Parameter(property = "removeProperty")
-	private String removeProperty;
+	private String[] removeProperty;
 
 	/**
 	 * Option to include demo data
@@ -283,9 +284,9 @@ public class Setup extends AbstractServerTask {
 	public void setup(Server server, DistroProperties distroProperties) throws MojoExecutionException {
 		if (distroProperties != null) {
 
-			if (removeProperty != null) {
+			if (removeProperty != null && removeProperty.length > 0) {
 				List<String> keysToRemove = distroProperties.getAllKeys().stream()
-						.filter(key -> key.startsWith(removeProperty))
+						.filter(key -> Arrays.stream(removeProperty).anyMatch(key::startsWith))
 						.collect(Collectors.toList());
 				for (String s : keysToRemove) {
 					distroProperties.removeProperty(s);
