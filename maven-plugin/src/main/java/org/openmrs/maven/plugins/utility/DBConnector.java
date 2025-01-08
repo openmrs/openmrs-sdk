@@ -27,6 +27,8 @@ public class DBConnector implements AutoCloseable {
 			} catch (SQLException e2) {
 				if (e2.getMessage().contains("Access denied")) {
 					throw new SQLException("Invalid database credentials. Please check your username and password.", e2);
+				} else if (e2.getMessage().contains("No suitable driver found for")) {
+					throw new SQLException("Incorrect Database Uri. Please provide a correct database uri.", e2);
 				}
 				throw e2;
 			}
