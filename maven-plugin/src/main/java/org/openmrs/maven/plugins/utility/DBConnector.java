@@ -22,7 +22,14 @@ public class DBConnector implements AutoCloseable {
 		try {
 			this.connection = DriverManager.getConnection(url, user, pass);
 		} catch (SQLException e) {
-			this.connection = DriverManager.getConnection(url, user, pass);
+			try {
+				this.connection = DriverManager.getConnection(url, user, pass);
+			} catch (SQLException e2) {
+				if (e2.getMessage().contains("Access denied")) {
+					throw new SQLException("Invalid database credentials. Please check your username and password.", e2);
+				}
+				throw e2;
+			}
 		}
 		this.dbName = dbName;
 	}

@@ -63,4 +63,6 @@ public interface Wizard {
     boolean promptForConfirmDistroUpgrade(UpgradeDifferential upgradeDifferential) throws MojoExecutionException;
 
     void setAnswers(ArrayDeque<String> batchAnswers);
+
+    String promptForPasswordIfMissingWithDefault(String s, String dbPassword, String dbPassword1, String s1) throws MojoExecutionException;
 }
