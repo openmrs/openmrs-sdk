@@ -1036,7 +1036,7 @@ public class DefaultWizard implements Wizard {
 			uri = new URIBuilder(noJdbc);
 		}
 		catch (URISyntaxException e) {
-			throw new MojoExecutionException("Database URI \"" + noJdbc + "\" is not a valid URI " + e.getMessage(),  e);
+			throw new MojoExecutionException("Database URI \"" + noJdbc + "\" is not a valid URI. " + e.getMessage(),  e);
 		}
 		uri.setParameter("autoReconnect", "true");
 		uri.setParameter("useUnicode", "true");
