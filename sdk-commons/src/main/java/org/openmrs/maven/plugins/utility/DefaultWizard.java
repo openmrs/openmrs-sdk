@@ -904,8 +904,11 @@ public class DefaultWizard implements Wizard {
 			throws MojoExecutionException {
 		promptForDockerHostIfMissing(dockerHelper, dockerHost);
 
-		String containerId = prompt(
-				"Please specify your container id/name/label (you can get it using command `docker ps -a --no-trunc`)");
+		List<String> containerNames = dockerHelper.getDockerContainerNames();
+		String customMessage = "Please specify your container id/name/label (you can get it using command `docker ps -a --no-trunc`) ";
+
+		String containerId = promptForMissingValueWithOptions("Select the docker container: ", null, null,
+				containerNames, customMessage, "");
 		String username = prompt("Please specify DB username");
 		String password = promptForPassword("Please specify DB password");
 

@@ -1,5 +1,11 @@
 package org.openmrs.maven.plugins.utility;
 
+import com.github.dockerjava.api.DockerClient;
+import com.github.dockerjava.api.model.Container;
+import com.github.dockerjava.core.DefaultDockerClientConfig;
+import com.github.dockerjava.core.DockerClientBuilder;
+import com.github.dockerjava.core.DockerClientConfig;
+import com.github.dockerjava.httpclient5.ApacheDockerHttpClient;
 import org.apache.commons.lang.SystemUtils;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.BuildPluginManager;
@@ -12,7 +18,9 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
+import java.util.List;
 import java.util.Properties;
+import java.util.stream.Collectors;
 
 import static org.openmrs.maven.plugins.utility.PropertiesUtils.loadPropertiesFromFile;
 import static org.twdata.maven.mojoexecutor.MojoExecutor.artifactId;
@@ -51,12 +59,18 @@ public class DockerHelper {
     private final MavenSession mavenSession;
     private final BuildPluginManager pluginManager;
     private final Wizard wizard;
+    private final DockerClient dockerClient;
 
     public DockerHelper(MavenEnvironment mavenEnvironment) {
         this.mavenProject = mavenEnvironment.getMavenProject();
         this.mavenSession = mavenEnvironment.getMavenSession();
         this.pluginManager = mavenEnvironment.getPluginManager();
         this.wizard = mavenEnvironment.getWizard();
+        DefaultDockerClientConfig.Builder configBuilder = DefaultDockerClientConfig.createDefaultConfigBuilder();
+        DockerClientConfig config = configBuilder.build();
+        dockerClient = DockerClientBuilder.getInstance(config).withDockerHttpClient(
+                new ApacheDockerHttpClient.Builder().dockerHost(config.getDockerHost()).sslConfig(config.getSSLConfig()).build()
+        ).build();
     }
 
     private Properties getSdkProperties() throws MojoExecutionException {
@@ -143,5 +157,15 @@ public class DockerHelper {
                         element("dbUri", dbUri)),
                 executionEnvironment(mavenProject, mavenSession, pluginManager)
         );
+    }
+
+    public List<Container> getDockerContainers() {
+        return dockerClient.listContainersCmd().withShowAll(true).exec();
+    }
+
+    public List<String> getDockerContainerNames() {
+        return getDockerContainers().stream()
+                .map(container -> container.getNames()[0].replace("/", ""))
+                .collect(Collectors.toList());
     }
 }
