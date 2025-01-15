@@ -905,7 +905,7 @@ public class DefaultWizard implements Wizard {
 		promptForDockerHostIfMissing(dockerHelper, dockerHost);
 
 		String containerId = prompt(
-				"Please specify your container id/name/label (you can get it using command `docker ps -a`)");
+				"Please specify your container id/name/label (you can get it using command `docker ps -a --no-trunc`)");
 		String username = prompt("Please specify DB username");
 		String password = promptForPassword("Please specify DB password");
 
