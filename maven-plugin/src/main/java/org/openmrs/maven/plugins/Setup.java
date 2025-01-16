@@ -139,6 +139,9 @@ public class Setup extends AbstractServerTask {
 	@Parameter(property = "debug")
 	private String debug;
 
+	@Parameter(property = "serverPort")
+	private String serverPort;
+
 	@Parameter(defaultValue = "false", property = "run")
 	private boolean run;
 
@@ -367,18 +370,20 @@ public class Setup extends AbstractServerTask {
 	}
 
 	private void setServerPort(Server server) throws MojoExecutionException {
-		String message = "What port would you like your server to use?";
-		String port = wizard.promptForValueIfMissingWithDefault(
-				message,
-				server.getParam("tomcat.port"),
-				"port number",
-				String.valueOf(Setup.DEFAULT_PORT));
-		if (!StringUtils.isNumeric(port) || !this.serverHelper.isPort(Integer.parseInt(port))) {
-			wizard.showMessage("Port must be numeric and less or equal 65535.");
-			this.setServerPort(server);
-			return;
+		if (StringUtils.isBlank(serverPort)) {
+			String message = "What port (-D%s) would you like your server to use?";
+			serverPort = wizard.promptForValueIfMissingWithDefault(
+					message,
+					server.getParam("tomcat.port"),
+					"serverPort",
+					String.valueOf(Setup.DEFAULT_PORT));
+			if (!StringUtils.isNumeric(serverPort) || !this.serverHelper.isPort(Integer.parseInt(serverPort))) {
+				wizard.showMessage("Port must be numeric and less or equal 65535.");
+				this.setServerPort(server);
+				return;
+			}
+			server.setPort(serverPort);
 		}
-		server.setPort(port);
 	}
 
 	private void setDebugPort(Server server) throws MojoExecutionException {
