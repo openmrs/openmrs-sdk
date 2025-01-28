@@ -12,6 +12,7 @@
     <properties>
         <sdk.groupId>org.openmrs.maven.plugins</sdk.groupId>
         <sdk.artifactId>openmrs-sdk-maven-plugin</sdk.artifactId>
+        <docker-java.version>3.2.8</docker-java.version>
     </properties>
 
     <dependencies>
@@ -70,6 +71,29 @@
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
         </dependency>
+
+        <!--        Docker-->
+        <dependency>
+            <groupId>com.github.docker-java</groupId>
+            <artifactId>docker-java</artifactId>
+            <version>${docker-java.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.github.docker-java</groupId>
+                    <artifactId>docker-java-transport-jersey</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.github.docker-java</groupId>
+                    <artifactId>docker-java-transport-netty</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.github.docker-java</groupId>
+            <artifactId>docker-java-transport-httpclient5</artifactId>
+            <version>${docker-java.version}</version>
+        </dependency>
+
 
         <!--Testing-->
         <dependency>
