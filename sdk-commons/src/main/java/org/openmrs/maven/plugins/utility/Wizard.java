@@ -56,6 +56,8 @@ public interface Wizard {
 
     String promptForExistingServerIdIfMissing(String serverId) throws MojoExecutionException;
 
+    void promptForNewUriAndCredentials(Server server, String dbUser, String dbPassword, String dbUri) throws MojoExecutionException;
+
     List<String> getListOfServers() throws MojoExecutionException;
 
     void showJdkErrorMessage(String jdk, String platform, String recommendedJdk, String pathToProps);
@@ -64,5 +66,5 @@ public interface Wizard {
 
     void setAnswers(ArrayDeque<String> batchAnswers);
 
-    String promptForPasswordIfMissingWithDefault(String s, String dbPassword, String dbPassword1, String s1) throws MojoExecutionException;
+    void promptForDbCredentialsAgain(Server server, String dbUser, String dbPassword) throws MojoExecutionException;
 }
