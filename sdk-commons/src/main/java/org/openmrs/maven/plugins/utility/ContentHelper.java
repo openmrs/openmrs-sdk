@@ -10,6 +10,9 @@ import org.openmrs.maven.plugins.model.BaseSdkProperties;
 import org.openmrs.maven.plugins.model.ContentPackage;
 import org.openmrs.maven.plugins.model.ContentProperties;
 import org.openmrs.maven.plugins.model.DistroProperties;
+import org.openmrs.maven.plugins.model.PackageJson;
+import org.semver4j.Semver;
+import org.semver4j.SemverException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -59,7 +62,7 @@ public class ContentHelper {
                 PropertiesUtils.loadPropertiesFromFile(contentPropertiesFile, properties);
             }
             else {
-                log.warn("No " + CONTENT_PROPERTIES_NAME + " found in " + artifact);
+                log.warn("No " + CONTENT_PROPERTIES_NAME + " found in {}", artifact);
             }
             return new ContentProperties(properties);
         }
@@ -144,7 +147,10 @@ public class ContentHelper {
         log.debug("Installing frontend configuration for content packages in distribution");
         for (ContentPackage contentPackage : getContentPackagesInInstallationOrder(distroProperties)) {
             log.debug("Installing content package {}", contentPackage.getGroupIdAndArtifactId());
+            ContentProperties contentProps = getContentProperties(contentPackage);
+            Map<String, String> resolvedFrontendModules = resolveFrontendModules(contentProps.getAllProperties(), distroProperties);
             Map<String, String> vars = getReplacementVariables(distroProperties, contentPackage);
+            vars.putAll(resolvedFrontendModules);
             installFrontendConfig(contentPackage, vars, installDir);
         }
     }
@@ -253,5 +259,57 @@ public class ContentHelper {
                 }
             }
         }
+    }
+
+    /**
+     * Resolves frontend module versions by matching content properties against distribution properties
+     * or determining the latest compatible versions. Skips modules without matching versions, logging
+     * warnings instead of throwing exceptions.
+     */
+    protected Map<String, String> resolveFrontendModules(Properties contentProperties, DistroProperties distroProperties) {
+        Map<String, String> map = new HashMap<>();
+        for (String dependency : contentProperties.stringPropertyNames()) {
+            if (dependency.startsWith("spa.frontendModule")) {
+                String versionRange = contentProperties.getProperty(dependency);
+                String distroVersion = distroProperties.getPropertyValue(dependency);
+
+                if (distroVersion == null) {
+                    String latestVersion = findLatestMatchingVersion(dependency, versionRange);
+                    if (latestVersion == null) {
+                        log.warn("No matching version found for dependency '{}' with version range '{}'; skipping.", dependency, versionRange);
+                        continue;
+                    }
+                    map.put(dependency, latestVersion);
+                    log.info("Resolved frontend module '{}' to version '{}'", dependency, latestVersion);
+                } else {
+                    // Optionally, validate that distroVersion satisfies versionRange
+                    // If validation fails, log a warning and continue
+                    try {
+                        Semver semverVersion = new Semver(distroVersion);
+                        if (!semverVersion.satisfies(versionRange.trim())) {
+                            log.warn("Distro version '{}' for dependency '{}' does not satisfy version range '{}'; using it anyway.", distroVersion, dependency, versionRange);
+                        }
+                    } catch (SemverException e) {
+                        log.warn("Invalid version format for dependency '{}': {}", dependency, e.getMessage());
+                    }
+                    map.put(dependency, distroVersion);
+                }
+            }
+        }
+        return map;
+    }
+
+    public String findLatestMatchingVersion(String dependency, String versionRange) {
+        if (dependency.startsWith("spa.frontendModule")) {
+            PackageJson packageJson = createPackageJson(dependency);
+            return new NpmVersionHelper().getResolvedVersionFromNpmRegistry(packageJson, versionRange);
+        }
+        throw new IllegalArgumentException("Unsupported dependency type: " + dependency + " and range: "+ versionRange);
+    }
+
+    private PackageJson createPackageJson(String dependency) {
+        PackageJson packageJson = new PackageJson();
+        packageJson.setName(dependency.substring("spa.frontendModules.".length()));
+        return packageJson;
     }
 }

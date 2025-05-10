@@ -9,7 +9,6 @@ import org.slf4j.LoggerFactory;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -25,7 +24,6 @@ public class NpmVersionHelper {
 
 	/**
 	 * Retrieves the resolved version of an NPM package based on the supplied semver range.
-	 * <p>
 	 * This method runs the `npm pack --dry-run --json <package>@<version>` command to get the exact
 	 * version of the package that satisfies the specified semver range.
 	 *
@@ -37,18 +35,38 @@ public class NpmVersionHelper {
 	public String getResolvedVersionFromNpmRegistry(PackageJson packageJson, String versionRange) {
 		try {
 			String packageName = packageJson.getName();
-			JsonNode jsonArray = getPackageMetadata(versionRange, packageName);
-			if (jsonArray.isEmpty()) {
-				throw new RuntimeException("No versions found for the specified range: " + versionRange);
+			JsonNode metadata = getPackageMetadata(packageName, versionRange);
+			if (metadata.isEmpty()) {
+				log.warn("No versions found for range: {}. Skipping.", versionRange);
+				return null;
 			}
-			
-			JsonNode jsonObject = jsonArray.get(0);
-			return jsonObject.get("version").asText();
+
+			return metadata.get(0).get("version").asText();
+		} catch (IOException | InterruptedException e) {
+			log.error("Error retrieving resolved version: {}", e.getMessage());
+			throw new RuntimeException("Error resolving version", e);
 		}
-		catch (IOException | InterruptedException e) {
-			log.error(e.getMessage(), e);
-			throw new RuntimeException("Error retrieving resolved version from NPM", e);
+	}
+
+	private static JsonNode getPackageMetadata(String packageName, String versionRange) throws IOException, InterruptedException {
+		if (packageName == null || packageName.isEmpty()) {
+			throw new IllegalArgumentException("Package name cannot be null or empty");
 		}
+
+		ProcessBuilder processBuilder = new ProcessBuilder().command("npm", "pack", "--dry-run", "--json", packageName + "@" + versionRange)
+				.redirectErrorStream(true);
+		Process process = processBuilder.start();
+		StringBuilder output = new StringBuilder();
+
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
+			reader.lines().forEach(output::append);
+		}
+
+		if (process.waitFor() != 0) {
+			throw new RuntimeException("npm pack failed. Output: " + output);
+		}
+
+		return objectMapper.readTree(output.toString());
 	}
 
 	public List<String> getPackageVersions(String packageName, int limit) {
@@ -79,33 +97,4 @@ public class NpmVersionHelper {
             throw new RuntimeException(e);
         }
     }
-	
-	private static JsonNode getPackageMetadata(String versionRange, String packageName) throws IOException, InterruptedException {
-		if (packageName == null || packageName.isEmpty()) {
-			throw new IllegalArgumentException("Package name cannot be null or empty");
-		}
-		
-		ProcessBuilder processBuilder = new ProcessBuilder()
-		        .command("npm", "pack", "--dry-run", "--json", packageName + "@" + versionRange).redirectErrorStream(true)
-		        .inheritIO();
-		Process process = processBuilder.start();
-		
-		// Read the command output
-		StringBuilder outputBuilder = new StringBuilder();
-		char[] buffer = new char[4096];
-		try (Reader reader = new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8)) {
-			int read;
-			while ((read = reader.read(buffer)) >= 0) {
-				outputBuilder.append(buffer, 0, read);
-			}
-		}
-		
-		int exitCode = process.waitFor();
-		if (exitCode != 0) {
-			throw new RuntimeException(
-			        "npm pack --dry-run --json command failed with exit code " + exitCode + ". Output: " + outputBuilder);
-		}
-		
-		return objectMapper.readTree(outputBuilder.toString());
-	}
 }
