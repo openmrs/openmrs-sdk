@@ -62,7 +62,7 @@ public class ContentHelper {
                 PropertiesUtils.loadPropertiesFromFile(contentPropertiesFile, properties);
             }
             else {
-                log.warn("No " + CONTENT_PROPERTIES_NAME + " found in {}", artifact);
+                log.warn("No {} found in {}", CONTENT_PROPERTIES_NAME, artifact);
             }
             return new ContentProperties(properties);
         }

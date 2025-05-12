@@ -2,12 +2,14 @@ package org.openmrs.maven.plugins.utility;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.io.IOUtils;
 import org.openmrs.maven.plugins.model.PackageJson;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -53,20 +55,21 @@ public class NpmVersionHelper {
 			throw new IllegalArgumentException("Package name cannot be null or empty");
 		}
 
-		ProcessBuilder processBuilder = new ProcessBuilder().command("npm", "pack", "--dry-run", "--json", packageName + "@" + versionRange)
+		ProcessBuilder processBuilder = new ProcessBuilder()
+				.command("npm", "pack", "--dry-run", "--json", packageName + "@" + versionRange)
 				.redirectErrorStream(true);
 		Process process = processBuilder.start();
-		StringBuilder output = new StringBuilder();
 
-		try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
-			reader.lines().forEach(output::append);
+		String output;
+		try (InputStream inputStream = process.getInputStream()) {
+			output = IOUtils.toString(inputStream, StandardCharsets.UTF_8);
 		}
 
 		if (process.waitFor() != 0) {
 			throw new RuntimeException("npm pack failed. Output: " + output);
 		}
 
-		return objectMapper.readTree(output.toString());
+		return objectMapper.readTree(output);
 	}
 
 	public List<String> getPackageVersions(String packageName, int limit) {
