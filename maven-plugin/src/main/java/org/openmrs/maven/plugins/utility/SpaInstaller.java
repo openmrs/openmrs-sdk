@@ -111,11 +111,11 @@ public class SpaInstaller {
 
 		String nodeVersion = Optional.ofNullable(spaBuildProperties.remove("node"))
 				.orElseGet(() -> System.getProperty("sdk.node.version",
-						System.getenv().getOrDefault("SDK_NODE_VERSION", "16.20.2")));
+						System.getenv().getOrDefault("SDK_NODE_VERSION", NODE_VERSION)));
 
 		String npmVersion = Optional.ofNullable(spaBuildProperties.remove("npm"))
 				.orElseGet(() -> System.getProperty("sdk.npm.version",
-						System.getenv().getOrDefault("SDK_NPM_VERSION", "8.19.4")));
+						System.getenv().getOrDefault("SDK_NPM_VERSION", NPM_VERSION)));
 
 		log.info("Using Node.js version: {}", nodeVersion);
 		log.info("Using NPM version: {}", npmVersion);
