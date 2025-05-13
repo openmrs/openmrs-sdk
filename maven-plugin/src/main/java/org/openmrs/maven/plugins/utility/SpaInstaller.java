@@ -109,11 +109,11 @@ public class SpaInstaller {
 		String coreVersion = Optional.ofNullable(spaBuildProperties.remove("core"))
 				.orElse("next");
 
-		String nodeVersion = Optional.ofNullable(spaBuildProperties.remove("node"))
+		String nodeVersion = Optional.ofNullable(spaBuildProperties.remove("node.version"))
 				.orElseGet(() -> System.getProperty("sdk.node.version",
 						System.getenv().getOrDefault("SDK_NODE_VERSION", NODE_VERSION)));
 
-		String npmVersion = Optional.ofNullable(spaBuildProperties.remove("npm"))
+		String npmVersion = Optional.ofNullable(spaBuildProperties.remove("npm.version"))
 				.orElseGet(() -> System.getProperty("sdk.npm.version",
 						System.getenv().getOrDefault("SDK_NPM_VERSION", NPM_VERSION)));
 
