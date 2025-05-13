@@ -8,6 +8,8 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.BaseSdkProperties;
 import org.openmrs.maven.plugins.model.DistroProperties;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -16,6 +18,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 
@@ -32,6 +35,7 @@ public class SpaInstaller {
 	static final String NODE_VERSION = "20.17.0";
 	
 	static final String NPM_VERSION = "10.8.2";
+	private static final Logger log = LoggerFactory.getLogger(SpaInstaller.class);
 
 	private NodeHelper nodeHelper;
 	private ModuleInstaller moduleInstaller;
@@ -101,18 +105,21 @@ public class SpaInstaller {
 
 		// First pull any optional properties that may be used to specify the core, node, or npm versions
 		// These properties are not passed to the build tool, but are used to specify the build execution itself
-		String coreVersion = spaBuildProperties.remove("core");
-		if (coreVersion == null) {
-			coreVersion = "next";
-		}
-		String nodeVersion = spaBuildProperties.remove("node");
-		if (nodeVersion == null) {
-			nodeVersion = NODE_VERSION;
-		}
-		String npmVersion = spaBuildProperties.remove("npm");
-		if (npmVersion == null) {
-			npmVersion = NPM_VERSION;
-		}
+		// Use defaults but allow overrides from distro.properties, system properties, or environment variables
+		String coreVersion = Optional.ofNullable(spaBuildProperties.remove("core"))
+				.orElse("next");
+
+		String nodeVersion = Optional.ofNullable(spaBuildProperties.remove("node"))
+				.orElseGet(() -> System.getProperty("sdk.node.version",
+						System.getenv().getOrDefault("SDK_NODE_VERSION", "14.17.0")));
+
+		String npmVersion = Optional.ofNullable(spaBuildProperties.remove("npm"))
+				.orElseGet(() -> System.getProperty("sdk.npm.version",
+						System.getenv().getOrDefault("SDK_NPM_VERSION", "6.14.13")));
+
+		log.info("Using Node.js version: {}", nodeVersion);
+		log.info("Using NPM version: {}", npmVersion);
+		log.info("Using OpenMRS Core frontend CLI version: {}", coreVersion);
 
 		// If there are no remaining spa properties, then no spa configuration has been provided
 		if (spaBuildProperties.isEmpty()) {
