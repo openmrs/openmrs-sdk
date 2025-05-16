@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public abstract class BaseSdkProperties {
 
@@ -171,6 +172,48 @@ public abstract class BaseSdkProperties {
 		return contentPackages;
 	}
 
+    /**
+     * Get all artifact-specific GitHub Packages configurations defined in the properties
+     * @return List of {@link GithubPackage} configurations
+     */
+    public List<GithubPackage> getGithubPackage() {
+        Map<String, GithubPackage> packages = new HashMap<>();
+        for (String key : properties.stringPropertyNames()) {
+            if (key.contains(".github.packages.")) {
+                String[] parts = key.split("\\.github\\.packages\\.");
+                if (parts.length != 2) continue;
+
+                String artifactKey = parts[0];
+                String configKey = parts[1];
+                GithubPackage pkg = packages.computeIfAbsent(artifactKey, k -> {
+                    GithubPackage newPkg = new GithubPackage();
+                    newPkg.setArtifactKey(k);
+                    return newPkg;
+                });
+
+                String value = properties.getProperty(key);
+                switch (configKey) {
+                    case "username":
+                        pkg.setUsername(value);
+                    break;
+                    case "token":
+                        pkg.setToken(value);
+                        break;
+                    case "owner":
+                        pkg.setOwner(value);
+                        break;
+                    case "repository":
+                        pkg.setRepository(value);
+                        break;
+                }
+            }
+        }
+
+        return packages.values().stream().filter(pkg -> pkg.getUsername() != null && pkg.getToken() != null &&
+                pkg.getOwner() != null &&
+                pkg.getRepository() != null).collect(Collectors.toList());
+    }
+
     public List<Artifact> getContentPackageArtifacts() {
         List<Artifact> artifacts = new ArrayList<>();
         for (ContentPackage contentPackage : getContentPackages()) {
@@ -193,8 +236,11 @@ public abstract class BaseSdkProperties {
     }
 
     public Set<String> getAllKeys() {
-		return properties.stringPropertyNames();
-	}
+        return properties.stringPropertyNames()
+            .stream()
+            .filter(key -> !key.contains(".github.packages."))
+            .collect(Collectors.toSet());
+    }
 
     public Properties getAllProperties() {
         return properties;
@@ -209,6 +255,10 @@ public abstract class BaseSdkProperties {
     }
 
     protected String getArtifactType(String key) {
+        if (key.contains(".github.packages.")) {
+            return "";
+        }
+        
         String[] wordsArray = key.split("\\.");
         String lastElement = wordsArray[wordsArray.length - 1];
         if (!PROPERTY_NAMES.contains(lastElement)) {
@@ -432,5 +482,4 @@ public abstract class BaseSdkProperties {
             this.setPlatformVersion(warArtifact.getVersion());
         }
     }
-
 }
