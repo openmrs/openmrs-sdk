@@ -5,6 +5,7 @@ import org.apache.maven.artifact.factory.ArtifactFactory;
 import org.apache.maven.artifact.metadata.ArtifactMetadataSource;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.BuildPluginManager;
+import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.settings.Settings;
 
@@ -17,6 +18,7 @@ public class MavenEnvironment {
 	private MavenProject mavenProject;
 	private MavenSession mavenSession;
 	private Settings settings;
+	private SettingsManager settingsManager;
 	private ArtifactMetadataSource artifactMetadataSource;
 	private ArtifactFactory artifactFactory;
 	private BuildPluginManager pluginManager;
@@ -24,6 +26,10 @@ public class MavenEnvironment {
 
 	public ArtifactHelper getArtifactHelper() {
 		return new ArtifactHelper(this);
+	}
+
+	public GitHubPackagesHelper gitHubPackagesHelper() throws MojoExecutionException {
+		return new GitHubPackagesHelper(this);
 	}
 
 	public VersionsHelper getVersionsHelper() {
