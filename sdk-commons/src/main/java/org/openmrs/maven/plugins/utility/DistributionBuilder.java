@@ -43,6 +43,7 @@ public class DistributionBuilder {
 		distribution.setFile(propertiesFile);
 		Properties properties = PropertiesUtils.loadPropertiesFromFile(propertiesFile);
 		PropertiesUtils.resolveMavenPropertyPlaceholders(properties, mavenEnvironment.getMavenProject());
+		mavenEnvironment.gitHubPackagesHelper().configureGitHubPackages(new DistroProperties(properties));
 		return populateDistributionFromProperties(distribution, properties);
 	}
 
@@ -84,6 +85,8 @@ public class DistributionBuilder {
 		if (properties == null) {
 			throw new MojoExecutionException("Unable to build from artifact, no distro properties file found");
 		}
+
+		mavenEnvironment.gitHubPackagesHelper().configureGitHubPackages(new DistroProperties(properties));
 
 		// Special handling for referenceapplication 2.x issues
 		if (REFAPP_2X_GROUP_ID.equals(artifact.getGroupId()) && REFAPP_2X_ARTIFACT_ID.equals(artifact.getArtifactId())) {
