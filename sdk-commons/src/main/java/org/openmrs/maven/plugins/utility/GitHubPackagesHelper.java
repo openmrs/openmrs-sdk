@@ -53,6 +53,10 @@ public class GitHubPackagesHelper {
 
     private void configureAuthentication(GithubPackage pkg) {
         log.info("Configuring authentication for GitHub Package: {}", pkg.getArtifactKey());
+        if (pkg.getUsername() == null || pkg.getToken() == null || pkg.getOwner() == null || pkg.getRepository() == null) {
+            log.warn("Skipping incomplete GitHub Package configuration for: {}", pkg.getArtifactKey());
+            return;
+        }
         settingsManager.getSettings().getServers().removeIf(s -> s.getId().equals("github"));
         Server server = new Server();
         server.setId("github");
@@ -63,6 +67,10 @@ public class GitHubPackagesHelper {
 
     private void configureRepository(GithubPackage pkg) {
         log.info("Configuring repository for GitHub Package: {}", pkg.getArtifactKey());
+        if (pkg.getUsername() == null || pkg.getToken() == null || pkg.getOwner() == null || pkg.getRepository() == null) {
+            log.warn("Skipping incomplete GitHub Package repository configuration for: {}", pkg.getArtifactKey());
+            return;
+        }
         Profile profile = settingsManager.getSettings().getProfiles().stream()
                 .filter(p -> p.getId().equals("github"))
                 .findFirst()
