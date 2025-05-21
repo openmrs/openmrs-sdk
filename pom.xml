@@ -134,6 +134,11 @@
 				<enabled>true</enabled>
 			</snapshots>
 		</repository>
+		<repository>
+            <id>sonatype-central-snapshots</id>
+            <name>Sonatype Central Snapshots</name>
+            <url>https://central.sonatype.com/repository/maven-snapshots</url>
+        </repository>
     </repositories>
 
     <pluginRepositories>
