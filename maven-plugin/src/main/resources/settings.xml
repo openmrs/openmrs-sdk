@@ -44,6 +44,11 @@
                     <name>Sonatype Central Snapshots</name>
                     <url>https://central.sonatype.com/repository/maven-snapshots</url>
                 </repository>
+                <repository>
+                    <id>sonatype-nexus</id>
+                    <name>Sonatype Nexus Repository</name>
+                    <url>https://oss.sonatype.org/content/repositories/releases/</url>
+                </repository>
             </repositories>
             <pluginRepositories>
                 <pluginRepository>
