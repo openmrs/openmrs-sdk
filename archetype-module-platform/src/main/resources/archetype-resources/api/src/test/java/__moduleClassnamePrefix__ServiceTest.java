@@ -10,7 +10,7 @@
  * Copyright (C) OpenMRS Inc. OpenMRS is a registered trademark and the OpenMRS
  * graphic logo is a trademark of OpenMRS Inc.
  */
-package ${package}.api;
+package ${package};
 
 import org.junit.Before;
 import org.junit.Test;
@@ -19,7 +19,6 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.openmrs.User;
 import org.openmrs.api.UserService;
-import ${package}.Item;
 import ${package}.api.dao.${moduleClassnamePrefix}Dao;
 import ${package}.api.impl.${moduleClassnamePrefix}ServiceImpl;
 import static org.mockito.Mockito.*;

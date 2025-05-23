@@ -28,6 +28,57 @@
 		<module>omod</module>
 	</modules>
 
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>org.openmrs.api</groupId>
+				<artifactId>openmrs-api</artifactId>
+				<version>${openmrsPlatformVersion}</version>
+				<type>jar</type>
+				<scope>provided</scope>
+			</dependency>
+
+			<dependency>
+				<groupId>org.openmrs.web</groupId>
+				<artifactId>openmrs-web</artifactId>
+				<version>${openmrsPlatformVersion}</version>
+				<type>jar</type>
+				<scope>provided</scope>
+			</dependency>
+
+			<dependency>
+				<groupId>org.openmrs.api</groupId>
+				<artifactId>openmrs-api</artifactId>
+				<version>${openmrsPlatformVersion}</version>
+				<type>test-jar</type>
+				<scope>test</scope>
+			</dependency>
+
+			<dependency>
+				<groupId>org.openmrs.web</groupId>
+				<artifactId>openmrs-web</artifactId>
+				<version>${openmrsPlatformVersion}</version>
+				<type>test-jar</type>
+				<scope>test</scope>
+			</dependency>
+
+			<dependency>
+				<groupId>org.openmrs.test</groupId>
+				<artifactId>openmrs-test</artifactId>
+				<version>${openmrsPlatformVersion}</version>
+				<type>pom</type>
+				<scope>test</scope>
+			</dependency>
+
+			<dependency>
+				<groupId>org.openmrs.module</groupId>
+				<artifactId>legacyui-omod</artifactId>
+				<version>${legacyUiVersion}</version>
+				<scope>provided</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+
 	<repositories>
 		<repository>
 			<id>openmrs-repo</id>
@@ -99,8 +150,8 @@
 		</pluginManagement>
 	</build>
 
-
     <properties>
         <openmrsPlatformVersion>${openmrsPlatformVersion}</openmrsPlatformVersion>
+		<legacyUiVersion>2.0.0-SNAPSHOT</legacyUiVersion>
     </properties>
 </project>

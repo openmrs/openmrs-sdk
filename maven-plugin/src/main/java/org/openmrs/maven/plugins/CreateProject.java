@@ -278,7 +278,7 @@ public class CreateProject extends AbstractTask {
 
 		if (TYPE_PLATFORM.equals(type)) {
 			platform = wizard.promptForValueIfMissingWithDefault(
-			    "What is the lowest version of the platform (-D%s) you want to support?", platform, "platform", "1.11.6");
+			    "What is the lowest version of the platform (-D%s) you want to support?", platform, "platform", "2.7.0");
 			archetypeArtifactId = SDKConstants.PLATFORM_ARCH_ARTIFACT_ID;
 		} else if (TYPE_REFAPP.equals(type)) {
 			refapp = wizard.promptForValueIfMissingWithDefault(
