@@ -382,8 +382,20 @@ public class CreateProject extends AbstractTask {
             return project.getModel();
 		} finally {
 			if (tempDir.exists()) {
-				tempDir.delete();
+				deleteDirectoryRecursively(tempDir);
 			}
 		}
+	}
+
+	private void deleteDirectoryRecursively(File dir) {
+		if (dir.isDirectory()) {
+			File[] entries = dir.listFiles();
+			if (entries != null) {
+				for (File file : entries) {
+					deleteDirectoryRecursively(file);
+				}
+			}
+		}
+		dir.delete();
 	}
 }
