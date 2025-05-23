@@ -11,41 +11,4 @@
 	<packaging>jar</packaging>
 	<name>${moduleName} API</name>
 	<description>API project for ${moduleName}</description>
-
-	<dependencies>
-		<dependency>
-			<groupId>org.openmrs.api</groupId>
-			<artifactId>openmrs-api</artifactId>
-			<type>jar</type>
-			<scope>provided</scope>
-		</dependency>
-
-		<dependency>
-			<groupId>org.openmrs.web</groupId>
-			<artifactId>openmrs-web</artifactId>
-			<type>jar</type>
-			<scope>provided</scope>
-		</dependency>
-
-		<dependency>
-			<groupId>org.openmrs.api</groupId>
-			<artifactId>openmrs-api</artifactId>
-			<type>test-jar</type>
-			<scope>test</scope>
-		</dependency>
-
-		<dependency>
-			<groupId>org.openmrs.web</groupId>
-			<artifactId>openmrs-web</artifactId>
-			<type>test-jar</type>
-			<scope>test</scope>
-		</dependency>
-
-		<dependency>
-			<groupId>org.openmrs.test</groupId>
-			<artifactId>openmrs-test</artifactId>
-			<type>pom</type>
-			<scope>test</scope>
-		</dependency>
-	</dependencies>
 </project>

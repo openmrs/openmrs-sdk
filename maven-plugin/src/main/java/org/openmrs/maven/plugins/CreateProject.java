@@ -5,8 +5,12 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.model.Model;
+import org.openmrs.maven.plugins.model.Project;
 import org.openmrs.maven.plugins.utility.OwaHelper;
 import org.openmrs.maven.plugins.utility.SDKConstants;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.nio.file.Paths;
@@ -82,6 +86,7 @@ public class CreateProject extends AbstractTask {
 	private static final String AUTHOR_PROMPT_TMPL = "Who is the author of the module?";
 
 	private static final String MODULE_TYPE_PROMPT = "What kind of project would you like to create?";
+	private static final Logger log = LoggerFactory.getLogger(CreateProject.class);
 
 	/**
 	 * The manager's artifactId. This can be an ordered comma separated list.
@@ -278,7 +283,7 @@ public class CreateProject extends AbstractTask {
 
 		if (TYPE_PLATFORM.equals(type)) {
 			platform = wizard.promptForValueIfMissingWithDefault(
-			    "What is the lowest version of the platform (-D%s) you want to support?", platform, "platform", "2.7.0");
+			    "What is the lowest version of the platform (-D%s) you want to support?", platform, "platform", "1.11.6");
 			archetypeArtifactId = SDKConstants.PLATFORM_ARCH_ARTIFACT_ID;
 		} else if (TYPE_REFAPP.equals(type)) {
 			refapp = wizard.promptForValueIfMissingWithDefault(
@@ -304,6 +309,14 @@ public class CreateProject extends AbstractTask {
 		if (platform != null) {
 			properties.setProperty("openmrsPlatformVersion", platform);
 			properties.setProperty("moduleClassnamePrefix", moduleClassnamePrefix);
+			Model model = addTestDependencyVersions(platform);
+			Properties pomProps = model.getProperties();
+			String junitVersionFromPom = pomProps.getProperty("junitVersion");
+			String mockitoVersionFromPom = pomProps.getProperty("mockitoVersion");
+            log.info("junitVersion: {}", junitVersionFromPom);
+            log.info("mockitoVersion: {}", mockitoVersionFromPom);
+			properties.setProperty("junitVersion", junitVersionFromPom);
+			properties.setProperty("mockitoVersion", mockitoVersionFromPom);
 		} else if (refapp != null) {
 			properties.setProperty("openmrsRefappVersion", refapp);
 			properties.setProperty("moduleClassnamePrefix", moduleClassnamePrefix);
@@ -337,5 +350,40 @@ public class CreateProject extends AbstractTask {
 
 	private String getSdkVersion() throws MojoExecutionException {
 		return loadPropertiesFromResource("sdk.properties").getProperty("version", null);
+	}
+
+	private Model addTestDependencyVersions(String platformVersion) throws MojoExecutionException {
+		File tempDir = new File("temp-pom");
+		tempDir.mkdir();
+		try {
+			executeMojo(
+				plugin(
+					groupId(SDKConstants.DEPENDENCY_PLUGIN_GROUP_ID),
+					artifactId(SDKConstants.DEPENDENCY_PLUGIN_ARTIFACT_ID),
+					version(SDKConstants.DEPENDENCY_PLUGIN_VERSION)
+				),
+				goal("copy"),
+				configuration(
+					element(name("artifactItems"), 
+						element(name("artifactItem"),
+							element(name("groupId"), "org.openmrs"),
+							element(name("artifactId"), "openmrs"),
+							element(name("version"), platformVersion),
+							element(name("type"), "pom"),
+							element(name("outputDirectory"), tempDir.getAbsolutePath())
+						)
+					)
+				),
+				executionEnvironment(mavenProject, mavenSession, pluginManager)
+			);
+
+			File pomFile = new File(tempDir, "openmrs-" + platformVersion + ".pom");
+			Project project = Project.loadProject(tempDir, pomFile.getName());
+            return project.getModel();
+		} finally {
+			if (tempDir.exists()) {
+				tempDir.delete();
+			}
+		}
 	}
 }

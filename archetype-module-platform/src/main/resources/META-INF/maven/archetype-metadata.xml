@@ -18,6 +18,12 @@
 		<requiredProperty key="openmrsPlatformVersion">
 			<defaultValue>1.11.6</defaultValue>
 		</requiredProperty>
+		<requiredProperty key="junitVersion">
+			<defaultValue>5.8.2</defaultValue>
+		</requiredProperty>
+		<requiredProperty key="mockitoVersion">
+			<defaultValue>4.5.1</defaultValue>
+		</requiredProperty>
 	</requiredProperties>
 	<fileSets>
 		<fileSet encoding="UTF-8" filtered="true">
