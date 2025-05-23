@@ -65,8 +65,10 @@ public class CreateProjectIT extends AbstractSdkIT {
         addTaskParam("moduleDescription", "none");
         addTaskParam("groupId", "org.openmrs.module");
         addTaskParam("version", "1.0.0-SNAPSHOT");
+        addTaskParam("junitVersion", "5.11.3");
+        addTaskParam("mockitoVersion", "3.12.4");
 
-        addAnswer("1.11.6");
+        addAnswer("2.7.0");
         addTaskParam(BATCH_ANSWERS, getAnswers()); //only to set interactive mode to false
 
         executeTask("create-project");

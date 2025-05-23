@@ -16,13 +16,13 @@
 			<defaultValue>Ben Wolfe</defaultValue>
 		</requiredProperty>
 		<requiredProperty key="openmrsPlatformVersion">
-			<defaultValue>1.11.6</defaultValue>
+			<defaultValue>2.4.0</defaultValue>
 		</requiredProperty>
 		<requiredProperty key="junitVersion">
-			<defaultValue>5.8.2</defaultValue>
+			<defaultValue>5.7.0</defaultValue>
 		</requiredProperty>
 		<requiredProperty key="mockitoVersion">
-			<defaultValue>4.5.1</defaultValue>
+			<defaultValue>3.5.11</defaultValue>
 		</requiredProperty>
 	</requiredProperties>
 	<fileSets>
