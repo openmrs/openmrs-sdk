@@ -1,6 +1,7 @@
 package org.openmrs.maven.plugins;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.maven.model.Dependency;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
@@ -216,7 +217,6 @@ public class CreateProject extends AbstractTask {
 		} else {
 			createModule();
 		}
-
 	}
 
 	private void setProjectType() throws MojoExecutionException {
@@ -309,14 +309,13 @@ public class CreateProject extends AbstractTask {
 		if (platform != null) {
 			properties.setProperty("openmrsPlatformVersion", platform);
 			properties.setProperty("moduleClassnamePrefix", moduleClassnamePrefix);
-			Model model = addTestDependencyVersions(platform);
-			Properties pomProps = model.getProperties();
-			String junitVersionFromPom = pomProps.getProperty("junitVersion");
-			String mockitoVersionFromPom = pomProps.getProperty("mockitoVersion");
-            log.info("junitVersion: {}", junitVersionFromPom);
-            log.info("mockitoVersion: {}", mockitoVersionFromPom);
-			properties.setProperty("junitVersion", junitVersionFromPom);
-			properties.setProperty("mockitoVersion", mockitoVersionFromPom);
+			
+			try {
+				Model model = loadModelFromPom(platform);
+				extractTestDependencyVersionsFromModel(model, properties);
+			} catch (MojoExecutionException e) {
+				throw new MojoExecutionException("Failed to resolve test dependency versions", e);
+			}
 		} else if (refapp != null) {
 			properties.setProperty("openmrsRefappVersion", refapp);
 			properties.setProperty("moduleClassnamePrefix", moduleClassnamePrefix);
@@ -352,39 +351,74 @@ public class CreateProject extends AbstractTask {
 		return loadPropertiesFromResource("sdk.properties").getProperty("version", null);
 	}
 
-	private Model addTestDependencyVersions(String platformVersion) throws MojoExecutionException {
+	private Model loadModelFromPom(String platformVersion) throws MojoExecutionException {
 		File tempDir = new File("temp-pom");
 		tempDir.mkdir();
 		try {
 			executeMojo(
-				plugin(
-					groupId(SDKConstants.DEPENDENCY_PLUGIN_GROUP_ID),
-					artifactId(SDKConstants.DEPENDENCY_PLUGIN_ARTIFACT_ID),
-					version(SDKConstants.DEPENDENCY_PLUGIN_VERSION)
-				),
-				goal("copy"),
-				configuration(
-					element(name("artifactItems"), 
-						element(name("artifactItem"),
-							element(name("groupId"), "org.openmrs"),
-							element(name("artifactId"), "openmrs"),
-							element(name("version"), platformVersion),
-							element(name("type"), "pom"),
-							element(name("outputDirectory"), tempDir.getAbsolutePath())
-						)
-					)
-				),
-				executionEnvironment(mavenProject, mavenSession, pluginManager)
+					plugin(
+							groupId(SDKConstants.DEPENDENCY_PLUGIN_GROUP_ID),
+							artifactId(SDKConstants.DEPENDENCY_PLUGIN_ARTIFACT_ID),
+							version(SDKConstants.DEPENDENCY_PLUGIN_VERSION)
+					),
+					goal("copy"),
+					configuration(
+							element(name("artifactItems"),
+									element(name("artifactItem"),
+											element(name("groupId"), "org.openmrs"),
+											element(name("artifactId"), "openmrs"),
+											element(name("version"), platformVersion),
+											element(name("type"), "pom"),
+											element(name("outputDirectory"), tempDir.getAbsolutePath())
+									)
+							)
+					),
+					executionEnvironment(mavenProject, mavenSession, pluginManager)
 			);
 
 			File pomFile = new File(tempDir, "openmrs-" + platformVersion + ".pom");
 			Project project = Project.loadProject(tempDir, pomFile.getName());
-            return project.getModel();
+			return project.getModel();
 		} finally {
 			if (tempDir.exists()) {
 				deleteDirectoryRecursively(tempDir);
 			}
 		}
+	}
+
+	private void extractTestDependencyVersionsFromModel(Model model, Properties properties) {
+		Properties modelProperties = model.getProperties();
+		
+		properties.setProperty("mockitoVersion", modelProperties.getProperty("mockitoVersion"));
+		properties.setProperty("junitJupiterVersion", modelProperties.getProperty("junitVersion"));
+
+		for (Dependency dependency : model.getDependencyManagement().getDependencies()) {
+			String groupId = dependency.getGroupId();
+			String artifactId = dependency.getArtifactId();
+			String version = resolveVersion(dependency.getVersion(), modelProperties);
+
+			switch (groupId) {
+				case "org.powermock":
+					log.info("powerMockVersion: {}", version);
+					properties.setProperty("powerMockVersion", version);
+					break;
+
+				case "junit":
+					if ("junit".equals(artifactId)) {
+						log.info("junitVersion: {}", version);
+						properties.setProperty("junitVersion", version);
+					}
+					break;
+			}
+		}
+	}
+
+	private String resolveVersion(String version, Properties modelProperties) {
+		if (version != null && version.startsWith("${") && version.endsWith("}")) {
+			String propertyName = version.substring(2, version.length() - 1);
+			return modelProperties.getProperty(propertyName);
+		}
+		return version;
 	}
 
 	private void deleteDirectoryRecursively(File dir) {
