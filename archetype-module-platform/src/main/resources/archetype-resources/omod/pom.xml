@@ -29,6 +29,11 @@
 			<scope>provided</scope>
 			<classifier>tests</classifier>
 		</dependency>
+		<dependency>
+			<groupId>org.openmrs.module</groupId>
+			<artifactId>legacyui-omod</artifactId>
+			<scope>provided</scope>
+		</dependency>
 	</dependencies>
 
 	<build>
