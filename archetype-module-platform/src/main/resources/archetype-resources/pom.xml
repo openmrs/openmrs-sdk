@@ -31,36 +31,30 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>org.openmrs.module</groupId>
-                <artifactId>legacyui-omod</artifactId>
-                <version>${legacyUiVersion}</version>
-                <scope>provided</scope>
-            </dependency>
-            <dependency>
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
-                <version>4.13.2</version>
+                <version>${junitVersion}</version>
             </dependency>
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter-api</artifactId>
-                <version>${junitVersion}</version>
+                <version>${junitJupiterVersion}</version>
             </dependency>
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter-engine</artifactId>
-                <version>${junitVersion}</version>
+                <version>${junitJupiterVersion}</version>
             </dependency>
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter-params</artifactId>
-                <version>${junitVersion}</version>
+                <version>${junitJupiterVersion}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.junit.vintage</groupId>
                 <artifactId>junit-vintage-engine</artifactId>
-                <version>${junitVersion}</version>
+                <version>${junitJupiterVersion}</version>
             </dependency>
             <dependency>
                 <groupId>org.mockito</groupId>
@@ -75,12 +69,18 @@
             <dependency>
                 <groupId>org.powermock</groupId>
                 <artifactId>powermock-module-junit4</artifactId>
-                <version>2.0.9</version>
+                <version>${powerMockVersion}</version>
             </dependency>
             <dependency>
                 <groupId>org.powermock</groupId>
                 <artifactId>powermock-api-mockito2</artifactId>
-                <version>2.0.9</version>
+                <version>${powerMockVersion}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.openmrs.module</groupId>
+                <artifactId>legacyui-omod</artifactId>
+                <version>${legacyUiVersion}</version>
+                <scope>provided</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -120,11 +120,12 @@
 					<configuration>
 						<java>
 							<licenseHeader>
-								<file>${project.basedir}/license-header.txt</file>
+								<file>license-header.txt</file>
 							</licenseHeader>
-							<eclipse>
-								<file>${project.basedir}/OpenMRSFormatter.xml</file>
-							</eclipse>
+							<googleJavaFormat>
+								<version>1.7</version>
+								<style>GOOGLE</style>
+							</googleJavaFormat>
 							<removeUnusedImports/>
 							<importOrder>
 								<order>javax,java</order>
@@ -136,7 +137,7 @@
 									<include>**/*.xml</include>
 								</includes>
 								<licenseHeader>
-									<file>${project.basedir}/license-header.txt</file>
+									<file>license-header.txt</file>
 									<delimiter>^(?!&lt;\?xml)</delimiter>
 								</licenseHeader>
 							</format>
@@ -159,7 +160,9 @@
     <properties>
         <openmrsPlatformVersion>${openmrsPlatformVersion}</openmrsPlatformVersion>
         <junitVersion>${junitVersion}</junitVersion>
+        <junitJupiterVersion>${junitJupiterVersion}</junitJupiterVersion>
         <mockitoVersion>${mockitoVersion}</mockitoVersion>
+		<powerMockVersion>${powerMockVersion}</powerMockVersion>
         <legacyUiVersion>2.0.0-SNAPSHOT</legacyUiVersion>
     </properties>
 </project>
