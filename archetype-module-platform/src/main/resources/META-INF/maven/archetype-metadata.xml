@@ -18,11 +18,17 @@
 		<requiredProperty key="openmrsPlatformVersion">
 			<defaultValue>2.4.0</defaultValue>
 		</requiredProperty>
-		<requiredProperty key="junitVersion">
+		<requiredProperty key="junitJupiterVersion">
 			<defaultValue>5.7.0</defaultValue>
 		</requiredProperty>
 		<requiredProperty key="mockitoVersion">
 			<defaultValue>3.5.11</defaultValue>
+		</requiredProperty>
+		<requiredProperty key="powerMockVersion">
+			<defaultValue>2.0.7</defaultValue>
+		</requiredProperty>
+		<requiredProperty key="junitVersion">
+			<defaultValue>4.13</defaultValue>
 		</requiredProperty>
 	</requiredProperties>
 	<fileSets>
@@ -30,6 +36,10 @@
 			<directory></directory>
 			<includes>
 				<include>README*</include>
+				<include>license-header.txt</include>
+				<include>OpenMRSFormatter.xml</include>
+				<include>.gitignore</include>
+				<include>LICENSE.txt</include>
 			</includes>
 		</fileSet>
 		<fileSet encoding="UTF-8">
