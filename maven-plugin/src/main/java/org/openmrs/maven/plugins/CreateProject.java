@@ -10,6 +10,7 @@ import org.apache.maven.model.Model;
 import org.openmrs.maven.plugins.model.Project;
 import org.openmrs.maven.plugins.utility.OwaHelper;
 import org.openmrs.maven.plugins.utility.SDKConstants;
+import org.openmrs.maven.plugins.utility.Wizard;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -208,6 +209,14 @@ public class CreateProject extends AbstractTask {
 	@Parameter(property = "type")
 	private String type;
 
+	public void setWizard(Wizard wizard) {
+		this.wizard = wizard;
+	}
+
+	public void setProjectType(String type) {
+		this.type = type;
+	}
+
 	@Override
 	public void executeTask() throws MojoExecutionException, MojoFailureException {
 		setProjectType();
@@ -282,8 +291,7 @@ public class CreateProject extends AbstractTask {
 		moduleAuthor = wizard.promptForValueIfMissingWithDefault(AUTHOR_PROMPT_TMPL, moduleAuthor, "", "anonymous");
 
 		if (TYPE_PLATFORM.equals(type)) {
-			platform = wizard.promptForValueIfMissingWithDefault(
-			    "What is the lowest version of the platform (-D%s) you want to support?", platform, "platform", "2.4.0");
+			choosePlatformVersion();
 			archetypeArtifactId = SDKConstants.PLATFORM_ARCH_ARTIFACT_ID;
 		} else if (TYPE_REFAPP.equals(type)) {
 			refapp = wizard.promptForValueIfMissingWithDefault(
@@ -431,5 +439,38 @@ public class CreateProject extends AbstractTask {
 			}
 		}
 		dir.delete();
+	}
+
+	public void choosePlatformVersion() throws MojoExecutionException {
+		if (TYPE_PLATFORM.equals(type)) {
+			boolean validVersion = false;
+			while (!validVersion) {
+				platform = wizard.promptForValueIfMissingWithDefault(
+						"What is the lowest version of the platform (-D%s) you want to support?", platform, "platform", "2.4.0");
+
+				if (compareVersions(platform, "2.4.0") < 0) {
+					wizard.showMessage("Platform version must be at least 2.4.0. Please try again.");
+					platform = null;
+				} else {
+					validVersion = true;
+				}
+			}
+		}
+	}
+
+	public int compareVersions(String version1, String version2) {
+		String[] v1Parts = version1.split("\\.");
+		String[] v2Parts = version2.split("\\.");
+		int maxLength = Math.max(v1Parts.length, v2Parts.length);
+
+		for (int i = 0; i < maxLength; i++) {
+			int v1 = i < v1Parts.length ? Integer.parseInt(v1Parts[i]) : 0;
+			int v2 = i < v2Parts.length ? Integer.parseInt(v2Parts[i]) : 0;
+
+			if (v1 != v2) {
+				return Integer.compare(v1, v2);
+			}
+		}
+		return 0;
 	}
 }
