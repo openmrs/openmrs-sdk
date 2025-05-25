@@ -111,6 +111,27 @@ public class CreateProjectIT extends AbstractSdkIT {
         assertContentPackageCreated();
     }
 
+    @Test
+    public void createProject_shouldRejectPlatformVersionBelowMinimum() throws Exception {
+        addTaskParam("type", "platform-module");
+
+        addTaskParam("moduleId", "test");
+        addTaskParam("moduleName", "Test");
+        addTaskParam("moduleDescription", "none");
+        addTaskParam("groupId", "org.openmrs.module");
+        addTaskParam("version", "1.0.0-SNAPSHOT");
+
+        addAnswer("2.2.0");
+        addAnswer("2.3.0");
+        addAnswer("2.4.0");
+
+        addTaskParam(BATCH_ANSWERS, getAnswers());
+
+        executeTask("create-project");
+        assertSuccess();
+        assertProjectCreated();
+    }
+
     private void assertProjectCreated() {
         //check only basic structure of module project and pom existence, not coupled with archetype itself
         assertFilePresent("test");
