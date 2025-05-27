@@ -124,6 +124,7 @@ public class CreateProjectIT extends AbstractSdkIT {
         addAnswer("2.2.0");
         addAnswer("2.3.0");
         addAnswer("2.4.0");
+        addAnswer("2.5.0");
 
         addTaskParam(BATCH_ANSWERS, getAnswers());
 
