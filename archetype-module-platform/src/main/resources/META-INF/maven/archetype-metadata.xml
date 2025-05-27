@@ -16,19 +16,19 @@
 			<defaultValue>Ben Wolfe</defaultValue>
 		</requiredProperty>
 		<requiredProperty key="openmrsPlatformVersion">
-			<defaultValue>2.4.0</defaultValue>
+			<defaultValue>2.5.0</defaultValue>
 		</requiredProperty>
 		<requiredProperty key="junitJupiterVersion">
-			<defaultValue>5.7.0</defaultValue>
+			<defaultValue>5.8.1</defaultValue>
 		</requiredProperty>
 		<requiredProperty key="mockitoVersion">
-			<defaultValue>3.5.11</defaultValue>
+			<defaultValue>3.12.4</defaultValue>
 		</requiredProperty>
 		<requiredProperty key="powerMockVersion">
-			<defaultValue>2.0.7</defaultValue>
+			<defaultValue>2.0.9</defaultValue>
 		</requiredProperty>
 		<requiredProperty key="junitVersion">
-			<defaultValue>4.13</defaultValue>
+			<defaultValue>4.13.2</defaultValue>
 		</requiredProperty>
 	</requiredProperties>
 	<fileSets>
