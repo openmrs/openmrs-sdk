@@ -139,6 +139,9 @@ public class Setup extends AbstractServerTask {
 	@Parameter(property = "debug")
 	private String debug;
 
+	@Parameter(property = "serverPort")
+	private String serverPort;
+
 	@Parameter(defaultValue = "false", property = "run")
 	private boolean run;
 
@@ -367,18 +370,20 @@ public class Setup extends AbstractServerTask {
 	}
 
 	private void setServerPort(Server server) throws MojoExecutionException {
-		String message = "What port would you like your server to use?";
-		String port = wizard.promptForValueIfMissingWithDefault(
-				message,
-				server.getParam("tomcat.port"),
-				"port number",
-				String.valueOf(Setup.DEFAULT_PORT));
-		if (!StringUtils.isNumeric(port) || !this.serverHelper.isPort(Integer.parseInt(port))) {
-			wizard.showMessage("Port must be numeric and less or equal 65535.");
-			this.setServerPort(server);
-			return;
+		if (StringUtils.isBlank(serverPort)) {
+			String message = "What port (-D%s) would you like your server to use?";
+			serverPort = wizard.promptForValueIfMissingWithDefault(
+					message,
+					server.getParam("tomcat.port"),
+					"serverPort",
+					String.valueOf(Setup.DEFAULT_PORT));
+			if (!StringUtils.isNumeric(serverPort) || !this.serverHelper.isPort(Integer.parseInt(serverPort))) {
+				wizard.showMessage("Port must be numeric and less or equal 65535.");
+				this.setServerPort(server);
+				return;
+			}
+			server.setPort(serverPort);
 		}
-		server.setPort(port);
 	}
 
 	private void setDebugPort(Server server) throws MojoExecutionException {
@@ -428,34 +433,36 @@ public class Setup extends AbstractServerTask {
 		}
 
 		if (server.isMySqlDb() || server.isPostgreSqlDb()) {
-			String uri = getUriWithoutDb(server);
 			boolean connectionEstablished = false;
 			int maxAttempts = 3;
 			int attempts = 0;
 
 			while (!connectionEstablished && attempts < maxAttempts) {
 				attempts++;
+				String uri = getUriWithoutDb(server);
 				try (DBConnector connector = new DBConnector(uri, server.getDbUser(), server.getDbPassword(), server.getDbName())) {
 					connector.checkAndCreate(server);
 					wizard.showMessage("Connected to the database.");
 					connectionEstablished = true;
 				}
 				catch (SQLException e) {
-					if (e.getMessage().contains("Invalid database credentials")) {
+					String message = e.getMessage();
+					wizard.showMessage(String.format("Database connection failed (attempt %d of %d): %s", attempts, maxAttempts, message));
+					if (message.contains("Invalid database credentials")) {
 						if (attempts == maxAttempts) {
-							throw new MojoExecutionException(
-									String.format("Failed to connect to database after %d attempts. Please verify your credentials and try again.", maxAttempts),
-									e
-							);
+							throw new MojoExecutionException(String.format("Failed to connect to database after %d attempts. " +
+									"Please verify your credentials and try again.", maxAttempts), e);
 						}
 
-						wizard.showMessage(String.format("Database connection failed (attempt %d of %d): %s", attempts, maxAttempts, e.getMessage()));
-						String newUser = wizard.promptForValueIfMissingWithDefault("Please specify correct database username (-D%s)", dbUser, "dbUser", "root");
-						String newPassword = wizard.promptForPasswordIfMissingWithDefault("Please specify correct database password (-D%s)", dbPassword, "dbPassword", "");
+						wizard.promptForDbCredentialsAgain(server, dbUser, dbPassword);
+						continue;
+					} else if (message.contains("Incorrect Database Uri")) {
+						if (attempts == maxAttempts) {
+							throw new MojoExecutionException(String.format("Failed to connect to database after %d attempts. " +
+									"Please verify your database uri.", maxAttempts), e);
+						}
 
-						server.setDbUser(newUser);
-						server.setDbPassword(newPassword);
-
+						wizard.promptForNewUriAndCredentials(server, dbUser, dbPassword, dbUri);
 						continue;
 					}
 					throw new MojoExecutionException("Failed to connect to the specified database " + server.getDbUri(), e);
