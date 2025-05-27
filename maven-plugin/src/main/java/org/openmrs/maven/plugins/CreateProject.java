@@ -318,13 +318,9 @@ public class CreateProject extends AbstractTask {
 		if (platform != null) {
 			properties.setProperty("openmrsPlatformVersion", platform);
 			properties.setProperty("moduleClassnamePrefix", moduleClassnamePrefix);
-			
-			try {
-				Model model = loadModelFromPom(platform);
-				extractTestDependencyVersionsFromModel(model, properties);
-			} catch (MojoExecutionException e) {
-				throw new MojoExecutionException("Failed to resolve test dependency versions", e);
-			}
+
+			Model model = loadModelFromPom(platform);
+			extractTestDependencyVersionsFromModel(model, properties);
 		} else if (refapp != null) {
 			properties.setProperty("openmrsRefappVersion", refapp);
 			properties.setProperty("moduleClassnamePrefix", moduleClassnamePrefix);
