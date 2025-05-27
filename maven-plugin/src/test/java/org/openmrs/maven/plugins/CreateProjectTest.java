@@ -62,26 +62,26 @@ public class CreateProjectTest {
     }
 
     @Test
-    public void choosePlatformVersion_shouldAcceptValidVersion() throws MojoExecutionException {
-        when(wizard.promptForValueIfMissingWithDefault(anyString(), eq(null), anyString(), anyString()))
-            .thenReturn("2.4.0");
-
-        createProject.setProjectType("platform-module");
-        createProject.choosePlatformVersion();
-
-        verify(wizard, times(1)).promptForValueIfMissingWithDefault(anyString(), eq(null), anyString(), anyString());
-    }
-
-    @Test
     public void choosePlatformVersion_shouldRejectInvalidVersionAndRetry() throws MojoExecutionException {
         when(wizard.promptForValueIfMissingWithDefault(anyString(), eq(null), anyString(), anyString()))
-            .thenReturn("2.3.0")
-            .thenReturn("2.4.0");
+            .thenReturn("2.4.0")
+            .thenReturn("2.5.0");
 
         createProject.setProjectType("platform-module");
         createProject.choosePlatformVersion();
 
         verify(wizard, times(2)).promptForValueIfMissingWithDefault(anyString(), eq(null), anyString(), anyString());
-        verify(wizard, times(1)).showMessage(contains("Platform version must be at least 2.4.0"));
+        verify(wizard, times(1)).showMessage(contains("Platform version must be at least 2.5.0"));
+    }
+
+    @Test
+    public void choosePlatformVersion_shouldAcceptValidVersion() throws MojoExecutionException {
+        when(wizard.promptForValueIfMissingWithDefault(anyString(), eq(null), anyString(), anyString()))
+            .thenReturn("2.5.0");
+
+        createProject.setProjectType("platform-module");
+        createProject.choosePlatformVersion();
+
+        verify(wizard, times(1)).promptForValueIfMissingWithDefault(anyString(), eq(null), anyString(), anyString());
     }
 }
