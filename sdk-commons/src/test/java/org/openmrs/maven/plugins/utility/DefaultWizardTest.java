@@ -4,8 +4,11 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.in;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
@@ -108,6 +111,23 @@ public class DefaultWizardTest {
 		List<NameValuePair> expectedNameValuePairs = URLEncodedUtils.parse(actualUri, StandardCharsets.UTF_8);
 
 		assertThat(actualNameValuePairs, everyItem(in(expectedNameValuePairs)));
+	}
+
+
+	@Test
+	 public void testIsJava8OrAbove() throws Exception {
+		assertTrue(invokeIsJava8OrAbove("1.8.0_292"));
+		assertTrue(invokeIsJava8OrAbove("11"));
+		assertTrue(invokeIsJava8OrAbove("24"));
+		assertFalse(invokeIsJava8OrAbove("1.6.0_65"));
+	}
+
+
+
+	private boolean invokeIsJava8OrAbove(String version) throws Exception {
+		Method method = DefaultWizard.class.getDeclaredMethod("isJava8orAbove", String.class);
+		method.setAccessible(true);
+		return (boolean) method.invoke(new DefaultWizard(), version);
 	}
 
 }

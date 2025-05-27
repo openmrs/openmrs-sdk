@@ -555,9 +555,13 @@ public class DefaultWizard implements Wizard {
 		if (javaVersion.startsWith("1.8")) {
 			return true;
 		}
-		int pos = javaVersion.indexOf('.');
-		String version = javaVersion.substring(0, pos);
-		return (Integer.parseInt(version) > 8);
+		int pos = javaVersion.indexOf(".");
+
+		if (pos > 0) {
+			javaVersion = javaVersion.substring(0, pos);
+		}
+
+		return (Integer.parseInt(javaVersion) > 8);
 	}
 
 	private String determineJavaVersionFromPath(String path) throws MojoExecutionException {
