@@ -5,7 +5,6 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
-import org.openmrs.maven.plugins.utility.OwaHelper;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 
 import java.io.File;
@@ -36,15 +35,11 @@ public class CreateProject extends AbstractTask {
 
 	private static final String TYPE_REFAPP = "referenceapplication-module";
 
-	private static final String TYPE_OWA = "owa-project";
-
 	private static final String TYPE_CONTENT_PACKAGE = "content-package";
 
 	private static final String OPTION_PLATFORM = "Platform module";
 
 	public static final String OPTION_REFAPP = "Reference Application module";
-
-	private static final String OPTION_OWA = "Open Web App";
 
 	private static final String OPTION_CONTENT_PACKAGES = "Content Package";
 
@@ -205,25 +200,17 @@ public class CreateProject extends AbstractTask {
 	@Override
 	public void executeTask() throws MojoExecutionException, MojoFailureException {
 		setProjectType();
-
-		if (TYPE_OWA.equals(type)) {
-			new OwaHelper(getMavenEnvironment()).createOwaProject();
-		} else {
-			createModule();
-		}
-
-	}
+		createModule();
+    }
 
 	private void setProjectType() throws MojoExecutionException {
 		String choice = wizard.promptForMissingValueWithOptions(MODULE_TYPE_PROMPT, type, null,
-				Arrays.asList(OPTION_PLATFORM, OPTION_REFAPP, OPTION_OWA, OPTION_CONTENT_PACKAGES));
+				Arrays.asList(OPTION_PLATFORM, OPTION_REFAPP, OPTION_CONTENT_PACKAGES));
 
 		if (OPTION_PLATFORM.equals(choice)) {
 			type = TYPE_PLATFORM;
 		} else if (OPTION_REFAPP.equals(choice)) {
 			type = TYPE_REFAPP;
-		} else if (OPTION_OWA.equals(choice)) {
-			type = TYPE_OWA;
 		} else if (OPTION_CONTENT_PACKAGES.equals(choice)) {
 			type = TYPE_CONTENT_PACKAGE;
 		}
