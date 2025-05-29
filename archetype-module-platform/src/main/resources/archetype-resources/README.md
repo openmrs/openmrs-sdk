@@ -7,8 +7,8 @@ This is a very basic module which can be used as a starting point in creating a 
 
 Building from Source
 --------------------
-You will need to have Java 1.6+ and Maven 2.x+ installed.  Use the command 'mvn package' to 
-compile and package the module.  The .omod file will be in the omod/target folder.
+You will need to have Java 8, 11, 17, or 21 installed and Maven 3.6+ installed. The module is compatible with all these Java versions.
+Use the command 'mvn package' to compile and package the module. The .omod file will be in the omod/target folder.
 
 Alternatively you can add the snippet provided in the [Creating Modules](https://wiki.openmrs.org/x/cAEr) page to your 
 omod/pom.xml and use the mvn command:
