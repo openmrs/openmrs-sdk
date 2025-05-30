@@ -122,11 +122,10 @@
 							<licenseHeader>
 								<file>license-header.txt</file>
 							</licenseHeader>
-							<googleJavaFormat>
-								<version>1.7</version>
-								<style>GOOGLE</style>
-							</googleJavaFormat>
-							<removeUnusedImports/>
+							<eclipse>
+								<file>OpenMRSFormatter.xml</file>
+								<version>4.19.0</version>
+							</eclipse>
 							<importOrder>
 								<order>javax,java</order>
 							</importOrder>
@@ -180,8 +179,8 @@
 										<version>[3.6.0,)</version>
 									</requireMavenVersion>
 									<requireJavaVersion>
-										<version>[1.8,22)</version> <!-- Allows 8, 11, 17, 21 -->
-										<message>Java 8, 11, 17, or 21 is required. Other versions are not supported.</message>
+										<version>[1.8,)</version> <!-- Allows 8 and above-->
+										<message>Java 8 and all the later java versions.</message>
 									</requireJavaVersion>
 								</rules>
 							</configuration>
