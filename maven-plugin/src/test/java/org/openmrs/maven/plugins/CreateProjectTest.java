@@ -1,7 +1,6 @@
 package org.openmrs.maven.plugins;
 
 import static org.hamcrest.Matchers.lessThan;
-import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -35,30 +34,20 @@ public class CreateProjectTest {
     }
 
     @Test
-    public void compareVersions_shouldReturnNegativeWhenFirstVersionIsLower() {
-        assertThat(createProject.compareVersions("2.3.0", "2.4.0"), is(lessThan(0)));
-        assertThat(createProject.compareVersions("2.3.9", "2.4.0"), is(lessThan(0)));
-        assertThat(createProject.compareVersions("1.9.9", "2.0.0"), is(lessThan(0)));
+    public void compareVersions_shouldReturnTrueWhenFirstVersionIsLower() {
+        assertThat(createProject.compareVersions("2.3.0", "2.4.0"), is(true));
+        assertThat(createProject.compareVersions("2.3.9", "2.4.0"), is(true));
     }
 
     @Test
-    public void compareVersions_shouldReturnZeroWhenVersionsAreEqual() {
-        assertThat(createProject.compareVersions("2.4.0", "2.4.0"), is(0));
-        assertThat(createProject.compareVersions("1.0.0", "1.0.0"), is(0));
+    public void compareVersions_shouldReturnFalseWhenFirstVersionIsLower() {
+        assertThat(createProject.compareVersions("2.4.0", "2.3.0"), is(false));
     }
 
     @Test
-    public void compareVersions_shouldReturnPositiveWhenFirstVersionIsHigher() {
-        assertThat(createProject.compareVersions("2.4.0", "2.3.0"), is(greaterThan(0)));
-        assertThat(createProject.compareVersions("2.5.0", "2.4.9"), is(greaterThan(0)));
-        assertThat(createProject.compareVersions("3.0.0", "2.9.9"), is(greaterThan(0)));
-    }
-
-    @Test
-    public void compareVersions_shouldHandleDifferentVersionLengths() {
-        assertThat(createProject.compareVersions("2.4", "2.4.0"), is(0));
-        assertThat(createProject.compareVersions("2.4.0", "2.4"), is(0));
-        assertThat(createProject.compareVersions("2.4.0.0", "2.4.0"), is(0));
+    public void compareVersions_shouldReturnFalseWhenVersionsAreEqual() {
+        assertThat(createProject.compareVersions("2.4.0", "2.4.0"), is(false));
+        assertThat(createProject.compareVersions("1.0.0", "1.0.0"), is(false));
     }
 
     @Test

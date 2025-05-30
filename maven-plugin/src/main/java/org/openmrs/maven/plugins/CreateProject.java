@@ -444,11 +444,8 @@ public class CreateProject extends AbstractTask {
 			while (!validVersion) {
 				platform = wizard.promptForValueIfMissingWithDefault(
 						"What is the lowest version of the platform (-D%s) you want to support?", platform, "platform", "2.5.0");
-
-				Version platformVersion = new Version(platform);
-				Version minVersion = new Version("2.5.0");
 				
-				if (platformVersion.lower(minVersion)) {
+				if (compareVersions(platform, "2.5.0")) {
 					wizard.showMessage("Platform version must be at least 2.5.0. Please try again.");
 					platform = null;
 				} else {
@@ -458,9 +455,9 @@ public class CreateProject extends AbstractTask {
 		}
 	}
 
-	public int compareVersions(String version1, String version2) {
+	public boolean compareVersions(String version1, String version2) {
 		Version v1 = new Version(version1);
 		Version v2 = new Version(version2);
-		return v1.compareTo(v2);
+		return v1.lower(v2);
 	}
 }
