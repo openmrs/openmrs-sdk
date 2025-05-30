@@ -29,25 +29,107 @@
 	</modules>
 
 	<dependencyManagement>
-		<dependencies>
-			<!-- Importing versions from refapp distro -->
-            <dependency>
-                <groupId>org.openmrs.distro</groupId>
-                <artifactId>referenceapplication</artifactId>
-                <version>${openmrsRefappVersion}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-		</dependencies>
+			<dependencies>
+				<!-- Importing versions from refapp distro -->
+				<dependency>
+					<groupId>org.openmrs.distro</groupId>
+					<artifactId>referenceapplication</artifactId>
+					<version>${openmrsRefappVersion}</version>
+					<type>pom</type>
+					<scope>import</scope>
+				</dependency>
+				<dependency>
+					<groupId>junit</groupId>
+					<artifactId>junit</artifactId>
+					<version>${junitVersion}</version>
+				</dependency>
+				<dependency>
+					<groupId>org.junit.jupiter</groupId>
+					<artifactId>junit-jupiter-api</artifactId>
+					<version>${junitJupiterVersion}</version>
+				</dependency>
+				<dependency>
+					<groupId>org.junit.jupiter</groupId>
+					<artifactId>junit-jupiter-engine</artifactId>
+					<version>${junitJupiterVersion}</version>
+				</dependency>
+				<dependency>
+					<groupId>org.junit.jupiter</groupId>
+					<artifactId>junit-jupiter-params</artifactId>
+					<version>${junitJupiterVersion}</version>
+					<scope>test</scope>
+				</dependency>
+				<dependency>
+					<groupId>org.junit.vintage</groupId>
+					<artifactId>junit-vintage-engine</artifactId>
+					<version>${junitJupiterVersion}</version>
+				</dependency>
+				<dependency>
+					<groupId>org.mockito</groupId>
+					<artifactId>mockito-junit-jupiter</artifactId>
+					<version>${mockitoVersion}</version>
+				</dependency>
+				<dependency>
+					<groupId>org.mockito</groupId>
+					<artifactId>mockito-core</artifactId>
+					<version>${mockitoVersion}</version>
+				</dependency>
+				<dependency>
+					<groupId>org.powermock</groupId>
+					<artifactId>powermock-module-junit4</artifactId>
+					<version>${powerMockVersion}</version>
+				</dependency>
+				<dependency>
+					<groupId>org.powermock</groupId>
+					<artifactId>powermock-api-mockito2</artifactId>
+					<version>${powerMockVersion}</version>
+				</dependency>
+				<dependency>
+					<groupId>org.openmrs.module</groupId>
+					<artifactId>legacyui-omod</artifactId>
+					<version>${legacyuiVersion}</version>
+					<scope>provided</scope>
+				</dependency>
+			</dependencies>
 	</dependencyManagement>
 
 	<build>
 		<pluginManagement>
 			<plugins>
+				<!-- Maven Compiler Plugin -->
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-compiler-plugin</artifactId>
-					<version>3.8.1</version>
+					<version>3.11.0</version>
+					<configuration>
+						<source>${maven.compiler.source}</source>
+						<target>${maven.compiler.target}</target>
+					</configuration>
+				</plugin>
+				<!-- Maven Enforcer Plugin -->
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-enforcer-plugin</artifactId>
+					<version>3.4.1</version>
+					<executions>
+						<execution>
+							<id>enforce-java</id>
+							<goals>
+								<goal>enforce</goal>
+							</goals>
+							<configuration>
+								<rules>
+									<requireMavenVersion>
+										<version>[3.6.0,)</version>
+									</requireMavenVersion>
+									<requireJavaVersion>
+										<version>[1.8,)</version>
+										<message>Java 8, and all the later java versions.</message>
+									</requireJavaVersion>
+								</rules>
+							</configuration>
+						</execution>
+					</executions>
 				</plugin>
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
@@ -89,9 +171,9 @@
 					<artifactId>license-maven-plugin</artifactId>
 					<version>3.0</version>
 					<configuration>
-						<header>${main.basedir}${file.separator}license-header.txt</header>
+						<header>license-header.txt</header>
 						<headerDefinitions>
-							<headerDefinition>${main.basedir}${file.separator}license-format.xml</headerDefinition>
+							<headerDefinition>license-format.xml</headerDefinition>
 						</headerDefinitions>
 						<mapping>
 							<java>JAVA_STYLE</java>
@@ -138,10 +220,10 @@
 					<configuration>
 						<java>
 							<licenseHeader>
-								<file>${project.basedir}/license-header.txt</file>
+								<file>license-header.txt</file>
 							</licenseHeader>
 							<eclipse>
-								<file>${project.basedir}/OpenMRSFormatter.xml</file>
+								<file>OpenMRSFormatter.xml</file>
 							</eclipse>
 							<removeUnusedImports/>
 							<importOrder>
@@ -154,7 +236,7 @@
 									<include>**/*.xml</include>
 								</includes>
 								<licenseHeader>
-									<file>${project.basedir}/license-header.txt</file>
+									<file>license-header.txt</file>
 									<delimiter>^(?!&lt;\?xml)</delimiter>
 								</licenseHeader>
 							</format>
@@ -199,6 +281,13 @@
 	</pluginRepositories>
 
 	<properties>
-		<openmrsPlatformVersion>1.11.6</openmrsPlatformVersion>
+		<openmrsPlatformVersion>${openmrsVersion}</openmrsPlatformVersion>
+		<junitVersion>${junitVersion}</junitVersion>
+		<junitJupiterVersion>${junitJupiterVersion}</junitJupiterVersion>
+		<mockitoVersion>${mockitoVersion}</mockitoVersion>
+		<powerMockVersion>${powerMockVersion}</powerMockVersion>
+		<legacyuiVersion>${legacyuiVersion}</legacyuiVersion>
+		<maven.compiler.source>8</maven.compiler.source>
+		<maven.compiler.target>8</maven.compiler.target>
 	</properties>
 </project>

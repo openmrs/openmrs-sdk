@@ -18,6 +18,12 @@
         <requiredProperty key="moduleAuthor" />
 		<requiredProperty key="moduleClassnamePrefix" />
 		<requiredProperty key="openmrsRefappVersion" />
+        <requiredProperty key="openmrsVersion"/>
+        <requiredProperty key="legacyuiVersion"/>
+        <requiredProperty key="junitJupiterVersion"/>
+        <requiredProperty key="mockitoVersion"/>
+        <requiredProperty key="powerMockVersion"/>
+        <requiredProperty key="junitVersion"/>
     </requiredProperties>
   <modules>
     <module id="${rootArtifactId}-api" dir="api" name="${rootArtifactId}-api">
