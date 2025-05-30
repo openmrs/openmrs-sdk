@@ -292,9 +292,9 @@ public class CreateProject extends AbstractTask {
 			while (!validVersion) {
 				refapp = wizard.promptForValueIfMissingWithDefault(
 						"What is the lowest version of the Reference Application (-D%s) you want to support?", refapp, "refapp",
-						"2.8.0");
-				if (compareVersions(refapp, "2.8.0")) {
-					wizard.showMessage("Reference Application version must be at least 2.8.0. Please try again.");
+						"2.12.0");
+				if (compareVersions(refapp, "2.12.0")) {
+					wizard.showMessage("Reference Application version must be at least 2.12.0. Please try again.");
 					refapp = null;
 				} else {
 					validVersion = true;
