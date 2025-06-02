@@ -25,6 +25,24 @@
         <requiredProperty key="powerMockVersion"/>
         <requiredProperty key="junitVersion"/>
     </requiredProperties>
+    <fileSets>
+        <fileSet encoding="UTF-8" filtered="true">
+            <directory></directory>
+            <includes>
+                <include>README*</include>
+                <include>license-header.txt</include>
+                <include>OpenMRSFormatter.xml</include>
+                <include>.gitignore</include>
+                <include>LICENSE.txt</include>
+            </includes>
+        </fileSet>
+        <fileSet encoding="UTF-8">
+            <directory>.settings</directory>
+            <includes>
+                <include>**/*.prefs</include>
+            </includes>
+        </fileSet>
+    </fileSets>
   <modules>
     <module id="${rootArtifactId}-api" dir="api" name="${rootArtifactId}-api">
       <fileSets>
@@ -47,6 +65,12 @@
             <include>**/*.java</include>
           </includes>
         </fileSet>
+          <fileSet filtered="true" encoding="UTF-8">
+              <directory>src/test/resources</directory>
+              <includes>
+                  <include>**/*.xml</include>
+              </includes>
+          </fileSet>
       </fileSets>
     </module>
     <module id="${rootArtifactId}-omod" dir="omod" name="${rootArtifactId}-omod">
