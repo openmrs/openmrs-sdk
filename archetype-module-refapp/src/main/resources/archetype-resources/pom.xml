@@ -224,8 +224,8 @@
 							</licenseHeader>
 							<eclipse>
 								<file>OpenMRSFormatter.xml</file>
+								<version>4.19.0</version>
 							</eclipse>
-							<removeUnusedImports/>
 							<importOrder>
 								<order>javax,java</order>
 							</importOrder>
