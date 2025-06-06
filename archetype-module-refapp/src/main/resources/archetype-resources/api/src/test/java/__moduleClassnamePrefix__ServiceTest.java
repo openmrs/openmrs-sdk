@@ -42,7 +42,6 @@ public class ${moduleClassnamePrefix}ServiceTest extends BaseModuleContextSensit
 	 */
 	@BeforeEach
 	public void runBeforeEachTest() throws SQLException {
-		initializeInMemoryDatabase();
 		executeDataSet("org/openmrs/api/include/item.xml");
 	}
 	

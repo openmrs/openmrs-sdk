@@ -35,7 +35,6 @@ public class ${moduleClassnamePrefix}DaoTest extends BaseModuleContextSensitiveT
 
 	@BeforeEach
 	public void runBeforeEachTest() throws Exception {
-		initializeInMemoryDatabase();
 		executeDataSet("org/openmrs/api/include/item.xml");
 	}
 
