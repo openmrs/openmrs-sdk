@@ -113,7 +113,7 @@ public class RunTomcat extends AbstractMojo {
 						"Please note that it is not recommended to run OpenMRS platform " + server.getPlatformVersion()
 								+ " on JDK 8.\n");
 			}
-		} else if (platformVersion.getMajorVersion() == 2 || platformVersion.getMajorVersion() == 3) {
+		} else if (platformVersion.getMajorVersion() >= 2) {
 			if (!jdk.startsWith("1.8") && platformVersion.getMinorVersion() < 4) {
 				wizard.showJdkErrorMessage(jdk, server.getPlatformVersion(), "JDK 1.8",
 						server.getPropertiesFile().getPath());
