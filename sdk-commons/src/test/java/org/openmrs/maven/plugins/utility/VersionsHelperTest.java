@@ -9,7 +9,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 
@@ -85,5 +88,13 @@ public class VersionsHelperTest {
         List<String> res = helper.getSuggestedVersions(
                 createTestVersions("1.5.2", "1.5.6", "1.5.7-SNAPSHOT"), 6);
         assertThat(res, contains("1.5.7-SNAPSHOT", "1.5.6"));
+    }
+
+    @Test
+    public void getSuggestedVersions_shouldNotIncludeVersionsThatDoNotConformToSemver() {
+        List<String> res = helper.getSuggestedVersions(
+                createTestVersions("3.2.1", "3.3.1", "3.4.1-SNAPSHOT", "3.5.0-core-2.8-SNAPSHOT", "3.5.0-SNAPSHOT"), 6);
+        assertThat(res, contains("3.5.0-SNAPSHOT", "3.4.1-SNAPSHOT", "3.3.1", "3.2.1" ));
+        assertThat(res, not(hasItem("3.5.0-core-2.8-SNAPSHOT")));
     }
 }
