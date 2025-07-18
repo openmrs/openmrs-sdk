@@ -32,7 +32,9 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_2X_PROMPT;
 import static org.openmrs.maven.plugins.utility.SDKConstants.REFAPP_3X_PROMPT;
@@ -72,6 +74,8 @@ public class BuildDistro extends AbstractTask {
 	private static final String DOCKER_COMPOSE_PROD_YML = "docker-compose.prod.yml";
 
 	private static final String DOCKER_COMPOSE_OVERRIDE_YML = "docker-compose.override.yml";
+
+	private static final String MODULE_CONFIG_URI = "omod/src/main/resources/config.xml";
 
 	private static final Logger log = LoggerFactory.getLogger(BuildDistro.class);
 
@@ -121,6 +125,14 @@ public class BuildDistro extends AbstractTask {
 	@Parameter(property = "appShellVersion")
 	private String appShellVersion;
 
+	/**
+	 * Comma seperated string of additional modules artefacts in the
+	 * form groupId:artifactId:version or artifactId:version if the
+	 * groupId is either org.openmrs.module or org.openmrs
+	 */
+	@Parameter(defaultValue = "org.openmrs.module:legacyui-omod:1.16.0", property = "includeModules")
+	private String includeModules;
+
 	@Override
 	public void executeTask() throws MojoExecutionException, MojoFailureException {
 		File buildDirectory = getBuildDirectory();
@@ -135,6 +147,18 @@ public class BuildDistro extends AbstractTask {
 			if (distroFile.exists()) {
 				wizard.showMessage("Building distribution from the distro file at " + distroFile + "...\n");
 				distribution = builder.buildFromFile(distroFile);
+			}
+			else if (Project.hasProject(userDir) && new File(userDir, MODULE_CONFIG_URI).exists() || StringUtils.isNotBlank(includeModules)) {
+				List<Artifact> modules = Arrays.stream(includeModules.split(","))
+										.map(String::trim)
+										.filter(s -> !s.isEmpty())
+										.map(this::parseArtifact)
+										.collect(Collectors.toList());
+				if (Project.hasProject(userDir)) {
+					Project project = Project.loadProject(userDir);
+					modules.add(new Artifact(project.getArtifactId(), project.getGroupId(), project.getVersion()));
+				}
+				distribution = builder.buildFromModuleArtifacts(modules.toArray(new Artifact[0]));
 			}
 			else if (Project.hasProject(userDir)) {
 				wizard.showMessage("Building distribution from the source at " + userDir + "...\n");
@@ -549,5 +573,24 @@ public class BuildDistro extends AbstractTask {
 				throw new MojoExecutionException("Distro should contain only single war file");
 			}
 		}
+	}
+
+	private Artifact parseArtifact(String spec) {
+		String[] parts = spec.split(":");
+		String groupId, artifactId, version;
+
+		if (parts.length == 3) {
+			groupId = parts[0];
+			artifactId = parts[1];
+			version = parts[2];
+		} else if (parts.length == 2) {
+			groupId = Artifact.GROUP_MODULE;
+			artifactId = parts[0];
+			version = parts[1];
+		} else {
+			throw new IllegalArgumentException("Invalid artifact format: " + spec);
+		}
+
+		return new Artifact(artifactId, version, groupId);
 	}
 }
