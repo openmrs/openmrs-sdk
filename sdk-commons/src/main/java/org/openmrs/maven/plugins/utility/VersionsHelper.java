@@ -8,6 +8,7 @@ import org.openmrs.maven.plugins.model.Artifact;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.regex.Pattern;
 
 /**
  * Created by user on 27.05.16.
@@ -15,6 +16,8 @@ import java.util.List;
 public class VersionsHelper {
 
     public static final String NO_VERSION_AVAILABLE_MSG = "No version is available in remote repositories!";
+
+    private static final Pattern SNAPSHOT_PATTERN = Pattern.compile("^\\d+\\.\\d+\\.\\d+-SNAPSHOT$");
 
     private final MavenEnvironment mavenEnvironment;
 
@@ -102,17 +105,28 @@ public class VersionsHelper {
         if(allVersions.isEmpty()){
             return Collections.emptyList();
         }
-        sortDescending(allVersions);
+
+        // Filter out invalid snapshots before sorting and processing
+        List<ArtifactVersion> filteredVersions = new ArrayList<>();
+        for (ArtifactVersion version : allVersions) {
+            if (!isSnapshot(version) || SNAPSHOT_PATTERN.matcher(version.toString()).matches()) {
+                filteredVersions.add(version);
+            }
+        }
+        if(filteredVersions.isEmpty()){
+            return Collections.emptyList();
+        }
+        sortDescending(filteredVersions);
         List<String> advices = new ArrayList<>();
         
         boolean secondSnaphotAdded = false;
 
-        //add first element, presumably last SNAPSHOT version
-        advices.add(allVersions.get(0).toString());
-        ArtifactVersion previous = allVersions.get(0);
+        //add first element
+        advices.add(filteredVersions.get(0).toString());
+        ArtifactVersion previous = filteredVersions.get(0);
         //start from second element
-        for (int i=1; i<allVersions.size(); i++) {
-            ArtifactVersion version = allVersions.get(i);
+        for (int i=1; i<filteredVersions.size(); i++) {
+            ArtifactVersion version = filteredVersions.get(i);
             if (!isSnapshot(version)) {
                 //add all releases unless there is already a later release with the same major.minor version
                 if (!equalMinorAndMajor(previous, version) || isSnapshot(previous)) {
@@ -121,7 +135,7 @@ public class VersionsHelper {
                 }
             }
             else {
-                //only add one snapshot prior to the latest snaphost
+                //only add one snapshot prior to the latest snapshot
                 if (!equalMinorAndMajor(previous, version) && !secondSnaphotAdded) {
                     advices.add(version.toString());
                     secondSnaphotAdded = true;
