@@ -326,11 +326,6 @@ public class BuildDistro extends AbstractTask {
 			contentHelper.installBackendConfig(distroProperties, configDir);
 			spaInstaller.installFromDistroProperties(web, distroProperties, ignorePeerDependencies, overrideReuseNodeCache);
 
-			if (!configDir.exists()) {
-				// create it because docker needs it pre-created
-				configDir.mkdir();
-			}
-
 			File owasDir = new File(web, "owa");
 			owasDir.mkdir();
 			downloadOWAs(targetDirectory, distroProperties, owasDir);
@@ -343,8 +338,20 @@ public class BuildDistro extends AbstractTask {
 			new File(web, "openmrs.war").renameTo(new File(openmrsCoreDir, "openmrs.war"));
 			new File(web, "modules").renameTo(new File(web, "openmrs_modules"));
 			new File(web, "frontend").renameTo(new File(web, "openmrs_spa"));
+			if (!new File(web, "openmrs_spa").exists()) {
+				// create it because docker needs it pre-created
+				new File(web, "openmrs_spa").mkdir();
+			}
 			new File(web, "configuration").renameTo(new File(web, "openmrs_config"));
+			if (!new File(web, "openmrs_config").exists()) {
+				// create it because docker needs it pre-created
+				new File(web, "openmrs_config").mkdir();
+			}
 			new File(web, "owa").renameTo(new File(web, "openmrs_owas"));
+			if (!new File(web, "openmrs_owas").exists()) {
+				// create it because docker needs it pre-created
+				new File(web, "openmrs_owas").mkdir();
+			}
 		}
 
 		wizard.showMessage("Creating Docker Compose configuration...\n");
