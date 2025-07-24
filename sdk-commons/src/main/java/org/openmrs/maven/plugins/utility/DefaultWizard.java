@@ -123,6 +123,8 @@ public class DefaultWizard implements Wizard {
 
 	public static final String LOWER_VERSIONS = "Lower Versions...";
 
+	public static final String ENTER_SPECIFIC_VERSION = "Enter Specific Version";
+
 	private static final int MAX_OPTIONS_SIZE = 5;
 
 	private final PrintStream writer;
@@ -248,6 +250,8 @@ public class DefaultWizard implements Wizard {
 			currentPage.add(LOWER_VERSIONS);
 		}
 
+		currentPage.add(ENTER_SPECIFIC_VERSION);
+
 		String otherPrompt = (isLastPage ? otherMessage : null);
 		String answer = promptForMissingValueWithOptions(message, null, null, currentPage, otherPrompt, null);
 
@@ -256,6 +260,9 @@ public class DefaultWizard implements Wizard {
 		}
 		else if (LOWER_VERSIONS.equals(answer)) {
 			return promptForArtifactVersion(message, options, pageNum + 1, pageSize, otherMessage);
+		}
+		else if (ENTER_SPECIFIC_VERSION.equals(answer)) {
+            return promptForValueIfMissingWithDefault("Please enter the specific version", null, "version", "");
 		}
 
 		return answer;
