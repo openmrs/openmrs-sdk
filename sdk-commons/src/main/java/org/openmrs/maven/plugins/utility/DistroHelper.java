@@ -152,7 +152,7 @@ public class DistroHelper {
 		String type = artifact.getType();
 
 		if (Artifact.GROUP_DISTRO.equals(groupId) || Artifact.GROUP_OPENMRS.equals(groupId)) {
-			if ("referenceapplication".equals(artifactId)) {
+			if ("referenceapplication".equals(artifactId) || "distro-emr-configuration".equals(artifactId)) {
 				Version v = new Version(version);
 				if (v.getMajorVersion() <= 2) {
 					groupId = SDKConstants.REFAPP_2X_GROUP_ID;
