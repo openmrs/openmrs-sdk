@@ -247,8 +247,9 @@ public class BuildDistro extends AbstractTask {
 
 	private void deleteDistroFiles(File targetDir) {
 		try {
-			FileUtils.deleteDirectory(new File(targetDir, "modules"));
-			new File(targetDir, OPENMRS_WAR).delete();
+			FileUtils.deleteDirectory(new File(targetDir, "openmrs_modules"));
+			FileUtils.deleteDirectory(new File(targetDir, "openmrs_core"));
+			new File(targetDir, "openmrs.war").delete();
 			new File(targetDir, OPENMRS_DISTRO_PROPERTIES).delete();
 		}
 		catch (IOException e) {
@@ -324,6 +325,11 @@ public class BuildDistro extends AbstractTask {
 			configurationInstaller.installToDirectory(configDir, distroProperties);
 			contentHelper.installBackendConfig(distroProperties, configDir);
 			spaInstaller.installFromDistroProperties(web, distroProperties, ignorePeerDependencies, overrideReuseNodeCache);
+
+			if (!configDir.exists()) {
+				// create it because docker needs it pre-created
+				configDir.mkdir();
+			}
 
 			File owasDir = new File(web, "owa");
 			owasDir.mkdir();
