@@ -319,10 +319,7 @@ public class BuildDistro extends AbstractTask {
 			moduleInstaller.installModules(distroProperties.getModuleArtifacts(), modulesDir.getAbsolutePath());
 
 			File frontendDir = new File(web, "frontend");
-			if (!frontendDir.mkdir()) {
-				// recreate if it fails fo some unknown reason
-				frontendDir.mkdir();
-			}
+			frontendDir.mkdir();
 
 			File configDir = new File(web, SDKConstants.OPENMRS_SERVER_CONFIGURATION);
 			configurationInstaller.installToDirectory(configDir, distroProperties);
