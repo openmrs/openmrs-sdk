@@ -149,6 +149,7 @@ public class BuildDistro extends AbstractTask {
 				distribution = builder.buildFromFile(distroFile);
 			}
 			else if (Project.hasProject(userDir) && new File(userDir, MODULE_CONFIG_URI).exists() || StringUtils.isNotBlank(includeModules)) {
+				wizard.showMessage("Building distribution from the 'includeModules' parameter and/or detected module project dependencies...\n");
 				List<Artifact> modules = Arrays.stream(includeModules.split(","))
 										.map(String::trim)
 										.filter(s -> !s.isEmpty())
