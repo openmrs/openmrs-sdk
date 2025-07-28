@@ -157,6 +157,7 @@ public class BuildDistro extends AbstractTask {
 										.collect(Collectors.toList());
 				if (Project.hasProject(userDir)) {
 					Project project = Project.loadProject(userDir);
+					new Build(this).buildProject(project);
 					modules.add(new Artifact(project.getArtifactId(), project.getVersion(), project.getGroupId()));
 				}
 				distribution = builder.buildFromModuleArtifacts(modules.toArray(new Artifact[0]));

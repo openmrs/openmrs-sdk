@@ -17,6 +17,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.apache.commons.io.FileUtils;
 import org.openmrs.maven.plugins.model.Artifact;
+import org.openmrs.maven.plugins.model.Project;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -42,8 +43,13 @@ public class ModuleBasedDistroHelper {
 
     public ModuleBasedDistroHelper(MavenEnvironment mavenEnvironment) {
         this.mavenEnvironment = mavenEnvironment;
-        this.tempWorkingDir = new File(mavenEnvironment.getMavenProject().getBuild().getDirectory(), "moduleBasedArtifactsTempDir");
-        tempWorkingDir.mkdirs();
+        File userDir = new File(System.getProperty("user.dir"));
+        if (Project.hasProject(userDir)) {
+            this.tempWorkingDir = new File(mavenEnvironment.getMavenProject().getBuild().getDirectory(), "moduleBasedArtifactsTempDir");
+            tempWorkingDir.mkdirs();
+        } else {
+            this.tempWorkingDir = new File(userDir, "moduleBasedArtifactsTempDir");
+        }
     }
 
     public Properties generateDitributionPropertiesFromModules(Artifact ...modules) {
