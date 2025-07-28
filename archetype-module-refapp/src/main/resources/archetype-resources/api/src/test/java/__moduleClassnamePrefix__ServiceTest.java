@@ -32,6 +32,7 @@ import java.sql.SQLException;
  */
 public class ${moduleClassnamePrefix}ServiceTest extends BaseModuleContextSensitiveTest {
 
+	private static final String ITEM_UUID = "46e35514-ef9d-49c3-8d68-8ec1d0da0639";
 
 	/**
 	 * Run this before each unit test in this class. This adds a bit more data to the base data that is
@@ -49,7 +50,7 @@ public class ${moduleClassnamePrefix}ServiceTest extends BaseModuleContextSensit
 	public void saveItem_shouldSetOwnerIfNotSet() {
 		${moduleClassnamePrefix}Service service = Context.getService(${moduleClassnamePrefix}Service.class);
 		UserService userService = Context.getUserService();
-		Item savedItem = service.getItemByUuid("46e35514-ef9d-49c3-8d68-8ec1d0da0639");
+		Item savedItem = service.getItemByUuid(ITEM_UUID);
 
 		savedItem.setOwner(userService.getUser(0));
 

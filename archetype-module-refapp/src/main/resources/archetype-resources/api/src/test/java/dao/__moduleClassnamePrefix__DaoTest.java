@@ -30,6 +30,10 @@ import org.springframework.beans.factory.annotation.Autowired;
  */
 public class ${moduleClassnamePrefix}DaoTest extends BaseModuleContextSensitiveTest {
 
+	private static final String ITEM_UUID = "076824da-b692-44b7-x33f-abf2u4i0474d";
+
+	private static final String OWNER_UUID = "1010d442-e134-11de-babe-001e378eb67e";
+
 	@Autowired
 	${moduleClassnamePrefix}Dao dao;
 
@@ -40,9 +44,9 @@ public class ${moduleClassnamePrefix}DaoTest extends BaseModuleContextSensitiveT
 
 	@Test
 	public void saveItem_shouldSaveAllPropertiesInDb() {
-		Item savedItem = dao.getItemByUuid("076824da-b692-44b7-x33f-abf2u4i0474d");
+		Item savedItem = dao.getItemByUuid(ITEM_UUID);
 		assertNotNull(savedItem);
-		assertEquals("1010d442-e134-11de-babe-001e378eb67e", savedItem.getOwner().getUuid());
+		assertEquals(OWNER_UUID, savedItem.getOwner().getUuid());
 		assertEquals("admin", savedItem.getOwner().getUsername());
 		assertEquals("This is a test item description.", savedItem.getDescription());
 	}
