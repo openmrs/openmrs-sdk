@@ -96,7 +96,7 @@ public class SDKConstants {
     public static final String REFAPP_3X_ARTIFACT_ID = "distro-emr-configuration";
     public static final String REFAPP_3X_TYPE = "zip";
 
-    public static final String REFERENCEAPPLICATION_3_0 = "org.openmrs:distro-emr-configuration:3.0.0";
+    public static final String REFERENCEAPPLICATION_3_4_0 = "org.openmrs:distro-emr-configuration:3.4.0";
 
     public static final List<String> SUPPPORTED_REFAPP_VERSIONS_2_3_1_OR_LOWER = java.util.Arrays.asList("2.3.1", "2.2", "2.1");
     private final static String[] SUPPORTED_MODULE_EXTENSIONS = new String[]{Artifact.TYPE_WAR, Artifact.TYPE_JAR, Artifact.TYPE_OMOD};

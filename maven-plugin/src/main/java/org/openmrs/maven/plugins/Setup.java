@@ -215,7 +215,7 @@ public class Setup extends AbstractServerTask {
 		options.add(PLATFORM);
 
 		String customDistroMessage = "Please specify distribution artifact";
-		String customDistroDefault = SDKConstants.REFERENCEAPPLICATION_3_0;
+		String customDistroDefault = SDKConstants.REFERENCEAPPLICATION_3_4_0;
 
 		String choice = wizard.promptForMissingValueWithOptions(SETUP_SERVERS_PROMPT, null, null, options, customDistroMessage, customDistroDefault);
 
