@@ -16,14 +16,30 @@
 			<defaultValue>Ben Wolfe</defaultValue>
 		</requiredProperty>
 		<requiredProperty key="openmrsPlatformVersion">
-			<defaultValue>1.11.6</defaultValue>
+			<defaultValue>2.5.0</defaultValue>
+		</requiredProperty>
+		<requiredProperty key="junitJupiterVersion">
+			<defaultValue>5.8.1</defaultValue>
+		</requiredProperty>
+		<requiredProperty key="mockitoVersion">
+			<defaultValue>3.12.4</defaultValue>
+		</requiredProperty>
+		<requiredProperty key="powerMockVersion">
+			<defaultValue>2.0.9</defaultValue>
+		</requiredProperty>
+		<requiredProperty key="junitVersion">
+			<defaultValue>4.13.2</defaultValue>
 		</requiredProperty>
 	</requiredProperties>
 	<fileSets>
-		<fileSet encoding="UTF-8">
+		<fileSet encoding="UTF-8" filtered="true">
 			<directory></directory>
 			<includes>
 				<include>README*</include>
+				<include>license-header.txt</include>
+				<include>OpenMRSFormatter.xml</include>
+				<include>.gitignore</include>
+				<include>LICENSE.txt</include>
 			</includes>
 		</fileSet>
 		<fileSet encoding="UTF-8">
