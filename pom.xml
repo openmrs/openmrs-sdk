@@ -19,8 +19,6 @@
         <module>archetype-submodule-owa</module>
         <module>sdk-commons</module>
         <module>docker-maven-plugin</module>
-        <module>tomcat7-maven-plugin</module>
-        <module>tomcat9-maven-plugin</module>
         <module>maven-plugin</module>
         <module>integration-tests</module>
     </modules>
@@ -600,6 +598,26 @@
                     </plugin>
                 </plugins>
             </build>
+        </profile>
+
+        <profile>
+            <id>Java21</id>
+            <activation>
+                <jdk>21</jdk>
+            </activation>
+            <modules>
+                <module>tomcat11-maven-plugin</module>
+            </modules>
+        </profile>
+
+        <profile>
+            <id>Java24</id>
+            <activation>
+                <jdk>24</jdk>
+            </activation>
+            <modules>
+                <module>tomcat11-maven-plugin</module>
+            </modules>
         </profile>
     </profiles>
 </project>
