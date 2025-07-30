@@ -16,6 +16,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.Project;
 import org.slf4j.Logger;
@@ -98,12 +99,9 @@ public class ModuleBasedDistroHelper {
             log.info("Resolving: groupId={}, artifactId={}, version={}", groupId, artifactId, version);
 
             Artifact current = resolved.get(artifactId);
-            if (current != null && compareVersions(current.getVersion(), version) >= 0) {
+            if (current != null && new ComparableVersion(current.getVersion()).compareTo(new ComparableVersion(version)) >= 0) {
                 log.info("Already resolved {} at same or higher version ({} >= {})", artifactId, current.getVersion(), version);
                 return;
-            } else if (current == null) {
-                // ensure it is valid version by it being greater than 0
-                compareVersions("0", version);
             }
 
             File jarFile = downloadJarAndUpdateResolved(groupId, artifactId, version);
@@ -139,7 +137,9 @@ public class ModuleBasedDistroHelper {
                     // keep trying next combination
                 }
             }
-            if (downloaded) break;
+            if (downloaded) {
+                break;
+            }
         }
 
         if (!downloaded) {
@@ -184,7 +184,9 @@ public class ModuleBasedDistroHelper {
                     String uid = el.getTextContent().trim();
                     String version = el.getAttribute("version").trim();
 
-                    if (!uid.contains(".")) continue;
+                    if (!uid.contains(".")) {
+                        continue;
+                    }
 
                     String artifactId = "";
                     String groupId = "";
@@ -202,37 +204,6 @@ public class ModuleBasedDistroHelper {
             }
         }
         return dependencies;
-    }
-
-    private int compareVersions(String v1, String v2) {
-        String[] qualifiers = {"alpha", "beta", "SNAPSHOT"};
-
-        String base1 = v1.split("-(?=alpha|beta|SNAPSHOT)")[0];
-        String base2 = v2.split("-(?=alpha|beta|SNAPSHOT)")[0];
-
-        String q1 = v1.contains("-") ? v1.substring(v1.indexOf("-") + 1) : "";
-        String q2 = v2.contains("-") ? v2.substring(v2.indexOf("-") + 1) : "";
-
-        String[] parts1 = base1.split("\\.");
-        String[] parts2 = base2.split("\\.");
-
-        for (int i = 0; i < Math.max(parts1.length, parts2.length); i++) {
-            int p1 = i < parts1.length ? Integer.parseInt(parts1[i]) : 0;
-            int p2 = i < parts2.length ? Integer.parseInt(parts2[i]) : 0;
-            if (p1 != p2) return Integer.compare(p1, p2);
-        }
-
-        // If base versions equal, compare qualifiers
-        if (!q1.equals(q2)) {
-            if (q1.isEmpty()) return 1; // release > pre-release
-            if (q2.isEmpty()) return -1;
-
-            int i1 = Arrays.asList(qualifiers).indexOf(q1);
-            int i2 = Arrays.asList(qualifiers).indexOf(q2);
-            return Integer.compare(i1, i2);
-        }
-
-        return 0;
     }
 
     public void printResults() {
