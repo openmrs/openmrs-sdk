@@ -39,6 +39,62 @@ public class BuildDistroIT extends AbstractSdkIT {
     }
 
     @Test
+    public void buildDistro_shouldBuildModuleBasedDistroFromDetectedModuleProject() throws Exception {
+        Path sourcePath = testResourceDir.resolve(TEST_DIRECTORY).resolve("moduleBasedDistroIT");
+        FileUtils.copyDirectory(sourcePath.toFile(), testDirectory);
+        addTaskParam("dir", "target/docker");
+        executeTask("build-distro");
+
+        assertFilePresent("target/docker/docker-compose.yml");
+        assertFilePresent("target/docker/docker-compose.override.yml");
+        assertFilePresent("target/docker/docker-compose.prod.yml");
+        assertFilePresent("target/docker/.env");
+        assertFilePresent("target/docker/web/Dockerfile");
+        assertFilePresent("target/docker/web/openmrs_modules");
+        assertFilePresent("target/docker/web/openmrs_modules/example-1.0.0-SNAPSHOT.omod");
+        assertFilePresent("target/docker/web/openmrs_modules/metadatamapping-1.0.1.omod");
+        assertFilePresent("target/docker/web/openmrs_modules/webservices.rest-2.49.0.omod");
+        assertFilePresent("target/docker/web/openmrs_modules/metadatadeploy-1.13.0.omod");
+        assertFilePresent("target/docker/web/openmrs_modules/fhir2-2.5.0.omod");
+        assertFilePresent("target/docker/web/openmrs_modules/metadatasharing-1.1.8.omod");
+        assertFilePresent("target/docker/web/openmrs_modules/legacyui-1.23.0.omod");
+        assertFilePresent("target/docker/web/openmrs_owas");
+        assertFilePresent("target/docker/web/openmrs_config");
+        assertFilePresent("target/docker/web/openmrs_spa");
+        assertFilePresent("target/docker/web/openmrs_core/openmrs.war");
+        assertFilePresent("target/docker/web/openmrs-distro.properties");
+        assertFileContains("war.openmrs=2.7.4", "target", "docker", "web", "openmrs-distro.properties");
+        assertSuccess();
+    }
+
+    @Test
+    public void buildDistro_shouldBuildModuleBasedDistroFromFromIncludeModulesParameter() throws Exception {
+        addTaskParam("dir", "docker");
+        addTaskParam("includeModules", "org.openmrs.module:legacyui-omod:1.23.0, org.openmrs.module:webservices.rest:2.49.0, org.openmrs.module:fhir2:2.5.0, org.openmrs.module:metadatadeploy:1.13.0");
+        executeTask("build-distro");
+        
+        assertFilePresent("docker/docker-compose.yml");
+        assertFilePresent("docker/docker-compose.override.yml");
+        assertFilePresent("docker/docker-compose.prod.yml");
+        assertFilePresent("docker/.env");
+        assertFilePresent("docker/web/Dockerfile");
+        assertFilePresent("docker/web/openmrs_modules");
+        assertFilePresent("docker/web/openmrs_modules/metadatamapping-1.0.1.omod");
+        assertFilePresent("docker/web/openmrs_modules/webservices.rest-2.49.0.omod");
+        assertFilePresent("docker/web/openmrs_modules/metadatadeploy-1.13.0.omod");
+        assertFilePresent("docker/web/openmrs_modules/fhir2-2.5.0.omod");
+        assertFilePresent("docker/web/openmrs_modules/metadatasharing-1.1.8.omod");
+        assertFilePresent("docker/web/openmrs_modules/legacyui-1.23.0.omod");
+        assertFilePresent("docker/web/openmrs_owas");
+        assertFilePresent("docker/web/openmrs_config");
+        assertFilePresent("docker/web/openmrs_spa");
+        assertFilePresent("docker/web/openmrs_core/openmrs.war");
+        assertFilePresent("docker/web/openmrs-distro.properties");
+        assertFileContains("war.openmrs=2.7.4", "docker", "web", "openmrs-distro.properties");
+        assertSuccess();
+    }
+
+    @Test
     public void buildDistro_shouldBuildFromDistroPropertiesInCurrentProject() throws Exception {
         Path sourcePath = testResourceDir.resolve(TEST_DIRECTORY).resolve("buildDistroIT");
         FileUtils.copyDirectory(sourcePath.toFile(), testDirectory);
