@@ -53,7 +53,7 @@ public class ModuleBasedDistroHelper {
         }
     }
 
-    public Properties generateDitributionPropertiesFromModules(Artifact ...modules) {
+    public Properties generateDistributionPropertiesFromModules(Artifact ...modules) {
         Properties properties = new Properties();
         properties.put("name", "Module based distro");
         properties.put("version", "100.0.0-SNAPSHOT");

@@ -70,7 +70,7 @@ public class BuildDistroIT extends AbstractSdkIT {
     @Test
     public void buildDistro_shouldBuildModuleBasedDistroFromFromIncludeModulesParameter() throws Exception {
         addTaskParam("dir", "docker");
-        addTaskParam("includeModules", "org.openmrs.module:legacyui-omod:1.23.0, org.openmrs.module:webservices.rest:2.49.0, org.openmrs.module:fhir2:2.5.0, org.openmrs.module:metadatadeploy:1.13.0");
+        addTaskParam("includeModules", "org.openmrs.module:legacyui-omod:1.23.0, webservices.rest:2.49.0, org.openmrs.module:fhir2:2.5.0, metadatadeploy:1.13.0");
         executeTask("build-distro");
         
         assertFilePresent("docker/docker-compose.yml");

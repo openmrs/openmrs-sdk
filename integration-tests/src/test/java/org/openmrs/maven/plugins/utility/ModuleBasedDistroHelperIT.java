@@ -35,7 +35,7 @@ public class ModuleBasedDistroHelperIT extends AbstractMavenIT {
             }
 
             // replay
-            Properties actualProperties = helper.generateDitributionPropertiesFromModules(artifacts);
+            Properties actualProperties = helper.generateDistributionPropertiesFromModules(artifacts);
 
             // verify
 			assertThat(actualProperties.size(), equalTo(expectedProperties.size()));
