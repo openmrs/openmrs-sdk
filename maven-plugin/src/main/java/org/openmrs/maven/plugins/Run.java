@@ -44,6 +44,8 @@ public class Run extends AbstractServerTask {
 	
 	private static final Version TOMCAT_7_CUTOFF = new Version("2.5.0-SNAPSHOT");
 
+	private static final Version TOMCAT_9_CUTOFF = new Version("3.0.0-SNAPSHOT");
+
 	public Run() {
 	}
 
@@ -224,10 +226,12 @@ public class Run extends AbstractServerTask {
 		
 		// if the runGoal isn't specified, we default to Tomcat 9, unless running a platform version before 2.5.0-SNAPSHOT
 		if (StringUtils.isBlank(runGoal)) {
-			String tomcatArtifactId = SDKConstants.OPENMRS_TOMCAT9_PLUGIN_ARTIFACT_ID;
+			String tomcatArtifactId = SDKConstants.OPENMRS_TOMCAT11_PLUGIN_ARTIFACT_ID;
 			Version platformVersion = new Version(server.getPlatformVersion());
 			if (platformVersion.lower(TOMCAT_7_CUTOFF)) {
 				tomcatArtifactId = SDKConstants.OPENMRS_TOMCAT7_PLUGIN_ARTIFACT_ID;
+			} else if (platformVersion.lower(TOMCAT_9_CUTOFF)) {
+				tomcatArtifactId =SDKConstants.OPENMRS_TOMCAT9_PLUGIN_ARTIFACT_ID;
 			}
 			
 			runGoal = String.format("%s:%s:%s:run-tomcat",
