@@ -177,17 +177,16 @@ public class Deploy extends AbstractServerTask {
 						server.getName(),
 						server.getVersion()));
 
+				List<String> distroOptions = new ArrayList<>(Arrays.asList(SDKConstants.REFAPP_2X_PROMPT,SDKConstants.REFAPP_3X_PROMPT));
+				String distroChoice = wizard.promptForMissingValueWithOptions("Which distribution would you like to deploy?%s", null, "", distroOptions);
 
 				Artifact artifact;
-
-				// If its impossible to define distro, prompt refapp distro versions
-				if (server.getName().equals("Platform") || server.getDistroGroupId() == null || server.getDistroArtifactId() == null) {
+				if (SDKConstants.REFAPP_2X_PROMPT.equals(distroChoice)) {
 					artifact = wizard.promptForRefApp2xArtifact(versionsHelper);
-				}
-				else {
-					// If it is possible to define distro, prompt that distro's versions
-					artifact = new Artifact(server.getDistroArtifactId(), server.getVersion(), server.getDistroGroupId());
-					artifact.setVersion(wizard.promptForArtifactVersion("Please choose a " + server.getName() + " version", artifact, null, versionsHelper));
+				} else if (SDKConstants.REFAPP_3X_PROMPT.equals(distroChoice)) {
+					artifact = wizard.promptForRefApp3xArtifact(versionsHelper);
+				} else {
+					throw new MojoExecutionException("Invalid distribution choice: " + distroChoice);
 				}
 
 				DistributionBuilder builder = new DistributionBuilder(getMavenEnvironment());
