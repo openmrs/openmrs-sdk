@@ -65,8 +65,11 @@ public class CreateProjectIT extends AbstractSdkIT {
         addTaskParam("moduleDescription", "none");
         addTaskParam("groupId", "org.openmrs.module");
         addTaskParam("version", "1.0.0-SNAPSHOT");
+        addTaskParam("junitVersion", "4.13.2");
+        addTaskParam("mockitoVersion", "3.12.4");
+        addTaskParam("junitJupiterVersion", "5.11.3");
 
-        addAnswer("1.11.6");
+        addAnswer("2.7.0");
         addTaskParam(BATCH_ANSWERS, getAnswers()); //only to set interactive mode to false
 
         executeTask("create-project");
@@ -106,6 +109,28 @@ public class CreateProjectIT extends AbstractSdkIT {
         executeTask("create-project");
         assertSuccess();
         assertContentPackageCreated();
+    }
+
+    @Test
+    public void createProject_shouldRejectPlatformVersionBelowMinimum() throws Exception {
+        addTaskParam("type", "platform-module");
+
+        addTaskParam("moduleId", "test");
+        addTaskParam("moduleName", "Test");
+        addTaskParam("moduleDescription", "none");
+        addTaskParam("groupId", "org.openmrs.module");
+        addTaskParam("version", "1.0.0-SNAPSHOT");
+
+        addAnswer("2.2.0");
+        addAnswer("2.3.0");
+        addAnswer("2.4.0");
+        addAnswer("2.5.0");
+
+        addTaskParam(BATCH_ANSWERS, getAnswers());
+
+        executeTask("create-project");
+        assertSuccess();
+        assertProjectCreated();
     }
 
     private void assertProjectCreated() {
