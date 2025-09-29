@@ -2,7 +2,7 @@
 version: 2
 plan:
   project-key: SDK
-  key: SDK
+  key: SDKL
   name: SDK Latest
   description: Plan for the SDK Latest
 stages:
@@ -259,7 +259,7 @@ other:
 ---
 version: 2
 plan:
-  key: SDK-SDK
+  key: SDK-SDKL
 plan-permissions:
   - roles:
       - anonymous
