@@ -19,6 +19,8 @@
         <module>archetype-submodule-owa</module>
         <module>sdk-commons</module>
         <module>docker-maven-plugin</module>
+        <module>tomcat7-maven-plugin</module>
+        <module>tomcat9-maven-plugin</module>
         <module>maven-plugin</module>
         <module>integration-tests</module>
     </modules>
