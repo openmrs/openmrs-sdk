@@ -26,7 +26,7 @@ public class NpmVersionHelper {
 	/**
 	 * Retrieves the resolved version of an NPM package based on the supplied semver range.
 	 * <p>
-	 * This method runs the `npm pack --dry-run --json <package>@<version>` command to get the exact
+	 * This method runs the {@code npm pack --dry-run --json <package>@<version>}  command to get the exact
 	 * version of the package that satisfies the specified semver range.
 	 *
 	 * @param packageJson The PackageJson object containing the name of the package.
