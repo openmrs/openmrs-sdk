@@ -10,6 +10,7 @@ import org.apache.commons.lang.SystemUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugins.annotations.Parameter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,9 +41,8 @@ abstract class AbstractDockerMojo extends AbstractMojo {
 
     /**
      * Option to override default dockerHost
-     *
-     * @parameter  property="dockerHost"
      */
+    @Parameter(property = "dockerHost")
     protected String dockerHost;
 
     protected DockerClient docker;

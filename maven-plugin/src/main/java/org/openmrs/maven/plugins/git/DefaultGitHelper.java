@@ -66,7 +66,7 @@ public class DefaultGitHelper implements GitHelper {
 	public static final String HTTPS_GIT_URL = "https://github.com/";
 
 	/**
-	 * @inheritDoc
+	 * {@inheritDoc}
 	 */
 	@Override
 	public Repository getLocalRepository(String path) throws MojoExecutionException {
@@ -79,7 +79,7 @@ public class DefaultGitHelper implements GitHelper {
 	}
 
 	/**
-	 * @inheritDoc
+	 * {@inheritDoc}
 	 */
 	@Override
 	public boolean checkIfUncommittedChanges(Git git) throws MojoExecutionException {
@@ -93,7 +93,7 @@ public class DefaultGitHelper implements GitHelper {
 	}
 
 	/**
-	 * @inheritDoc
+	 * {@inheritDoc}
 	 */
 	@Override
 	public void addIssueIdIfMissing(Git git, final String issueId, int rebaseSize) throws MojoExecutionException {
@@ -138,7 +138,7 @@ public class DefaultGitHelper implements GitHelper {
 	}
 
 	/**
-	 * @inheritDoc
+	 * {@inheritDoc}
 	 */
 	@Override
 	public void squashLastCommits(Git git, int numberOfCommits) {
@@ -178,7 +178,7 @@ public class DefaultGitHelper implements GitHelper {
 	}
 
 	/**
-	 * @inheritDoc
+	 * {@inheritDoc}
 	 */
 	@Override
 	public void pullRebase(AbstractTask parentTask, String branch, Project project) throws MojoExecutionException {
@@ -190,7 +190,7 @@ public class DefaultGitHelper implements GitHelper {
 	}
 
 	/**
-	 * @inheritDoc
+	 * {@inheritDoc}
 	 */
 	@Override
 	public Iterable<PushResult> push(Git git, String username, String password, String reference, String remote,
@@ -221,7 +221,7 @@ public class DefaultGitHelper implements GitHelper {
 	}
 
 	/**
-	 * @inheritDoc
+	 * {@inheritDoc}
 	 */
 	@Override
 	public Iterable<RevCommit> getCommitDifferential(Git git, String baseRef, String headRef) throws MojoExecutionException {
@@ -236,7 +236,7 @@ public class DefaultGitHelper implements GitHelper {
 	}
 
 	/**
-	 * @inheritDoc
+	 * {@inheritDoc}
 	 */
 	@Override
 	public List<String> getCommitDifferentialMessages(Git git, String baseRef, String headRef)
@@ -250,7 +250,7 @@ public class DefaultGitHelper implements GitHelper {
 	}
 
 	/**
-	 * @inheritDoc
+	 * {@inheritDoc}
 	 */
 	@Override
 	public PullRequest openPullRequest(GithubPrRequest request) throws MojoExecutionException {
@@ -281,7 +281,7 @@ public class DefaultGitHelper implements GitHelper {
 	}
 
 	/**
-	 * @inheritDoc
+	 * {@inheritDoc}
 	 */
 	@Override
 	public PullRequest getPullRequestIfExists(String base, String head, String repository) throws MojoExecutionException {
@@ -311,7 +311,7 @@ public class DefaultGitHelper implements GitHelper {
 	}
 
 	/**
-	 * @inheritDoc
+	 * {@inheritDoc}
 	 */
 	@Override
 	public RevCommit getLastCommit(Git git) throws MojoExecutionException {
@@ -324,7 +324,7 @@ public class DefaultGitHelper implements GitHelper {
 	}
 
 	/**
-	 * @inheritDoc
+	 * {@inheritDoc}
 	 */
 	@Override
 	public void resetHard(Git git, RevCommit commit) throws MojoExecutionException {
@@ -337,7 +337,7 @@ public class DefaultGitHelper implements GitHelper {
 	}
 
 	/**
-	 * @inheritDoc
+	 * {@inheritDoc}
 	 */
 	@Override
 	public boolean deleteTag(Git git, String tag, String username, String password) throws MojoExecutionException {
@@ -364,7 +364,7 @@ public class DefaultGitHelper implements GitHelper {
 	}
 
 	/**
-	 * @inheritDoc
+	 * {@inheritDoc}
 	 */
 	@Override
 	public void revertCommits(Git git, Iterable<RevCommit> commits) throws MojoExecutionException {
@@ -381,7 +381,7 @@ public class DefaultGitHelper implements GitHelper {
 	}
 
 	/**
-	 * @inheritDoc
+	 * {@inheritDoc}
 	 */
 	@Override
 	public void addRemoteUpstream(Git git, String path) throws Exception {

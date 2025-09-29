@@ -335,8 +335,7 @@ public class Deploy extends AbstractServerTask {
 	 *
 	 * @param server
 	 * @param artifact
-	 * @return tru if success
-	 * @throws MojoExecutionException
+	 * @throws MojoExecutionException if deployment fails
 	 */
 	public void deployOpenmrsWar(Server server, Artifact artifact) throws MojoExecutionException {
 		File openmrsCorePath = new File(server.getServerDirectory(), "openmrs-" + server.getPlatformVersion() + ".war");
