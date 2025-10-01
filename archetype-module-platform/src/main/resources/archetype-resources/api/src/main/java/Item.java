@@ -25,11 +25,11 @@ import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 /**
- * Please note that a corresponding table schema must be created in liquibase.xml.
+ * Please note that a corresponding table schema can also be created using the liquibase.xml file.
+ * Comment the 2 lines below if you want to make the Item class persistable using the liquibase.xml file.
  */
-//Uncomment 2 lines below if you want to make the Item class persistable, see also ${moduleClassnamePrefix}DaoTest and liquibase.xml
-//@Entity(name = "${rootArtifactId}.Item")
-//@Table(name = "${rootArtifactId}_item")
+@Entity(name = "${rootArtifactId}.Item")
+@Table(name = "${rootArtifactId}_item")
 public class Item extends BaseOpenmrsData {
 	
 	@Id
