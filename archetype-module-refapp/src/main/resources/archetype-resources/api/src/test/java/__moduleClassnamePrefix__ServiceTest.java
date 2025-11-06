@@ -10,57 +10,51 @@
  * Copyright (C) OpenMRS Inc. OpenMRS is a registered trademark and the OpenMRS
  * graphic logo is a trademark of OpenMRS Inc.
  */
-package ${package}.api;
+package ${package};
 
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.openmrs.User;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.openmrs.api.UserService;
-import ${package}.Item;
-import ${package}.api.dao.${moduleClassnamePrefix}Dao;
-import ${package}.api.impl.${moduleClassnamePrefix}ServiceImpl;
-import static org.mockito.Mockito.*;
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+import org.openmrs.api.context.Context;
+import ${package}.api.${moduleClassnamePrefix}Service;
+import org.openmrs.test.jupiter.BaseContextSensitiveTest;
+import org.openmrs.test.jupiter.BaseModuleContextSensitiveTest;
+
+import java.sql.SQLException;
 
 /**
- * This is a unit test, which verifies logic in ${moduleClassnamePrefix}Service. It doesn't extend
- * BaseModuleContextSensitiveTest, thus it is run without the in-memory DB and Spring context.
+ * Tests for {@link ${moduleClassnamePrefix}Service}, verifying its core logic using a context sensitive approach.
+ * <p>
+ * This test class extends {@link BaseModuleContextSensitiveTest}, which sets up a full Spring application
+ * context and in-memory database.
  */
-public class ${moduleClassnamePrefix}ServiceTest {
-	
-	@InjectMocks
-	${moduleClassnamePrefix}ServiceImpl basicModuleService;
-	
-	@Mock
-	${moduleClassnamePrefix}Dao dao;
-	
-	@Mock
-	UserService userService;
-	
-	@Before
-	public void setupMocks() {
-		MockitoAnnotations.initMocks(this);
+public class ${moduleClassnamePrefix}ServiceTest extends BaseModuleContextSensitiveTest {
+
+	private static final String ITEM_UUID = "46e35514-ef9d-49c3-8d68-8ec1d0da0639";
+
+	/**
+	 * Run this before each unit test in this class. This adds a bit more data to the base data that is
+	 * done in the "@Before" method in {@link BaseContextSensitiveTest} (which is run right before this
+	 * method).
+	 *
+	 * @throws SQLException An exception that provides information on a database access error.
+	 */
+	@BeforeEach
+	public void runBeforeEachTest() throws SQLException {
+		executeDataSet("org/openmrs/api/include/item.xml");
 	}
 	
 	@Test
 	public void saveItem_shouldSetOwnerIfNotSet() {
-		//Given
-		Item item = new Item();
-		item.setDescription("some description");
-		
-		when(dao.saveItem(item)).thenReturn(item);
-		
-		User user = new User();
-		when(userService.getUser(1)).thenReturn(user);
-		
-		//When
-		basicModuleService.saveItem(item);
-		
-		//Then
-		assertThat(item, hasProperty("owner", is(user)));
+		${moduleClassnamePrefix}Service service = Context.getService(${moduleClassnamePrefix}Service.class);
+		UserService userService = Context.getUserService();
+		Item savedItem = service.getItemByUuid(ITEM_UUID);
+
+		savedItem.setOwner(userService.getUser(0));
+
+		assertEquals("daemon", savedItem.getOwner().getSystemId());
+		assertEquals("Does not have an owner", savedItem.getDescription());
 	}
 }

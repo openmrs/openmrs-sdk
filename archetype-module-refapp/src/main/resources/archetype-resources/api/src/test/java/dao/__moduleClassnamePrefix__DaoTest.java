@@ -10,17 +10,17 @@
  * Copyright (C) OpenMRS Inc. OpenMRS is a registered trademark and the OpenMRS
  * graphic logo is a trademark of OpenMRS Inc.
  */
-package ${package}.api.dao;
+package ${package}.dao;
 
-import org.junit.Test;
-import org.junit.Ignore;
-import org.openmrs.api.UserService;
-import org.openmrs.api.context.Context;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import ${package}.Item;
-import org.openmrs.test.BaseModuleContextSensitiveTest;
+import ${package}.api.dao.${moduleClassnamePrefix}Dao;
+import org.openmrs.test.jupiter.BaseModuleContextSensitiveTest;
 import org.springframework.beans.factory.annotation.Autowired;
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
 
 /**
  * It is an integration test (extends BaseModuleContextSensitiveTest), which verifies DAO methods
@@ -29,33 +29,25 @@ import static org.junit.Assert.*;
  * rolled back by the end of each test method.
  */
 public class ${moduleClassnamePrefix}DaoTest extends BaseModuleContextSensitiveTest {
-	
+
+	private static final String ITEM_UUID = "076824da-b692-44b7-x33f-abf2u4i0474d";
+
+	private static final String OWNER_UUID = "1010d442-e134-11de-babe-001e378eb67e";
+
 	@Autowired
 	${moduleClassnamePrefix}Dao dao;
-	
-	@Autowired
-	UserService userService;
-	
+
+	@BeforeEach
+	public void runBeforeEachTest() throws Exception {
+		executeDataSet("org/openmrs/api/include/item.xml");
+	}
+
 	@Test
-	@Ignore("Unignore if you want to make the Item class persistable, see also Item and liquibase.xml")
 	public void saveItem_shouldSaveAllPropertiesInDb() {
-		//Given
-		Item item = new Item();
-		item.setDescription("some description");
-		item.setOwner(userService.getUser(1));
-		
-		//When
-		dao.saveItem(item);
-		
-		//Let's clean up the cache to be sure getItemByUuid fetches from DB and not from cache
-		Context.flushSession();
-		Context.clearSession();
-		
-		//Then
-		Item savedItem = dao.getItemByUuid(item.getUuid());
-		
-		assertThat(savedItem, hasProperty("uuid", is(item.getUuid())));
-		assertThat(savedItem, hasProperty("owner", is(item.getOwner())));
-		assertThat(savedItem, hasProperty("description", is(item.getDescription())));
+		Item savedItem = dao.getItemByUuid(ITEM_UUID);
+		assertNotNull(savedItem);
+		assertEquals(OWNER_UUID, savedItem.getOwner().getUuid());
+		assertEquals("admin", savedItem.getOwner().getUsername());
+		assertEquals("This is a test item description.", savedItem.getDescription());
 	}
 }

@@ -12,8 +12,7 @@
         See http://www.liquibase.org/manual/home#available_database_refactorings
         for a list of supported elements and attributes
     -->
- 
- 	<!-- Uncomment the changeset below if you want to make the Item class persistable, see also Item and ${moduleClassnamePrefix}DaoTest -->
+    <!-- Uncomment the changeset below if you want to use liquibase instead of jpa annotations, see also Item and ${moduleClassnamePrefix}DaoTest -->
  	<!--
 	<changeSet id="${rootArtifactId}-2016-08-02-12-21" author="raff">
 		<preConditions onFail="MARK_RAN">
