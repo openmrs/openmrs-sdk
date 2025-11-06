@@ -6,7 +6,7 @@
     <groupId>org.openmrs.maven</groupId>
     <artifactId>openmrs-sdk</artifactId>
     <packaging>pom</packaging>
-    <version>6.6.0-SNAPSHOT</version>
+    <version>6.8.0-SNAPSHOT</version>
 
     <name>OpenMRS SDK</name>
     <description>OpenMRS SDK allows for rapid development of OpenMRS modules.</description>
@@ -19,6 +19,8 @@
         <module>archetype-submodule-owa</module>
         <module>sdk-commons</module>
         <module>docker-maven-plugin</module>
+        <module>tomcat7-maven-plugin</module>
+        <module>tomcat9-maven-plugin</module>
         <module>maven-plugin</module>
         <module>integration-tests</module>
     </modules>

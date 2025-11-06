@@ -13,6 +13,8 @@ import com.github.dockerjava.api.model.Volume;
 import org.apache.commons.lang.StringUtils;
 import com.github.dockerjava.api.command.ListImagesCmd;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
 
 import java.io.Closeable;
 import java.util.HashMap;
@@ -21,31 +23,25 @@ import java.util.Map;
 import java.util.Collections;
 import java.util.concurrent.CountDownLatch;
 
-/**
- * @goal create-mysql
- * @requiresProject false
- */
+@Mojo(name = "create-mysql", requiresProject = false)
 public class CreateMySql extends AbstractDockerMojo {
 
     /**
      * port exposed by mysql container to connect with db
-     *
-     * @parameter  property="port"
      */
+    @Parameter(property = "port")
     protected String port;
 
     /**
      * port exposed by mysql container to connect with db
-     *
-     * @parameter  property="container"
      */
+    @Parameter(property = "container")
     protected String container;
 
     /**
      * password for root user of mysql
-     *
-     * @parameter  property="rootPassword"
      */
+    @Parameter(property = "rootPassword")
     protected String rootPassword;
 
     @Override

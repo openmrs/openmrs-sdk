@@ -3,42 +3,37 @@ package org.openmrs.maven.plugins;
 import com.github.dockerjava.api.model.Container;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
 
 import java.sql.DriverManager;
 
-/**
- * @goal run-db
- * @requiresProject false
- */
+@Mojo(name = "run-db", requiresProject = false)
 public class RunDb extends AbstractDockerMojo {
 
     public static final String JDBC_MYSQL = "jdbc:mysql://";
     /**
      * port exposed by mysql container to connect with db
-     *
-     * @parameter property="container"
      */
+    @Parameter(property = "container")
     protected String container;
 
     /**
      * uri to connect with db
-     *
-     * @parameter  property="dbUri"
      */
+    @Parameter(property = "dbUri")
     protected String dbUri;
 
     /**
      * username to connect with db
-     *
-     * @parameter  property="username"
      */
+    @Parameter(property = "username")
     protected String username;
 
     /**
      * password to connect with db
-     *
-     * @parameter  property="password"
      */
+    @Parameter(property = "password")
     protected String password;
 
     @Override

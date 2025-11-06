@@ -1,0 +1,268 @@
+---
+version: 2
+plan:
+  project-key: SDK
+  key: SDKL
+  name: SDK Latest
+  description: Plan for the SDK Latest
+stages:
+  - Build and Test:
+      manual: false
+      final: false
+      jobs:
+        - Build and Test JDK 17
+        - Build and Test JDK 24
+        - Build and Test JDK 8
+        - Build and Test JDK 11
+        - Build and Test JDK 21
+  - Deploy:
+      manual: false
+      final: false
+      jobs:
+        - Deploy to Maven
+  - Release:
+      manual: true
+      final: false
+      jobs:
+        - Release to maven
+Build and Test JDK 17:
+  key: BTJ17
+  tasks:
+    - checkout:
+        force-clean-build: 'false'
+        description: Checkout default repository
+    - script:
+        interpreter: SHELL
+        scripts:
+          - |-
+            #!/bin/bash -eu
+            
+            set -x
+            
+            export IMAGE="maven:3.9.9-amazoncorretto-17"
+            
+            docker pull ${IMAGE}
+            
+            docker run -v m2-repo:/root/.m2/repository -v ${PWD}:/module --rm -w="/module" ${IMAGE} bash -c 'mvn clean package && chmod -R 777 .'
+        description: Build and test
+  artifact-subscriptions: []
+Build and Test JDK 24:
+  key: BTJ24
+  tasks:
+    - checkout:
+        force-clean-build: 'false'
+        description: Checkout default repository
+    - script:
+        interpreter: SHELL
+        scripts:
+          - |-
+            #!/bin/bash -eu
+            
+            set -x
+            
+            export IMAGE="maven:3.9.9-amazoncorretto-24"
+            
+            docker pull ${IMAGE}
+            
+            docker run -v m2-repo:/root/.m2/repository -v ${PWD}:/module --rm -w="/module" ${IMAGE} bash -c 'mvn clean package && chmod -R 777 .'
+        description: Build and test
+  artifact-subscriptions: []
+Build and Test JDK 8:
+  key: BTJ8
+  tasks:
+    - checkout:
+        force-clean-build: 'false'
+        description: Checkout default repository
+    - script:
+        interpreter: SHELL
+        scripts:
+          - |-
+            #!/bin/bash -eu
+            
+            set -x
+            
+            export IMAGE="maven:3.9.9-amazoncorretto-8"
+            
+            docker pull ${IMAGE}
+            
+            docker run -v m2-repo:/root/.m2/repository -v ${PWD}:/module --rm -w="/module" ${IMAGE} bash -c 'mvn clean package && chmod -R 777 .'
+        description: Build and test
+  artifact-subscriptions: []
+Build and Test JDK 11:
+  key: BTJ11
+  tasks:
+    - checkout:
+        force-clean-build: 'false'
+        description: Checkout default repository
+    - script:
+        interpreter: SHELL
+        scripts:
+          - |-
+            #!/bin/bash -eu
+            
+            set -x
+            
+            export IMAGE="maven:3.9.9-amazoncorretto-11"
+            
+            docker pull ${IMAGE}
+            
+            docker run -v m2-repo:/root/.m2/repository -v ${PWD}:/module --rm -w="/module" ${IMAGE} bash -c 'mvn clean package && chmod -R 777 .'
+        description: Build and test
+  artifact-subscriptions: []
+Build and Test JDK 21:
+  key: BTJ21
+  tasks:
+    - checkout:
+        force-clean-build: 'false'
+        description: Checkout default repository
+    - script:
+        interpreter: SHELL
+        scripts:
+          - |-
+            #!/bin/bash -eu
+            
+            set -x
+            
+            export IMAGE="maven:3.9.9-amazoncorretto-21"
+            
+            docker pull ${IMAGE}
+            
+            docker run -v m2-repo:/root/.m2/repository -v ${PWD}:/module --rm -w="/module" ${IMAGE} bash -c 'mvn clean package && chmod -R 777 .'
+        description: Build and test
+  artifact-subscriptions: []
+Deploy to Maven:
+  key: DTM
+  tasks:
+    - checkout:
+        force-clean-build: 'false'
+        description: Checkout default repository
+    - script:
+        interpreter: SHELL
+        scripts:
+          - |-
+            #!/bin/bash -eu
+            
+            set -x
+            
+            export IMAGE=${bamboo.build.docker.image.id}
+            
+            docker pull ${IMAGE}
+            
+            docker run -v m2-repo:/root/.m2/repository -v ~/.m2/settings.xml:/.m2/settings.xml:ro -v ${PWD}:/module --rm -w="/module" ${IMAGE} bash -c 'mvn deploy -DskipTests --settings /.m2/settings.xml'
+        description: Deploy
+  artifact-subscriptions: []
+Release to maven:
+  key: RTM
+  tasks:
+    - checkout:
+        force-clean-build: 'false'
+        description: Checkout Default Repository
+    - checkout:
+        repository: Release scripts
+        path: release-scripts
+        force-clean-build: 'false'
+        description: Checkout Default Repository
+    - script:
+        interpreter: SHELL
+        scripts:
+          - |-
+            #!/bin/bash -eu
+            
+            set -x
+            
+            export IMAGE=${bamboo.build.docker.image.id}
+            
+            docker pull ${IMAGE}
+            
+            docker run \
+              -v m2-repo:/root/.m2/repository \
+              -v ~/.m2/settings.xml:/root/.m2/settings.xml:ro \
+              -v ${PWD}:/module \
+              -v ~/.ssh/github:/root/.ssh:ro \
+              -e GIT_USER_NAME=$GIT_USER_NAME \
+              -e GIT_USER_EMAIL=$GIT_USER_EMAIL \
+              -e GIT_SSH_COMMAND='ssh -i /root/.ssh/id_rsa -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no' \
+              --rm \
+              -w='/module' \
+              ${IMAGE} \
+              bash -c '
+                yum -y install git &&
+                yum clean all &&
+                git config --global user.email "$GIT_USER_EMAIL" &&
+                git config --global user.name "$GIT_USER_NAME" &&
+                git config --global --add safe.directory /module &&
+                ./release-scripts/release-prepare-perform.sh \
+                  -r ${bamboo.maven.release.version} \
+                  -d ${bamboo.maven.development.version} \
+                  -e ${bamboo.planRepository.repositoryUrl}
+              '
+        environment: GIT_USER_NAME=${bamboo.git.user.name} GIT_USER_EMAIL=${bamboo.git.user.email}
+        description: Release prepare perform
+    - any-task:
+        plugin-key: com.atlassian.bamboo.plugins.variable.updater.variable-updater-generic:variable-extractor
+        configuration:
+          variable: maven.release.version
+          removeSnapshot: 'true'
+          variableScope: PLAN
+        description: Save next release version
+    - any-task:
+        plugin-key: com.atlassian.bamboo.plugins.variable.updater.variable-updater-generic:variable-extractor
+        configuration:
+          variable: maven.development.version
+          variableScope: JOB
+        description: Retrieve next snaphot version
+  artifact-subscriptions: []
+variables:
+  build.docker.image.id: maven:3.9.9-amazoncorretto-21
+  maven.development.version: 6.7.0-SNAPSHOT
+  maven.release.version: 6.7.0
+repositories:
+  - Git:
+      type: git
+      url: https://github.com/openmrs/openmrs-sdk
+      branch: master
+      command-timeout-minutes: '180'
+      lfs: 'false'
+      verbose-logs: 'true'
+      use-shallow-clones: 'false'
+      cache-on-agents: 'false'
+      submodules: 'false'
+      ssh-key-applies-to-submodules: 'false'
+      fetch-all: 'false'
+  - Release scripts:
+      scope: global
+triggers:
+  - polling:
+      period: '180'
+      repositories:
+        - Git
+branches:
+  create: manually
+  delete: never
+  link-to-jira: true
+notifications:
+  - events:
+      - job-failed
+    recipients:
+      - committers
+      - emails:
+          - dev-refapp@openmrs.org
+labels:
+  - refapp
+dependencies:
+  require-all-stages-passing: false
+  enabled-for-branches: true
+  block-strategy: none
+  plans: []
+other:
+  concurrent-build-plugin: system-default
+---
+version: 2
+plan:
+  key: SDK-SDKL
+plan-permissions:
+  - roles:
+      - anonymous
+    permissions:
+      - view
+...
