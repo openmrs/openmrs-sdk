@@ -7,31 +7,46 @@ import java.sql.Statement;
 
 import org.openmrs.maven.plugins.model.Server;
 
+private static final int  MAX_RETRIES = 15;
 public class DBConnector implements AutoCloseable {
 
 	Connection connection;
 
 	String dbName;
 
+
+
 	public DBConnector(String url, String user, String pass, String dbName) throws SQLException {
 		DriverManager.setLoginTimeout(60);
-		/*
-		 * Connection attempts to a database in a newly created Docker container might fail on the first try due to the container not being fully ready
-		 * This is to mitigate such errors.
-		 */
-		try {
-			this.connection = DriverManager.getConnection(url, user, pass);
-		} catch (SQLException e) {
+		this.dbName = dbName;
+
+		//  LOGIC: Retry up to 15 times (15 seconds)
+
+		for (int i = 0; i < MAX_RETRIES; i++) {
 			try {
+				// Try to connect
 				this.connection = DriverManager.getConnection(url, user, pass);
-			} catch (SQLException e2) {
-				if (e2.getMessage().contains("Access denied")) {
-					throw new SQLException("Invalid database credentials. Please check your username and password.", e2);
+
+				break;
+
+			} catch (SQLException e) {
+				// If this was the last attempt, give up and crash
+				if (i == maxRetries - 1) {
+					if (e.getMessage().contains("Access denied")) {
+						throw new SQLException("Invalid database credentials. Please check your username and password.", e);
+					}
+					throw e; // Throw the actual error
 				}
-				throw e2;
+
+				// If not the last attempt, Wait 1 second and loop again
+				try {
+					Thread.sleep(1000);
+				} catch (InterruptedException ie) {
+					Thread.currentThread().interrupt();
+					throw new SQLException("Thread interrupted while waiting for database connection", ie);
+				}
 			}
 		}
-		this.dbName = dbName;
 	}
 
 	/**
