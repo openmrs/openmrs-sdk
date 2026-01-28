@@ -199,7 +199,7 @@ public class Run extends AbstractServerTask {
 
 		mavenOpts = adjustXmxToAtLeast(mavenOpts, 768);
 
-		if (isJava11OrHigher(server)) {
+		if (isJava11OrHigher()) {
 			mavenOpts +=
 					" --add-opens java.base/java.lang=ALL-UNNAMED" +
 					" --add-opens java.base/java.lang.reflect=ALL-UNNAMED" +
@@ -279,7 +279,7 @@ public class Run extends AbstractServerTask {
 		}
 	}
 
-	private boolean isJava11OrHigher(Server server) {
+	private boolean isJava11OrHigher() {
 		String version = System.getProperty("java.version");
 		if (version == null || version.startsWith("1.")) {
 			return false;
