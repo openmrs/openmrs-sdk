@@ -17,7 +17,6 @@ import org.openmrs.api.APIException;
 import org.openmrs.api.OpenmrsService;
 import ${package}.${moduleClassnamePrefix}Config;
 import ${package}.Item;
-import org.springframework.transaction.annotation.Transactional;
 
 /**
  * The main service of this module, which is exposed for other modules. See
@@ -34,7 +33,6 @@ public interface ${moduleClassnamePrefix}Service extends OpenmrsService {
 	 * @throws APIException
 	 */
 	@Authorized()
-	@Transactional(readOnly = true)
 	Item getItemByUuid(String uuid) throws APIException;
 	
 	/**
@@ -46,6 +44,5 @@ public interface ${moduleClassnamePrefix}Service extends OpenmrsService {
 	 * @throws APIException
 	 */
 	@Authorized(${moduleClassnamePrefix}Config.MODULE_PRIVILEGE)
-	@Transactional
 	Item saveItem(Item item) throws APIException;
 }

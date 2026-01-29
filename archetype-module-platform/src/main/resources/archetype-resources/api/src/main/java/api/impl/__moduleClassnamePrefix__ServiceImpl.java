@@ -18,6 +18,7 @@ import org.openmrs.api.impl.BaseOpenmrsService;
 import ${package}.Item;
 import ${package}.api.${moduleClassnamePrefix}Service;
 import ${package}.api.dao.${moduleClassnamePrefix}Dao;
+import org.springframework.transaction.annotation.Transactional;
 
 public class ${moduleClassnamePrefix}ServiceImpl extends BaseOpenmrsService implements ${moduleClassnamePrefix}Service {
 	
@@ -40,11 +41,13 @@ public class ${moduleClassnamePrefix}ServiceImpl extends BaseOpenmrsService impl
 	}
 	
 	@Override
+	@Transactional(readOnly = true)
 	public Item getItemByUuid(String uuid) throws APIException {
 		return dao.getItemByUuid(uuid);
 	}
 	
 	@Override
+	@Transactional
 	public Item saveItem(Item item) throws APIException {
 		if (item.getOwner() == null) {
 			item.setOwner(userService.getUser(1));
