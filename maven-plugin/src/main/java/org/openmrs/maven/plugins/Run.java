@@ -41,7 +41,7 @@ import static org.twdata.maven.mojoexecutor.MojoExecutor.version;
  */
 @Mojo(name = "run", requiresProject = false)
 public class Run extends AbstractServerTask {
-	
+
 	private static final Version TOMCAT_7_CUTOFF = new Version("2.5.0-SNAPSHOT");
 
 	private static final Version TOMCAT_9_CUTOFF = new Version("3.0.0-SNAPSHOT");
@@ -138,7 +138,7 @@ public class Run extends AbstractServerTask {
 			new Build(this, serverId).executeTask();
 		}
 
-		
+
 		runInFork(server);
 	}
 
@@ -199,6 +199,14 @@ public class Run extends AbstractServerTask {
 
 		mavenOpts = adjustXmxToAtLeast(mavenOpts, 768);
 
+		if (isJava11OrHigher()) {
+			mavenOpts +=
+					" --add-opens java.base/java.lang=ALL-UNNAMED" +
+					" --add-opens java.base/java.lang.reflect=ALL-UNNAMED" +
+					" --add-opens java.base/java.io=ALL-UNNAMED" +
+					" --add-opens java.base/java.util=ALL-UNNAMED";
+		}
+
 		if (server.hasWatchedProjects() && isWatchApi()) {
 			mavenOpts +=
 					" -javaagent:\"" + Server.getServersPath().resolve("springloaded.jar").toAbsolutePath() + "\" -noverify";
@@ -215,15 +223,15 @@ public class Run extends AbstractServerTask {
 		if (port != null) {
 			properties.put("port", port.toString());
 		}
-		
+
 		if (isWatchApi()) {
 			properties.put("watchApi", "true");
 		}
-		
+
 		if (server.hasWatchedProjects() && isWatchApi()) {
 			properties.put("springloaded", "inclusions=org.openmrs..*");
 		}
-		
+
 		// if the runGoal isn't specified, we default to Tomcat 9, unless running a platform version before 2.5.0-SNAPSHOT
 		if (StringUtils.isBlank(runGoal)) {
 			String tomcatArtifactId = SDKConstants.OPENMRS_TOMCAT11_PLUGIN_ARTIFACT_ID;
@@ -233,7 +241,7 @@ public class Run extends AbstractServerTask {
 			} else if (platformVersion.lower(TOMCAT_9_CUTOFF)) {
 				tomcatArtifactId =SDKConstants.OPENMRS_TOMCAT9_PLUGIN_ARTIFACT_ID;
 			}
-			
+
 			runGoal = String.format("%s:%s:%s:run-tomcat",
 					SDKConstants.OPENMRS_TOMCAT_PLUGIN_GROUP_ID,
 					tomcatArtifactId,
@@ -268,6 +276,19 @@ public class Run extends AbstractServerTask {
 		}
 		catch (MavenInvocationException e) {
 			throw new MojoFailureException("Failed to start Tomcat process", e);
+		}
+	}
+
+	private boolean isJava11OrHigher() {
+		String version = System.getProperty("java.version");
+		if (version == null || version.startsWith("1.")) {
+			return false;
+		}
+		try {
+			int major = Integer.parseInt(version.split("\\.")[0]);
+			return major >= 11;
+		} catch (NumberFormatException e) {
+			return false;
 		}
 	}
 
