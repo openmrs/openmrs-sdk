@@ -130,46 +130,6 @@
 					<artifactId>maven-resources-plugin</artifactId>
 					<version>3.1.0</version>
 				</plugin>
-				<!-- Spotless plugin -->
-				<plugin>
-					<groupId>com.diffplug.spotless</groupId>
-					<artifactId>spotless-maven-plugin</artifactId>
-					<version>2.30.0</version>
-					<configuration>
-						<java>
-							<licenseHeader>
-								<file>${project.basedir}/license-header.txt</file>
-							</licenseHeader>
-							<eclipse>
-								<file>${project.basedir}/OpenMRSFormatter.xml</file>
-							</eclipse>
-							<removeUnusedImports/>
-							<importOrder>
-								<order>javax,java</order>
-							</importOrder>
-						</java>
-						<formats>
-							<format>
-								<includes>
-									<include>**/*.xml</include>
-								</includes>
-								<licenseHeader>
-									<file>${project.basedir}/license-header.txt</file>
-									<delimiter>^(?!&lt;\?xml)</delimiter>
-								</licenseHeader>
-							</format>
-						</formats>
-					</configuration>
-					<executions>
-						<execution>
-							<id>spotless-apply</id>
-							<phase>validate</phase>
-							<goals>
-								<goal>apply</goal>
-							</goals>
-						</execution>
-					</executions>
-				</plugin>
 			</plugins>
 		</pluginManagement>
 	</build>
