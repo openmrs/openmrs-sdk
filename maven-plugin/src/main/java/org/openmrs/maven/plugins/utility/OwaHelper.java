@@ -338,7 +338,7 @@ public class OwaHelper {
 			this.rawVersion = version;
 
 			try {
-				Version.valueOf(version);
+				Version.parse(version);
 				exact = true;
 			} catch (Exception e) {
 				//it's an expression
@@ -373,7 +373,7 @@ public class OwaHelper {
 			if (rawVersion.equals(version)) {
 				return true;
 			} else if (expression != null){
-				return Version.valueOf(version).satisfies(expression);
+				return Version.parse(version).satisfies(expression);
 			} else {
 				return false;
 			}
