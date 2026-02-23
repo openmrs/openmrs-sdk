@@ -69,7 +69,7 @@ public class CreateMySql extends AbstractDockerMojo {
     private void createMysqlContainer(DockerClient docker) {
         if (container == null) container = DEFAULT_MYSQL_CONTAINER;
 
-        PortBinding portBinding = new PortBinding(new Ports.Binding("localhost", port), ExposedPort.tcp(3306));
+        PortBinding portBinding = new PortBinding(new Ports.Binding("127.0.0.1", port), ExposedPort.tcp(3306));
 
         Map<String, String> labels = new HashMap<>();
         labels.put(container, "true");

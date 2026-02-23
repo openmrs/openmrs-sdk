@@ -334,8 +334,9 @@ public abstract class AbstractSdkIT {
 
     public void assertZipEntryPresent(String path, String zipEntryName) throws Exception {
         File file = new File(testDirectory.getAbsolutePath(), path);
-        ZipFile zipFile = new ZipFile(file);
-        assertNotNull(zipFile.getEntry(zipEntryName));
+        try (ZipFile zipFile = new ZipFile(file)) {
+          assertNotNull(zipFile.getEntry(zipEntryName));
+        }
     }
 
     /**

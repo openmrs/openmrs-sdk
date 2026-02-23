@@ -561,7 +561,7 @@ public class Setup extends AbstractServerTask {
 		     Connection connection = DriverManager.getConnection(uri, server.getDbUser(), server.getDbPassword())) {
 			ScriptRunner scriptRunner = new ScriptRunner(connection);
 			//we don't want to display ~5000 lines of queries to user if there is no error
-			scriptRunner.setLogWriter(new PrintWriter(new NullOutputStream()));
+			scriptRunner.setLogWriter(new PrintWriter(NullOutputStream.INSTANCE));
 			scriptRunner.setStopOnError(true);
 			scriptRunner.runScript(sqlReader);
 
