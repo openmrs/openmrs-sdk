@@ -15,7 +15,7 @@
     <description>Plugin to use Tomcat 9.x to launch an instance of the OpenMRS SDK</description>
 
     <properties>
-        <tomcat.version>9.0.52</tomcat.version>
+        <tomcat.version>9.0.115</tomcat.version>
     </properties>
 
     <dependencies>
