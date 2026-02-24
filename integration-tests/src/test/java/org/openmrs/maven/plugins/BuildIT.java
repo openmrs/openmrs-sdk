@@ -2,6 +2,7 @@ package org.openmrs.maven.plugins;
 
 import org.apache.commons.io.FileUtils;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.openmrs.maven.plugins.model.Project;
 import org.openmrs.maven.plugins.model.Server;
@@ -12,7 +13,17 @@ import java.nio.file.Path;
 
 public class BuildIT extends AbstractSdkIT {
 
+	private static Path templateRefApp22;
+
 	private String serverId;
+
+	@BeforeClass
+	public static void setupTemplate() throws Exception {
+		Path testBaseDir = resolveTestBaseDir();
+		File nodeCacheDir = testBaseDir.resolve("node-cache").toFile();
+		Path testResourceDir = testBaseDir.resolve("test-resources");
+		templateRefApp22 = getOrCreateTemplateServer("referenceapplication:2.2", testBaseDir, nodeCacheDir, testResourceDir);
+	}
 
 	protected void addTestResources() throws Exception {
 		Path sourcePath = testResourceDir.resolve(TEST_DIRECTORY).resolve("buildIT");
@@ -23,7 +34,7 @@ public class BuildIT extends AbstractSdkIT {
 	@Override
 	public void setup() throws Exception {
 		super.setup();
-		serverId = setupTestServer("referenceapplication:2.2");
+		serverId = copyServerFromTemplate(templateRefApp22);
 		Server server = Server.loadServer(testDirectoryPath.resolve(serverId));
 		File firstDir = new File(testDirectory, "module1");
 		File secondDir = new File(testDirectory, "module2");

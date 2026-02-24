@@ -55,8 +55,7 @@ public class SetupIT extends AbstractSdkIT {
         DistroProperties distroProperties = new DistroProperties(properties);
         assertOnlyModulesInstalled(serverId, distroProperties);
 
-        Server.setServersPath(testDirectory.getAbsolutePath());
-        Server server = Server.loadServer(serverId);
+        Server server = Server.loadServer(testDirectoryPath.resolve(serverId));
         assertThat(server, serverHasVersion("2.3.1"));
         assertThat(server, serverHasDebugPort("1044"));
     }
@@ -91,8 +90,7 @@ public class SetupIT extends AbstractSdkIT {
         assertFilePresent(serverId, "owa");
         assertFilePresent(serverId, "owa", "SystemAdministration.owa");
 
-        Server.setServersPath(testDirectory.getAbsolutePath());
-        Server server = Server.loadServer(serverId);
+        Server server = Server.loadServer(testDirectoryPath.resolve(serverId));
         assertThat(server, serverHasVersion("2.13.0"));
         assertThat(server, serverHasDebugPort("1044"));
     }
@@ -125,8 +123,7 @@ public class SetupIT extends AbstractSdkIT {
         assertFilePresent(serverId, "configuration");
         assertFilePresent(serverId, "configuration", "conceptclasses", "conceptclasses-core_data.csv");
 
-        Server.setServersPath(testDirectory.getAbsolutePath());
-        Server server = Server.loadServer(serverId);
+        Server server = Server.loadServer(testDirectoryPath.resolve(serverId));
         assertThat(server, serverHasVersion("3.0.0"));
         assertThat(server, serverHasDebugPort("1044"));
     }
@@ -151,8 +148,7 @@ public class SetupIT extends AbstractSdkIT {
         assertFilePresent(serverId,  "h2-1.4.190.jar");
         assertFileNotPresent(serverId, "modules");
 
-        Server.setServersPath(testDirectory.getAbsolutePath());
-        Server server = Server.loadServer(serverId);
+        Server server = Server.loadServer(testDirectoryPath.resolve(serverId));
         assertThat(server, serverHasVersion("1.0"));
         assertFilePresent(serverId, DistroProperties.DISTRO_FILE_NAME);
         assertThat(server, serverHasName(serverId));
@@ -178,8 +174,7 @@ public class SetupIT extends AbstractSdkIT {
         assertFilePresent(serverId, "openmrs-2.0.2.war");
         assertFilePresent(serverId, "modules");
 
-        Server.setServersPath(testDirectory.getAbsolutePath());
-        Server server = Server.loadServer(serverId);
+        Server server = Server.loadServer(testDirectoryPath.resolve(serverId));
         assertThat(server, serverHasVersion("2.0.2"));
         assertFilePresent(serverId, DistroProperties.DISTRO_FILE_NAME);
         assertThat(server, serverHasDebugPort("1044"));
@@ -209,8 +204,7 @@ public class SetupIT extends AbstractSdkIT {
         assertFilePresent(serverId, "modules");
         assertModulesInstalled(serverId, "owa-1.4.omod", "uicommons-1.7.omod", "uiframework-3.6.omod");
 
-        Server.setServersPath(testDirectory.getAbsolutePath());
-        Server server = Server.loadServer(serverId);
+        Server server = Server.loadServer(testDirectoryPath.resolve(serverId));
         assertThat(server, serverHasName("OpenMRS Concepts OWA server"));
         assertThat(server, hasPropertyEqualTo("test", "testValue"));
         assertThat(server, hasPropertyEqualTo("pih.default.config", "nameValue"));
@@ -240,8 +234,7 @@ public class SetupIT extends AbstractSdkIT {
         assertFilePresent(serverId, "modules");
         assertModulesInstalled(serverId, "owa-1.4.omod", "uicommons-1.7.omod", "uiframework-3.6.omod");
 
-        Server.setServersPath(testDirectory.getAbsolutePath());
-        Server server = Server.loadServer(serverId);
+        Server server = Server.loadServer(testDirectoryPath.resolve(serverId));
         assertThat(server, serverHasName("OpenMRS Concepts OWA server"));
         assertThat(server, hasPropertyEqualTo("test", "testValue"));
         assertThat(server, hasPropertyEqualTo("pih.default.config", "nameValue"));
@@ -290,8 +283,7 @@ public class SetupIT extends AbstractSdkIT {
         assertSuccess();
         assertServerInstalled(serverId);
 
-        Server.setServersPath(testDirectory.getAbsolutePath());
-        Server server = Server.loadServer(serverId);
+        Server server = Server.loadServer(testDirectoryPath.resolve(serverId));
 
         assertFilePresent(serverId, SDKConstants.OPENMRS_SERVER_PROPERTIES);
         assertThat(server, hasPropertyThatContains("version", "SNAPSHOT"));
@@ -320,8 +312,7 @@ public class SetupIT extends AbstractSdkIT {
         assertSuccess();
         assertServerInstalled(serverId);
 
-        Server.setServersPath(testDirectory.getAbsolutePath());
-        Server server = Server.loadServer(serverId);
+        Server server = Server.loadServer(testDirectoryPath.resolve(serverId));
 
         assertFilePresent(serverId, SDKConstants.OPENMRS_SERVER_PROPERTIES);
         assertThat(server, hasPropertyThatContains("version", "SNAPSHOT"));
@@ -348,8 +339,7 @@ public class SetupIT extends AbstractSdkIT {
         assertSuccess();
         assertServerInstalled(serverId);
 
-        Server.setServersPath(testDirectory.getAbsolutePath());
-        Server server = Server.loadServer(serverId);
+        Server server = Server.loadServer(testDirectoryPath.resolve(serverId));
 
         assertFilePresent(serverId, SDKConstants.OPENMRS_SERVER_PROPERTIES);
         assertThat(server, hasPropertyThatNotContains("version", "SNAPSHOT"));
@@ -378,8 +368,7 @@ public class SetupIT extends AbstractSdkIT {
         assertSuccess();
         assertServerInstalled(serverId);
 
-        Server.setServersPath(testDirectory.getAbsolutePath());
-        Server server = Server.loadServer(serverId);
+        Server server = Server.loadServer(testDirectoryPath.resolve(serverId));
 
         assertFilePresent(serverId, SDKConstants.OPENMRS_SERVER_PROPERTIES);
         assertThat(server, hasPropertyThatNotContains("version", "SNAPSHOT"));
@@ -421,8 +410,7 @@ public class SetupIT extends AbstractSdkIT {
 		String javaHomes = readValueFromPropertyKey(sdkProperties, "javaHomeOptions");
 		assertThat(javaHomes, is(customJavaHome));
 
-        Server.setServersPath(testDirectory.getAbsolutePath());
-        Server server = Server.loadServer(serverId);
+        Server server = Server.loadServer(testDirectoryPath.resolve(serverId));
         assertThat(server, serverHasDebugPort("1044"));
     }
 

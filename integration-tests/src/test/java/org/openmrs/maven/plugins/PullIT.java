@@ -5,11 +5,13 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.openmrs.maven.plugins.model.Project;
 import org.openmrs.maven.plugins.model.Server;
 
 import java.io.File;
+import java.nio.file.Path;
 
 public class PullIT extends AbstractSdkIT {
 
@@ -19,13 +21,23 @@ public class PullIT extends AbstractSdkIT {
     private static final String SUCCESS_MESSAGE = "updated successfully";
     private static final String NO_WATCHED_PROJECTS_MESSAGE = "Server with id %s has no watched modules";
 
+    private static Path templateRefApp22;
+
     private String serverId;
+
+    @BeforeClass
+    public static void setupTemplate() throws Exception {
+        Path testBaseDir = resolveTestBaseDir();
+        File nodeCacheDir = testBaseDir.resolve("node-cache").toFile();
+        Path testResourceDir = testBaseDir.resolve("test-resources");
+        templateRefApp22 = getOrCreateTemplateServer("referenceapplication:2.2", testBaseDir, nodeCacheDir, testResourceDir);
+    }
 
     @Before
     @Override
     public void setup() throws Exception {
         super.setup();
-        serverId = setupTestServer("referenceapplication:2.2");
+        serverId = copyServerFromTemplate(templateRefApp22);
         cloneGitProject();
         verifier = new Verifier(new File(testDirectory, OPENMRS_MODULE_IDGEN).getAbsolutePath());
         verifier.setSystemProperty("nodeCacheDir", nodeCacheDir.getAbsolutePath());

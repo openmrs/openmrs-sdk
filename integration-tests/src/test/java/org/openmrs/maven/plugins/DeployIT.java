@@ -1,6 +1,7 @@
 package org.openmrs.maven.plugins;
 
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.DistroProperties;
@@ -9,6 +10,7 @@ import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.utility.PropertiesUtils;
 
 import java.io.File;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Properties;
 
@@ -23,7 +25,17 @@ import static org.openmrs.maven.plugins.SdkMatchers.serverHasVersion;
 
 public class DeployIT extends AbstractSdkIT {
 
+    private static Path templateRefApp22;
+
     private String testServerId;
+
+    @BeforeClass
+    public static void setupTemplate() throws Exception {
+        Path testBaseDir = resolveTestBaseDir();
+        File nodeCacheDir = testBaseDir.resolve("node-cache").toFile();
+        Path testResourceDir = testBaseDir.resolve("test-resources");
+        templateRefApp22 = getOrCreateTemplateServer("referenceapplication:2.2", testBaseDir, nodeCacheDir, testResourceDir);
+    }
 
     @Before
     @Override
@@ -33,7 +45,7 @@ public class DeployIT extends AbstractSdkIT {
 
     @Test
     public void deploy_shouldReplaceWebapp() throws Exception {
-        testServerId = setupTestServer("referenceapplication:2.2");
+        testServerId = copyServerFromTemplate(templateRefApp22);
         assertFilePresent(testServerId, "openmrs-1.11.2.war");
         assertFileNotPresent(testServerId, "openmrs-1.11.5.war");
         addTaskParam("platform", "1.11.5");
@@ -47,7 +59,7 @@ public class DeployIT extends AbstractSdkIT {
 
     @Test
     public void deploy_shouldReplaceDistroPlatform() throws Exception {
-        testServerId = setupTestServer("referenceapplication:2.2");
+        testServerId = copyServerFromTemplate(templateRefApp22);
         assertFilePresent(testServerId, "openmrs-1.11.2.war");
         assertFileNotPresent(testServerId, "webservices.rest-2.16.omod");
         assertFileNotPresent(testServerId, "openmrs-2.0.2.war");
@@ -62,7 +74,7 @@ public class DeployIT extends AbstractSdkIT {
 
     @Test
     public void deploy_shouldUpgradeDistroTo2_3_1() throws Exception {
-        testServerId = setupTestServer("referenceapplication:2.2");
+        testServerId = copyServerFromTemplate(templateRefApp22);
         addAnswer(testServerId);
         addTaskParam("distro", "referenceapplication:2.3.1");
         addAnswer("y");
@@ -73,14 +85,13 @@ public class DeployIT extends AbstractSdkIT {
         DistroProperties distroProperties = new DistroProperties(properties);
         assertOnlyModulesInstalled(testServerId, distroProperties);
         assertPlatformUpdated(testServerId, "1.11.5");
-        Server.setServersPath(testDirectory.getAbsolutePath());
-        Server server = Server.loadServer(testServerId);
+        Server server = Server.loadServer(testDirectoryPath.resolve(testServerId));
         assertThat(server, serverHasVersion("2.3.1"));
     }
 
     @Test
     public void deploy_shouldDowngradeDistroTo2_1() throws Exception {
-        testServerId = setupTestServer("referenceapplication:2.2");
+        testServerId = copyServerFromTemplate(templateRefApp22);
         addAnswer(testServerId);
         addTaskParam("distro", "referenceapplication:2.1");
         addAnswer("y");
@@ -91,8 +102,7 @@ public class DeployIT extends AbstractSdkIT {
         DistroProperties distroProperties = new DistroProperties(properties);
         assertOnlyModulesInstalled(testServerId, distroProperties);
         assertPlatformUpdated(testServerId, "1.10.0");
-        Server.setServersPath(testDirectory.getAbsolutePath());
-        Server server = Server.loadServer(testServerId);
+        Server server = Server.loadServer(testDirectoryPath.resolve(testServerId));
         assertThat(server, serverHasVersion("2.1"));
     }
 
@@ -114,14 +124,13 @@ public class DeployIT extends AbstractSdkIT {
         assertPlatformUpdated(testServerId, "2.5.9");
         assertFilePresent(testServerId, "owa");
         assertFilePresent(testServerId, "owa", "SystemAdministration.owa");
-        Server.setServersPath(testDirectory.getAbsolutePath());
-        Server server = Server.loadServer(testServerId);
+        Server server = Server.loadServer(testDirectoryPath.resolve(testServerId));
         assertThat(server, serverHasVersion("2.13.0"));
     }
 
     @Test
     public void deploy_shouldUpgradeDistroTo3_0_0() throws Exception {
-        testServerId = setupTestServer("referenceapplication:2.2");
+        testServerId = copyServerFromTemplate(templateRefApp22);
         addAnswer(testServerId);
         addTaskParam("distro", "referenceapplication:3.0.0");
         addAnswer("y");
@@ -146,8 +155,7 @@ public class DeployIT extends AbstractSdkIT {
         assertFilePresent(testServerId, "configuration");
         assertFilePresent(testServerId, "configuration", "conceptclasses", "conceptclasses-core_data.csv");
 
-        Server.setServersPath(testDirectory.getAbsolutePath());
-        Server server = Server.loadServer(testServerId);
+        Server server = Server.loadServer(testDirectoryPath.resolve(testServerId));
         assertThat(server, serverHasVersion("3.0.0"));
 
         assertLogContains("+ Assembles and builds new frontend spa");
@@ -156,7 +164,7 @@ public class DeployIT extends AbstractSdkIT {
 
     @Test
     public void deploy_shouldUpgradeDistroWithConfigPackage() throws Exception {
-        testServerId = setupTestServer("referenceapplication:2.2");
+        testServerId = copyServerFromTemplate(templateRefApp22);
         includeDistroPropertiesFile("openmrs-distro-configuration.properties");
         addAnswer(testServerId);
         addAnswer("y");
@@ -173,7 +181,7 @@ public class DeployIT extends AbstractSdkIT {
     @Test
     public void deploy_shouldUpgradeDistroWithContentPackage() throws Exception {
         setupContentPackage("testpackage2");
-        testServerId = setupTestServer("referenceapplication:2.2");
+        testServerId = copyServerFromTemplate(templateRefApp22);
         includeDistroPropertiesFile("openmrs-distro-content-package.properties");
         addAnswer(testServerId);
         addAnswer("y");
@@ -188,7 +196,7 @@ public class DeployIT extends AbstractSdkIT {
     @Test
     public void deploy_shouldUpgradeDistroWithContentPackageWithoutNamespace() throws Exception {
         setupContentPackage("testpackage2");
-        testServerId = setupTestServer("referenceapplication:2.2");
+        testServerId = copyServerFromTemplate(templateRefApp22);
         includeDistroPropertiesFile("openmrs-distro-content-package-no-namespace.properties");
         addAnswer(testServerId);
         addAnswer("y");
@@ -202,7 +210,7 @@ public class DeployIT extends AbstractSdkIT {
 
     @Test
     public void deploy_shouldReplaceConfigurationAndContentIfChanged() throws Exception {
-        testServerId = setupTestServer("referenceapplication:2.2");
+        testServerId = copyServerFromTemplate(templateRefApp22);
 
         includeDistroPropertiesFile("openmrs-distro-configuration.properties");
         addAnswer(testServerId);
@@ -247,7 +255,7 @@ public class DeployIT extends AbstractSdkIT {
 
     @Test
     public void deploy_shouldUpgradeDistroFromDistroProperties() throws Exception {
-        testServerId = setupTestServer("referenceapplication:2.2");
+        testServerId = copyServerFromTemplate(templateRefApp22);
         includeDistroPropertiesFile(DistroProperties.DISTRO_FILE_NAME);
         addAnswer(testServerId);
         addAnswer("y");
@@ -263,7 +271,7 @@ public class DeployIT extends AbstractSdkIT {
 
     @Test
     public void deploy_shouldInstallModule() throws Exception {
-        testServerId = setupTestServer("referenceapplication:2.2");
+        testServerId = copyServerFromTemplate(templateRefApp22);
         addTaskParam("artifactId", "owa");
         addTaskParam("groupId", Artifact.GROUP_MODULE);
         addTaskParam("version", "1.4");
@@ -278,7 +286,7 @@ public class DeployIT extends AbstractSdkIT {
 
     @Test
     public void deploy_shouldInstallModuleFromPomInDir() throws Exception {
-        testServerId = setupTestServer("referenceapplication:2.2");
+        testServerId = copyServerFromTemplate(templateRefApp22);
         includePomFile("deployIT", "pom-owa-module.xml");
         addAnswer(testServerId);
         addAnswer("y");
@@ -290,7 +298,7 @@ public class DeployIT extends AbstractSdkIT {
 
     @Test
     public void deploy_shouldInstallOwaAndOwaModule() throws Exception {
-        testServerId = setupTestServer("referenceapplication:2.2");
+        testServerId = copyServerFromTemplate(templateRefApp22);
         addTaskParam("owa", "conceptdictionary:1.0.0");
         addAnswer(testServerId);
         addAnswer("y");
@@ -305,14 +313,13 @@ public class DeployIT extends AbstractSdkIT {
         //can't check for specific file, as always the latest release is installed
         assertThat(modulesDir.listFiles(), hasItemInArray(hasNameStartingWith("owa")));
 
-        Server.setServersPath(testDirectory.getAbsolutePath());
-        Server server = Server.loadServer(testServerId);
+        Server server = Server.loadServer(testDirectoryPath.resolve(testServerId));
         assertThat(server, hasUserOwa(new OwaId("conceptdictionary","1.0.0")));
     }
 
     @Test
     public void deploy_shouldDeployOwas() throws Exception {
-        testServerId = setupTestServer("referenceapplication:2.2");
+        testServerId = copyServerFromTemplate(templateRefApp22);
         includeDistroPropertiesFile("openmrs-distro-owa1.properties");
         addAnswer(testServerId);
         addAnswer("y");
@@ -353,7 +360,7 @@ public class DeployIT extends AbstractSdkIT {
     public void testDeployWithMissingContentDependencies() throws Exception {
         setupContentPackage("testpackage1");
 
-        testServerId = setupTestServer("referenceapplication:2.2");
+        testServerId = copyServerFromTemplate(templateRefApp22);
 
         includeDistroPropertiesFile("openmrs-distro-content-package-missing-dependencies.properties");
         addAnswer(testServerId);

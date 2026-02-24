@@ -32,7 +32,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.UUID;
@@ -199,6 +201,97 @@ public abstract class AbstractSdkIT {
         }
     }
 
+    private static final Object templateLock = new Object();
+    private static final Map<String, Path> templateServers = new HashMap<>();
+
+    /**
+     * Returns the path to a pre-built template server for the given distro. The template is created
+     * on first request and cached so subsequent callers reuse the same template. Thread-safe for
+     * parallel test execution (Failsafe parallel=classes).
+     */
+    protected static Path getOrCreateTemplateServer(String distro, Path testBaseDir, File nodeCacheDir, Path testResourceDir) throws Exception {
+        synchronized (templateLock) {
+            Path cached = templateServers.get(distro);
+            if (cached != null && cached.toFile().exists()) {
+                return cached;
+            }
+
+            String templateName = "template-" + distro.replace(":", "-");
+            Path templateWorkDir = testBaseDir.resolve(templateName);
+            FileUtils.deleteQuietly(templateWorkDir.toFile());
+            templateWorkDir.toFile().mkdirs();
+
+            FileUtils.copyFile(
+                    testResourceDir.resolve(TEST_DIRECTORY).resolve("pom.xml").toFile(),
+                    templateWorkDir.resolve("pom.xml").toFile()
+            );
+
+            Verifier verifier = new Verifier(templateWorkDir.toFile().getAbsolutePath());
+            verifier.setAutoclean(false);
+            verifier.setSystemProperty("nodeCacheDir", nodeCacheDir.getAbsolutePath());
+            try {
+                addTaskParam(verifier, "openMRSPath", templateWorkDir.toFile().getAbsolutePath());
+                addTaskParam(verifier, "distro", distro);
+                addTaskParam(verifier, "debug", "1044");
+                addMockDbSettings(verifier);
+
+                String answers = String.join(",", "server", System.getProperty("java.home"), "8080");
+                addTaskParam(verifier, BATCH_ANSWERS, answers);
+
+                Properties sdk = new Properties();
+                try (InputStream sdkPom = AbstractSdkIT.class.getClassLoader().getResourceAsStream("sdk.properties")) {
+                    sdk.load(sdkPom);
+                }
+                String sdkArtifact = sdk.get("groupId") + ":" + sdk.get("artifactId") + ":" + sdk.get("version");
+                verifier.executeGoal(sdkArtifact + ":setup");
+            } finally {
+                verifier.resetStreams();
+            }
+
+            Path serverDir = templateWorkDir.resolve("server");
+            if (!serverDir.resolve("openmrs-server.properties").toFile().exists()) {
+                throw new RuntimeException("Template server setup failed for " + distro
+                        + ": openmrs-server.properties not found in " + serverDir);
+            }
+            new File(templateWorkDir.toFile(), "log.txt").delete();
+            templateServers.put(distro, serverDir);
+            return serverDir;
+        }
+    }
+
+    /**
+     * Copies a pre-built template server into this test's directory with a new unique serverId.
+     * Much faster than running setupTestServer() since it avoids Maven artifact resolution.
+     */
+    protected String copyServerFromTemplate(Path templateServerDir) throws IOException {
+        String serverId = UUID.randomUUID().toString();
+        Path targetDir = testDirectoryPath.resolve(serverId);
+        FileUtils.copyDirectory(templateServerDir.toFile(), targetDir.toFile());
+
+        // Update the serverId in properties to match the new directory name
+        Path propsFile = targetDir.resolve("openmrs-server.properties");
+        if (propsFile.toFile().exists()) {
+            Properties props = new Properties();
+            try (InputStream in = Files.newInputStream(propsFile)) {
+                props.load(in);
+            }
+            props.setProperty("server.id", serverId);
+            try (OutputStream out = Files.newOutputStream(propsFile)) {
+                props.store(out, null);
+            }
+        }
+
+        return serverId;
+    }
+
+    /**
+     * Resolves the test base directory path. Usable from static @BeforeClass methods.
+     */
+    protected static Path resolveTestBaseDir() throws Exception {
+        Path classesPath = Paths.get(Objects.requireNonNull(AbstractSdkIT.class.getResource("/")).toURI());
+        return classesPath.resolveSibling("integration-test-base-dir");
+    }
+
     private void cleanAnswers() {
         batchAnswers.clear();
     }
@@ -241,15 +334,13 @@ public abstract class AbstractSdkIT {
     }
 
     protected void assertPlatformUpdated(String serverId, String version) throws MojoExecutionException {
-        Server.setServersPath(testDirectory.getAbsolutePath());
-        Server server = Server.loadServer(serverId);
+        Server server = Server.loadServer(testDirectoryPath.resolve(serverId));
         assertThat(server, hasPlatformVersion(version));
         assertThat(server.getDistroProperties(), hasWarVersion(version));
     }
 
     protected void assertModuleUpdated(String serverId, String artifactId, String version) throws MojoExecutionException {
-        Server.setServersPath(testDirectory.getAbsolutePath());
-        Server server = Server.loadServer(serverId);
+        Server server = Server.loadServer(testDirectoryPath.resolve(serverId));
         assertThat(server, hasModuleVersion(artifactId, version));
         assertThat(server.getDistroProperties(), hasModuleVersionInDisstro(artifactId, version));
     }
