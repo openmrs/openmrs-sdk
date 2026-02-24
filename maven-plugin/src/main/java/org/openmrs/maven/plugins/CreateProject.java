@@ -1,12 +1,19 @@
 package org.openmrs.maven.plugins;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.maven.model.Dependency;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.model.Model;
+import org.openmrs.maven.plugins.model.Project;
+import org.openmrs.maven.plugins.model.Version;
 import org.openmrs.maven.plugins.utility.OwaHelper;
 import org.openmrs.maven.plugins.utility.SDKConstants;
+import org.openmrs.maven.plugins.utility.Wizard;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.nio.file.Paths;
@@ -82,6 +89,7 @@ public class CreateProject extends AbstractTask {
 	private static final String AUTHOR_PROMPT_TMPL = "Who is the author of the module?";
 
 	private static final String MODULE_TYPE_PROMPT = "What kind of project would you like to create?";
+	private static final Logger log = LoggerFactory.getLogger(CreateProject.class);
 
 	/**
 	 * The manager's artifactId. This can be an ordered comma separated list.
@@ -202,6 +210,14 @@ public class CreateProject extends AbstractTask {
 	@Parameter(property = "type")
 	private String type;
 
+	public void setWizard(Wizard wizard) {
+		this.wizard = wizard;
+	}
+
+	public void setProjectType(String type) {
+		this.type = type;
+	}
+
 	@Override
 	public void executeTask() throws MojoExecutionException, MojoFailureException {
 		setProjectType();
@@ -211,7 +227,6 @@ public class CreateProject extends AbstractTask {
 		} else {
 			createModule();
 		}
-
 	}
 
 	private void setProjectType() throws MojoExecutionException {
@@ -277,8 +292,7 @@ public class CreateProject extends AbstractTask {
 		moduleAuthor = wizard.promptForValueIfMissingWithDefault(AUTHOR_PROMPT_TMPL, moduleAuthor, "", "anonymous");
 
 		if (TYPE_PLATFORM.equals(type)) {
-			platform = wizard.promptForValueIfMissingWithDefault(
-			    "What is the lowest version of the platform (-D%s) you want to support?", platform, "platform", "1.11.6");
+			choosePlatformVersion();
 			archetypeArtifactId = SDKConstants.PLATFORM_ARCH_ARTIFACT_ID;
 		} else if (TYPE_REFAPP.equals(type)) {
 			refapp = wizard.promptForValueIfMissingWithDefault(
@@ -304,6 +318,9 @@ public class CreateProject extends AbstractTask {
 		if (platform != null) {
 			properties.setProperty("openmrsPlatformVersion", platform);
 			properties.setProperty("moduleClassnamePrefix", moduleClassnamePrefix);
+
+			Model model = loadModelFromPom(platform);
+			extractTestDependencyVersionsFromModel(model, properties);
 		} else if (refapp != null) {
 			properties.setProperty("openmrsRefappVersion", refapp);
 			properties.setProperty("moduleClassnamePrefix", moduleClassnamePrefix);
@@ -337,5 +354,110 @@ public class CreateProject extends AbstractTask {
 
 	private String getSdkVersion() throws MojoExecutionException {
 		return loadPropertiesFromResource("sdk.properties").getProperty("version", null);
+	}
+
+	private Model loadModelFromPom(String platformVersion) throws MojoExecutionException {
+		File tempDir = new File("temp-pom");
+		tempDir.mkdir();
+		try {
+			executeMojo(
+					plugin(
+							groupId(SDKConstants.DEPENDENCY_PLUGIN_GROUP_ID),
+							artifactId(SDKConstants.DEPENDENCY_PLUGIN_ARTIFACT_ID),
+							version(SDKConstants.DEPENDENCY_PLUGIN_VERSION)
+					),
+					goal("copy"),
+					configuration(
+							element(name("artifactItems"),
+									element(name("artifactItem"),
+											element(name("groupId"), "org.openmrs"),
+											element(name("artifactId"), "openmrs"),
+											element(name("version"), platformVersion),
+											element(name("type"), "pom"),
+											element(name("outputDirectory"), tempDir.getAbsolutePath())
+									)
+							)
+					),
+					executionEnvironment(mavenProject, mavenSession, pluginManager)
+			);
+
+			File pomFile = new File(tempDir, "openmrs-" + platformVersion + ".pom");
+			Project project = Project.loadProject(tempDir, pomFile.getName());
+			return project.getModel();
+		} finally {
+			if (tempDir.exists()) {
+				deleteDirectoryRecursively(tempDir);
+			}
+		}
+	}
+
+	private void extractTestDependencyVersionsFromModel(Model model, Properties properties) {
+		Properties modelProperties = model.getProperties();
+		
+		properties.setProperty("mockitoVersion", modelProperties.getProperty("mockitoVersion"));
+		properties.setProperty("junitJupiterVersion", modelProperties.getProperty("junitVersion"));
+
+		for (Dependency dependency : model.getDependencyManagement().getDependencies()) {
+			String groupId = dependency.getGroupId();
+			String artifactId = dependency.getArtifactId();
+			String version = resolveVersion(dependency.getVersion(), modelProperties);
+
+			switch (groupId) {
+				case "org.powermock":
+					log.info("powerMockVersion: {}", version);
+					properties.setProperty("powerMockVersion", version);
+					break;
+
+				case "junit":
+					if ("junit".equals(artifactId)) {
+						log.info("junitVersion: {}", version);
+						properties.setProperty("junitVersion", version);
+					}
+					break;
+			}
+		}
+	}
+
+	private String resolveVersion(String version, Properties modelProperties) {
+		if (version != null && version.startsWith("${") && version.endsWith("}")) {
+			String propertyName = version.substring(2, version.length() - 1);
+			return modelProperties.getProperty(propertyName);
+		}
+		return version;
+	}
+
+	private void deleteDirectoryRecursively(File dir) {
+		if (dir.isDirectory()) {
+			File[] entries = dir.listFiles();
+			if (entries != null) {
+				for (File file : entries) {
+					deleteDirectoryRecursively(file);
+				}
+			}
+		}
+		dir.delete();
+	}
+
+	public void choosePlatformVersion() throws MojoExecutionException {
+		if (TYPE_PLATFORM.equals(type)) {
+			boolean validVersion = false;
+			while (!validVersion) {
+				platform = wizard.promptForValueIfMissingWithDefault(
+						"What is the lowest version of the platform (-D%s) you want to support?", platform, "platform", "2.5.0");
+				
+				if (compareVersions(platform, "2.5.0")) {
+					wizard.showMessage("Platform version must be at least 2.5.0. Please try again.");
+					platform = null;
+				} else {
+					validVersion = true;
+				}
+			}
+		}
+	}
+
+	public boolean compareVersions(String version1, String version2) {
+		Version v1 = new Version(version1);
+		Version v2 = new Version(version2);
+		return v1.lower(v2);
 	}
 }
