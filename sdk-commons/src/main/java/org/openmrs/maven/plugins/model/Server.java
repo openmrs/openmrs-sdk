@@ -67,6 +67,8 @@ public class Server extends BaseSdkProperties {
 
     public static final String PROPERTY_SERVER_PORT = "server.port";
 
+    public static final String PROPERTY_SERVLET_CONTAINER = "server.servlet.container";
+
     private static Path serversPath = Paths.get(System.getProperty("user.home"), SDKConstants.OPENMRS_SERVER_PATH).toAbsolutePath();
 
     private File propertiesFile;
@@ -764,6 +766,14 @@ public class Server extends BaseSdkProperties {
 
     public String getPort() {
         return getParam(PROPERTY_SERVER_PORT);
+    }
+
+    public String getServletContainer() {
+        return getParam(PROPERTY_SERVLET_CONTAINER);
+    }
+
+    public void setServletContainer(String servletContainer) {
+        setParam(PROPERTY_SERVLET_CONTAINER, servletContainer);
     }
 
     public void setDbUser(String dbUser) {
