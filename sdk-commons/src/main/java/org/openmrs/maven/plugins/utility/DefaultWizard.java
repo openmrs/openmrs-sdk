@@ -306,7 +306,9 @@ public class DefaultWizard implements Wizard {
 		String choice = prompt(DEFAULT_CHOICE_TMPL + " [" + StringUtils.join(choices, "/") + "]");
 
 		int chosenIndex = -1;
-		if (!StringUtils.isBlank(choice)) {
+		if (StringUtils.isBlank(choice)) {
+			chosenIndex = 0;
+		} else {
 			try {
 				chosenIndex = Integer.parseInt(choice) - 1;
 			}
