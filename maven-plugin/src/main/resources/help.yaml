@@ -94,10 +94,12 @@ help:
         desc: "Enable remote debugging on the given port. (defaults to '1044' if empty)"
       - name: "DwatchApi"
         desc: "Flag to indicate whether to redeploy API classes"
+      - name: "Dcontainer"
+        desc: "Servlet container to use: 'tomcat' (default) or 'jetty'"
       - name: "DskipBuild"
         desc: "Flag to indicate whether to build server's watched projects, OWA projects, or node projects. (defaults to 'false')"
       - name: "runGoal"
-        desc: "Goal to execute when running the server. (defaults to 'org.openmrs.maven.plugins:openmrs-sdk-tomcat9-maven-plugin:{$version}')"
+        desc: "Goal to execute when running the server. When set, overrides automatic platform module and container selection."
       - name: "DjvmArgs"
         desc: "Pass JVM arguments to the run command. (example : -DjvmArgs='--add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED')"
 

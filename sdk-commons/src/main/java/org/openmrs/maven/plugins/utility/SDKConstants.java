@@ -41,11 +41,11 @@ public class SDKConstants {
     public static final String REFAPP_ARCH_ARTIFACT_ID = "openmrs-sdk-archetype-module-refapp";
     public static final String PLATFORM_ARCH_ARTIFACT_ID = "openmrs-sdk-archetype-module-platform";
     public static final String CONTENT_PACKAGE_ARCH_ARTIFACT_ID = "openmrs-sdk-archetype-module-content";
-    // tomcat plugin
-    public static final String OPENMRS_TOMCAT_PLUGIN_GROUP_ID = "org.openmrs.maven.plugins";
-    public static final String OPENMRS_TOMCAT7_PLUGIN_ARTIFACT_ID = "openmrs-sdk-tomcat7-maven-plugin";
-    public static final String OPENMRS_TOMCAT9_PLUGIN_ARTIFACT_ID = "openmrs-sdk-tomcat9-maven-plugin";
-    public static final String OPENMRS_TOMCAT11_PLUGIN_ARTIFACT_ID = "openmrs-sdk-tomcat11-maven-plugin";
+    // server container plugins (organized by platform version)
+    public static final String OPENMRS_SERVER_PLUGIN_GROUP_ID = "org.openmrs.maven.plugins";
+    public static final String OPENMRS_SERVER_PRE25_ARTIFACT_ID = "openmrs-sdk-server-pre25";
+    public static final String OPENMRS_SERVER_2X_ARTIFACT_ID = "openmrs-sdk-server-2x";
+    public static final String OPENMRS_SERVER_3X_ARTIFACT_ID = "openmrs-sdk-server-3x";
     // default path to projects
     public static final String OPENMRS_SERVER_PATH = "openmrs";
     public static final String OPENMRS_SERVER_PROPERTIES = "openmrs-server.properties";
