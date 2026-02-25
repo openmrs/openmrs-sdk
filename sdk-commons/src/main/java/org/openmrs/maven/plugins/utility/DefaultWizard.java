@@ -961,6 +961,51 @@ public class DefaultWizard implements Wizard {
 		server.setDbPassword(dbPassword);
 	}
 
+	@Override
+	public void promptForDbCredentialsAgain(Server server, String dbUser, String dbPassword) throws MojoExecutionException {
+		String newUser = promptForValueIfMissingWithDefault("Please specify correct database username (-D%s)", dbUser,
+				"dbUser", "root");
+
+		String newPassword = promptForPasswordIfMissingWithDefault("Please specify correct database password (-D%s)", dbPassword,
+				"dbPassword", "");
+
+		server.setDbUser(newUser);
+		server.setDbPassword(newPassword);
+	}
+
+	@Override
+	public void promptForNewUriAndCredentials(Server server, String dbUser, String dbPassword, String dbUri) throws MojoExecutionException {
+		showMessage("Prompting for new database URI and credentials...");
+		String uriTemplate;
+		if (server.isMySqlDb()) {
+			uriTemplate = SDKConstants.URI_MYSQL;
+		} else if (server.isPostgreSqlDb()) {
+			uriTemplate = SDKConstants.URI_POSTGRESQL;
+		} else {
+			return;
+		}
+
+		String newUri = promptForValueIfMissingWithDefault(
+				"The distribution requires a " +
+						(server.isMySqlDb() ? "MySQL" : "PostgreSQL") +
+						" database. Please specify a valid database uri (-D%s)",
+				dbUri, "dbUri", uriTemplate);
+
+		if (server.isMySqlDb()) {
+			newUri = addMySQLParamsIfMissing(newUri);
+		} else if (server.isPostgreSqlDb()) {
+			newUri = addPostgreSQLParamsIfMissing(newUri);
+		}
+
+		newUri = newUri.replace(DBNAME_URL_VARIABLE, server.getServerId());
+		server.setDbUri(newUri);
+
+		String newUser = promptForValueIfMissingWithDefault("Please enter the database username (-D%s):", dbUser, "dbUser", "root");
+		String newPassword = promptForPasswordIfMissingWithDefault("Please enter the database password (-D%s):", dbPassword, "dbPassword", "");
+		server.setDbUser(newUser);
+		server.setDbPassword(newPassword);
+	}
+
 	/**
 	 * Get servers with recently used first
 	 */
@@ -1002,7 +1047,7 @@ public class DefaultWizard implements Wizard {
 			uri = new URIBuilder(noJdbc);
 		}
 		catch (URISyntaxException e) {
-			throw new MojoExecutionException("Database URI \"" + noJdbc + "\" is not a valid URI " + e.getMessage(),  e);
+			throw new MojoExecutionException("Database URI \"" + noJdbc + "\" is not a valid URI. " + e.getMessage(),  e);
 		}
 		uri.setParameter("autoReconnect", "true");
 		uri.setParameter("useUnicode", "true");
