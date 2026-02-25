@@ -112,7 +112,7 @@ public class CargoContainerRunner {
 
 			// Deploy a redirect page at the root context so / redirects to /openmrs/
 			WAR redirectWar = new WAR(redirectDir.getAbsolutePath());
-			redirectWar.setContext("/");
+			redirectWar.setContext("");
 			config.addDeployable(redirectWar);
 
 			// Deploy the OpenMRS WAR at /openmrs
