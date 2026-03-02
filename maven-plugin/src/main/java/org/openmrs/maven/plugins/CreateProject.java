@@ -1,19 +1,14 @@
 package org.openmrs.maven.plugins;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.maven.model.Dependency;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
-import org.apache.maven.model.Model;
-import org.openmrs.maven.plugins.model.Project;
 import org.openmrs.maven.plugins.model.Version;
 import org.openmrs.maven.plugins.utility.OwaHelper;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 import org.openmrs.maven.plugins.utility.Wizard;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.nio.file.Paths;
@@ -89,7 +84,6 @@ public class CreateProject extends AbstractTask {
 	private static final String AUTHOR_PROMPT_TMPL = "Who is the author of the module?";
 
 	private static final String MODULE_TYPE_PROMPT = "What kind of project would you like to create?";
-	private static final Logger log = LoggerFactory.getLogger(CreateProject.class);
 
 	/**
 	 * The manager's artifactId. This can be an ordered comma separated list.
@@ -210,6 +204,12 @@ public class CreateProject extends AbstractTask {
 	@Parameter(property = "type")
 	private String type;
 
+	/**
+	 * The target Java version for the generated project. Must be at least 8.
+	 */
+	@Parameter(property = "javaVersion")
+	private String javaVersion;
+
 	public void setWizard(Wizard wizard) {
 		this.wizard = wizard;
 	}
@@ -318,9 +318,7 @@ public class CreateProject extends AbstractTask {
 		if (platform != null) {
 			properties.setProperty("openmrsPlatformVersion", platform);
 			properties.setProperty("moduleClassnamePrefix", moduleClassnamePrefix);
-
-			Model model = loadModelFromPom(platform);
-			extractTestDependencyVersionsFromModel(model, properties);
+			validateAndSetJavaVersion(properties);
 		} else if (refapp != null) {
 			properties.setProperty("openmrsRefappVersion", refapp);
 			properties.setProperty("moduleClassnamePrefix", moduleClassnamePrefix);
@@ -356,86 +354,21 @@ public class CreateProject extends AbstractTask {
 		return loadPropertiesFromResource("sdk.properties").getProperty("version", null);
 	}
 
-	private Model loadModelFromPom(String platformVersion) throws MojoExecutionException {
-		File tempDir = new File("temp-pom");
-		tempDir.mkdir();
+	private void validateAndSetJavaVersion(Properties properties) throws MojoExecutionException {
+		if (javaVersion == null) {
+			javaVersion = "8";
+		}
+
 		try {
-			executeMojo(
-					plugin(
-							groupId(SDKConstants.DEPENDENCY_PLUGIN_GROUP_ID),
-							artifactId(SDKConstants.DEPENDENCY_PLUGIN_ARTIFACT_ID),
-							version(SDKConstants.DEPENDENCY_PLUGIN_VERSION)
-					),
-					goal("copy"),
-					configuration(
-							element(name("artifactItems"),
-									element(name("artifactItem"),
-											element(name("groupId"), "org.openmrs"),
-											element(name("artifactId"), "openmrs"),
-											element(name("version"), platformVersion),
-											element(name("type"), "pom"),
-											element(name("outputDirectory"), tempDir.getAbsolutePath())
-									)
-							)
-					),
-					executionEnvironment(mavenProject, mavenSession, pluginManager)
-			);
-
-			File pomFile = new File(tempDir, "openmrs-" + platformVersion + ".pom");
-			Project project = Project.loadProject(tempDir, pomFile.getName());
-			return project.getModel();
-		} finally {
-			if (tempDir.exists()) {
-				deleteDirectoryRecursively(tempDir);
+			int version = Integer.parseInt(javaVersion);
+			if (version < 8) {
+				throw new MojoExecutionException("Java version must be at least 8, got: " + javaVersion);
 			}
+		} catch (NumberFormatException e) {
+			throw new MojoExecutionException("Invalid Java version: " + javaVersion + ". Expected a number >= 8 (e.g., 8, 11, 17, 21).");
 		}
-	}
 
-	private void extractTestDependencyVersionsFromModel(Model model, Properties properties) {
-		Properties modelProperties = model.getProperties();
-		
-		properties.setProperty("mockitoVersion", modelProperties.getProperty("mockitoVersion"));
-		properties.setProperty("junitJupiterVersion", modelProperties.getProperty("junitVersion"));
-
-		for (Dependency dependency : model.getDependencyManagement().getDependencies()) {
-			String groupId = dependency.getGroupId();
-			String artifactId = dependency.getArtifactId();
-			String version = resolveVersion(dependency.getVersion(), modelProperties);
-
-			switch (groupId) {
-				case "org.powermock":
-					log.info("powerMockVersion: {}", version);
-					properties.setProperty("powerMockVersion", version);
-					break;
-
-				case "junit":
-					if ("junit".equals(artifactId)) {
-						log.info("junitVersion: {}", version);
-						properties.setProperty("junitVersion", version);
-					}
-					break;
-			}
-		}
-	}
-
-	private String resolveVersion(String version, Properties modelProperties) {
-		if (version != null && version.startsWith("${") && version.endsWith("}")) {
-			String propertyName = version.substring(2, version.length() - 1);
-			return modelProperties.getProperty(propertyName);
-		}
-		return version;
-	}
-
-	private void deleteDirectoryRecursively(File dir) {
-		if (dir.isDirectory()) {
-			File[] entries = dir.listFiles();
-			if (entries != null) {
-				for (File file : entries) {
-					deleteDirectoryRecursively(file);
-				}
-			}
-		}
-		dir.delete();
+		properties.setProperty("javaVersion", javaVersion);
 	}
 
 	public void choosePlatformVersion() throws MojoExecutionException {

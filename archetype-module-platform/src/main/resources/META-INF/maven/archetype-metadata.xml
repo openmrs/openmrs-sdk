@@ -18,17 +18,8 @@
 		<requiredProperty key="openmrsPlatformVersion">
 			<defaultValue>2.5.0</defaultValue>
 		</requiredProperty>
-		<requiredProperty key="junitJupiterVersion">
-			<defaultValue>5.8.1</defaultValue>
-		</requiredProperty>
-		<requiredProperty key="mockitoVersion">
-			<defaultValue>3.12.4</defaultValue>
-		</requiredProperty>
-		<requiredProperty key="powerMockVersion">
-			<defaultValue>2.0.9</defaultValue>
-		</requiredProperty>
-		<requiredProperty key="junitVersion">
-			<defaultValue>4.13.2</defaultValue>
+		<requiredProperty key="javaVersion">
+			<defaultValue>8</defaultValue>
 		</requiredProperty>
 	</requiredProperties>
 	<fileSets>
