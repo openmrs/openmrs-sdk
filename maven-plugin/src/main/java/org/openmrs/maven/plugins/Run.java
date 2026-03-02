@@ -42,9 +42,9 @@ import static org.twdata.maven.mojoexecutor.MojoExecutor.version;
 @Mojo(name = "run", requiresProject = false)
 public class Run extends AbstractServerTask {
 
-	private static final Version TOMCAT_7_CUTOFF = new Version("2.5.0-SNAPSHOT");
+	private static final Version PLATFORM_2_5 = new Version("2.5.0-SNAPSHOT");
 
-	private static final Version TOMCAT_9_CUTOFF = new Version("3.0.0-SNAPSHOT");
+	private static final Version PLATFORM_3_0 = new Version("3.0.0-SNAPSHOT");
 
 	public Run() {
 	}
@@ -83,16 +83,22 @@ public class Run extends AbstractServerTask {
 	private boolean skipBuild;
 
 	/**
-	 * Goal to execute when running the server."Goal to execute when running the server
-	 * (Defaults to 'org.openmrs.maven.plugins:openmrs-sdk-tomcat9-maven-plugin:{$version}')
+	 * Servlet container to use: "tomcat" (default) or "jetty".
+	 * Can also be set per-server in openmrs-server.properties via server.servlet.container.
+	 */
+	@Parameter(property = "container")
+	private String container;
+
+	/**
+	 * Goal to execute when running the server.
+	 * When set, overrides automatic platform module and container selection.
 	 */
 	@Parameter(property = "runGoal")
 	private String runGoal;
 
-
 	/**
-		Pass JVM arguments to the run command
-	 	example: --add-opens java.base/java.lang=ALL-UNNAMED
+	 * Pass JVM arguments to the run command.
+	 * Example: --add-opens java.base/java.lang=ALL-UNNAMED
 	 */
 	@Parameter(property = "jvmArgs")
 	private String jvmArgs;
@@ -232,19 +238,25 @@ public class Run extends AbstractServerTask {
 			properties.put("springloaded", "inclusions=org.openmrs..*");
 		}
 
-		// if the runGoal isn't specified, we default to Tomcat 9, unless running a platform version before 2.5.0-SNAPSHOT
-		if (StringUtils.isBlank(runGoal)) {
-			String tomcatArtifactId = SDKConstants.OPENMRS_TOMCAT11_PLUGIN_ARTIFACT_ID;
-			Version platformVersion = new Version(server.getPlatformVersion());
-			if (platformVersion.lower(TOMCAT_7_CUTOFF)) {
-				tomcatArtifactId = SDKConstants.OPENMRS_TOMCAT7_PLUGIN_ARTIFACT_ID;
-			} else if (platformVersion.lower(TOMCAT_9_CUTOFF)) {
-				tomcatArtifactId =SDKConstants.OPENMRS_TOMCAT9_PLUGIN_ARTIFACT_ID;
-			}
+		Version platformVersion = new Version(server.getPlatformVersion());
 
-			runGoal = String.format("%s:%s:%s:run-tomcat",
-					SDKConstants.OPENMRS_TOMCAT_PLUGIN_GROUP_ID,
-					tomcatArtifactId,
+		// Resolve which container to use: CLI param > server property > default (tomcat)
+		String effectiveContainer = "tomcat";
+		if (StringUtils.isNotBlank(container)) {
+			effectiveContainer = container;
+		} else if (StringUtils.isNotBlank(server.getServletContainer())) {
+			effectiveContainer = server.getServletContainer();
+		}
+
+		if (StringUtils.isBlank(runGoal)) {
+			String platformArtifactId = resolvePlatformArtifactId(platformVersion);
+			String containerId = resolveContainerId(platformVersion, effectiveContainer);
+
+			properties.put("containerId", containerId);
+
+			runGoal = String.format("%s:%s:%s:run-container",
+					SDKConstants.OPENMRS_SERVER_PLUGIN_GROUP_ID,
+					platformArtifactId,
 					SDKConstants.getSDKInfo().getVersion());
 		}
 
@@ -267,15 +279,15 @@ public class Run extends AbstractServerTask {
 			InvocationResult result = invoker.execute(request);
 			if (result.getExitCode() != 0) {
 				if (result.getExecutionException() != null) {
-					throw new MojoFailureException("Failed running Tomcat " + result.getExecutionException().getMessage(),
+					throw new MojoFailureException("Failed running server:" + result.getExecutionException().getMessage(),
 							result.getExecutionException());
 				} else {
-					throw new MojoExecutionException("Failed running Tomcat");
+					throw new MojoExecutionException("Failed running server");
 				}
 			}
 		}
 		catch (MavenInvocationException e) {
-			throw new MojoFailureException("Failed to start Tomcat process", e);
+			throw new MojoFailureException("Failed to start server process", e);
 		}
 	}
 
@@ -366,6 +378,35 @@ public class Run extends AbstractServerTask {
 		}
 
 		return input;
+	}
+
+	/**
+	 * Maps a platform version to the correct platform module artifact ID.
+	 * Each module bundles the appropriate Tomcat and Jetty embed JARs for its tier.
+	 */
+	private String resolvePlatformArtifactId(Version platformVersion) {
+		if (platformVersion.lower(PLATFORM_2_5)) {
+			return SDKConstants.OPENMRS_SERVER_PRE25_ARTIFACT_ID;
+		} else if (platformVersion.lower(PLATFORM_3_0)) {
+			return SDKConstants.OPENMRS_SERVER_2X_ARTIFACT_ID;
+		} else {
+			return SDKConstants.OPENMRS_SERVER_3X_ARTIFACT_ID;
+		}
+	}
+
+	/**
+	 * Maps a (platform version, container preference) pair to a Cargo container ID string.
+	 * The container ID tells Cargo which embedded container implementation to instantiate.
+	 */
+	private String resolveContainerId(Version platformVersion, String containerPref) {
+		boolean useJetty = "jetty".equalsIgnoreCase(containerPref);
+		if (platformVersion.lower(PLATFORM_2_5)) {
+			return useJetty ? "jetty9x" : "tomcat7x";
+		} else if (platformVersion.lower(PLATFORM_3_0)) {
+			return useJetty ? "jetty9x" : "tomcat9x";
+		} else {
+			return useJetty ? "jetty11x" : "tomcat11x";
+		}
 	}
 
 	@Override

@@ -19,8 +19,9 @@
         <module>archetype-submodule-owa</module>
         <module>sdk-commons</module>
         <module>docker-maven-plugin</module>
-        <module>tomcat7-maven-plugin</module>
-        <module>tomcat9-maven-plugin</module>
+        <module>cargo-container-commons</module>
+        <module>openmrs-sdk-server-pre25</module>
+        <module>openmrs-sdk-server-2x</module>
         <module>maven-plugin</module>
         <module>integration-tests</module>
     </modules>
@@ -80,6 +81,7 @@
         <jackson.version>2.13.4.2</jackson.version>
         <lombokVersion>1.18.38</lombokVersion>
         <maven.version>3.8.1</maven.version>
+        <cargo.version>1.10.15</cargo.version>
     </properties>
 
     <repositories>
@@ -344,6 +346,33 @@
                 <groupId>javax.servlet</groupId>
                 <artifactId>jstl</artifactId>
                 <version>1.2</version>
+            </dependency>
+
+            <!-- Cargo (container abstraction layer) -->
+            <dependency>
+                <groupId>org.codehaus.cargo</groupId>
+                <artifactId>cargo-core-api-container</artifactId>
+                <version>${cargo.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.codehaus.cargo</groupId>
+                <artifactId>cargo-core-api-module</artifactId>
+                <version>${cargo.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.codehaus.cargo</groupId>
+                <artifactId>cargo-core-api-util</artifactId>
+                <version>${cargo.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.codehaus.cargo</groupId>
+                <artifactId>cargo-core-container-tomcat</artifactId>
+                <version>${cargo.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.codehaus.cargo</groupId>
+                <artifactId>cargo-core-container-jetty</artifactId>
+                <version>${cargo.version}</version>
             </dependency>
 
             <!-- Testing -->
@@ -632,20 +661,10 @@
         <profile>
             <id>Java21</id>
             <activation>
-                <jdk>21</jdk>
+                <jdk>[21,)</jdk>
             </activation>
             <modules>
-                <module>tomcat11-maven-plugin</module>
-            </modules>
-        </profile>
-
-        <profile>
-            <id>Java24</id>
-            <activation>
-                <jdk>24</jdk>
-            </activation>
-            <modules>
-                <module>tomcat11-maven-plugin</module>
+                <module>openmrs-sdk-server-3x</module>
             </modules>
         </profile>
     </profiles>
