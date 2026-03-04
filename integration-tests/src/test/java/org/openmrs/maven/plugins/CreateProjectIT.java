@@ -31,8 +31,9 @@ public class CreateProjectIT extends AbstractSdkIT {
         addTaskParam("moduleDescription", "none");
         addTaskParam("groupId", "org.openmrs.module");
         addTaskParam("version", "1.0.0-SNAPSHOT");
+        addTaskParam("javaVersion", "8");
 
-        addAnswer("2.4");
+        addAnswer("2.12.0");
 
         addTaskParam(BATCH_ANSWERS, getAnswers()); //only to set interactive mode to false
 
@@ -49,7 +50,29 @@ public class CreateProjectIT extends AbstractSdkIT {
         addAnswer("none");
         addAnswer("org.openmrs.module");
         addAnswer("1.0.0-SNAPSHOT");
-        addAnswer("2.4");
+        addAnswer("2.12.0");
+
+        executeTask("create-project");
+        assertSuccess();
+        assertProjectCreated();
+    }
+
+    @Test
+    public void createProject_shouldRejectRefappVersionBelowMinimum() throws Exception {
+        addTaskParam("type", "referenceapplication-module");
+
+        addTaskParam("moduleId", "test");
+        addTaskParam("moduleName", "Test");
+        addTaskParam("moduleDescription", "none");
+        addTaskParam("groupId", "org.openmrs.module");
+        addTaskParam("version", "1.0.0-SNAPSHOT");
+        addTaskParam("javaVersion", "8");
+
+        addAnswer("2.4.0");
+        addAnswer("2.11.0");
+        addAnswer("2.12.0");
+
+        addTaskParam(BATCH_ANSWERS, getAnswers());
 
         executeTask("create-project");
         assertSuccess();
