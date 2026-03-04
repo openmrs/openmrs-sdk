@@ -8,6 +8,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>sdk-commons</artifactId>
+    <name>OpenMRS SDK Commons</name>
 
     <properties>
         <sdk.groupId>org.openmrs.maven.plugins</sdk.groupId>

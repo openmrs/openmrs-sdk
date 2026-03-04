@@ -1,0 +1,57 @@
+name: Publish to Maven Central
+
+on:
+  push:
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Git tag to publish (e.g., 6.9.0)'
+        required: true
+
+jobs:
+  publish:
+    name: Publish to Central Portal
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ inputs.tag || github.ref_name }}
+    steps:
+      - name: Checkout tag
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.tag || github.ref_name }}
+
+      - name: Determine JDK version
+        id: jdk
+        run: |
+          if [ -f openmrs-sdk-server-3x/pom.xml ] || [ -f tomcat11-maven-plugin/pom.xml ]; then
+            echo "version=21" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=8" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up JDK
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: ${{ steps.jdk.outputs.version }}
+          cache: 'maven'
+          server-id: central
+          server-username: MAVEN_CENTRAL_USERNAME
+          server-password: MAVEN_CENTRAL_TOKEN
+          gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
+          gpg-passphrase: GPG_PASSPHRASE
+
+      - name: Publish to Central Portal
+        run: >
+          mvn deploy
+          -Pcentral-publish
+          -Dmaven.test.skip=true
+          -Dmaven.javadoc.failOnError=false
+          --batch-mode
+          --no-transfer-progress
+        env:
+          MAVEN_CENTRAL_USERNAME: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          MAVEN_CENTRAL_TOKEN: ${{ secrets.MAVEN_CENTRAL_TOKEN }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
