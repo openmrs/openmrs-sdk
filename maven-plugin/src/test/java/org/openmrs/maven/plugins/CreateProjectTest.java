@@ -73,4 +73,28 @@ public class CreateProjectTest {
 
         verify(wizard, times(1)).promptForValueIfMissingWithDefault(anyString(), eq(null), anyString(), anyString());
     }
+
+    @Test
+    public void chooseRefappVersion_shouldRejectInvalidVersionAndRetry() throws MojoExecutionException {
+        when(wizard.promptForValueIfMissingWithDefault(anyString(), eq(null), anyString(), anyString()))
+            .thenReturn("2.4.0")
+            .thenReturn("2.12.0");
+
+        createProject.setProjectType("referenceapplication-module");
+        createProject.chooseRefappVersion();
+
+        verify(wizard, times(2)).promptForValueIfMissingWithDefault(anyString(), eq(null), anyString(), anyString());
+        verify(wizard, times(1)).showMessage(contains("Reference Application version must be at least 2.12.0"));
+    }
+
+    @Test
+    public void chooseRefappVersion_shouldAcceptValidVersion() throws MojoExecutionException {
+        when(wizard.promptForValueIfMissingWithDefault(anyString(), eq(null), anyString(), anyString()))
+            .thenReturn("2.12.0");
+
+        createProject.setProjectType("referenceapplication-module");
+        createProject.chooseRefappVersion();
+
+        verify(wizard, times(1)).promptForValueIfMissingWithDefault(anyString(), eq(null), anyString(), anyString());
+    }
 }

@@ -18,7 +18,26 @@
         <requiredProperty key="moduleAuthor" />
 		<requiredProperty key="moduleClassnamePrefix" />
 		<requiredProperty key="openmrsRefappVersion" />
+		<requiredProperty key="javaVersion">
+			<defaultValue>8</defaultValue>
+		</requiredProperty>
+		<requiredProperty key="legacyuiVersion">
+			<defaultValue>2.0.0</defaultValue>
+		</requiredProperty>
+		<requiredProperty key="useRelease">
+			<defaultValue>false</defaultValue>
+		</requiredProperty>
     </requiredProperties>
+	<fileSets>
+		<fileSet encoding="UTF-8" filtered="true">
+			<directory></directory>
+			<includes>
+				<include>README*</include>
+				<include>.gitignore</include>
+				<include>LICENSE.txt</include>
+			</includes>
+		</fileSet>
+	</fileSets>
   <modules>
     <module id="${rootArtifactId}-api" dir="api" name="${rootArtifactId}-api">
       <fileSets>
@@ -39,6 +58,12 @@
           <directory>src/test/java</directory>
           <includes>
             <include>**/*.java</include>
+          </includes>
+        </fileSet>
+        <fileSet filtered="true" encoding="UTF-8">
+          <directory>src/test/resources</directory>
+          <includes>
+            <include>**/*.xml</include>
           </includes>
         </fileSet>
       </fileSets>

@@ -1,14 +1,18 @@
 package org.openmrs.maven.plugins;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.maven.model.Model;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
+import org.openmrs.maven.plugins.model.Project;
 import org.openmrs.maven.plugins.model.Version;
 import org.openmrs.maven.plugins.utility.OwaHelper;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 import org.openmrs.maven.plugins.utility.Wizard;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.nio.file.Paths;
@@ -84,6 +88,7 @@ public class CreateProject extends AbstractTask {
 	private static final String AUTHOR_PROMPT_TMPL = "Who is the author of the module?";
 
 	private static final String MODULE_TYPE_PROMPT = "What kind of project would you like to create?";
+	private static final Logger log = LoggerFactory.getLogger(CreateProject.class);
 
 	/**
 	 * The manager's artifactId. This can be an ordered comma separated list.
@@ -295,9 +300,7 @@ public class CreateProject extends AbstractTask {
 			choosePlatformVersion();
 			archetypeArtifactId = SDKConstants.PLATFORM_ARCH_ARTIFACT_ID;
 		} else if (TYPE_REFAPP.equals(type)) {
-			refapp = wizard.promptForValueIfMissingWithDefault(
-			    "What is the lowest version of the Reference Application (-D%s) you want to support?", refapp, "refapp",
-			    "2.4");
+			chooseRefappVersion();
 			archetypeArtifactId = SDKConstants.REFAPP_ARCH_ARTIFACT_ID;
 		} else if (TYPE_CONTENT_PACKAGE.equals(type)) {
 			archetypeArtifactId = SDKConstants.CONTENT_PACKAGE_ARCH_ARTIFACT_ID;
@@ -322,6 +325,8 @@ public class CreateProject extends AbstractTask {
 		} else if (refapp != null) {
 			properties.setProperty("openmrsRefappVersion", refapp);
 			properties.setProperty("moduleClassnamePrefix", moduleClassnamePrefix);
+			validateAndSetJavaVersion(properties);
+			resolveLegacyUiVersion(refapp, properties);
 		}
 		properties.setProperty("package", packageName);
 		mavenSession.getUserProperties().putAll(properties);
@@ -359,9 +364,10 @@ public class CreateProject extends AbstractTask {
 			javaVersion = "8";
 		}
 
+		int parsedVersion;
 		try {
-			int version = Integer.parseInt(javaVersion);
-			if (version < 8) {
+			parsedVersion = Integer.parseInt(javaVersion);
+			if (parsedVersion < 8) {
 				throw new MojoExecutionException("Java version must be at least 8, got: " + javaVersion);
 			}
 		} catch (NumberFormatException e) {
@@ -369,6 +375,7 @@ public class CreateProject extends AbstractTask {
 		}
 
 		properties.setProperty("javaVersion", javaVersion);
+		properties.setProperty("useRelease", parsedVersion >= 11 ? "true" : "false");
 	}
 
 	public void choosePlatformVersion() throws MojoExecutionException {
@@ -388,9 +395,85 @@ public class CreateProject extends AbstractTask {
 		}
 	}
 
+	public void chooseRefappVersion() throws MojoExecutionException {
+		boolean validVersion = false;
+		while (!validVersion) {
+			refapp = wizard.promptForValueIfMissingWithDefault(
+					"What is the lowest version of the Reference Application (-D%s) you want to support?", refapp, "refapp", "2.12.0");
+
+			if (compareVersions(refapp, "2.12.0")) {
+				wizard.showMessage("Reference Application version must be at least 2.12.0. Please try again.");
+				refapp = null;
+			} else {
+				validVersion = true;
+			}
+		}
+	}
+
 	public boolean compareVersions(String version1, String version2) {
 		Version v1 = new Version(version1);
 		Version v2 = new Version(version2);
 		return v1.lower(v2);
+	}
+
+	private void resolveLegacyUiVersion(String refappVersion, Properties properties) throws MojoExecutionException {
+		String legacyuiVersion = "2.0.0";
+		try {
+			Model model = loadReferenceApplicationModel(refappVersion);
+			Properties modelProperties = model.getProperties();
+			String resolved = modelProperties.getProperty("legacyuiVersion");
+			if (resolved != null) {
+				legacyuiVersion = resolved;
+				log.info("Resolved legacyuiVersion {} from Reference Application {}", legacyuiVersion, refappVersion);
+			}
+		} catch (Exception e) {
+			log.warn("Could not resolve legacyuiVersion from Reference Application {}; defaulting to {}", refappVersion, legacyuiVersion);
+		}
+		properties.setProperty("legacyuiVersion", legacyuiVersion);
+	}
+
+	private Model loadReferenceApplicationModel(String version) throws MojoExecutionException {
+		File tempDir = new File("temp-pom");
+		tempDir.mkdir();
+		try {
+			executeMojo(
+					plugin(
+							groupId(SDKConstants.DEPENDENCY_PLUGIN_GROUP_ID),
+							artifactId(SDKConstants.DEPENDENCY_PLUGIN_ARTIFACT_ID),
+							version(SDKConstants.DEPENDENCY_PLUGIN_VERSION)
+					),
+					goal("copy"),
+					configuration(
+							element(name("artifactItems"),
+									element(name("artifactItem"),
+											element(name("groupId"), "org.openmrs.distro"),
+											element(name("artifactId"), "referenceapplication"),
+											element(name("version"), version),
+											element(name("type"), "pom"),
+											element(name("outputDirectory"), tempDir.getAbsolutePath())
+									)
+							)
+					),
+					executionEnvironment(mavenProject, mavenSession, pluginManager)
+			);
+
+			File pomFile = new File(tempDir, "referenceapplication-" + version + ".pom");
+			Project project = Project.loadProject(tempDir, pomFile.getName());
+			return project.getModel();
+		} finally {
+			deleteDirectoryRecursively(tempDir);
+		}
+	}
+
+	private void deleteDirectoryRecursively(File dir) {
+		if (dir.isDirectory()) {
+			File[] entries = dir.listFiles();
+			if (entries != null) {
+				for (File file : entries) {
+					deleteDirectoryRecursively(file);
+				}
+			}
+		}
+		dir.delete();
 	}
 }
