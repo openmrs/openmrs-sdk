@@ -26,7 +26,7 @@ abstract class AbstractDockerMojo extends AbstractMojo {
     protected static final String DEFAULT_MYSQL_EXPOSED_PORT = "3308";
     protected static final String DEFAULT_MYSQL_PASSWORD = "Admin123";
     protected static final String MYSQL_8_4_1 = "mysql:8.4.1";
-    protected static final String DEFAULT_MYSQL_DB_URI = "jdbc:mysql://localhost:" + DEFAULT_MYSQL_EXPOSED_PORT + "/";
+    protected static final String DEFAULT_MYSQL_DB_URI = "jdbc:mysql://127.0.0.1:" + DEFAULT_MYSQL_EXPOSED_PORT + "/";
     private static final Logger logger = LoggerFactory.getLogger(AbstractDockerMojo.class);
 
     private static final String NOT_LINUX_UNABLE_TO_CONNECT_MESSAGE = "\n\n\nCould not connect to Docker at " +
