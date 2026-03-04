@@ -112,8 +112,12 @@
 					<artifactId>maven-compiler-plugin</artifactId>
 					<version>3.11.0</version>
 					<configuration>
+#if ($javaVersion == "8")
 						<source>${maven.compiler.source}</source>
 						<target>${maven.compiler.target}</target>
+#else
+						<release>${maven.compiler.release}</release>
+#end
 					</configuration>
 				</plugin>
 				<!-- Maven Enforcer Plugin -->
@@ -149,8 +153,12 @@
         <openmrsPlatformVersion>${openmrsPlatformVersion}</openmrsPlatformVersion>
         <javaVersion>${javaVersion}</javaVersion>
         <legacyUiVersion>2.0.0-SNAPSHOT</legacyUiVersion>
+#if ($javaVersion == "8")
         <maven.compiler.source>\${javaVersion}</maven.compiler.source>
         <maven.compiler.target>\${javaVersion}</maven.compiler.target>
+#else
+        <maven.compiler.release>\${javaVersion}</maven.compiler.release>
+#end
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 </project>
