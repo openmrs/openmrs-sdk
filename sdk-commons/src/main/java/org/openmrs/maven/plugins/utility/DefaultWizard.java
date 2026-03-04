@@ -955,11 +955,11 @@ public class DefaultWizard implements Wizard {
 	}
 
 	@Override
-	public void promptForDbCredentialsAgain(Server server, String dbUser, String dbPassword) throws MojoExecutionException {
-		String newUser = promptForValueIfMissingWithDefault("Please specify correct database username (-D%s)", dbUser,
+	public void promptForDbCredentialsAgain(Server server) throws MojoExecutionException {
+		String newUser = promptForValueIfMissingWithDefault("Please specify correct database username (-D%s)", null,
 				"dbUser", "root");
 
-		String newPassword = promptForPasswordIfMissingWithDefault("Please specify correct database password (-D%s)", dbPassword,
+		String newPassword = promptForPasswordIfMissingWithDefault("Please specify correct database password (-D%s)", null,
 				"dbPassword", "");
 
 		server.setDbUser(newUser);
@@ -967,7 +967,7 @@ public class DefaultWizard implements Wizard {
 	}
 
 	@Override
-	public void promptForNewUriAndCredentials(Server server, String dbUser, String dbPassword, String dbUri) throws MojoExecutionException {
+	public void promptForNewUriAndCredentials(Server server) throws MojoExecutionException {
 		showMessage("Prompting for new database URI and credentials...");
 		String uriTemplate;
 		if (server.isMySqlDb()) {
@@ -982,7 +982,7 @@ public class DefaultWizard implements Wizard {
 				"The distribution requires a " +
 						(server.isMySqlDb() ? "MySQL" : "PostgreSQL") +
 						" database. Please specify a valid database uri (-D%s)",
-				dbUri, "dbUri", uriTemplate);
+				null, "dbUri", uriTemplate);
 
 		if (server.isMySqlDb()) {
 			newUri = addMySQLParamsIfMissing(newUri);
@@ -993,8 +993,8 @@ public class DefaultWizard implements Wizard {
 		newUri = newUri.replace(DBNAME_URL_VARIABLE, server.getServerId());
 		server.setDbUri(newUri);
 
-		String newUser = promptForValueIfMissingWithDefault("Please enter the database username (-D%s):", dbUser, "dbUser", "root");
-		String newPassword = promptForPasswordIfMissingWithDefault("Please enter the database password (-D%s):", dbPassword, "dbPassword", "");
+		String newUser = promptForValueIfMissingWithDefault("Please enter the database username (-D%s):", null, "dbUser", "root");
+		String newPassword = promptForPasswordIfMissingWithDefault("Please enter the database password (-D%s):", null, "dbPassword", "");
 		server.setDbUser(newUser);
 		server.setDbPassword(newPassword);
 	}

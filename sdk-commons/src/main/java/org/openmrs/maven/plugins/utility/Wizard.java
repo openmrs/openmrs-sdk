@@ -56,7 +56,7 @@ public interface Wizard {
 
     String promptForExistingServerIdIfMissing(String serverId) throws MojoExecutionException;
 
-    void promptForNewUriAndCredentials(Server server, String dbUser, String dbPassword, String dbUri) throws MojoExecutionException;
+    void promptForNewUriAndCredentials(Server server) throws MojoExecutionException;
 
     List<String> getListOfServers() throws MojoExecutionException;
 
@@ -66,5 +66,5 @@ public interface Wizard {
 
     void setAnswers(ArrayDeque<String> batchAnswers);
 
-    void promptForDbCredentialsAgain(Server server, String dbUser, String dbPassword) throws MojoExecutionException;
+    void promptForDbCredentialsAgain(Server server) throws MojoExecutionException;
 }

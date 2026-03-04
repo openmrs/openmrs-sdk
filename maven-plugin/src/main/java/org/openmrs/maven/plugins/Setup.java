@@ -370,20 +370,22 @@ public class Setup extends AbstractServerTask {
 	}
 
 	private void setServerPort(Server server) throws MojoExecutionException {
-		if (StringUtils.isBlank(serverPort)) {
-			String message = "What port (-D%s) would you like your server to use?";
-			serverPort = wizard.promptForValueIfMissingWithDefault(
-					message,
-					server.getParam("tomcat.port"),
-					"serverPort",
-					String.valueOf(Setup.DEFAULT_PORT));
-			if (!StringUtils.isNumeric(serverPort) || !this.serverHelper.isPort(Integer.parseInt(serverPort))) {
-				wizard.showMessage("Port must be numeric and less or equal 65535.");
-				this.setServerPort(server);
-				return;
+		while (true) {
+			if (StringUtils.isBlank(serverPort)) {
+				String message = "What port (-D%s) would you like your server to use?";
+				serverPort = wizard.promptForValueIfMissingWithDefault(
+						message,
+						server.getParam("tomcat.port"),
+						"serverPort",
+						String.valueOf(Setup.DEFAULT_PORT));
 			}
-			server.setPort(serverPort);
+			if (StringUtils.isNumeric(serverPort) && this.serverHelper.isPort(Integer.parseInt(serverPort))) {
+				break;
+			}
+			wizard.showMessage("Port must be numeric and less or equal 65535.");
+			serverPort = null;
 		}
+		server.setPort(serverPort);
 	}
 
 	private void setDebugPort(Server server) throws MojoExecutionException {
@@ -454,7 +456,7 @@ public class Setup extends AbstractServerTask {
 									"Please verify your credentials and try again.", maxAttempts), e);
 						}
 
-						wizard.promptForDbCredentialsAgain(server, dbUser, dbPassword);
+						wizard.promptForDbCredentialsAgain(server);
 						continue;
 					} else if (message.contains("Incorrect Database Uri")) {
 						if (attempts == maxAttempts) {
@@ -462,7 +464,7 @@ public class Setup extends AbstractServerTask {
 									"Please verify your database uri.", maxAttempts), e);
 						}
 
-						wizard.promptForNewUriAndCredentials(server, dbUser, dbPassword, dbUri);
+						wizard.promptForNewUriAndCredentials(server);
 						continue;
 					}
 					throw new MojoExecutionException("Failed to connect to the specified database " + server.getDbUri(), e);
