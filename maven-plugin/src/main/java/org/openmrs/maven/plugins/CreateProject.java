@@ -5,8 +5,10 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
+import org.openmrs.maven.plugins.model.Version;
 import org.openmrs.maven.plugins.utility.OwaHelper;
 import org.openmrs.maven.plugins.utility.SDKConstants;
+import org.openmrs.maven.plugins.utility.Wizard;
 
 import java.io.File;
 import java.nio.file.Paths;
@@ -202,6 +204,20 @@ public class CreateProject extends AbstractTask {
 	@Parameter(property = "type")
 	private String type;
 
+	/**
+	 * The target Java version for the generated project. Must be at least 8.
+	 */
+	@Parameter(property = "javaVersion")
+	private String javaVersion;
+
+	public void setWizard(Wizard wizard) {
+		this.wizard = wizard;
+	}
+
+	public void setProjectType(String type) {
+		this.type = type;
+	}
+
 	@Override
 	public void executeTask() throws MojoExecutionException, MojoFailureException {
 		setProjectType();
@@ -211,7 +227,6 @@ public class CreateProject extends AbstractTask {
 		} else {
 			createModule();
 		}
-
 	}
 
 	private void setProjectType() throws MojoExecutionException {
@@ -277,8 +292,7 @@ public class CreateProject extends AbstractTask {
 		moduleAuthor = wizard.promptForValueIfMissingWithDefault(AUTHOR_PROMPT_TMPL, moduleAuthor, "", "anonymous");
 
 		if (TYPE_PLATFORM.equals(type)) {
-			platform = wizard.promptForValueIfMissingWithDefault(
-			    "What is the lowest version of the platform (-D%s) you want to support?", platform, "platform", "1.11.6");
+			choosePlatformVersion();
 			archetypeArtifactId = SDKConstants.PLATFORM_ARCH_ARTIFACT_ID;
 		} else if (TYPE_REFAPP.equals(type)) {
 			refapp = wizard.promptForValueIfMissingWithDefault(
@@ -304,6 +318,7 @@ public class CreateProject extends AbstractTask {
 		if (platform != null) {
 			properties.setProperty("openmrsPlatformVersion", platform);
 			properties.setProperty("moduleClassnamePrefix", moduleClassnamePrefix);
+			validateAndSetJavaVersion(properties);
 		} else if (refapp != null) {
 			properties.setProperty("openmrsRefappVersion", refapp);
 			properties.setProperty("moduleClassnamePrefix", moduleClassnamePrefix);
@@ -337,5 +352,45 @@ public class CreateProject extends AbstractTask {
 
 	private String getSdkVersion() throws MojoExecutionException {
 		return loadPropertiesFromResource("sdk.properties").getProperty("version", null);
+	}
+
+	private void validateAndSetJavaVersion(Properties properties) throws MojoExecutionException {
+		if (javaVersion == null) {
+			javaVersion = "8";
+		}
+
+		try {
+			int version = Integer.parseInt(javaVersion);
+			if (version < 8) {
+				throw new MojoExecutionException("Java version must be at least 8, got: " + javaVersion);
+			}
+		} catch (NumberFormatException e) {
+			throw new MojoExecutionException("Invalid Java version: " + javaVersion + ". Expected a number >= 8 (e.g., 8, 11, 17, 21).");
+		}
+
+		properties.setProperty("javaVersion", javaVersion);
+	}
+
+	public void choosePlatformVersion() throws MojoExecutionException {
+		if (TYPE_PLATFORM.equals(type)) {
+			boolean validVersion = false;
+			while (!validVersion) {
+				platform = wizard.promptForValueIfMissingWithDefault(
+						"What is the lowest version of the platform (-D%s) you want to support?", platform, "platform", "2.5.0");
+				
+				if (compareVersions(platform, "2.5.0")) {
+					wizard.showMessage("Platform version must be at least 2.5.0. Please try again.");
+					platform = null;
+				} else {
+					validVersion = true;
+				}
+			}
+		}
+	}
+
+	public boolean compareVersions(String version1, String version2) {
+		Version v1 = new Version(version1);
+		Version v2 = new Version(version2);
+		return v1.lower(v2);
 	}
 }

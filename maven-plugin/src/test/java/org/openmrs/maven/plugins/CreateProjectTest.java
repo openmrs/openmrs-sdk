@@ -1,0 +1,76 @@
+package org.openmrs.maven.plugins;
+
+import static org.hamcrest.Matchers.lessThan;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.contains;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import org.apache.maven.plugin.MojoExecutionException;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExpectedException;
+import org.openmrs.maven.plugins.utility.Wizard;
+
+public class CreateProjectTest {
+
+    @Rule
+    public final ExpectedException expectedException = ExpectedException.none();
+
+    private CreateProject createProject;
+    private Wizard wizard;
+
+    @Before
+    public void setup() {
+        createProject = new CreateProject();
+        wizard = mock(Wizard.class);
+        createProject.setWizard(wizard);
+    }
+
+    @Test
+    public void compareVersions_shouldReturnTrueWhenFirstVersionIsLower() {
+        assertThat(createProject.compareVersions("2.3.0", "2.4.0"), is(true));
+        assertThat(createProject.compareVersions("2.3.9", "2.4.0"), is(true));
+    }
+
+    @Test
+    public void compareVersions_shouldReturnFalseWhenFirstVersionIsLower() {
+        assertThat(createProject.compareVersions("2.4.0", "2.3.0"), is(false));
+    }
+
+    @Test
+    public void compareVersions_shouldReturnFalseWhenVersionsAreEqual() {
+        assertThat(createProject.compareVersions("2.4.0", "2.4.0"), is(false));
+        assertThat(createProject.compareVersions("1.0.0", "1.0.0"), is(false));
+    }
+
+    @Test
+    public void choosePlatformVersion_shouldRejectInvalidVersionAndRetry() throws MojoExecutionException {
+        when(wizard.promptForValueIfMissingWithDefault(anyString(), eq(null), anyString(), anyString()))
+            .thenReturn("2.4.0")
+            .thenReturn("2.5.0");
+
+        createProject.setProjectType("platform-module");
+        createProject.choosePlatformVersion();
+
+        verify(wizard, times(2)).promptForValueIfMissingWithDefault(anyString(), eq(null), anyString(), anyString());
+        verify(wizard, times(1)).showMessage(contains("Platform version must be at least 2.5.0"));
+    }
+
+    @Test
+    public void choosePlatformVersion_shouldAcceptValidVersion() throws MojoExecutionException {
+        when(wizard.promptForValueIfMissingWithDefault(anyString(), eq(null), anyString(), anyString()))
+            .thenReturn("2.5.0");
+
+        createProject.setProjectType("platform-module");
+        createProject.choosePlatformVersion();
+
+        verify(wizard, times(1)).promptForValueIfMissingWithDefault(anyString(), eq(null), anyString(), anyString());
+    }
+}
