@@ -106,6 +106,9 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-plugin-plugin</artifactId>
+                <configuration>
+                    <goalPrefix>openmrs-sdk-server-pre25</goalPrefix>
+                </configuration>
                 <executions>
                     <execution>
                         <id>default-descriptor</id>
