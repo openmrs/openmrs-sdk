@@ -4,6 +4,7 @@ FROM openmrs/openmrs-core:nightly-amazoncorretto-8
 
 COPY openmrs_core/openmrs.war /openmrs/distribution/openmrs_core/
 COPY openmrs-distro.properties /openmrs/distribution/
+RUN rm -rf /openmrs/distribution/openmrs_modules/*
 COPY openmrs_modules /openmrs/distribution/openmrs_modules
 COPY openmrs_owas /openmrs/distribution/openmrs_owas
 COPY openmrs_config /openmrs/distribution/openmrs_config
