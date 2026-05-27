@@ -1,13 +1,13 @@
 package org.openmrs.maven.plugins.utility;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.maven.it.util.ResourceExtractor;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.hamcrest.Matchers;
-import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
@@ -31,6 +31,9 @@ import static org.mockito.Mockito.verifyNoInteractions;
 @RunWith(MockitoJUnitRunner.class)
 public class SpaInstallerTest {
 
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+
     SpaInstaller spaInstaller;
 
     @Mock
@@ -49,18 +52,13 @@ public class SpaInstallerTest {
 
     @Before
     public void setup() throws Exception {
-        appDataDir = new File(ResourceExtractor.simpleExtractResources(getClass(), "/test-tmp"), "server1");
+        appDataDir = new File(temporaryFolder.newFolder(), "server1");
         appDataDir.mkdirs();
         spaInstaller = new SpaInstaller();
         spaInstaller.setModuleInstaller(moduleInstaller);
         spaInstaller.setNodeHelper(nodeHelper);
         spaInstaller.setContentHelper(contentHelper);
         spaInstaller.setWizard(wizard);
-    }
-
-    @After
-    public void tearDown() {
-        appDataDir.delete();
     }
 
     @Test
