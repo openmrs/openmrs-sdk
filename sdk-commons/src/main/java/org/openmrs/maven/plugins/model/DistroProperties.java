@@ -145,15 +145,10 @@ public class DistroProperties extends BaseSdkProperties {
         }
     }
 
-    public void resolveInternalPlaceholders() {
-        PropertiesUtils.resolveInternalPlaceholders(properties);
-    }
-
     // This is no longer needed or used, keeping it here until unit test dependencies and coverage is resolved
     // It has been moved to PropertyUtils and changed to a new implementation.  It is applied in DistibutionBuilder.
     @Deprecated
     public void resolvePlaceholders(Properties projectProperties) throws MojoExecutionException {
-        PropertiesUtils.resolveInternalPlaceholders(properties);
         PropertiesUtils.resolvePlaceholders(properties, projectProperties);
     }
 

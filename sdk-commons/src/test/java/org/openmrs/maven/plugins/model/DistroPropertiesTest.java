@@ -4,7 +4,6 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.hamcrest.FeatureMatcher;
 import org.hamcrest.Matcher;
 import org.junit.Test;
-import org.openmrs.maven.plugins.utility.PropertiesUtils;
 
 import java.util.List;
 import java.util.Map;
@@ -95,50 +94,6 @@ public class DistroPropertiesTest {
         assertThat(hivPackage.getGroupId(), equalTo("org.openmrs.new"));
         assertThat(hivPackage.getType(), equalTo("gzip"));
         assertThat(hivPackage.getNamespace(), equalTo(""));
-    }
-
-    @Test
-    public void resolveInternalPlaceholders_shouldResolvePropertyReferencingAnotherProperty() {
-        Properties properties = new Properties();
-        properties.setProperty("war.openmrs", "2.7.0");
-        properties.setProperty("docker.image.openmrsVersion", "${war.openmrs}");
-        DistroProperties distro = new DistroProperties(properties);
-        distro.resolveInternalPlaceholders();
-        assertThat(distro.getParam("docker.image.openmrsVersion"), is("2.7.0"));
-    }
-
-    @Test
-    public void resolveMavenPlaceholders_shouldLeaveDistroInternalRefsIntactForLaterResolution() throws MojoExecutionException {
-        // Simulates a distro.properties file that uses ${war.openmrs} (a distro property from the parent)
-        // alongside Maven properties.  Maven resolution must leave the distro ref intact so that
-        // resolveInternalPlaceholders can resolve it after the parent is merged.
-        Properties properties = new Properties();
-        properties.setProperty("name", "${project.name}");
-        properties.setProperty("docker.image.openmrsVersion", "${war.openmrs}");
-
-        Properties mavenProps = new Properties();
-        mavenProps.setProperty("project.name", "My Distro");
-        // war.openmrs is NOT a Maven property — it comes from the parent distro
-
-        PropertiesUtils.resolvePlaceholders(properties, mavenProps, false);
-
-        assertThat(properties.getProperty("name"), is("My Distro"));
-        assertThat(properties.getProperty("docker.image.openmrsVersion"), is("${war.openmrs}"));
-
-        // Now simulate the parent merge and internal resolution
-        properties.setProperty("war.openmrs", "2.7.0");
-        DistroProperties distro = new DistroProperties(properties);
-        distro.resolveInternalPlaceholders();
-        assertThat(distro.getParam("docker.image.openmrsVersion"), is("2.7.0"));
-    }
-
-    @Test
-    public void resolveInternalPlaceholders_shouldLeaveUnresolvableReferencesUnchanged() {
-        Properties properties = new Properties();
-        properties.setProperty("docker.image.openmrsVersion", "${missing.property}");
-        DistroProperties distro = new DistroProperties(properties);
-        distro.resolveInternalPlaceholders();
-        assertThat(distro.getParam("docker.image.openmrsVersion"), is("${missing.property}"));
     }
 
     @Test(expected = MojoExecutionException.class)

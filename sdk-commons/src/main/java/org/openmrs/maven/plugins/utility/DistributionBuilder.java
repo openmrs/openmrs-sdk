@@ -199,9 +199,7 @@ public class DistributionBuilder {
 			}
 		}
 
-		DistroProperties effectiveDistroProperties = new DistroProperties(effectiveProperties);
-		effectiveDistroProperties.resolveInternalPlaceholders();
-		distribution.setEffectiveProperties(effectiveDistroProperties);
+		distribution.setEffectiveProperties(new DistroProperties(effectiveProperties));
 		return distribution;
 	}
 }

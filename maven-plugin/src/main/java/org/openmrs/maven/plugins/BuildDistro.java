@@ -76,21 +76,18 @@ public class BuildDistro extends AbstractTask {
 	/**
 	 * The Docker image namespace (i.e. the registry organisation) to use in the generated Dockerfile.
 	 * Defaults to {@code openmrs}.
-	 * Supports interpolation of other distro properties, e.g. {@code docker.image.namespace=${my.org}}.
 	 */
 	static final String DOCKER_IMAGE_NAMESPACE = "docker.image.namespace";
 
 	/**
 	 * The Docker image repository to use in the generated Dockerfile.
 	 * Defaults to {@code openmrs-core}.
-	 * Supports interpolation of other distro properties, e.g. {@code docker.image.repository=${my.repo}}.
 	 */
 	static final String DOCKER_IMAGE_REPOSITORY = "docker.image.repository";
 
 	/**
 	 * The full Docker image tag to use in the generated Dockerfile, e.g. {@code 2.7.0-amazoncorretto-11}.
 	 * When set, {@link #DOCKER_IMAGE_OPENMRS_VERSION} and {@link #DOCKER_IMAGE_JAVA_VERSION} are ignored.
-	 * Supports interpolation of other distro properties, e.g. {@code docker.image.tag=${my.tag}}.
 	 */
 	static final String DOCKER_IMAGE_TAG = "docker.image.tag";
 
@@ -99,10 +96,15 @@ public class BuildDistro extends AbstractTask {
 	 * Ignored when {@link #DOCKER_IMAGE_TAG} is set.
 	 * For the default {@code openmrs/openmrs-core} image, SNAPSHOT versions are automatically
 	 * converted to the {@code major.minor.x} rolling-tag format (e.g. {@code 2.7.0-SNAPSHOT} → {@code 2.7.x}).
-	 * A common pattern is to pin the image to the same version as the platform war:
-	 * {@code docker.image.openmrsVersion=${war.openmrs}}.
+	 * Set to {@link #DOCKER_IMAGE_OPENMRS_VERSION_PLATFORM} to use the same version as {@code war.openmrs}.
 	 */
 	static final String DOCKER_IMAGE_OPENMRS_VERSION = "docker.image.openmrsVersion";
+
+	/**
+	 * Magic value for {@link #DOCKER_IMAGE_OPENMRS_VERSION} that resolves to the {@code war.openmrs} version
+	 * from the distro properties.
+	 */
+	static final String DOCKER_IMAGE_OPENMRS_VERSION_PLATFORM = "platform";
 
 	/**
 	 * Optional Java variant suffix appended to {@link #DOCKER_IMAGE_OPENMRS_VERSION} to form the full tag,
@@ -415,6 +417,9 @@ public class BuildDistro extends AbstractTask {
 			String dockerImageTag = distroProperties.getParam(DOCKER_IMAGE_TAG);
 			if (StringUtils.isBlank(dockerImageTag)) {
 				String openmrsVersion = distroProperties.getParam(DOCKER_IMAGE_OPENMRS_VERSION, null);
+				if (DOCKER_IMAGE_OPENMRS_VERSION_PLATFORM.equalsIgnoreCase(openmrsVersion)) {
+					openmrsVersion = distroProperties.getPlatformVersion();
+				}
 				if (StringUtils.isNotBlank(openmrsVersion)) {
 					// NOTE: This will always treat a SNAPSHOT version as the latest snapshot in the minor release line, never an older snapshot
 					if (namespace.equals("openmrs") && repository.equals("openmrs-core") && openmrsVersion.endsWith("-SNAPSHOT")) {

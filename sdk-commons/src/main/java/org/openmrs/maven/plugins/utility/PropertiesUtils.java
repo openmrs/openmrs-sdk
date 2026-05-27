@@ -147,32 +147,17 @@ public class PropertiesUtils {
 			Properties mavenProjectProperties = mavenProject.getProperties();
 			mavenProjectProperties.setProperty("project.parent.version", mavenProject.getVersion());
 			mavenProjectProperties.setProperty("project.version", mavenProject.getVersion());
-			// Unresolved placeholders are left intact — they may be distro-internal references
-			// that will be resolved later by resolveInternalPlaceholders after parent properties are merged
-			resolvePlaceholders(properties, mavenProjectProperties, false);
-		}
-	}
-
-	public static void resolveInternalPlaceholders(Properties properties) {
-		if (properties != null) {
-			StrSubstitutor substitutor = new StrSubstitutor(properties);
-			for (String property : properties.stringPropertyNames()) {
-				properties.put(property, substitutor.replace(properties.getProperty(property)));
-			}
+			resolvePlaceholders(properties, mavenProjectProperties);
 		}
 	}
 
 	public static void resolvePlaceholders(Properties properties, Properties replacementValues) throws MojoExecutionException {
-		resolvePlaceholders(properties, replacementValues, true);
-	}
-
-	public static void resolvePlaceholders(Properties properties, Properties replacementValues, boolean failOnUnresolved) throws MojoExecutionException {
 		if (properties != null && replacementValues != null) {
 			StrSubstitutor substitutor = new StrSubstitutor(replacementValues);
 			for (String property : properties.stringPropertyNames()) {
 				String originalValue = properties.getProperty(property);
 				String replacement = substitutor.replace(originalValue);
-				if (failOnUnresolved && replacement.contains("${") && replacement.contains("}")) {
+				if (replacement.contains("${") && replacement.contains("}")) {
 					throw new MojoExecutionException("Failed to resolve placeholders in property: " + property + " = " + originalValue);
 				}
 				properties.put(property, replacement);

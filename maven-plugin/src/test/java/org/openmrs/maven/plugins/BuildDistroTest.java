@@ -24,7 +24,6 @@ public class BuildDistroTest {
         props.setProperty("war.openmrs", platformVersion);
         props.putAll(dockerProps);
         DistroProperties distroProperties = new DistroProperties(props);
-        distroProperties.resolveInternalPlaceholders();
         BuildDistro buildDistro = new BuildDistro();
         buildDistro.bundled = bundled;
         File targetDir = temporaryFolder.newFolder();
@@ -112,38 +111,12 @@ public class BuildDistroTest {
     }
 
     @Test
-    public void copyDockerfile_withWarVersionPlaceholder_shouldResolveFromDistroProperties() throws Exception {
+    public void copyDockerfile_withPlatformMagicWord_shouldUseWarOpenmrsVersion() throws Exception {
         Properties props = new Properties();
-        props.setProperty(BuildDistro.DOCKER_IMAGE_OPENMRS_VERSION, "${war.openmrs}");
+        props.setProperty(BuildDistro.DOCKER_IMAGE_OPENMRS_VERSION, BuildDistro.DOCKER_IMAGE_OPENMRS_VERSION_PLATFORM);
         props.setProperty(BuildDistro.DOCKER_IMAGE_JAVA_VERSION, "amazoncorretto-11");
         List<String> lines = generateDockerfile("2.7.0", props, false);
         assertThat(lines, hasItem("FROM openmrs/openmrs-core:2.7.0-amazoncorretto-11"));
-    }
-
-    @Test
-    public void copyDockerfile_withPlaceholderReferencingParentProperty_shouldResolve() throws Exception {
-        // Simulate DistributionBuilder merging parent effective properties with child properties
-        // before resolveInternalPlaceholders runs — war.openmrs comes from the parent distro,
-        // docker.image.openmrsVersion=${war.openmrs} is declared in the child
-        Properties parentProps = new Properties();
-        parentProps.setProperty("war.openmrs", "2.7.0");
-
-        Properties childProps = new Properties();
-        childProps.setProperty(BuildDistro.DOCKER_IMAGE_OPENMRS_VERSION, "${war.openmrs}");
-
-        Properties effectiveProps = new Properties();
-        effectiveProps.putAll(parentProps);
-        effectiveProps.putAll(childProps);
-
-        DistroProperties distroProperties = new DistroProperties(effectiveProps);
-        distroProperties.resolveInternalPlaceholders();
-
-        BuildDistro buildDistro = new BuildDistro();
-        buildDistro.bundled = false;
-        File targetDir = temporaryFolder.newFolder();
-        buildDistro.copyDockerfile(targetDir, distroProperties);
-        List<String> lines = FileUtils.readLines(new File(targetDir, "Dockerfile"), "UTF-8");
-        assertThat(lines, hasItem("FROM openmrs/openmrs-core:2.7.0"));
     }
 
     @Test
