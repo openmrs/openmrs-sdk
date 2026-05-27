@@ -96,6 +96,25 @@ public class DistroPropertiesTest {
         assertThat(hivPackage.getNamespace(), equalTo(""));
     }
 
+    @Test
+    public void resolveInternalPlaceholders_shouldResolvePropertyReferencingAnotherProperty() {
+        Properties properties = new Properties();
+        properties.setProperty("war.openmrs", "2.7.0");
+        properties.setProperty("docker.image.openmrsVersion", "${war.openmrs}");
+        DistroProperties distro = new DistroProperties(properties);
+        distro.resolveInternalPlaceholders();
+        assertThat(distro.getParam("docker.image.openmrsVersion"), is("2.7.0"));
+    }
+
+    @Test
+    public void resolveInternalPlaceholders_shouldLeaveUnresolvableReferencesUnchanged() {
+        Properties properties = new Properties();
+        properties.setProperty("docker.image.openmrsVersion", "${missing.property}");
+        DistroProperties distro = new DistroProperties(properties);
+        distro.resolveInternalPlaceholders();
+        assertThat(distro.getParam("docker.image.openmrsVersion"), is("${missing.property}"));
+    }
+
     @Test(expected = MojoExecutionException.class)
     public void resolvePlaceholders_shouldFailIfNoPropertyForPlaceholderFound() throws MojoExecutionException {
         Properties properties = new Properties();

@@ -151,6 +151,15 @@ public class PropertiesUtils {
 		}
 	}
 
+	public static void resolveInternalPlaceholders(Properties properties) {
+		if (properties != null) {
+			StrSubstitutor substitutor = new StrSubstitutor(properties);
+			for (String property : properties.stringPropertyNames()) {
+				properties.put(property, substitutor.replace(properties.getProperty(property)));
+			}
+		}
+	}
+
 	public static void resolvePlaceholders(Properties properties, Properties replacementValues) throws MojoExecutionException {
 		if (properties != null && replacementValues != null) {
 			StrSubstitutor substitutor = new StrSubstitutor(replacementValues);
