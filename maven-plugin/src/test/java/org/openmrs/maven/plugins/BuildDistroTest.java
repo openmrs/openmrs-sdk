@@ -53,7 +53,7 @@ public class BuildDistroTest {
     @Test
     public void copyDockerfile_withDockerImageTag_shouldUseTagDirectly() throws Exception {
         Properties props = new Properties();
-        props.setProperty("docker.image.tag", "2.7.0-amazoncorretto-11");
+        props.setProperty(BuildDistro.DOCKER_IMAGE_TAG, "2.7.0-amazoncorretto-11");
         List<String> lines = generateDockerfile("2.7.0", props, false);
         assertThat(lines, hasItem("FROM openmrs/openmrs-core:2.7.0-amazoncorretto-11"));
     }
@@ -61,7 +61,7 @@ public class BuildDistroTest {
     @Test
     public void copyDockerfile_withOpenmrsVersion_shouldUseVersionAsTag() throws Exception {
         Properties props = new Properties();
-        props.setProperty("docker.image.openmrsVersion", "2.7.0");
+        props.setProperty(BuildDistro.DOCKER_IMAGE_OPENMRS_VERSION, "2.7.0");
         List<String> lines = generateDockerfile("2.7.0", props, false);
         assertThat(lines, hasItem("FROM openmrs/openmrs-core:2.7.0"));
     }
@@ -69,8 +69,8 @@ public class BuildDistroTest {
     @Test
     public void copyDockerfile_withOpenmrsVersionAndJavaVersion_shouldAppendJavaSuffix() throws Exception {
         Properties props = new Properties();
-        props.setProperty("docker.image.openmrsVersion", "2.7.0");
-        props.setProperty("docker.image.javaVersion", "amazoncorretto-11");
+        props.setProperty(BuildDistro.DOCKER_IMAGE_OPENMRS_VERSION, "2.7.0");
+        props.setProperty(BuildDistro.DOCKER_IMAGE_JAVA_VERSION, "amazoncorretto-11");
         List<String> lines = generateDockerfile("2.7.0", props, false);
         assertThat(lines, hasItem("FROM openmrs/openmrs-core:2.7.0-amazoncorretto-11"));
     }
@@ -78,7 +78,7 @@ public class BuildDistroTest {
     @Test
     public void copyDockerfile_withSnapshotVersion_shouldConvertToXSuffix() throws Exception {
         Properties props = new Properties();
-        props.setProperty("docker.image.openmrsVersion", "2.7.0-SNAPSHOT");
+        props.setProperty(BuildDistro.DOCKER_IMAGE_OPENMRS_VERSION, "2.7.0-SNAPSHOT");
         List<String> lines = generateDockerfile("2.7.0", props, false);
         assertThat(lines, hasItem("FROM openmrs/openmrs-core:2.7.x"));
     }
@@ -86,8 +86,8 @@ public class BuildDistroTest {
     @Test
     public void copyDockerfile_withSnapshotVersionAndCustomNamespace_shouldNotConvertSnapshot() throws Exception {
         Properties props = new Properties();
-        props.setProperty("docker.image.namespace", "myorg");
-        props.setProperty("docker.image.openmrsVersion", "2.7.0-SNAPSHOT");
+        props.setProperty(BuildDistro.DOCKER_IMAGE_NAMESPACE, "myorg");
+        props.setProperty(BuildDistro.DOCKER_IMAGE_OPENMRS_VERSION, "2.7.0-SNAPSHOT");
         List<String> lines = generateDockerfile("2.7.0", props, false);
         assertThat(lines, hasItem("FROM myorg/openmrs-core:2.7.0-SNAPSHOT"));
     }
@@ -95,9 +95,9 @@ public class BuildDistroTest {
     @Test
     public void copyDockerfile_withCustomNamespaceAndRepository_shouldUseCustomImage() throws Exception {
         Properties props = new Properties();
-        props.setProperty("docker.image.namespace", "myorg");
-        props.setProperty("docker.image.repository", "myimage");
-        props.setProperty("docker.image.tag", "latest");
+        props.setProperty(BuildDistro.DOCKER_IMAGE_NAMESPACE, "myorg");
+        props.setProperty(BuildDistro.DOCKER_IMAGE_REPOSITORY, "myimage");
+        props.setProperty(BuildDistro.DOCKER_IMAGE_TAG, "latest");
         List<String> lines = generateDockerfile("2.7.0", props, false);
         assertThat(lines, hasItem("FROM myorg/myimage:latest"));
     }
@@ -114,8 +114,8 @@ public class BuildDistroTest {
     @Test
     public void copyDockerfile_withWarVersionPlaceholder_shouldResolveFromDistroProperties() throws Exception {
         Properties props = new Properties();
-        props.setProperty("docker.image.openmrsVersion", "${war.openmrs}");
-        props.setProperty("docker.image.javaVersion", "amazoncorretto-11");
+        props.setProperty(BuildDistro.DOCKER_IMAGE_OPENMRS_VERSION, "${war.openmrs}");
+        props.setProperty(BuildDistro.DOCKER_IMAGE_JAVA_VERSION, "amazoncorretto-11");
         List<String> lines = generateDockerfile("2.7.0", props, false);
         assertThat(lines, hasItem("FROM openmrs/openmrs-core:2.7.0-amazoncorretto-11"));
     }

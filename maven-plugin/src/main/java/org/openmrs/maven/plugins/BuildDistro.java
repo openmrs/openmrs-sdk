@@ -73,6 +73,45 @@ public class BuildDistro extends AbstractTask {
 
 	private static final String DOCKER_COMPOSE_OVERRIDE_YML = "docker-compose.override.yml";
 
+	/**
+	 * The Docker image namespace (i.e. the registry organisation) to use in the generated Dockerfile.
+	 * Defaults to {@code openmrs}.
+	 * Supports interpolation of other distro properties, e.g. {@code docker.image.namespace=${my.org}}.
+	 */
+	static final String DOCKER_IMAGE_NAMESPACE = "docker.image.namespace";
+
+	/**
+	 * The Docker image repository to use in the generated Dockerfile.
+	 * Defaults to {@code openmrs-core}.
+	 * Supports interpolation of other distro properties, e.g. {@code docker.image.repository=${my.repo}}.
+	 */
+	static final String DOCKER_IMAGE_REPOSITORY = "docker.image.repository";
+
+	/**
+	 * The full Docker image tag to use in the generated Dockerfile, e.g. {@code 2.7.0-amazoncorretto-11}.
+	 * When set, {@link #DOCKER_IMAGE_OPENMRS_VERSION} and {@link #DOCKER_IMAGE_JAVA_VERSION} are ignored.
+	 * Supports interpolation of other distro properties, e.g. {@code docker.image.tag=${my.tag}}.
+	 */
+	static final String DOCKER_IMAGE_TAG = "docker.image.tag";
+
+	/**
+	 * The OpenMRS version component of the Docker image tag.
+	 * Ignored when {@link #DOCKER_IMAGE_TAG} is set.
+	 * For the default {@code openmrs/openmrs-core} image, SNAPSHOT versions are automatically
+	 * converted to the {@code major.minor.x} rolling-tag format (e.g. {@code 2.7.0-SNAPSHOT} → {@code 2.7.x}).
+	 * A common pattern is to pin the image to the same version as the platform war:
+	 * {@code docker.image.openmrsVersion=${war.openmrs}}.
+	 */
+	static final String DOCKER_IMAGE_OPENMRS_VERSION = "docker.image.openmrsVersion";
+
+	/**
+	 * Optional Java variant suffix appended to {@link #DOCKER_IMAGE_OPENMRS_VERSION} to form the full tag,
+	 * e.g. setting this to {@code amazoncorretto-11} with an OpenMRS version of {@code 2.7.0} produces the
+	 * tag {@code 2.7.0-amazoncorretto-11}.
+	 * Ignored when {@link #DOCKER_IMAGE_TAG} is set.
+	 */
+	static final String DOCKER_IMAGE_JAVA_VERSION = "docker.image.javaVersion";
+
 	private static final Logger log = LoggerFactory.getLogger(BuildDistro.class);
 
 	/**
@@ -371,11 +410,11 @@ public class BuildDistro extends AbstractTask {
 				copyBuildDistroResource("Dockerfile-jre7", new File(targetDirectory, "Dockerfile"));
 			}
 		} else {
-			String namespace = distroProperties.getParam("docker.image.namespace", "openmrs");
-			String repository = distroProperties.getParam("docker.image.repository", "openmrs-core");
-			String dockerImageTag = distroProperties.getParam("docker.image.tag");
+			String namespace = distroProperties.getParam(DOCKER_IMAGE_NAMESPACE, "openmrs");
+			String repository = distroProperties.getParam(DOCKER_IMAGE_REPOSITORY, "openmrs-core");
+			String dockerImageTag = distroProperties.getParam(DOCKER_IMAGE_TAG);
 			if (StringUtils.isBlank(dockerImageTag)) {
-				String openmrsVersion = distroProperties.getParam("docker.image.openmrsVersion", null);
+				String openmrsVersion = distroProperties.getParam(DOCKER_IMAGE_OPENMRS_VERSION, null);
 				if (StringUtils.isNotBlank(openmrsVersion)) {
 					// NOTE: This will always treat a SNAPSHOT version as the latest snapshot in the minor release line, never an older snapshot
 					if (namespace.equals("openmrs") && repository.equals("openmrs-core") && openmrsVersion.endsWith("-SNAPSHOT")) {
@@ -383,7 +422,7 @@ public class BuildDistro extends AbstractTask {
 						openmrsVersion = parts[0] + "." + parts[1] + ".x";
 					}
 					dockerImageTag = openmrsVersion;
-					String javaVersion = distroProperties.getParam("docker.image.javaVersion", null);
+					String javaVersion = distroProperties.getParam(DOCKER_IMAGE_JAVA_VERSION, null);
 					if (StringUtils.isNotBlank(javaVersion)) {
 						dockerImageTag += "-" + javaVersion;
 					}
