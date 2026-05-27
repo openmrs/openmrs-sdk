@@ -121,6 +121,32 @@ public class BuildDistroTest {
     }
 
     @Test
+    public void copyDockerfile_withPlaceholderReferencingParentProperty_shouldResolve() throws Exception {
+        // Simulate DistributionBuilder merging parent effective properties with child properties
+        // before resolveInternalPlaceholders runs — war.openmrs comes from the parent distro,
+        // docker.image.openmrsVersion=${war.openmrs} is declared in the child
+        Properties parentProps = new Properties();
+        parentProps.setProperty("war.openmrs", "2.7.0");
+
+        Properties childProps = new Properties();
+        childProps.setProperty(BuildDistro.DOCKER_IMAGE_OPENMRS_VERSION, "${war.openmrs}");
+
+        Properties effectiveProps = new Properties();
+        effectiveProps.putAll(parentProps);
+        effectiveProps.putAll(childProps);
+
+        DistroProperties distroProperties = new DistroProperties(effectiveProps);
+        distroProperties.resolveInternalPlaceholders();
+
+        BuildDistro buildDistro = new BuildDistro();
+        buildDistro.bundled = false;
+        File targetDir = temporaryFolder.newFolder();
+        buildDistro.copyDockerfile(targetDir, distroProperties);
+        List<String> lines = FileUtils.readLines(new File(targetDir, "Dockerfile"), "UTF-8");
+        assertThat(lines, hasItem("FROM openmrs/openmrs-core:2.7.0"));
+    }
+
+    @Test
     public void copyDockerfile_bundled_shouldOmitModuleCopyLines() throws Exception {
         List<String> lines = generateDockerfile("2.5.0", new Properties(), true);
         assertThat(lines, not(hasItem("COPY openmrs_modules /openmrs/distribution/openmrs_modules")));
