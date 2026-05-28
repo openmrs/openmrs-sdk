@@ -32,21 +32,49 @@ public class BuildDistroTest {
     }
 
     @Test
-    public void copyDockerfile_platform25_shouldUseJre11DefaultTag() throws Exception {
+    public void copyDockerfile_platform25_shouldUseVersionAsDefaultTag() throws Exception {
         List<String> lines = generateDockerfile("2.5.0", new Properties(), false);
-        assertThat(lines, hasItem("FROM openmrs/openmrs-core:nightly-amazoncorretto-11"));
+        assertThat(lines, hasItem("FROM openmrs/openmrs-core:2.5.x"));
     }
 
     @Test
-    public void copyDockerfile_platformBelow25_shouldUseJre8DefaultTag() throws Exception {
+    public void copyDockerfile_platform1x_shouldUseStaticJre7Dockerfile() throws Exception {
+        List<String> lines = generateDockerfile("1.12.0", new Properties(), false);
+        assertThat(lines, hasItem("FROM tomcat:7-jre7"));
+    }
+
+    @Test
+    public void copyDockerfile_platform1xBundled_shouldUseStaticJre7BundledDockerfile() throws Exception {
+        List<String> lines = generateDockerfile("1.12.0", new Properties(), true);
+        assertThat(lines, hasItem("FROM tomcat:7-jre7"));
+        assertThat(lines, not(hasItem("COPY modules /usr/local/tomcat/.OpenMRS/modules")));
+    }
+
+    @Test
+    public void copyDockerfile_platformBelow25_shouldUseStaticJre8Dockerfile() throws Exception {
         List<String> lines = generateDockerfile("2.4.0", new Properties(), false);
-        assertThat(lines, hasItem("FROM openmrs/openmrs-core:nightly-amazoncorretto-8"));
+        assertThat(lines, hasItem("FROM tomcat:8-jre8"));
     }
 
     @Test
-    public void copyDockerfile_platform3x_shouldUseJre11DefaultTag() throws Exception {
+    public void copyDockerfile_platformBelow25Bundled_shouldUseStaticJre8BundledDockerfile() throws Exception {
+        List<String> lines = generateDockerfile("2.4.0", new Properties(), true);
+        assertThat(lines, hasItem("FROM tomcat:8-jre8"));
+        assertThat(lines, not(hasItem("COPY modules /usr/local/tomcat/.OpenMRS/modules")));
+    }
+
+    @Test
+    public void copyDockerfile_platformBelow25WithCustomNamespace_shouldUseDynamicDockerfile() throws Exception {
+        Properties props = new Properties();
+        props.setProperty(BuildDistro.DOCKER_IMAGE_NAMESPACE, "myorg");
+        List<String> lines = generateDockerfile("2.4.0", props, false);
+        assertThat(lines, hasItem("FROM myorg/openmrs-core:2.4.x"));
+    }
+
+    @Test
+    public void copyDockerfile_platform3x_shouldUseVersionAsDefaultTag() throws Exception {
         List<String> lines = generateDockerfile("3.0.0", new Properties(), false);
-        assertThat(lines, hasItem("FROM openmrs/openmrs-core:nightly-amazoncorretto-11"));
+        assertThat(lines, hasItem("FROM openmrs/openmrs-core:3.0.x"));
     }
 
     @Test
@@ -75,11 +103,11 @@ public class BuildDistroTest {
     }
 
     @Test
-    public void copyDockerfile_withSnapshotVersion_shouldConvertToXSuffix() throws Exception {
+    public void copyDockerfile_withSnapshotVersion_shouldUseSnapshotVersionAsTag() throws Exception {
         Properties props = new Properties();
         props.setProperty(BuildDistro.DOCKER_IMAGE_OPENMRS_VERSION, "2.7.0-SNAPSHOT");
         List<String> lines = generateDockerfile("2.7.0", props, false);
-        assertThat(lines, hasItem("FROM openmrs/openmrs-core:2.7.x"));
+        assertThat(lines, hasItem("FROM openmrs/openmrs-core:2.7.0-SNAPSHOT"));
     }
 
     @Test
