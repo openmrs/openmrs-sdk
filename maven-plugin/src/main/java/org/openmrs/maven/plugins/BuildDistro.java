@@ -452,6 +452,16 @@ public class BuildDistro extends AbstractTask {
 				lines.add("COPY openmrs_config /openmrs/distribution/openmrs_config");
 				lines.add("COPY openmrs_spa /openmrs/distribution/openmrs_spa");
 			}
+			lines.add("");
+			for (String extraProperty : distroProperties.getPropertiesNames()) {
+				String propertyValue = distroProperties.getPropertyValue(extraProperty);
+				if (StringUtils.isBlank(propertyValue)) {
+					propertyValue = distroProperties.getPropertyDefault(extraProperty);
+				}
+				if (StringUtils.isNotBlank(propertyValue)) {
+					lines.add("ENV OMRS_EXTRA_" + extraProperty.replace(".", "_") + "=" + propertyValue);
+				}
+			}
 			try {
 				FileUtils.writeLines(dockerFile, "UTF-8", lines);
 			}
