@@ -338,6 +338,7 @@ public class BuildDistro extends AbstractTask {
 			frontendDir.mkdir();
 
 			File configDir = new File(web, SDKConstants.OPENMRS_SERVER_CONFIGURATION);
+			configDir.mkdir();
 			configurationInstaller.installToDirectory(configDir, distroProperties);
 			contentHelper.installBackendConfig(distroProperties, configDir);
 			spaInstaller.installFromDistroProperties(web, distroProperties, ignorePeerDependencies, overrideReuseNodeCache);
@@ -361,8 +362,8 @@ public class BuildDistro extends AbstractTask {
 
 		wizard.showMessage("Creating Docker Compose configuration...\n");
 		String distroVersion = adjustImageName(distroProperties.getVersion());
-		writeDockerCompose(targetDirectory, distroVersion);
-		writeReadme(targetDirectory, distroVersion);
+		writeDockerCompose(targetDirectory, distroVersion, platformVersion);
+		writeReadme(targetDirectory, distroVersion, platformVersion);
 		if(!isAbovePlatform2point0) {
 			copyBuildDistroResource("setenv.sh", new File(web, "setenv.sh"));
 			copyBuildDistroResource("startup.sh", new File(web, "startup.sh"));
@@ -471,17 +472,17 @@ public class BuildDistro extends AbstractTask {
 		}
 	}
 
-	private void writeDockerCompose(File targetDirectory, String version) throws MojoExecutionException {
-		writeTemplatedFile(targetDirectory, version, DOCKER_COMPOSE_PATH, DOCKER_COMPOSE_YML);
-		writeTemplatedFile(targetDirectory, version, DOCKER_COMPOSE_OVERRIDE_PATH, DOCKER_COMPOSE_OVERRIDE_YML);
-		writeTemplatedFile(targetDirectory, version, DOCKER_COMPOSE_PROD_PATH, DOCKER_COMPOSE_PROD_YML);
+	private void writeDockerCompose(File targetDirectory, String version, Version platformVersion) throws MojoExecutionException {
+		writeTemplatedFile(targetDirectory, version, platformVersion, DOCKER_COMPOSE_PATH, DOCKER_COMPOSE_YML);
+		writeTemplatedFile(targetDirectory, version, platformVersion, DOCKER_COMPOSE_OVERRIDE_PATH, DOCKER_COMPOSE_OVERRIDE_YML);
+		writeTemplatedFile(targetDirectory, version, platformVersion, DOCKER_COMPOSE_PROD_PATH, DOCKER_COMPOSE_PROD_YML);
 	}
 
-	private void writeReadme(File targetDirectory, String version) throws MojoExecutionException {
-		writeTemplatedFile(targetDirectory, version, README_PATH, "README.md");
+	private void writeReadme(File targetDirectory, String version, Version platformVersion) throws MojoExecutionException {
+		writeTemplatedFile(targetDirectory, version, platformVersion, README_PATH, "README.md");
 	}
 
-	private void writeTemplatedFile(File targetDirectory, String version, String path, String filename) throws MojoExecutionException {
+	private void writeTemplatedFile(File targetDirectory, String version, Version platformVersion, String path, String filename) throws MojoExecutionException {
 		URL composeUrl = getClass().getClassLoader().getResource(path);
 		if (composeUrl == null) {
 			throw new MojoExecutionException("Failed to find file '" + path + "' in classpath");
@@ -491,6 +492,9 @@ public class BuildDistro extends AbstractTask {
 			try (InputStream inputStream = composeUrl.openStream(); FileWriter composeWriter = new FileWriter(compose)) {
 				String content = IOUtils.toString(inputStream, StandardCharsets.UTF_8);
 				content = content.replaceAll("\\$\\{TAG:-nightly}", version);
+				if (platformVersion.getMajorVersion() < 2) {
+					content = content.replaceAll("\\$\\{DB_IMAGE:-mariadb:10.11.7}", "mysql:5.6");
+				}
 				composeWriter.write(content);
 			}
 			catch (IOException e) {
