@@ -286,6 +286,10 @@ public class BuildDistro extends AbstractTask {
 
 		DistroProperties distroProperties = distribution.getEffectiveProperties();
 
+		Version platformVersion = new Version(distroProperties.getPlatformVersion());
+		int majorVersion = platformVersion.getMajorVersion();
+		int minorVersion = platformVersion.getMinorVersion();
+
 		// First do content package validation
 		distroHelper.validateDistribution(distroProperties);
 
@@ -348,9 +352,7 @@ public class BuildDistro extends AbstractTask {
 			downloadOWAs(targetDirectory, distroProperties, owasDir);
 		}
 
-		Version platformVersion = new Version(distroProperties.getPlatformVersion());
-		boolean isAbovePlatform2point0 = platformVersion.getMajorVersion() >= 2;
-		if (isAbovePlatform2point0) {
+		if (majorVersion >= 2) {
 			File openmrsCoreDir = new File(web, "openmrs_core");
 			openmrsCoreDir.mkdir();
 			new File(web, "openmrs.war").renameTo(new File(openmrsCoreDir, "openmrs.war"));
@@ -364,7 +366,7 @@ public class BuildDistro extends AbstractTask {
 		String distroVersion = adjustImageName(distroProperties.getVersion());
 		writeDockerCompose(targetDirectory, distroVersion, platformVersion);
 		writeReadme(targetDirectory, distroVersion, platformVersion);
-		if(!isAbovePlatform2point0) {
+		if(!isPlatform2point5AndAbove(platformVersion)) {
 			copyBuildDistroResource("setenv.sh", new File(web, "setenv.sh"));
 			copyBuildDistroResource("startup.sh", new File(web, "startup.sh"));
 			copyBuildDistroResource("wait-for-it.sh", new File(web, "wait-for-it.sh"));
@@ -413,7 +415,7 @@ public class BuildDistro extends AbstractTask {
 		String repository = distroProperties.getParam(DOCKER_IMAGE_REPOSITORY, null);
 
 		// For versions < 2.5, use the built-in Dockerfiles if no specific image information is configured
-		boolean isLowerThan2point5 = majorVersion < 2 || (majorVersion == 2 && minorVersion < 5);
+		boolean isLowerThan2point5 = !isPlatform2point5AndAbove(platformVersion);
 		if (isLowerThan2point5 && namespace == null && repository == null) {
 			String dockerFile = "Dockerfile-jre" + (majorVersion == 1 ? "7" : "8") + (bundled ? "-bundled" : "");
 			copyBuildDistroResource(dockerFile, new File(targetDirectory, "Dockerfile"));
@@ -424,6 +426,9 @@ public class BuildDistro extends AbstractTask {
 			String dockerImageTag = distroProperties.getParam(DOCKER_IMAGE_TAG);
 			if (StringUtils.isBlank(dockerImageTag)) {
 				String defaultOpenmrsVersion = majorVersion + "." + minorVersion + ".x";
+				if (majorVersion == 2 && minorVersion == 5) {
+					defaultOpenmrsVersion += "-nightly";
+				}
 				dockerImageTag = distroProperties.getParam(DOCKER_IMAGE_OPENMRS_VERSION, defaultOpenmrsVersion);
 				if (DOCKER_IMAGE_OPENMRS_VERSION_PLATFORM.equals(dockerImageTag)) {
 					dockerImageTag = distroProperties.getPlatformVersion();
@@ -454,6 +459,15 @@ public class BuildDistro extends AbstractTask {
 				throw new MojoExecutionException("Failed to write Dockerfile: " + e.getMessage(), e);
 			}
 		}
+	}
+
+	private boolean isPlatform2point5AndAbove(Version platformVersion) {
+		return isAtOrAbovePlatformVersion(platformVersion, 2, 5);
+	}
+
+	private boolean isAtOrAbovePlatformVersion(Version platformVersion, int majorVersion, int minorVersion) {
+		return platformVersion.getMajorVersion() > majorVersion
+				|| (platformVersion.getMajorVersion() == majorVersion && platformVersion.getMinorVersion() >= minorVersion);
 	}
 
 	/**
@@ -491,10 +505,8 @@ public class BuildDistro extends AbstractTask {
 		if (!compose.exists()) {
 			try (InputStream inputStream = composeUrl.openStream(); FileWriter composeWriter = new FileWriter(compose)) {
 				String content = IOUtils.toString(inputStream, StandardCharsets.UTF_8);
-				content = content.replaceAll("\\$\\{TAG:-nightly}", version);
-				if (platformVersion.getMajorVersion() < 2) {
-					content = content.replaceAll("\\$\\{DB_IMAGE:-mariadb:10.11.7}", "mysql:5.6");
-				}
+				String dbImage = isPlatform2point5AndAbove(platformVersion) ? "mariadb:10.11.7" : "mysql:5.6";
+				content = content.replace("openmrs-db-image-name", dbImage);
 				composeWriter.write(content);
 			}
 			catch (IOException e) {

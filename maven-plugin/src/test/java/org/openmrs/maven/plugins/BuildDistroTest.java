@@ -32,9 +32,15 @@ public class BuildDistroTest {
     }
 
     @Test
-    public void copyDockerfile_platform25_shouldUseVersionAsDefaultTag() throws Exception {
+    public void copyDockerfile_platform25_shouldUseVersionPlusNightlyAsDefaultTag() throws Exception {
         List<String> lines = generateDockerfile("2.5.0", new Properties(), false);
-        assertThat(lines, hasItem("FROM openmrs/openmrs-core:2.5.x"));
+        assertThat(lines, hasItem("FROM openmrs/openmrs-core:2.5.x-nightly"));
+    }
+
+    @Test
+    public void copyDockerfile_platform65_shouldUseVersionAsDefaultTag() throws Exception {
+        List<String> lines = generateDockerfile("2.6.0", new Properties(), false);
+        assertThat(lines, hasItem("FROM openmrs/openmrs-core:2.6.x"));
     }
 
     @Test
