@@ -384,7 +384,6 @@ public class BuildDistro extends AbstractTask {
 		}
 
 		wizard.showMessage("Creating Docker Compose configuration...\n");
-		String distroVersion = adjustImageName(distroProperties.getVersion());
 		if (!skipDockerCompose) {
 			writeDockerCompose(targetDirectory);
 			// .env and log4j configs belong to the compose setup: .env supplies variable

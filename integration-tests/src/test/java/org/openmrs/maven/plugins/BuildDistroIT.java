@@ -292,4 +292,71 @@ public class BuildDistroIT extends AbstractSdkIT {
         assertNotNull(exception);
         assertLogContains("testpackage2 variable concept.weight.uuid must be assigned a value in the distro properties");
     }
+
+    @Test
+    public void buildDistro_shouldWriteMysqlImageToEnvForPre25Platform() throws Exception {
+        includeDistroPropertiesFile(DistroProperties.DISTRO_FILE_NAME);  // 1.11.5 — pre-2.5
+        addTaskParam("dir", "target");
+        addTaskParam("ignorePeerDependencies", "false");
+        executeTask("build-distro");
+        assertFilePresent("target", ".env");
+        assertFileContains("OMRS_DB_IMAGE=mysql:5.6", "target", ".env");
+        assertSuccess();
+    }
+
+    @Test
+    public void buildDistro_shouldNotWriteMysqlImageToEnvForPost25Platform() throws Exception {
+        addTaskParam("distro", "referenceapplication:3.0.0");
+        addTaskParam("dir", "referenceapplication");
+        addTaskParam("ignorePeerDependencies", "false");
+        executeTask("build-distro");
+        assertFilePresent("referenceapplication", ".env");
+        assertFileNotContains("OMRS_DB_IMAGE=mysql:5.6", "referenceapplication", ".env");
+        assertSuccess();
+    }
+
+    @Test
+    public void buildDistro_withSkipDockerCompose_shouldNotGenerateComposeOrEnvFiles() throws Exception {
+        includeDistroPropertiesFile(DistroProperties.DISTRO_FILE_NAME);
+        addTaskParam("dir", "target");
+        addTaskParam("ignorePeerDependencies", "false");
+        addTaskParam("skipDockerCompose", "true");
+        executeTask("build-distro");
+        assertFileNotPresent("target", "docker-compose.yml");
+        assertFileNotPresent("target", "docker-compose.override.yml");
+        assertFileNotPresent("target", "docker-compose.prod.yml");
+        assertFileNotPresent("target", ".env");
+        assertFilePresent("target", "web", "Dockerfile");    // Dockerfile still generated
+        assertFilePresent("target", "web", "startup.sh");    // startup.sh still generated
+        assertSuccess();
+    }
+
+    @Test
+    public void buildDistro_withSkipDockerfile_shouldNotGenerateDockerfileOrStartupScripts() throws Exception {
+        includeDistroPropertiesFile(DistroProperties.DISTRO_FILE_NAME);
+        addTaskParam("dir", "target");
+        addTaskParam("ignorePeerDependencies", "false");
+        addTaskParam("skipDockerfile", "true");
+        executeTask("build-distro");
+        assertFileNotPresent("target", "web", "Dockerfile");
+        assertFileNotPresent("target", "web", "startup.sh");
+        assertFileNotPresent("target", "web", "setenv.sh");
+        assertFileNotPresent("target", "web", "wait-for-it.sh");
+        assertFilePresent("target", "docker-compose.yml");   // compose still generated
+        assertFilePresent("target", ".env");                 // .env still generated
+        assertSuccess();
+    }
+
+    @Test
+    public void buildDistro_withSkipReadme_shouldNotGenerateReadme() throws Exception {
+        includeDistroPropertiesFile(DistroProperties.DISTRO_FILE_NAME);
+        addTaskParam("dir", "target");
+        addTaskParam("ignorePeerDependencies", "false");
+        addTaskParam("skipReadme", "true");
+        executeTask("build-distro");
+        assertFileNotPresent("target", "README.md");
+        assertFilePresent("target", "docker-compose.yml");   // compose still generated
+        assertFilePresent("target", "web", "Dockerfile");    // Dockerfile still generated
+        assertSuccess();
+    }
 }
