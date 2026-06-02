@@ -170,9 +170,8 @@ public class BuildDistroE2EIT extends AbstractSdkIT {
 			assertFilePresent(COMPOSE_OUT_DIR, "web", "startup.sh");
 		}
 
-		// Step 3: start the stack and wait for the login-page footer to confirm the
-		// correct version is running.  DockerComposeHelper logs the full response body
-		// when the check passes so the result is easy to inspect.
+		// Step 3: start the stack and wait for the REST systeminformation endpoint to
+		// return Content-Type: application/json, confirming OpenMRS is fully initialised.
 		long dockerStart = System.currentTimeMillis();
 		dockerHelper = new DockerComposeHelper(
 				getTestFile(COMPOSE_OUT_DIR),
