@@ -160,6 +160,9 @@ public class BuildDistro extends AbstractTask {
 	@Parameter(defaultValue = "false", property = "reset")
 	private boolean reset;
 
+	@Parameter(property = "appShellVersion")
+	private String appShellVersion;
+
 	/**
 	 * Skip generating the default docker-compose.yml, docker-compose.override.yml, and
 	 * docker-compose.prod.yml files.  Use this when you want to supply your own compose
