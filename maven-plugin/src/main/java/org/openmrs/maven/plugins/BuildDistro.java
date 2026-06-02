@@ -393,8 +393,8 @@ public class BuildDistro extends AbstractTask {
 			if (!isPlatform2point5AndAbove(platformVersion)) {
 				appendToEnvFile(new File(targetDirectory, ".env"), "OMRS_DB_IMAGE", "mysql:5.6");
 			}
-			copyBuildDistroResource("log4j.properties", new File(web, "log4j.properties"));
-			copyBuildDistroResource("log4j2.xml", new File(web, "log4j2.xml"));
+			copyBuildDistroResource("log4j.properties", new File(targetDirectory, "log4j.properties"));
+			copyBuildDistroResource("log4j2.xml", new File(targetDirectory, "log4j2.xml"));
 		}
 		distroProperties.saveTo(web);
 		writeReadme(targetDirectory, !skipDockerfile, !skipDockerCompose);

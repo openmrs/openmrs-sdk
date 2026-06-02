@@ -34,7 +34,7 @@ Load the override file to mount a custom log4j configuration at runtime:
 ```
 docker compose -f docker-compose.yml -f docker-compose.override.yml up --build
 ```
-Edit `web/log4j.properties` (pre-2.5 platforms) or `web/log4j2.xml` (2.5+)
+Edit `log4j.properties` (pre-2.5 platforms) or `log4j2.xml` (2.5+)
 and restart to change log levels without rebuilding the image.
 
 ### Customising the initial database
