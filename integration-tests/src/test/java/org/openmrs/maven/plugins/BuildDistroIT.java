@@ -300,7 +300,7 @@ public class BuildDistroIT extends AbstractSdkIT {
         addTaskParam("ignorePeerDependencies", "false");
         executeTask("build-distro");
         assertFilePresent("target", ".env");
-        assertFileContains("OMRS_DB_IMAGE=mysql:5.6", "target", ".env");
+        assertFileContains("\nOMRS_DB_IMAGE=mysql:5.6", "target", ".env");
         assertSuccess();
     }
 
@@ -311,7 +311,7 @@ public class BuildDistroIT extends AbstractSdkIT {
         addTaskParam("ignorePeerDependencies", "false");
         executeTask("build-distro");
         assertFilePresent("referenceapplication", ".env");
-        assertFileNotContains("OMRS_DB_IMAGE=mysql:5.6", "referenceapplication", ".env");
+        assertFileNotContains("\nOMRS_DB_IMAGE=mysql:5.6", "referenceapplication", ".env");
         assertSuccess();
     }
 
