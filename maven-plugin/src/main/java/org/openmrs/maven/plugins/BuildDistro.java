@@ -37,6 +37,8 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import org.codehaus.plexus.interpolation.PropertiesBasedValueSource;
+import org.codehaus.plexus.interpolation.StringSearchInterpolator;
 import static java.nio.file.StandardOpenOption.APPEND;
 import java.util.ArrayList;
 import java.util.List;
@@ -162,6 +164,24 @@ public class BuildDistro extends AbstractTask {
 
 	@Parameter(property = "appShellVersion")
 	private String appShellVersion;
+
+	/**
+	 * Path to a custom Dockerfile template to use instead of the auto-selected one.
+	 * The file content is filtered with Maven property variable replacement before being
+	 * written to {@code web/Dockerfile}.
+	 */
+	@Parameter(property = "docker.dockerfile")
+	private String dockerDockerfile;
+
+	/**
+	 * Comma-separated paths to custom docker-compose template files.  When set, none of
+	 * the default compose files (docker-compose.yml, docker-compose.override.yml,
+	 * docker-compose.prod.yml) are generated — only these files are written.  Each file
+	 * is filtered with Maven property variable replacement and written to the output
+	 * directory using the source file's own name.
+	 */
+	@Parameter(property = "docker.compose.files")
+	private String dockerComposeFiles;
 
 	@Override
 	public void executeTask() throws MojoExecutionException, MojoFailureException {
@@ -364,8 +384,14 @@ public class BuildDistro extends AbstractTask {
 
 		wizard.showMessage("Creating Docker Compose configuration...\n");
 		String distroVersion = adjustImageName(distroProperties.getVersion());
-		writeDockerCompose(targetDirectory);
-		writeReadme(targetDirectory);
+		if (StringUtils.isNotBlank(dockerComposeFiles)) {
+			for (String path : dockerComposeFiles.split(",")) {
+				writeExternalTemplate(path.trim(), targetDirectory);
+			}
+		} else {
+			writeDockerCompose(targetDirectory);
+			writeReadme(targetDirectory);
+		}
 		if(!isPlatform2point5AndAbove(platformVersion)) {
 			copyBuildDistroResource("setenv.sh", new File(web, "setenv.sh"));
 			copyBuildDistroResource("startup.sh", new File(web, "startup.sh"));
@@ -382,7 +408,11 @@ public class BuildDistro extends AbstractTask {
 		if (!isPlatform2point5AndAbove(platformVersion)) {
 			appendToEnvFile(new File(targetDirectory, ".env"), "OMRS_DB_IMAGE", "mysql:5.6");
 		}
-		copyDockerfile(web, distroProperties);
+		if (StringUtils.isNotBlank(dockerDockerfile)) {
+			writeExternalTemplate(dockerDockerfile, web, "Dockerfile");
+		} else {
+			copyDockerfile(web, distroProperties);
+		}
 		distroProperties.saveTo(web);
 
 		dbDumpStream = getSqlDumpStream(StringUtils.isNotBlank(dbSql) ? dbSql : distroProperties.getSqlScriptPath(),
@@ -565,6 +595,33 @@ public class BuildDistro extends AbstractTask {
 		catch (Exception e) {
 			log.warn("Could not check Docker Hub for {}/{}:{} — {}", namespace, repository, tag, e.getMessage());
 			return false;
+		}
+	}
+
+	/**
+	 * Reads an external template file, filters {@code ${property}} placeholders using
+	 * Maven user and project properties, and writes the result to {@code targetDir} using
+	 * the source file's own name.
+	 */
+	private void writeExternalTemplate(String templatePath, File targetDir) throws MojoExecutionException {
+		writeExternalTemplate(templatePath, targetDir, new File(templatePath).getName());
+	}
+
+	/** Reads an external template, filters Maven properties, and writes to {@code targetDir/outputName}. */
+	private void writeExternalTemplate(String templatePath, File targetDir, String outputName) throws MojoExecutionException {
+		File source = new File(templatePath);
+		if (!source.exists()) {
+			throw new MojoExecutionException("Template file not found: " + source.getAbsolutePath());
+		}
+		try {
+			String content = new String(Files.readAllBytes(source.toPath()), StandardCharsets.UTF_8);
+			StringSearchInterpolator interpolator = new StringSearchInterpolator();
+			interpolator.addValueSource(new PropertiesBasedValueSource(mavenSession.getUserProperties()));
+			interpolator.addValueSource(new PropertiesBasedValueSource(mavenProject.getProperties()));
+			Files.write(new File(targetDir, outputName).toPath(), interpolator.interpolate(content).getBytes(StandardCharsets.UTF_8));
+		}
+		catch (Exception e) {
+			throw new MojoExecutionException("Failed to write template " + templatePath + ": " + e.getMessage(), e);
 		}
 	}
 
