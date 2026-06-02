@@ -201,9 +201,15 @@ public class BuildDistroE2EIT extends AbstractSdkIT {
 			catch (Exception e) {
 				log.warn("Could not open browser automatically: {}", e.getMessage());
 			}
+			// System.console() is reliably connected to the terminal when Maven forks a JVM;
+			// System.in may have buffered content or be closed in some Maven configurations.
 			try {
-				//noinspection ResultOfMethodCallIgnored
-				System.in.read();
+				java.io.Console console = System.console();
+				if (console != null) {
+					console.readLine();
+				} else {
+					new java.io.BufferedReader(new java.io.InputStreamReader(System.in)).readLine();
+				}
 			}
 			catch (Exception ignored) {}
 		}
