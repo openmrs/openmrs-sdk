@@ -168,21 +168,21 @@ public class BuildDistro extends AbstractTask {
 	 * docker-compose.prod.yml files.  Use this when you want to supply your own compose
 	 * files, e.g. via the maven-resources-plugin, rather than using the SDK defaults.
 	 */
-	@Parameter(defaultValue = "false", property = "skipDefaultDockerCompose")
-	private boolean skipDefaultDockerCompose;
+	@Parameter(defaultValue = "false", property = "skipDockerCompose")
+	private boolean skipDockerCompose;
 
 	/**
 	 * Skip generating the default Dockerfile.  Use this when you want to supply your own
 	 * Dockerfile, e.g. via the maven-resources-plugin, rather than using the SDK defaults.
 	 */
-	@Parameter(defaultValue = "false", property = "skipDefaultDockerfile")
-	private boolean skipDefaultDockerfile;
+	@Parameter(defaultValue = "false", property = "skipDockerfile")
+	private boolean skipDockerfile;
 
 	/**
 	 * Skip generating the default README.md.
 	 */
-	@Parameter(defaultValue = "false", property = "skipDefaultReadme")
-	private boolean skipDefaultReadme;
+	@Parameter(defaultValue = "false", property = "skipReadme")
+	private boolean skipReadme;
 
 	@Override
 	public void executeTask() throws MojoExecutionException, MojoFailureException {
@@ -385,10 +385,10 @@ public class BuildDistro extends AbstractTask {
 
 		wizard.showMessage("Creating Docker Compose configuration...\n");
 		String distroVersion = adjustImageName(distroProperties.getVersion());
-		if (!skipDefaultDockerCompose) {
+		if (!skipDockerCompose) {
 			writeDockerCompose(targetDirectory);
 		}
-		if (!skipDefaultReadme) {
+		if (!skipReadme) {
 			writeReadme(targetDirectory);
 		}
 		if(!isPlatform2point5AndAbove(platformVersion)) {
@@ -407,7 +407,7 @@ public class BuildDistro extends AbstractTask {
 		if (!isPlatform2point5AndAbove(platformVersion)) {
 			appendToEnvFile(new File(targetDirectory, ".env"), "OMRS_DB_IMAGE", "mysql:5.6");
 		}
-		if (!skipDefaultDockerfile) {
+		if (!skipDockerfile) {
 			copyDockerfile(web, distroProperties);
 		}
 		distroProperties.saveTo(web);
