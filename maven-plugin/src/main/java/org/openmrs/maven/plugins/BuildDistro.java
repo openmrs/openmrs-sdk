@@ -163,6 +163,27 @@ public class BuildDistro extends AbstractTask {
 	@Parameter(property = "appShellVersion")
 	private String appShellVersion;
 
+	/**
+	 * Skip generating the default docker-compose.yml, docker-compose.override.yml, and
+	 * docker-compose.prod.yml files.  Use this when you want to supply your own compose
+	 * files, e.g. via the maven-resources-plugin, rather than using the SDK defaults.
+	 */
+	@Parameter(defaultValue = "false", property = "skipDefaultDockerCompose")
+	private boolean skipDefaultDockerCompose;
+
+	/**
+	 * Skip generating the default Dockerfile.  Use this when you want to supply your own
+	 * Dockerfile, e.g. via the maven-resources-plugin, rather than using the SDK defaults.
+	 */
+	@Parameter(defaultValue = "false", property = "skipDefaultDockerfile")
+	private boolean skipDefaultDockerfile;
+
+	/**
+	 * Skip generating the default README.md.
+	 */
+	@Parameter(defaultValue = "false", property = "skipDefaultReadme")
+	private boolean skipDefaultReadme;
+
 	@Override
 	public void executeTask() throws MojoExecutionException, MojoFailureException {
 		File buildDirectory = getBuildDirectory();
@@ -364,8 +385,12 @@ public class BuildDistro extends AbstractTask {
 
 		wizard.showMessage("Creating Docker Compose configuration...\n");
 		String distroVersion = adjustImageName(distroProperties.getVersion());
-		writeDockerCompose(targetDirectory);
-		writeReadme(targetDirectory);
+		if (!skipDefaultDockerCompose) {
+			writeDockerCompose(targetDirectory);
+		}
+		if (!skipDefaultReadme) {
+			writeReadme(targetDirectory);
+		}
 		if(!isPlatform2point5AndAbove(platformVersion)) {
 			copyBuildDistroResource("setenv.sh", new File(web, "setenv.sh"));
 			copyBuildDistroResource("startup.sh", new File(web, "startup.sh"));
@@ -382,7 +407,9 @@ public class BuildDistro extends AbstractTask {
 		if (!isPlatform2point5AndAbove(platformVersion)) {
 			appendToEnvFile(new File(targetDirectory, ".env"), "OMRS_DB_IMAGE", "mysql:5.6");
 		}
-		copyDockerfile(web, distroProperties);
+		if (!skipDefaultDockerfile) {
+			copyDockerfile(web, distroProperties);
+		}
 		distroProperties.saveTo(web);
 
 		dbDumpStream = getSqlDumpStream(StringUtils.isNotBlank(dbSql) ? dbSql : distroProperties.getSqlScriptPath(),
