@@ -348,15 +348,43 @@ public class BuildDistroIT extends AbstractSdkIT {
     }
 
     @Test
-    public void buildDistro_withSkipReadme_shouldNotGenerateReadme() throws Exception {
+    public void buildDistro_shouldAlwaysGenerateReadme() throws Exception {
         includeDistroPropertiesFile(DistroProperties.DISTRO_FILE_NAME);
         addTaskParam("dir", "target");
         addTaskParam("ignorePeerDependencies", "false");
-        addTaskParam("skipReadme", "true");
         executeTask("build-distro");
-        assertFileNotPresent("target", "README.md");
-        assertFilePresent("target", "docker-compose.yml");   // compose still generated
-        assertFilePresent("target", "web", "Dockerfile");    // Dockerfile still generated
+        assertFilePresent("target", "README.md");
+        assertFileContains("openmrs_core", "target", "README.md");           // baseline always present
+        assertFileContains("Docker Image", "target", "README.md");           // Dockerfile section
+        assertFileContains("Docker Compose", "target", "README.md");         // compose section
+        assertSuccess();
+    }
+
+    @Test
+    public void buildDistro_withSkipDockerfile_readmeShouldOmitDockerfileSection() throws Exception {
+        includeDistroPropertiesFile(DistroProperties.DISTRO_FILE_NAME);
+        addTaskParam("dir", "target");
+        addTaskParam("ignorePeerDependencies", "false");
+        addTaskParam("skipDockerfile", "true");
+        executeTask("build-distro");
+        assertFilePresent("target", "README.md");
+        assertFileContains("openmrs_core", "target", "README.md");
+        assertFileNotContains("Docker Image", "target", "README.md");
+        assertFileContains("Docker Compose", "target", "README.md");
+        assertSuccess();
+    }
+
+    @Test
+    public void buildDistro_withSkipDockerCompose_readmeShouldOmitComposeSection() throws Exception {
+        includeDistroPropertiesFile(DistroProperties.DISTRO_FILE_NAME);
+        addTaskParam("dir", "target");
+        addTaskParam("ignorePeerDependencies", "false");
+        addTaskParam("skipDockerCompose", "true");
+        executeTask("build-distro");
+        assertFilePresent("target", "README.md");
+        assertFileContains("openmrs_core", "target", "README.md");
+        assertFileContains("Docker Image", "target", "README.md");
+        assertFileNotContains("Docker Compose", "target", "README.md");
         assertSuccess();
     }
 }

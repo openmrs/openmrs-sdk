@@ -62,7 +62,6 @@ public class BuildDistro extends AbstractTask {
 
 	private static final String DOCKER_COMPOSE_PROD_PATH = "build-distro/docker-compose.prod.yml";
 
-	private static final String README_PATH = "build-distro/README.md";
 
 	private static final String DISTRIBUTION_VERSION_PROMPT = "You can build the following versions of distribution";
 
@@ -177,12 +176,6 @@ public class BuildDistro extends AbstractTask {
 	 */
 	@Parameter(defaultValue = "false", property = "skipDockerfile")
 	private boolean skipDockerfile;
-
-	/**
-	 * Skip generating the default README.md.
-	 */
-	@Parameter(defaultValue = "false", property = "skipReadme")
-	private boolean skipReadme;
 
 	@Override
 	public void executeTask() throws MojoExecutionException, MojoFailureException {
@@ -383,21 +376,19 @@ public class BuildDistro extends AbstractTask {
 			new File(web, "owa").renameTo(new File(web, "openmrs_owas"));
 		}
 
+		// Unless skipped, copy Dockerfile and resources used to build the Docker image
 		if (!skipDockerfile) {
-			// startup.sh, setenv.sh, and wait-for-it.sh are COPY'd into the image by the
-			// Dockerfile, so they belong to the Dockerfile group.
 			if (!isPlatform2point5AndAbove(platformVersion)) {
 				copyBuildDistroResource("setenv.sh", new File(web, "setenv.sh"));
 				copyBuildDistroResource("startup.sh", new File(web, "startup.sh"));
 				copyBuildDistroResource("wait-for-it.sh", new File(web, "wait-for-it.sh"));
 			}
 			copyDockerfile(web, distroProperties);
+			copyBuildDistroResource("README.md", new File(web, "README.md"));
 		}
 		if (!skipDockerCompose) {
 			wizard.showMessage("Creating Docker Compose configuration...\n");
 			writeDockerCompose(targetDirectory);
-			// .env and log4j configs belong to the compose setup: .env supplies variable
-			// substitution for the compose files; the log4j files are mounted by the override.
 			copyBuildDistroResource(".env", new File(targetDirectory, ".env"));
 			if (!isPlatform2point5AndAbove(platformVersion)) {
 				appendToEnvFile(new File(targetDirectory, ".env"), "OMRS_DB_IMAGE", "mysql:5.6");
@@ -405,10 +396,8 @@ public class BuildDistro extends AbstractTask {
 			copyBuildDistroResource("log4j.properties", new File(web, "log4j.properties"));
 			copyBuildDistroResource("log4j2.xml", new File(web, "log4j2.xml"));
 		}
-		if (!skipReadme) {
-			writeReadme(targetDirectory);
-		}
 		distroProperties.saveTo(web);
+		writeReadme(targetDirectory, !skipDockerfile, !skipDockerCompose);
 
 		dbDumpStream = getSqlDumpStream(StringUtils.isNotBlank(dbSql) ? dbSql : distroProperties.getSqlScriptPath(),
 				targetDirectory, distribution.getArtifact());
@@ -633,8 +622,91 @@ public class BuildDistro extends AbstractTask {
 		writeTemplatedFile(targetDirectory, DOCKER_COMPOSE_PROD_PATH, DOCKER_COMPOSE_PROD_YML);
 	}
 
-	private void writeReadme(File targetDirectory) throws MojoExecutionException {
-		writeTemplatedFile(targetDirectory, README_PATH, "README.md");
+	/**
+	 * Writes README.md to the target directory.  Always includes a baseline section describing
+	 * the distribution artifact layout.  Additional sections are included only when the
+	 * corresponding files were generated so the README reflects what is actually present.
+	 */
+	private void writeReadme(File targetDirectory, boolean includeDockerfile, boolean includeDockerCompose) throws MojoExecutionException {
+		File readme = new File(targetDirectory, "README.md");
+		if (readme.exists()) {
+			return;
+		}
+		StringBuilder sb = new StringBuilder();
+
+		sb.append("# Distribution\n\n");
+		sb.append("This directory contains the OpenMRS distribution artifacts and Docker configuration.\n\n");
+		sb.append("## Artifacts\n\n");
+		sb.append("| Path | Contents |\n");
+		sb.append("|---|---|\n");
+		sb.append("| `web/openmrs_core/openmrs.war` | OpenMRS core WAR |\n");
+		sb.append("| `web/openmrs_modules/` | OpenMRS modules (`.omod` files) |\n");
+		sb.append("| `web/openmrs_owas/` | Open Web Apps |\n");
+		sb.append("| `web/openmrs_spa/` | Single Page Application frontend |\n");
+		sb.append("| `web/openmrs_config/` | Initializer configuration files |\n");
+		sb.append("| `web/openmrs-distro.properties` | Full list of components and versions |\n\n");
+		sb.append("To regenerate this distribution:\n");
+		sb.append("```\n");
+		sb.append("mvn openmrs-sdk:build-distro -Ddistro=openmrs-distro.properties\n");
+		sb.append("```\n");
+		sb.append("Add `-Dreset` to overwrite any files you have customised.\n");
+
+		if (includeDockerfile) {
+			sb.append("\n## Docker Image\n\n");
+			sb.append("The `web/` directory is the Docker build context.  Build the image locally:\n");
+			sb.append("```\n");
+			sb.append("docker build -t <username>/openmrs-<distro>:latest web/\n");
+			sb.append("```\n");
+			sb.append("Push to Docker Hub for use in test environments or production:\n");
+			sb.append("```\n");
+			sb.append("docker push <username>/openmrs-<distro>:latest\n");
+			sb.append("```\n");
+		}
+
+		if (includeDockerCompose) {
+			sb.append("\n## Docker Compose\n\n");
+			sb.append("### Development\n\n");
+			sb.append("Start all containers (builds the image on first run):\n");
+			sb.append("```\n");
+			sb.append("docker compose up\n");
+			sb.append("```\n");
+			sb.append("Application is accessible at http://localhost:8080/openmrs.\n\n");
+			sb.append("Rebuild after changing modules, OWAs, or WAR:\n");
+			sb.append("```\n");
+			sb.append("docker compose up --build\n");
+			sb.append("```\n");
+			sb.append("Stop and remove containers and volumes:\n");
+			sb.append("```\n");
+			sb.append("docker compose down -v\n");
+			sb.append("```\n");
+			sb.append("The debug port 1044 and MySQL port 3306 are exposed in development mode.\n");
+			sb.append("Customise them in the `.env` file.\n\n");
+			sb.append("### Production\n\n");
+			sb.append("```\n");
+			sb.append("docker compose -f docker-compose.yml -f docker-compose.prod.yml up\n");
+			sb.append("```\n");
+			sb.append("Application is accessible at http://localhost/openmrs (port 80).\n");
+			sb.append("No debug or database ports are exposed in production mode.\n\n");
+			sb.append("### Debug logging\n\n");
+			sb.append("Load the override file to mount a custom log4j configuration at runtime:\n");
+			sb.append("```\n");
+			sb.append("docker compose -f docker-compose.yml -f docker-compose.override.yml up --build\n");
+			sb.append("```\n");
+			sb.append("Edit `web/log4j.properties` (pre-2.5 platforms) or `web/log4j2.xml` (2.5+) ");
+			sb.append("and restart to change log levels without rebuilding the image.\n\n");
+			sb.append("### Customising the initial database\n\n");
+			sb.append("Pass a SQL dump to seed the database on first run:\n");
+			sb.append("```\n");
+			sb.append("mvn openmrs-sdk:build-distro -DdbSql=initial_db.sql\n");
+			sb.append("```\n");
+		}
+
+		try {
+			Files.write(readme.toPath(), sb.toString().getBytes(StandardCharsets.UTF_8));
+		}
+		catch (IOException e) {
+			throw new MojoExecutionException("Failed to write README.md: " + e.getMessage(), e);
+		}
 	}
 
 	private void writeTemplatedFile(File targetDirectory, String path, String filename) throws MojoExecutionException {
