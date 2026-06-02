@@ -72,10 +72,13 @@ every supported OpenMRS platform version line (1.9.x through 2.8.x) by:
 
 1. Running `build-distro` to generate a `Dockerfile` and `docker-compose.yml` for that version
 2. Starting the generated docker compose stack
-3. Polling the running container until the login-page footer confirms the correct version is running
+3. Polling `GET /openmrs/ws/rest/v1/systeminformation` (authenticated) until it returns JSON,
+   confirming OpenMRS is fully initialised and webservices.rest has started
+4. Asserting that the `addresshierarchy` module reports `started:true` via
+   `GET /openmrs/ws/rest/v1/module/addresshierarchy`
 
 These tests require a running Docker daemon and are intentionally excluded from the standard
-`integration-tests` profile because each test can take up to 20 minutes (artifact download +
+`integration-tests` profile because each test can take several minutes (artifact download +
 Docker image build + OpenMRS database initialisation).
 
 **Run the full suite:**
@@ -88,8 +91,28 @@ mvn verify -Pdocker-e2e-tests -pl integration-tests        # run all 13 version 
 **Run a single version:**
 
 ```bash
-mvn verify -Pdocker-e2e-tests -pl integration-tests \
-  -Dit.test="BuildDistroE2EIT#platform_2_6_x"
+mvn verify -Pdocker-e2e-tests -pl integration-tests -Dit.test="BuildDistroE2EIT#platform_2_6_x"
+```
+
+**Browse the running instance while the test is paused:**
+
+Adding `-Dbrowser` opens the running container's URL in your default browser and pauses the
+test until you press Enter, so you can navigate around before the container is torn down:
+
+```bash
+mvn verify -Pdocker-e2e-tests -pl integration-tests -Dit.test="BuildDistroE2EIT#platform_2_6_x" -Dbrowser
+```
+
+**Enable debug logging:**
+
+Adding `-DdockerDebug` loads `docker-compose.override.yml` alongside the generated
+`docker-compose.yml`.  The override mounts `web/log4j.properties` (pre-2.5, log4j 1.x) and
+`web/log4j2.xml` (2.5+, log4j 2.x) into the container via `JAVA_TOOL_OPTIONS`, overriding the
+logging configuration bundled inside the WAR.  Edit the relevant file and restart to change
+log levels without rebuilding the image:
+
+```bash
+mvn verify -Pdocker-e2e-tests -pl integration-tests -Dit.test="BuildDistroE2EIT#platform_2_6_x" -DdockerDebug
 ```
 
 The available test method names map directly to version lines:
