@@ -122,7 +122,7 @@ public class BuildDistroE2EIT extends AbstractSdkIT {
 	@Test public void platform_1_11_x() throws Exception { buildAndRun("1.11.9");  }
 	@Test public void platform_1_12_x() throws Exception { buildAndRun("1.12.1");  }
 
-	// 2.0–2.4 — Dockerfile-jre8 (FROM tomcat:8-jre8), DB: mysql:5.6
+	// 2.0–2.4 — Dockerfile-jre8 (FROM tomcat:7-jdk8), DB: mysql:5.6
 	@Test public void platform_2_0_x()  throws Exception { buildAndRun("2.0.8");   }
 	@Test public void platform_2_1_x()  throws Exception { buildAndRun("2.1.7");   }
 	@Test public void platform_2_2_x()  throws Exception { buildAndRun("2.2.1");   }

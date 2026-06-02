@@ -6,8 +6,6 @@ import com.github.dockerjava.core.DefaultDockerClientConfig;
 import com.github.dockerjava.core.DockerClientBuilder;
 import com.github.dockerjava.httpclient5.ApacheDockerHttpClient;
 import net.lingala.zip4j.core.ZipFile;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import net.lingala.zip4j.exception.ZipException;
 import net.lingala.zip4j.model.ZipParameters;
 import org.apache.commons.io.FileUtils;
@@ -35,6 +33,7 @@ import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -289,7 +288,6 @@ public class BuildDistro extends AbstractTask {
 
 		Version platformVersion = new Version(distroProperties.getPlatformVersion());
 		int majorVersion = platformVersion.getMajorVersion();
-		int minorVersion = platformVersion.getMinorVersion();
 
 		// First do content package validation
 		distroHelper.validateDistribution(distroProperties);
@@ -365,8 +363,8 @@ public class BuildDistro extends AbstractTask {
 
 		wizard.showMessage("Creating Docker Compose configuration...\n");
 		String distroVersion = adjustImageName(distroProperties.getVersion());
-		writeDockerCompose(targetDirectory, distroVersion, platformVersion);
-		writeReadme(targetDirectory, distroVersion, platformVersion);
+		writeDockerCompose(targetDirectory, platformVersion);
+		writeReadme(targetDirectory, platformVersion);
 		if(!isPlatform2point5AndAbove(platformVersion)) {
 			copyBuildDistroResource("setenv.sh", new File(web, "setenv.sh"));
 			copyBuildDistroResource("startup.sh", new File(web, "startup.sh"));
@@ -416,7 +414,6 @@ public class BuildDistro extends AbstractTask {
 	void copyDockerfile(File targetDirectory, DistroProperties distroProperties) throws MojoExecutionException {
 		Version platformVersion = new Version(distroProperties.getPlatformVersion());
 		int majorVersion = platformVersion.getMajorVersion();
-		int minorVersion = platformVersion.getMinorVersion();
 
 		String namespace = distroProperties.getParam(DOCKER_IMAGE_NAMESPACE, null);
 		String repository = distroProperties.getParam(DOCKER_IMAGE_REPOSITORY, null);
@@ -467,7 +464,7 @@ public class BuildDistro extends AbstractTask {
 					propertyValue = distroProperties.getPropertyDefault(extraProperty);
 				}
 				if (StringUtils.isNotBlank(propertyValue)) {
-					lines.add("ENV OMRS_EXTRA_" + extraProperty.replace(".", "_") + "=" + propertyValue);
+					lines.add("ENV OMRS_EXTRA_" + extraProperty.replace(".", "_") + "=\"" + propertyValue + "\"");
 				}
 			}
 			try {
@@ -555,9 +552,11 @@ public class BuildDistro extends AbstractTask {
 			conn.setConnectTimeout(5_000);
 			conn.setReadTimeout(5_000);
 			conn.setRequestMethod("GET");
-			int responseCode = conn.getResponseCode();
-			conn.disconnect();
-			return responseCode == 200;
+			try {
+				return conn.getResponseCode() == 200;
+			} finally {
+				conn.disconnect();
+			}
 		}
 		catch (Exception e) {
 			log.warn("Could not check Docker Hub for {}/{}:{} — {}", namespace, repository, tag, e.getMessage());
@@ -590,17 +589,17 @@ public class BuildDistro extends AbstractTask {
 		}
 	}
 
-	private void writeDockerCompose(File targetDirectory, String version, Version platformVersion) throws MojoExecutionException {
-		writeTemplatedFile(targetDirectory, version, platformVersion, DOCKER_COMPOSE_PATH, DOCKER_COMPOSE_YML);
-		writeTemplatedFile(targetDirectory, version, platformVersion, DOCKER_COMPOSE_OVERRIDE_PATH, DOCKER_COMPOSE_OVERRIDE_YML);
-		writeTemplatedFile(targetDirectory, version, platformVersion, DOCKER_COMPOSE_PROD_PATH, DOCKER_COMPOSE_PROD_YML);
+	private void writeDockerCompose(File targetDirectory, Version platformVersion) throws MojoExecutionException {
+		writeTemplatedFile(targetDirectory, platformVersion, DOCKER_COMPOSE_PATH, DOCKER_COMPOSE_YML);
+		writeTemplatedFile(targetDirectory, platformVersion, DOCKER_COMPOSE_OVERRIDE_PATH, DOCKER_COMPOSE_OVERRIDE_YML);
+		writeTemplatedFile(targetDirectory, platformVersion, DOCKER_COMPOSE_PROD_PATH, DOCKER_COMPOSE_PROD_YML);
 	}
 
-	private void writeReadme(File targetDirectory, String version, Version platformVersion) throws MojoExecutionException {
-		writeTemplatedFile(targetDirectory, version, platformVersion, README_PATH, "README.md");
+	private void writeReadme(File targetDirectory, Version platformVersion) throws MojoExecutionException {
+		writeTemplatedFile(targetDirectory, platformVersion, README_PATH, "README.md");
 	}
 
-	private void writeTemplatedFile(File targetDirectory, String version, Version platformVersion, String path, String filename) throws MojoExecutionException {
+	private void writeTemplatedFile(File targetDirectory, Version platformVersion, String path, String filename) throws MojoExecutionException {
 		URL composeUrl = getClass().getClassLoader().getResource(path);
 		if (composeUrl == null) {
 			throw new MojoExecutionException("Failed to find file '" + path + "' in classpath");

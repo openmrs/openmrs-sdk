@@ -253,13 +253,6 @@ public class DockerComposeHelper implements AutoCloseable {
 		}
 	}
 
-	/** Returns true for platforms that use startup.sh (1.x and 2.0–2.4). */
-	private static boolean isPre25(String warVersion) {
-		Version v = new Version(warVersion);
-		return v.getMajorVersion() == 1
-				|| (v.getMajorVersion() == 2 && v.getMinorVersion() < 5);
-	}
-
 	/**
 	 * Returns the default admin password for a fresh OpenMRS install of the given version.
 	 * The password is set by the Liquibase initial data and changed at OpenMRS 2.4.x.
