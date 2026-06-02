@@ -383,8 +383,8 @@ public class BuildDistro extends AbstractTask {
 			new File(web, "owa").renameTo(new File(web, "openmrs_owas"));
 		}
 
-		wizard.showMessage("Creating Docker Compose configuration...\n");
 		if (!skipDockerCompose) {
+			wizard.showMessage("Creating Docker Compose configuration...\n");
 			writeDockerCompose(targetDirectory);
 			// .env and log4j configs belong to the compose setup: .env supplies variable
 			// substitution for the compose files; the log4j files are mounted by the override.
