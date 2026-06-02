@@ -7,8 +7,13 @@ import com.github.dockerjava.httpclient5.ApacheDockerHttpClient;
 import org.junit.After;
 import org.junit.Assume;
 import org.junit.BeforeClass;
+import org.junit.FixMethodOrder;
 import org.junit.Test;
+import org.junit.runners.MethodSorters;
 import org.openmrs.maven.plugins.model.Version;
+
+import java.awt.Desktop;
+import java.net.URI;
 
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
@@ -56,6 +61,7 @@ import java.util.concurrent.TimeUnit;
  *   <li>Browse to {@code http://localhost:8080/openmrs}.</li>
  * </ol>
  */
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class BuildDistroE2EIT extends AbstractSdkIT {
 
 	private static final Duration STARTUP_TIMEOUT = Duration.ofMinutes(20);
@@ -111,7 +117,7 @@ public class BuildDistroE2EIT extends AbstractSdkIT {
 	// module list used by each test.
 
 	// 1.x — Dockerfile-jre7 (FROM tomcat:7-jre7), DB: mysql:5.6
-	@Test public void platform_1_9_x()  throws Exception { buildAndRun("1.9.9");   }
+	@Test public void platform_1_09_x() throws Exception { buildAndRun("1.9.12");  }
 	@Test public void platform_1_10_x() throws Exception { buildAndRun("1.10.6");  }
 	@Test public void platform_1_11_x() throws Exception { buildAndRun("1.11.9");  }
 	@Test public void platform_1_12_x() throws Exception { buildAndRun("1.12.1");  }
@@ -177,6 +183,30 @@ public class BuildDistroE2EIT extends AbstractSdkIT {
 				STARTUP_TIMEOUT,
 				warVersion);
 		dockerHelper.start();
+
+		// If -Dbrowser is set, open the running instance in the default browser and pause
+		// so you can navigate around before the container is torn down.
+		// Usage: mvn verify -Pdocker-e2e-tests ... -Dit.test="...#platform_1_09_x" -Dbrowser
+		if (System.getProperty("browser") != null) {
+			String url = "http://localhost:" + dockerHelper.getPort() + "/openmrs/";
+			log.info("================================================================================");
+			log.info("  BROWSER MODE: OpenMRS {} is running at {}", warVersion, url);
+			log.info("  Press ENTER in this terminal to stop the container and end the test...");
+			log.info("================================================================================");
+			try {
+				if (Desktop.isDesktopSupported()) {
+					Desktop.getDesktop().browse(new URI(url));
+				}
+			}
+			catch (Exception e) {
+				log.warn("Could not open browser automatically: {}", e.getMessage());
+			}
+			try {
+				//noinspection ResultOfMethodCallIgnored
+				System.in.read();
+			}
+			catch (Exception ignored) {}
+		}
 
 		log.info("================================================================================");
 		log.info("  PASS: OpenMRS {}  (docker startup: {}  total: {})",

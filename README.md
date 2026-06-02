@@ -96,7 +96,7 @@ The available test method names map directly to version lines:
 
 | Method | Platform version |
 |---|---|
-| `platform_1_9_x` | 1.9.9 |
+| `platform_1_09_x` | 1.9.12 |
 | `platform_1_10_x` | 1.10.6 |
 | `platform_1_11_x` | 1.11.9 |
 | `platform_1_12_x` | 1.12.1 |
