@@ -14,9 +14,7 @@ import org.openmrs.maven.plugins.model.Version;
 
 import java.awt.Desktop;
 import java.net.URI;
-
 import java.time.Duration;
-import java.util.concurrent.TimeUnit;
 
 /**
  * End-to-end tests for the {@code build-distro} goal, one test method per supported
