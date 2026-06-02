@@ -372,6 +372,12 @@ public class BuildDistro extends AbstractTask {
 			copyBuildDistroResource("startup.sh", new File(web, "startup.sh"));
 			copyBuildDistroResource("wait-for-it.sh", new File(web, "wait-for-it.sh"));
 		}
+		// Logging config files are copied for all platforms so that docker-compose.override.yml
+		// can mount them for runtime debug logging without rebuilding the image.
+		// Pre-2.5 platforms use log4j 1.x (log4j.properties);
+		// 2.5+ platforms use log4j2 (log4j2.xml).
+		copyBuildDistroResource("log4j.properties", new File(web, "log4j.properties"));
+		copyBuildDistroResource("log4j2.xml", new File(web, "log4j2.xml"));
 
 		copyBuildDistroResource(".env", new File(targetDirectory, ".env"));
 		copyDockerfile(web, distroProperties);

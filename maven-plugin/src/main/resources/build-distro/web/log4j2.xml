@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  OpenMRS log4j2 configuration for runtime debugging (2.5+ platforms).
+  Mounted into the container via docker-compose.override.yml:
+    /usr/local/tomcat/lib/log4j2.xml
+
+  Adjust log levels below as needed.  Restart the container after editing
+  to apply changes without rebuilding the image.
+-->
+<Configuration status="WARN">
+    <Appenders>
+        <Console name="stdout" target="SYSTEM_OUT">
+            <PatternLayout pattern="%p - %C{1}.%M(%L) |%d{ISO8601}| %m%n"/>
+        </Console>
+    </Appenders>
+
+    <Loggers>
+        <!-- Spring MVC — DispatcherServlet handler mapping registration and dispatch -->
+        <Logger name="org.springframework.web.servlet" level="DEBUG" additivity="false">
+            <AppenderRef ref="stdout"/>
+        </Logger>
+
+        <!-- Spring context — ApplicationContext refresh lifecycle -->
+        <Logger name="org.springframework.context" level="DEBUG" additivity="false">
+            <AppenderRef ref="stdout"/>
+        </Logger>
+
+        <!-- OpenMRS web — Listener, WebContextRefresher, module servlet registration -->
+        <Logger name="org.openmrs.web" level="DEBUG" additivity="false">
+            <AppenderRef ref="stdout"/>
+        </Logger>
+
+        <!-- OpenMRS module loading -->
+        <Logger name="org.openmrs.module" level="DEBUG" additivity="false">
+            <AppenderRef ref="stdout"/>
+        </Logger>
+
+        <Root level="INFO">
+            <AppenderRef ref="stdout"/>
+        </Root>
+    </Loggers>
+</Configuration>

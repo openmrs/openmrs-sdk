@@ -5,9 +5,26 @@ services:
   web:
     environment:
       DEBUG: 'true'
+      # Override logging configuration at the JVM level, bypassing config files
+      # bundled inside the OpenMRS WAR.  JAVA_TOOL_OPTIONS is read by the JVM
+      # before any application code runs, so it takes precedence over classpath
+      # discovery and over setenv.sh.
+      #
+      # Pre-2.5 platforms use log4j 1.x  → log4j.properties (log4j.configuration)
+      # 2.5+ platforms use log4j 2.x     → log4j2.xml      (log4j.configurationFile)
+      #
+      # Both properties are set; each JVM will honour only the one matching its
+      # logging framework and ignore the other.  Edit the relevant file and
+      # restart the container to change log levels without rebuilding the image.
+      JAVA_TOOL_OPTIONS: >-
+        -Dlog4j.configuration=file:///usr/local/tomcat/lib/log4j.properties
+        -Dlog4j.configurationFile=file:///usr/local/tomcat/lib/log4j2.xml
     ports:
       - "${TOMCAT_DEV_PORT}:8080"
       - "${TOMCAT_DEV_DEBUG_PORT}:1044"
+    volumes:
+      - ./web/log4j.properties:/usr/local/tomcat/lib/log4j.properties
+      - ./web/log4j2.xml:/usr/local/tomcat/lib/log4j2.xml
 
   db:
     ports:
