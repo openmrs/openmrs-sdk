@@ -38,6 +38,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import static java.nio.file.StandardOpenOption.APPEND;
+import static java.nio.file.StandardOpenOption.CREATE;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -643,7 +644,7 @@ public class BuildDistro extends AbstractTask {
 			if (in == null) {
 				throw new MojoExecutionException("Classpath resource not found: build-distro/" + resource);
 			}
-			Files.write(target.toPath(), IOUtils.toByteArray(in), APPEND);
+			Files.write(target.toPath(), IOUtils.toByteArray(in), CREATE, APPEND);
 		}
 		catch (IOException e) {
 			throw new MojoExecutionException("Failed to write README.md: " + e.getMessage(), e);
