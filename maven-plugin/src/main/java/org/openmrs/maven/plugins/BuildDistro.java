@@ -363,8 +363,8 @@ public class BuildDistro extends AbstractTask {
 
 		wizard.showMessage("Creating Docker Compose configuration...\n");
 		String distroVersion = adjustImageName(distroProperties.getVersion());
-		writeDockerCompose(targetDirectory, platformVersion);
-		writeReadme(targetDirectory, platformVersion);
+		writeDockerCompose(targetDirectory);
+		writeReadme(targetDirectory);
 		if(!isPlatform2point5AndAbove(platformVersion)) {
 			copyBuildDistroResource("setenv.sh", new File(web, "setenv.sh"));
 			copyBuildDistroResource("startup.sh", new File(web, "startup.sh"));
@@ -378,6 +378,9 @@ public class BuildDistro extends AbstractTask {
 		copyBuildDistroResource("log4j2.xml", new File(web, "log4j2.xml"));
 
 		copyBuildDistroResource(".env", new File(targetDirectory, ".env"));
+		if (!isPlatform2point5AndAbove(platformVersion)) {
+			appendToEnvFile(new File(targetDirectory, ".env"), "OMRS_DB_IMAGE", "mysql:5.6");
+		}
 		copyDockerfile(web, distroProperties);
 		distroProperties.saveTo(web);
 
@@ -564,6 +567,16 @@ public class BuildDistro extends AbstractTask {
 		}
 	}
 
+	private static void appendToEnvFile(File envFile, String key, String value) throws MojoExecutionException {
+		try {
+			Files.write(envFile.toPath(), ("\n" + key + "=" + value + "\n").getBytes(StandardCharsets.UTF_8),
+					java.nio.file.StandardOpenOption.APPEND);
+		}
+		catch (IOException e) {
+			throw new MojoExecutionException("Failed to write " + key + " to " + envFile + ": " + e.getMessage(), e);
+		}
+	}
+
 	private boolean isPlatform2point5AndAbove(Version platformVersion) {
 		return isAtOrAbovePlatformVersion(platformVersion, 2, 5);
 	}
@@ -589,17 +602,17 @@ public class BuildDistro extends AbstractTask {
 		}
 	}
 
-	private void writeDockerCompose(File targetDirectory, Version platformVersion) throws MojoExecutionException {
-		writeTemplatedFile(targetDirectory, platformVersion, DOCKER_COMPOSE_PATH, DOCKER_COMPOSE_YML);
-		writeTemplatedFile(targetDirectory, platformVersion, DOCKER_COMPOSE_OVERRIDE_PATH, DOCKER_COMPOSE_OVERRIDE_YML);
-		writeTemplatedFile(targetDirectory, platformVersion, DOCKER_COMPOSE_PROD_PATH, DOCKER_COMPOSE_PROD_YML);
+	private void writeDockerCompose(File targetDirectory) throws MojoExecutionException {
+		writeTemplatedFile(targetDirectory, DOCKER_COMPOSE_PATH, DOCKER_COMPOSE_YML);
+		writeTemplatedFile(targetDirectory, DOCKER_COMPOSE_OVERRIDE_PATH, DOCKER_COMPOSE_OVERRIDE_YML);
+		writeTemplatedFile(targetDirectory, DOCKER_COMPOSE_PROD_PATH, DOCKER_COMPOSE_PROD_YML);
 	}
 
-	private void writeReadme(File targetDirectory, Version platformVersion) throws MojoExecutionException {
-		writeTemplatedFile(targetDirectory, platformVersion, README_PATH, "README.md");
+	private void writeReadme(File targetDirectory) throws MojoExecutionException {
+		writeTemplatedFile(targetDirectory, README_PATH, "README.md");
 	}
 
-	private void writeTemplatedFile(File targetDirectory, Version platformVersion, String path, String filename) throws MojoExecutionException {
+	private void writeTemplatedFile(File targetDirectory, String path, String filename) throws MojoExecutionException {
 		URL composeUrl = getClass().getClassLoader().getResource(path);
 		if (composeUrl == null) {
 			throw new MojoExecutionException("Failed to find file '" + path + "' in classpath");
@@ -608,8 +621,6 @@ public class BuildDistro extends AbstractTask {
 		if (!compose.exists()) {
 			try (InputStream inputStream = composeUrl.openStream(); FileWriter composeWriter = new FileWriter(compose)) {
 				String content = IOUtils.toString(inputStream, StandardCharsets.UTF_8);
-				String dbImage = isPlatform2point5AndAbove(platformVersion) ? "mariadb:10.11.7" : "mysql:5.6";
-				content = content.replace("openmrs-db-image-name", dbImage);
 				composeWriter.write(content);
 			}
 			catch (IOException e) {
