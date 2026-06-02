@@ -387,27 +387,26 @@ public class BuildDistro extends AbstractTask {
 		String distroVersion = adjustImageName(distroProperties.getVersion());
 		if (!skipDockerCompose) {
 			writeDockerCompose(targetDirectory);
+			// .env and log4j configs belong to the compose setup: .env supplies variable
+			// substitution for the compose files; the log4j files are mounted by the override.
+			copyBuildDistroResource(".env", new File(targetDirectory, ".env"));
+			if (!isPlatform2point5AndAbove(platformVersion)) {
+				appendToEnvFile(new File(targetDirectory, ".env"), "OMRS_DB_IMAGE", "mysql:5.6");
+			}
+			copyBuildDistroResource("log4j.properties", new File(web, "log4j.properties"));
+			copyBuildDistroResource("log4j2.xml", new File(web, "log4j2.xml"));
 		}
 		if (!skipReadme) {
 			writeReadme(targetDirectory);
 		}
-		if(!isPlatform2point5AndAbove(platformVersion)) {
-			copyBuildDistroResource("setenv.sh", new File(web, "setenv.sh"));
-			copyBuildDistroResource("startup.sh", new File(web, "startup.sh"));
-			copyBuildDistroResource("wait-for-it.sh", new File(web, "wait-for-it.sh"));
-		}
-		// Logging config files are copied for all platforms so that docker-compose.override.yml
-		// can mount them for runtime debug logging without rebuilding the image.
-		// Pre-2.5 platforms use log4j 1.x (log4j.properties);
-		// 2.5+ platforms use log4j2 (log4j2.xml).
-		copyBuildDistroResource("log4j.properties", new File(web, "log4j.properties"));
-		copyBuildDistroResource("log4j2.xml", new File(web, "log4j2.xml"));
-
-		copyBuildDistroResource(".env", new File(targetDirectory, ".env"));
-		if (!isPlatform2point5AndAbove(platformVersion)) {
-			appendToEnvFile(new File(targetDirectory, ".env"), "OMRS_DB_IMAGE", "mysql:5.6");
-		}
 		if (!skipDockerfile) {
+			// startup.sh, setenv.sh, and wait-for-it.sh are COPY'd into the image by the
+			// Dockerfile, so they belong to the Dockerfile group.
+			if (!isPlatform2point5AndAbove(platformVersion)) {
+				copyBuildDistroResource("setenv.sh", new File(web, "setenv.sh"));
+				copyBuildDistroResource("startup.sh", new File(web, "startup.sh"));
+				copyBuildDistroResource("wait-for-it.sh", new File(web, "wait-for-it.sh"));
+			}
 			copyDockerfile(web, distroProperties);
 		}
 		distroProperties.saveTo(web);
