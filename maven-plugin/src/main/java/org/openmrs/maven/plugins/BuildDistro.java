@@ -37,6 +37,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import static java.nio.file.StandardOpenOption.APPEND;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -569,8 +570,7 @@ public class BuildDistro extends AbstractTask {
 
 	private static void appendToEnvFile(File envFile, String key, String value) throws MojoExecutionException {
 		try {
-			Files.write(envFile.toPath(), ("\n" + key + "=" + value + "\n").getBytes(StandardCharsets.UTF_8),
-					java.nio.file.StandardOpenOption.APPEND);
+			Files.write(envFile.toPath(), ("\n" + key + "=" + value + "\n").getBytes(StandardCharsets.UTF_8), APPEND);
 		}
 		catch (IOException e) {
 			throw new MojoExecutionException("Failed to write " + key + " to " + envFile + ": " + e.getMessage(), e);
