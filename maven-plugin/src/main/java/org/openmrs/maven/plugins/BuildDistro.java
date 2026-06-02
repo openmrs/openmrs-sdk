@@ -174,14 +174,22 @@ public class BuildDistro extends AbstractTask {
 	private String dockerDockerfile;
 
 	/**
-	 * Comma-separated paths to custom docker-compose template files.  When set, none of
-	 * the default compose files (docker-compose.yml, docker-compose.override.yml,
-	 * docker-compose.prod.yml) are generated — only these files are written.  Each file
-	 * is filtered with Maven property variable replacement and written to the output
-	 * directory using the source file's own name.
+	 * Paths to custom docker-compose template files.  When set, none of the default compose
+	 * files (docker-compose.yml, docker-compose.override.yml, docker-compose.prod.yml) are
+	 * generated — only these files are written.  Each file is filtered with Maven property
+	 * variable replacement and written to the output directory using the source file's own name.
+	 *
+	 * <p>In a pom.xml:
+	 * <pre>{@code
+	 * <dockerComposeFiles>
+	 *   <dockerComposeFile>path/to/docker-compose.yml</dockerComposeFile>
+	 *   <dockerComposeFile>path/to/docker-compose.prod.yml</dockerComposeFile>
+	 * </dockerComposeFiles>
+	 * }</pre>
+	 * From the command line: {@code -Ddocker.compose.files=path/to/file1.yml,path/to/file2.yml}
 	 */
 	@Parameter(property = "docker.compose.files")
-	private String dockerComposeFiles;
+	private List<String> dockerComposeFiles;
 
 	@Override
 	public void executeTask() throws MojoExecutionException, MojoFailureException {
@@ -384,8 +392,8 @@ public class BuildDistro extends AbstractTask {
 
 		wizard.showMessage("Creating Docker Compose configuration...\n");
 		String distroVersion = adjustImageName(distroProperties.getVersion());
-		if (StringUtils.isNotBlank(dockerComposeFiles)) {
-			for (String path : dockerComposeFiles.split(",")) {
+		if (dockerComposeFiles != null && !dockerComposeFiles.isEmpty()) {
+			for (String path : dockerComposeFiles) {
 				writeExternalTemplate(path.trim(), targetDirectory);
 			}
 		} else {
