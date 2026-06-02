@@ -78,6 +78,13 @@
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
         </dependency>
+        <!-- Testcontainers: docker compose lifecycle + HTTP wait strategy for E2E tests -->
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers</artifactId>
+            <version>1.20.1</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -167,6 +174,45 @@
                                     <goal>integration-test</goal>
                                     <goal>verify</goal>
                                 </goals>
+                                <configuration>
+                                    <!-- E2E tests require a Docker daemon and take 20+ min each; run separately -->
+                                    <excludes>
+                                        <exclude>**/*E2EIT.java</exclude>
+                                    </excludes>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <!--
+                Docker end-to-end tests: actually start docker compose stacks and verify
+                OpenMRS becomes reachable.  Requires a running Docker daemon.
+
+                Run with:  mvn verify -Pdocker-e2e-tests -pl integration-tests
+            -->
+            <id>docker-e2e-tests</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <version>3.1.2</version>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>integration-test</goal>
+                                    <goal>verify</goal>
+                                </goals>
+                                <configuration>
+                                    <includes>
+                                        <include>**/*E2EIT.java</include>
+                                    </includes>
+                                    <!-- 30 min per test to allow for Docker build + OpenMRS startup -->
+                                    <forkedProcessTimeoutInSeconds>1800</forkedProcessTimeoutInSeconds>
+                                </configuration>
                             </execution>
                         </executions>
                     </plugin>

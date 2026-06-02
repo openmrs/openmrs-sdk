@@ -54,6 +54,66 @@ To run a SNAPSHOT version of SDK, you need to specify groupId:artifactId:version
 You can also debug commands by creating maven run configurations for the SNAPSHOT version in your IDE 
 and starting them in the debug mode.
 
+## Testing
+
+### Integration tests
+
+Integration tests cover the SDK goals (e.g. `build-distro`, `setup`, `deploy`) without requiring Docker.
+They run as part of the standard build:
+
+```bash
+mvn verify -Pintegration-tests
+```
+
+### Docker E2E tests
+
+The `integration-tests` module contains a suite of end-to-end tests (`BuildDistroE2EIT`) that exercise
+every supported OpenMRS platform version line (1.9.x through 2.8.x) by:
+
+1. Running `build-distro` to generate a `Dockerfile` and `docker-compose.yml` for that version
+2. Starting the generated docker compose stack
+3. Polling the running container until the login-page footer confirms the correct version is running
+
+These tests require a running Docker daemon and are intentionally excluded from the standard
+`integration-tests` profile because each test can take up to 20 minutes (artifact download +
+Docker image build + OpenMRS database initialisation).
+
+**Run the full suite:**
+
+```bash
+mvn install -DskipTests                                    # install the SDK to the local Maven repo first
+mvn verify -Pdocker-e2e-tests -pl integration-tests        # run all 13 version tests
+```
+
+**Run a single version:**
+
+```bash
+mvn verify -Pdocker-e2e-tests -pl integration-tests \
+  -Dit.test="BuildDistroE2EIT#platform_2_6_x"
+```
+
+The available test method names map directly to version lines:
+
+| Method | Platform version |
+|---|---|
+| `platform_1_9_x` | 1.9.9 |
+| `platform_1_10_x` | 1.10.6 |
+| `platform_1_11_x` | 1.11.9 |
+| `platform_1_12_x` | 1.12.1 |
+| `platform_2_0_x` | 2.0.8 |
+| `platform_2_1_x` | 2.1.7 |
+| `platform_2_2_x` | 2.2.1 |
+| `platform_2_3_x` | 2.3.6 |
+| `platform_2_4_x` | 2.4.7 |
+| `platform_2_5_x` | 2.5.15 |
+| `platform_2_6_x` | 2.6.16 |
+| `platform_2_7_x` | 2.7.9 |
+| `platform_2_8_x` | 2.8.6 |
+
+Each test's distro properties file is at
+`integration-tests/src/test/resources/integration-test/openmrs-distro-e2e-{version}.properties`
+and can be used to reproduce the scenario manually — see the comments inside each file.
+
 ## Releasing
 
 Before publishing a new release, go to JIRA at https://issues.openmrs.org/plugins/servlet/project-config/SDK/versions 

@@ -1,6 +1,13 @@
 package org.openmrs.maven.plugins;
 
+import com.github.dockerjava.api.DockerClient;
+import com.github.dockerjava.api.exception.NotFoundException;
+import com.github.dockerjava.core.DefaultDockerClientConfig;
+import com.github.dockerjava.core.DockerClientBuilder;
+import com.github.dockerjava.httpclient5.ApacheDockerHttpClient;
 import net.lingala.zip4j.core.ZipFile;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import net.lingala.zip4j.exception.ZipException;
 import net.lingala.zip4j.model.ZipParameters;
 import org.apache.commons.io.FileUtils;
@@ -92,19 +99,13 @@ public class BuildDistro extends AbstractTask {
 	static final String DOCKER_IMAGE_TAG = "docker.image.tag";
 
 	/**
-	 * The OpenMRS version component of the Docker image tag.
+	 * An explicit Docker image tag OpenMRS version component to use, overriding the default registry probe.
 	 * Ignored when {@link #DOCKER_IMAGE_TAG} is set.
-	 * For the default {@code openmrs/openmrs-core} image, SNAPSHOT versions are automatically
-	 * converted to the {@code major.minor.x} rolling-tag format (e.g. {@code 2.7.0-SNAPSHOT} → {@code 2.7.x}).
-	 * Set to {@link #DOCKER_IMAGE_OPENMRS_VERSION_PLATFORM} to use the same version as {@code war.openmrs}.
+	 * When not set, the SDK probes the registry (local daemon then Docker Hub) for the best available
+	 * tag matching the exact platform version, then {@code major.minor.x}, then
+	 * {@code major.minor.x-nightly}.
 	 */
 	static final String DOCKER_IMAGE_OPENMRS_VERSION = "docker.image.openmrsVersion";
-
-	/**
-	 * Magic value for {@link #DOCKER_IMAGE_OPENMRS_VERSION} that resolves to the {@code war.openmrs} version
-	 * from the distro properties.
-	 */
-	static final String DOCKER_IMAGE_OPENMRS_VERSION_PLATFORM = "platform";
 
 	/**
 	 * Optional Java variant suffix appended to {@link #DOCKER_IMAGE_OPENMRS_VERSION} to form the full tag,
@@ -425,13 +426,14 @@ public class BuildDistro extends AbstractTask {
 			repository = StringUtils.defaultIfBlank(repository, "openmrs-core");
 			String dockerImageTag = distroProperties.getParam(DOCKER_IMAGE_TAG);
 			if (StringUtils.isBlank(dockerImageTag)) {
-				String defaultOpenmrsVersion = majorVersion + "." + minorVersion + ".x";
-				if (majorVersion == 2 && minorVersion == 5) {
-					defaultOpenmrsVersion += "-nightly";
-				}
-				dockerImageTag = distroProperties.getParam(DOCKER_IMAGE_OPENMRS_VERSION, defaultOpenmrsVersion);
-				if (DOCKER_IMAGE_OPENMRS_VERSION_PLATFORM.equals(dockerImageTag)) {
-					dockerImageTag = distroProperties.getPlatformVersion();
+				String imageOpenmrsVersion = distroProperties.getParam(DOCKER_IMAGE_OPENMRS_VERSION, null);
+				if (imageOpenmrsVersion == null) {
+					// No explicit version — probe the registry for the best available tag for the war.
+					// SNAPSHOT versions and versions without a dedicated Docker image automatically
+					// fall back to the .x rolling tag or the .x-nightly tag, whichever exists first.
+					dockerImageTag = resolveDockerImageTag(namespace, repository, distroProperties.getPlatformVersion());
+				} else {
+					dockerImageTag = imageOpenmrsVersion;
 				}
 				String javaVersion = distroProperties.getParam(DOCKER_IMAGE_JAVA_VERSION, null);
 				if (StringUtils.isNotBlank(javaVersion)) {
@@ -468,6 +470,92 @@ public class BuildDistro extends AbstractTask {
 			catch (IOException e) {
 				throw new MojoExecutionException("Failed to write Dockerfile: " + e.getMessage(), e);
 			}
+		}
+	}
+
+	/**
+	 * Resolves the best available Docker image tag for the given platform version.
+	 * Candidates are evaluated in preference order — each candidate is checked
+	 * everywhere (local daemon first, then Docker Hub) before the next is considered:
+	 * <ol>
+	 *   <li>Exact release version (e.g. {@code 2.6.16}) — local, then Hub</li>
+	 *   <li>Minor-version rolling tag (e.g. {@code 2.6.x}) — local, then Hub</li>
+	 *   <li>Nightly rolling tag (e.g. {@code 2.6.x-nightly}) — local, then Hub</li>
+	 * </ol>
+	 * Throws if none of the candidates are found anywhere, with a message directing the
+	 * user to set {@link #DOCKER_IMAGE_TAG} or {@link #DOCKER_IMAGE_OPENMRS_VERSION} explicitly.
+	 */
+	String resolveDockerImageTag(String namespace, String repository, String platformVersion) throws MojoExecutionException {
+		// SNAPSHOT versions never have a dedicated Docker image — strip the suffix and resolve
+		// against the release version so we fall through to the .x or .x-nightly rolling tag.
+		String releaseVersion = StringUtils.removeEnd(platformVersion, "-SNAPSHOT");
+		Version version = new Version(releaseVersion);
+		String rollingTag = version.getMajorVersion() + "." + version.getMinorVersion() + ".x";
+		String[] candidates = { releaseVersion, rollingTag, rollingTag + "-nightly" };
+
+		for (String candidate : candidates) {
+			String image = namespace + "/" + repository + ":" + candidate;
+			if (dockerImageExistsLocally(namespace, repository, candidate)) {
+				log.info("Using local Docker image {}", image);
+				return candidate;
+			}
+			if (dockerImageExistsOnHub(namespace, repository, candidate)) {
+				log.info("Using Docker Hub image {}", image);
+				return candidate;
+			}
+		}
+
+		throw new MojoExecutionException(
+				"Could not find a Docker image for " + namespace + "/" + repository
+						+ " matching platform version " + platformVersion
+						+ ". Checked tags: " + String.join(", ", candidates)
+						+ ". Set the " + DOCKER_IMAGE_TAG + " or " + DOCKER_IMAGE_OPENMRS_VERSION
+						+ " property in your distro properties to specify a tag explicitly.");
+	}
+
+	/**
+	 * Returns {@code true} if the given image tag is already present in the local Docker daemon.
+	 * Uses the docker-java API directly rather than shelling out to the {@code docker} CLI.
+	 * Protected to allow overriding in tests.
+	 */
+	protected boolean dockerImageExistsLocally(String namespace, String repository, String tag) {
+		DefaultDockerClientConfig config = DefaultDockerClientConfig.createDefaultConfigBuilder().build();
+		try (DockerClient client = DockerClientBuilder.getInstance(config)
+				.withDockerHttpClient(new ApacheDockerHttpClient.Builder()
+						.dockerHost(config.getDockerHost())
+						.sslConfig(config.getSSLConfig())
+						.build())
+				.build()) {
+			client.inspectImageCmd(namespace + "/" + repository + ":" + tag).exec();
+			return true;
+		}
+		catch (NotFoundException e) {
+			return false;
+		}
+		catch (Exception e) {
+			log.debug("Could not check local Docker daemon for image {}/{}:{} — {}", namespace, repository, tag, e.getMessage());
+			return false;
+		}
+	}
+
+	/**
+	 * Returns {@code true} if the given image tag exists in the Docker Hub registry.
+	 * Protected to allow overriding in tests without making real network calls.
+	 */
+	protected boolean dockerImageExistsOnHub(String namespace, String repository, String tag) {
+		try {
+			URL url = new URL("https://hub.docker.com/v2/repositories/" + namespace + "/" + repository + "/tags/" + tag + "/");
+			HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+			conn.setConnectTimeout(5_000);
+			conn.setReadTimeout(5_000);
+			conn.setRequestMethod("GET");
+			int responseCode = conn.getResponseCode();
+			conn.disconnect();
+			return responseCode == 200;
+		}
+		catch (Exception e) {
+			log.warn("Could not check Docker Hub for {}/{}:{} — {}", namespace, repository, tag, e.getMessage());
+			return false;
 		}
 	}
 
