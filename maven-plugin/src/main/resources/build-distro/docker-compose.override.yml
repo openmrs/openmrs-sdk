@@ -1,6 +1,4 @@
 # Generated automatically by openmrs SDK
-version: '2'
-
 services:
   web:
     environment:
