@@ -383,6 +383,16 @@ public class BuildDistro extends AbstractTask {
 			new File(web, "owa").renameTo(new File(web, "openmrs_owas"));
 		}
 
+		if (!skipDockerfile) {
+			// startup.sh, setenv.sh, and wait-for-it.sh are COPY'd into the image by the
+			// Dockerfile, so they belong to the Dockerfile group.
+			if (!isPlatform2point5AndAbove(platformVersion)) {
+				copyBuildDistroResource("setenv.sh", new File(web, "setenv.sh"));
+				copyBuildDistroResource("startup.sh", new File(web, "startup.sh"));
+				copyBuildDistroResource("wait-for-it.sh", new File(web, "wait-for-it.sh"));
+			}
+			copyDockerfile(web, distroProperties);
+		}
 		if (!skipDockerCompose) {
 			wizard.showMessage("Creating Docker Compose configuration...\n");
 			writeDockerCompose(targetDirectory);
@@ -397,16 +407,6 @@ public class BuildDistro extends AbstractTask {
 		}
 		if (!skipReadme) {
 			writeReadme(targetDirectory);
-		}
-		if (!skipDockerfile) {
-			// startup.sh, setenv.sh, and wait-for-it.sh are COPY'd into the image by the
-			// Dockerfile, so they belong to the Dockerfile group.
-			if (!isPlatform2point5AndAbove(platformVersion)) {
-				copyBuildDistroResource("setenv.sh", new File(web, "setenv.sh"));
-				copyBuildDistroResource("startup.sh", new File(web, "startup.sh"));
-				copyBuildDistroResource("wait-for-it.sh", new File(web, "wait-for-it.sh"));
-			}
-			copyDockerfile(web, distroProperties);
 		}
 		distroProperties.saveTo(web);
 
