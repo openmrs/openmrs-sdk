@@ -24,9 +24,8 @@ import java.time.Duration;
  * <ol>
  *   <li>Reads {@code openmrs-distro-e2e-{version}.properties} from
  *       {@code src/test/resources/integration-test/}.  Each file pins the latest release
- *       of that version line and lists two cross-version components — addresshierarchy
- *       and the orderentry OWA — plus legacyui for 2.x so that all versions produce the
- *       same login page.</li>
+ *       of that version line and lists addresshierarchy, the orderentry OWA, and
+ *       webservices.rest, plus legacyui for 2.x platforms.</li>
  *   <li>Runs the SDK {@code build-distro} goal to download artifacts and generate Docker
  *       artefacts in {@code target/docker/}.</li>
  *   <li>Asserts that the expected Dockerfile base image and DB image appear in the
@@ -34,9 +33,9 @@ import java.time.Duration;
  *       {@code Dockerfile-jre7} (1.x), {@code Dockerfile-jre8} (2.0–2.4), and dynamic
  *       FROM line (2.5+).</li>
  *   <li>Uses Testcontainers to start the generated docker compose stack, then polls
- *       {@code /openmrs/} until the login-page footer contains the exact version string
- *       (e.g. {@code "1.9.9"} or {@code "2.6.16"}), confirming that the database was
- *       initialised, all Liquibase changesets ran, and the correct version is running.</li>
+ *       {@code /openmrs/ws/rest/v1/systeminformation} until it responds with
+ *       {@code Content-Type: application/json}, confirming that the database was
+ *       initialised, all Liquibase changesets ran, and the REST module is running.</li>
  * </ol>
  *
  * <p>Tests require a running Docker daemon and are excluded from the standard
