@@ -384,7 +384,6 @@ public class BuildDistro extends AbstractTask {
 				copyBuildDistroResource("wait-for-it.sh", new File(web, "wait-for-it.sh"));
 			}
 			copyDockerfile(web, distroProperties);
-			copyBuildDistroResource("README.md", new File(web, "README.md"));
 		}
 		if (!skipDockerCompose) {
 			wizard.showMessage("Creating Docker Compose configuration...\n");
@@ -629,80 +628,22 @@ public class BuildDistro extends AbstractTask {
 	 */
 	private void writeReadme(File targetDirectory, boolean includeDockerfile, boolean includeDockerCompose) throws MojoExecutionException {
 		File readme = new File(targetDirectory, "README.md");
-		if (readme.exists()) {
-			return;
-		}
-		StringBuilder sb = new StringBuilder();
-
-		sb.append("# Distribution\n\n");
-		sb.append("This directory contains the OpenMRS distribution artifacts and Docker configuration.\n\n");
-		sb.append("## Artifacts\n\n");
-		sb.append("| Path | Contents |\n");
-		sb.append("|---|---|\n");
-		sb.append("| `web/openmrs_core/openmrs.war` | OpenMRS core WAR |\n");
-		sb.append("| `web/openmrs_modules/` | OpenMRS modules (`.omod` files) |\n");
-		sb.append("| `web/openmrs_owas/` | Open Web Apps |\n");
-		sb.append("| `web/openmrs_spa/` | Single Page Application frontend |\n");
-		sb.append("| `web/openmrs_config/` | Initializer configuration files |\n");
-		sb.append("| `web/openmrs-distro.properties` | Full list of components and versions |\n\n");
-		sb.append("To regenerate this distribution:\n");
-		sb.append("```\n");
-		sb.append("mvn openmrs-sdk:build-distro -Ddistro=openmrs-distro.properties\n");
-		sb.append("```\n");
-		sb.append("Add `-Dreset` to overwrite any files you have customised.\n");
-
+		readme.delete();
+		appendReadmeResource(readme, "README.md");
 		if (includeDockerfile) {
-			sb.append("\n## Docker Image\n\n");
-			sb.append("The `web/` directory is the Docker build context.  Build the image locally:\n");
-			sb.append("```\n");
-			sb.append("docker build -t <username>/openmrs-<distro>:latest web/\n");
-			sb.append("```\n");
-			sb.append("Push to Docker Hub for use in test environments or production:\n");
-			sb.append("```\n");
-			sb.append("docker push <username>/openmrs-<distro>:latest\n");
-			sb.append("```\n");
+			appendReadmeResource(readme, "README-dockerfile.md");
 		}
-
 		if (includeDockerCompose) {
-			sb.append("\n## Docker Compose\n\n");
-			sb.append("### Development\n\n");
-			sb.append("Start all containers (builds the image on first run):\n");
-			sb.append("```\n");
-			sb.append("docker compose up\n");
-			sb.append("```\n");
-			sb.append("Application is accessible at http://localhost:8080/openmrs.\n\n");
-			sb.append("Rebuild after changing modules, OWAs, or WAR:\n");
-			sb.append("```\n");
-			sb.append("docker compose up --build\n");
-			sb.append("```\n");
-			sb.append("Stop and remove containers and volumes:\n");
-			sb.append("```\n");
-			sb.append("docker compose down -v\n");
-			sb.append("```\n");
-			sb.append("The debug port 1044 and MySQL port 3306 are exposed in development mode.\n");
-			sb.append("Customise them in the `.env` file.\n\n");
-			sb.append("### Production\n\n");
-			sb.append("```\n");
-			sb.append("docker compose -f docker-compose.yml -f docker-compose.prod.yml up\n");
-			sb.append("```\n");
-			sb.append("Application is accessible at http://localhost/openmrs (port 80).\n");
-			sb.append("No debug or database ports are exposed in production mode.\n\n");
-			sb.append("### Debug logging\n\n");
-			sb.append("Load the override file to mount a custom log4j configuration at runtime:\n");
-			sb.append("```\n");
-			sb.append("docker compose -f docker-compose.yml -f docker-compose.override.yml up --build\n");
-			sb.append("```\n");
-			sb.append("Edit `web/log4j.properties` (pre-2.5 platforms) or `web/log4j2.xml` (2.5+) ");
-			sb.append("and restart to change log levels without rebuilding the image.\n\n");
-			sb.append("### Customising the initial database\n\n");
-			sb.append("Pass a SQL dump to seed the database on first run:\n");
-			sb.append("```\n");
-			sb.append("mvn openmrs-sdk:build-distro -DdbSql=initial_db.sql\n");
-			sb.append("```\n");
+			appendReadmeResource(readme, "README-compose.md");
 		}
+	}
 
-		try {
-			Files.write(readme.toPath(), sb.toString().getBytes(StandardCharsets.UTF_8));
+	private void appendReadmeResource(File target, String resource) throws MojoExecutionException {
+		try (InputStream in = getClass().getClassLoader().getResourceAsStream("build-distro/" + resource)) {
+			if (in == null) {
+				throw new MojoExecutionException("Classpath resource not found: build-distro/" + resource);
+			}
+			Files.write(target.toPath(), IOUtils.toByteArray(in), APPEND);
 		}
 		catch (IOException e) {
 			throw new MojoExecutionException("Failed to write README.md: " + e.getMessage(), e);
