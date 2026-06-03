@@ -230,9 +230,12 @@ public class BuildDistro extends AbstractTask {
 
 		String distroName = buildDistro(buildDirectory, distribution);
 
-		wizard.showMessage(
-				"The '" + distroName + "' distribution created! To start up the server run 'docker-compose up' from "
-						+ buildDirectory.getAbsolutePath() + "\n");
+		if (skipDockerCompose) {
+			wizard.showMessage("The '" + distroName + "' distribution created in " + buildDirectory.getAbsolutePath() + "\n");
+		} else {
+			wizard.showMessage("The '" + distroName + "' distribution created! To start up the server run 'docker compose up' from "
+					+ buildDirectory.getAbsolutePath() + "\n");
+		}
 	}
 
 	private File getBuildDirectory() throws MojoExecutionException {
