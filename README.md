@@ -54,6 +54,89 @@ To run a SNAPSHOT version of SDK, you need to specify groupId:artifactId:version
 You can also debug commands by creating maven run configurations for the SNAPSHOT version in your IDE 
 and starting them in the debug mode.
 
+## Testing
+
+### Integration tests
+
+Integration tests cover the SDK goals (e.g. `build-distro`, `setup`, `deploy`) without requiring Docker.
+They run as part of the standard build:
+
+```bash
+mvn verify -Pintegration-tests
+```
+
+### Docker E2E tests
+
+The `integration-tests` module contains a suite of end-to-end tests (`BuildDistroE2EIT`) that exercise
+every supported OpenMRS platform version line (1.9.x through 2.8.x) by:
+
+1. Running `build-distro` to generate a `Dockerfile` and `docker-compose.yml` for that version
+2. Starting the generated docker compose stack
+3. Polling `GET /openmrs/ws/rest/v1/systeminformation` (authenticated) until it returns JSON,
+   confirming OpenMRS is fully initialised and webservices.rest has started
+4. Asserting that the `addresshierarchy` module reports `started:true` via
+   `GET /openmrs/ws/rest/v1/module/addresshierarchy`
+
+These tests require a running Docker daemon and are intentionally excluded from the standard
+`integration-tests` profile because each test can take several minutes (artifact download +
+Docker image build + OpenMRS database initialisation).
+
+**Run the full suite:**
+
+```bash
+mvn install -DskipTests                                    # install the SDK to the local Maven repo first
+mvn verify -Pdocker-e2e-tests -pl integration-tests        # run all 13 version tests
+```
+
+**Run a single version:**
+
+```bash
+mvn verify -Pdocker-e2e-tests -pl integration-tests -Dit.test="BuildDistroE2EIT#platform_2_6_x"
+```
+
+**Browse the running instance while the test is paused:**
+
+Adding `-Dbrowser` opens the running container's URL in your default browser and pauses the
+test until you press Enter, so you can navigate around before the container is torn down:
+
+```bash
+mvn verify -Pdocker-e2e-tests -pl integration-tests -Dit.test="BuildDistroE2EIT#platform_2_6_x" -Dbrowser
+```
+
+**Enable debug logging:**
+
+Adding `-DdockerDebug` loads `docker-compose.override.yml` alongside the generated
+`docker-compose.yml`.  The override mounts `web/log4j.properties` (pre-2.5, log4j 1.x) and
+`web/log4j2.xml` (2.5+, log4j 2.x) into the container via `JAVA_TOOL_OPTIONS`, overriding the
+logging configuration bundled inside the WAR.  Edit the relevant file and restart to change
+log levels without rebuilding the image:
+
+```bash
+mvn verify -Pdocker-e2e-tests -pl integration-tests -Dit.test="BuildDistroE2EIT#platform_2_6_x" -DdockerDebug
+```
+
+The available test method names map directly to version lines:
+
+| Method | Platform version |
+|---|---|
+| `platform_1_09_x` | 1.9.12 |
+| `platform_1_10_x` | 1.10.6 |
+| `platform_1_11_x` | 1.11.9 |
+| `platform_1_12_x` | 1.12.1 |
+| `platform_2_0_x` | 2.0.8 |
+| `platform_2_1_x` | 2.1.7 |
+| `platform_2_2_x` | 2.2.1 |
+| `platform_2_3_x` | 2.3.6 |
+| `platform_2_4_x` | 2.4.7 |
+| `platform_2_5_x` | 2.5.15 |
+| `platform_2_6_x` | 2.6.16 |
+| `platform_2_7_x` | 2.7.9 |
+| `platform_2_8_x` | 2.8.6 |
+
+Each test's distro properties file is at
+`integration-tests/src/test/resources/integration-test/openmrs-distro-e2e-{version}.properties`
+and can be used to reproduce the scenario manually — see the comments inside each file.
+
 ## Releasing
 
 Before publishing a new release, go to JIRA at https://issues.openmrs.org/plugins/servlet/project-config/SDK/versions 

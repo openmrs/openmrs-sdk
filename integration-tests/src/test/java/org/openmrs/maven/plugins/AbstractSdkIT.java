@@ -306,6 +306,15 @@ public abstract class AbstractSdkIT {
         assertThat(jsContents, Matchers.containsString(text));
     }
 
+    public void assertFileNotContains(String text, String... paths) throws IOException {
+        Path resolvedPath = testDirectoryPath.toAbsolutePath();
+        for (String path : paths) {
+            resolvedPath = resolvedPath.resolve(path);
+        }
+        String contents = new String(Files.readAllBytes(resolvedPath), StandardCharsets.UTF_8);
+        assertThat(contents, Matchers.not(Matchers.containsString(text)));
+    }
+
     public void assertPathPresent(Path path) {
         assertThat("Expected " + path + " to be an existing file or directory",
                 path.toFile(), anExistingFileOrDirectory());

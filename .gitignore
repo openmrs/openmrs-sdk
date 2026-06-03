@@ -11,3 +11,4 @@ node/
 /.project
 /.classpath
 .DS_Store
+.claude/

@@ -75,6 +75,10 @@ public class SpaInstaller {
 
 		contentHelper.installFrontendConfig(distroProperties, buildTargetDir);
 
+		if (buildTargetDir.mkdirs()) {
+			wizard.showMessage("Created " + SDKConstants.OPENMRS_SERVER_FRONTEND + " directory: " + buildTargetDir.getAbsolutePath());
+		}
+
 		Map<String, String> spaArtifactProperties = distroProperties.getSpaArtifactProperties();
 		Map<String, String> spaBuildProperties = distroProperties.getSpaBuildProperties();
 		if (!spaArtifactProperties.isEmpty() && !spaBuildProperties.isEmpty()) {
@@ -92,9 +96,6 @@ public class SpaInstaller {
 				throw new MojoExecutionException("If specifying a spa.artifactId, you must also specify a spa.groupId and spa.version property");
 			}
 			wizard.showMessage("Installing SPA from Maven artifact: " + artifact);
-			if (buildTargetDir.mkdirs()) {
-				wizard.showMessage("Created " + SDKConstants.OPENMRS_SERVER_FRONTEND + " directory: " + buildTargetDir.getAbsolutePath());
-			}
 			String includes = spaArtifactProperties.get(BaseSdkProperties.INCLUDES);
 			moduleInstaller.installAndUnpackModule(artifact, buildTargetDir, includes);
 			wizard.showMessage("SPA successfully installed to " + buildTargetDir.getAbsolutePath());

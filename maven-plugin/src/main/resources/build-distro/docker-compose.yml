@@ -1,8 +1,6 @@
-version: "3.7"
-
 services:
   db:
-    image: mariadb:10.11.7
+    image: ${OMRS_DB_IMAGE:-mariadb:10.11.7}
     command: "mysqld --character-set-server=utf8 --collation-server=utf8_general_ci"
     environment:
       MYSQL_DATABASE: openmrs
@@ -13,8 +11,8 @@ services:
       - db-data:/var/lib/mysql
 
   web:
-    image: openmrs/openmrs-referenceapplication:${TAG:-nightly}
-    build: web
+    build:
+      context: ./web
     depends_on:
       - db
     ports:

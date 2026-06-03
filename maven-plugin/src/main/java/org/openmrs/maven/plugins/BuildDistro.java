@@ -1,5 +1,10 @@
 package org.openmrs.maven.plugins;
 
+import com.github.dockerjava.api.DockerClient;
+import com.github.dockerjava.api.exception.NotFoundException;
+import com.github.dockerjava.core.DefaultDockerClientConfig;
+import com.github.dockerjava.core.DockerClientBuilder;
+import com.github.dockerjava.httpclient5.ApacheDockerHttpClient;
 import net.lingala.zip4j.core.ZipFile;
 import net.lingala.zip4j.exception.ZipException;
 import net.lingala.zip4j.model.ZipParameters;
@@ -28,9 +33,12 @@ import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import static java.nio.file.StandardOpenOption.APPEND;
+import static java.nio.file.StandardOpenOption.CREATE;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -55,7 +63,6 @@ public class BuildDistro extends AbstractTask {
 
 	private static final String DOCKER_COMPOSE_PROD_PATH = "build-distro/docker-compose.prod.yml";
 
-	private static final String README_PATH = "build-distro/README.md";
 
 	private static final String DISTRIBUTION_VERSION_PROMPT = "You can build the following versions of distribution";
 
@@ -72,6 +79,41 @@ public class BuildDistro extends AbstractTask {
 	private static final String DOCKER_COMPOSE_PROD_YML = "docker-compose.prod.yml";
 
 	private static final String DOCKER_COMPOSE_OVERRIDE_YML = "docker-compose.override.yml";
+
+	/**
+	 * The Docker image namespace (i.e. the registry organisation) to use in the generated Dockerfile.
+	 * Defaults to {@code openmrs}.
+	 */
+	static final String DOCKER_IMAGE_NAMESPACE = "docker.image.namespace";
+
+	/**
+	 * The Docker image repository to use in the generated Dockerfile.
+	 * Defaults to {@code openmrs-core}.
+	 */
+	static final String DOCKER_IMAGE_REPOSITORY = "docker.image.repository";
+
+	/**
+	 * The full Docker image tag to use in the generated Dockerfile, e.g. {@code 2.7.0-amazoncorretto-11}.
+	 * When set, {@link #DOCKER_IMAGE_OPENMRS_VERSION} and {@link #DOCKER_IMAGE_JAVA_VERSION} are ignored.
+	 */
+	static final String DOCKER_IMAGE_TAG = "docker.image.tag";
+
+	/**
+	 * An explicit Docker image tag OpenMRS version component to use, overriding the default registry probe.
+	 * Ignored when {@link #DOCKER_IMAGE_TAG} is set.
+	 * When not set, the SDK probes the registry (local daemon then Docker Hub) for the best available
+	 * tag matching the exact platform version, then {@code major.minor.x}, then
+	 * {@code major.minor.x-nightly}.
+	 */
+	static final String DOCKER_IMAGE_OPENMRS_VERSION = "docker.image.openmrsVersion";
+
+	/**
+	 * Optional Java variant suffix appended to {@link #DOCKER_IMAGE_OPENMRS_VERSION} to form the full tag,
+	 * e.g. setting this to {@code amazoncorretto-11} with an OpenMRS version of {@code 2.7.0} produces the
+	 * tag {@code 2.7.0-amazoncorretto-11}.
+	 * Ignored when {@link #DOCKER_IMAGE_TAG} is set.
+	 */
+	static final String DOCKER_IMAGE_JAVA_VERSION = "docker.image.javaVersion";
 
 	private static final Logger log = LoggerFactory.getLogger(BuildDistro.class);
 
@@ -110,7 +152,7 @@ public class BuildDistro extends AbstractTask {
 	 * the war file in `/webapp/src/main/webapp/WEB-INF/bundledModules`
 	 */
 	@Parameter(defaultValue = "false", property = "bundled")
-	private boolean bundled;
+	boolean bundled;
 
 	/**
 	 * Flag to indicate whether to delete the target directory or not.
@@ -120,6 +162,21 @@ public class BuildDistro extends AbstractTask {
 
 	@Parameter(property = "appShellVersion")
 	private String appShellVersion;
+
+	/**
+	 * Skip generating the default docker-compose.yml, docker-compose.override.yml, and
+	 * docker-compose.prod.yml files.  Use this when you want to supply your own compose
+	 * files, e.g. via the maven-resources-plugin, rather than using the SDK defaults.
+	 */
+	@Parameter(defaultValue = "false", property = "skipDockerCompose")
+	private boolean skipDockerCompose;
+
+	/**
+	 * Skip generating the default Dockerfile.  Use this when you want to supply your own
+	 * Dockerfile, e.g. via the maven-resources-plugin, rather than using the SDK defaults.
+	 */
+	@Parameter(defaultValue = "false", property = "skipDockerfile")
+	private boolean skipDockerfile;
 
 	@Override
 	public void executeTask() throws MojoExecutionException, MojoFailureException {
@@ -173,9 +230,12 @@ public class BuildDistro extends AbstractTask {
 
 		String distroName = buildDistro(buildDirectory, distribution);
 
-		wizard.showMessage(
-				"The '" + distroName + "' distribution created! To start up the server run 'docker-compose up' from "
-						+ buildDirectory.getAbsolutePath() + "\n");
+		if (skipDockerCompose) {
+			wizard.showMessage("The '" + distroName + "' distribution created in " + buildDirectory.getAbsolutePath() + "\n");
+		} else {
+			wizard.showMessage("The '" + distroName + "' distribution created! To start up the server run 'docker compose up' from "
+					+ buildDirectory.getAbsolutePath() + "\n");
+		}
 	}
 
 	private File getBuildDirectory() throws MojoExecutionException {
@@ -245,6 +305,9 @@ public class BuildDistro extends AbstractTask {
 
 		DistroProperties distroProperties = distribution.getEffectiveProperties();
 
+		Version platformVersion = new Version(distroProperties.getPlatformVersion());
+		int majorVersion = platformVersion.getMajorVersion();
+
 		// First do content package validation
 		distroHelper.validateDistribution(distroProperties);
 
@@ -297,6 +360,7 @@ public class BuildDistro extends AbstractTask {
 			frontendDir.mkdir();
 
 			File configDir = new File(web, SDKConstants.OPENMRS_SERVER_CONFIGURATION);
+			configDir.mkdir();
 			configurationInstaller.installToDirectory(configDir, distroProperties);
 			contentHelper.installBackendConfig(distroProperties, configDir);
 			spaInstaller.installFromDistroProperties(web, distroProperties, ignorePeerDependencies, overrideReuseNodeCache);
@@ -306,8 +370,7 @@ public class BuildDistro extends AbstractTask {
 			downloadOWAs(targetDirectory, distroProperties, owasDir);
 		}
 
-		boolean isAbovePlatform2point0 = isAbovePlatformVersion(new Version(distroProperties.getPlatformVersion()), 2, 0);
-		if(isAbovePlatform2point0) {
+		if (majorVersion >= 2) {
 			File openmrsCoreDir = new File(web, "openmrs_core");
 			openmrsCoreDir.mkdir();
 			new File(web, "openmrs.war").renameTo(new File(openmrsCoreDir, "openmrs.war"));
@@ -317,19 +380,27 @@ public class BuildDistro extends AbstractTask {
 			new File(web, "owa").renameTo(new File(web, "openmrs_owas"));
 		}
 
-		wizard.showMessage("Creating Docker Compose configuration...\n");
-		String distroVersion = adjustImageName(distroProperties.getVersion());
-		writeDockerCompose(targetDirectory, distroVersion);
-		writeReadme(targetDirectory, distroVersion);
-		if(!isAbovePlatform2point0) {
-			copyBuildDistroResource("setenv.sh", new File(web, "setenv.sh"));
-			copyBuildDistroResource("startup.sh", new File(web, "startup.sh"));
-			copyBuildDistroResource("wait-for-it.sh", new File(web, "wait-for-it.sh"));
+		// Unless skipped, copy Dockerfile and resources used to build the Docker image
+		if (!skipDockerfile) {
+			if (!isPlatform2point5AndAbove(platformVersion)) {
+				copyBuildDistroResource("setenv.sh", new File(web, "setenv.sh"));
+				copyBuildDistroResource("startup.sh", new File(web, "startup.sh"));
+				copyBuildDistroResource("wait-for-it.sh", new File(web, "wait-for-it.sh"));
+			}
+			copyDockerfile(web, distroProperties);
 		}
-
-		copyBuildDistroResource(".env", new File(targetDirectory, ".env"));
-		copyDockerfile(web, distroProperties);
+		if (!skipDockerCompose) {
+			wizard.showMessage("Creating Docker Compose configuration...\n");
+			writeDockerCompose(targetDirectory);
+			copyBuildDistroResource(".env", new File(targetDirectory, ".env"));
+			if (!isPlatform2point5AndAbove(platformVersion)) {
+				appendToEnvFile(new File(targetDirectory, ".env"), "OMRS_DB_IMAGE", "mysql:5.6");
+			}
+			copyBuildDistroResource("log4j.properties", new File(targetDirectory, "log4j.properties"));
+			copyBuildDistroResource("log4j2.xml", new File(targetDirectory, "log4j2.xml"));
+		}
 		distroProperties.saveTo(web);
+		writeReadme(targetDirectory, !skipDockerfile, !skipDockerCompose);
 
 		dbDumpStream = getSqlDumpStream(StringUtils.isNotBlank(dbSql) ? dbSql : distroProperties.getSqlScriptPath(),
 				targetDirectory, distribution.getArtifact());
@@ -361,42 +432,176 @@ public class BuildDistro extends AbstractTask {
 		return dockerCompose.exists() && dockerComposeOverride.exists() && dockerComposeProd.exists();
 	}
 
-	private void copyDockerfile(File targetDirectory, DistroProperties distroProperties) throws MojoExecutionException {
+	void copyDockerfile(File targetDirectory, DistroProperties distroProperties) throws MojoExecutionException {
 		Version platformVersion = new Version(distroProperties.getPlatformVersion());
 		int majorVersion = platformVersion.getMajorVersion();
-		if (majorVersion == 1) {
-			if (bundled) {
-				copyBuildDistroResource("Dockerfile-jre7-bundled", new File(targetDirectory, "Dockerfile"));
-			} else {
-				copyBuildDistroResource("Dockerfile-jre7", new File(targetDirectory, "Dockerfile"));
-			}
-		} else {
-			if (isPlatform2point5AndAbove(platformVersion)) {
-				if (bundled) {
-					copyBuildDistroResource("Dockerfile-jre11-bundled", new File(targetDirectory, "Dockerfile"));
+
+		String namespace = distroProperties.getParam(DOCKER_IMAGE_NAMESPACE, null);
+		String repository = distroProperties.getParam(DOCKER_IMAGE_REPOSITORY, null);
+
+		// For versions < 2.5, use the built-in Dockerfiles if no specific image information is configured
+		boolean isLowerThan2point5 = !isPlatform2point5AndAbove(platformVersion);
+		if (isLowerThan2point5 && namespace == null && repository == null) {
+			String dockerFile = "Dockerfile-jre" + (majorVersion == 1 ? "7" : "8") + (bundled ? "-bundled" : "");
+			copyBuildDistroResource(dockerFile, new File(targetDirectory, "Dockerfile"));
+		}
+		else {
+			namespace = StringUtils.defaultIfBlank(namespace, "openmrs");
+			repository = StringUtils.defaultIfBlank(repository, "openmrs-core");
+			String dockerImageTag = distroProperties.getParam(DOCKER_IMAGE_TAG);
+			if (StringUtils.isBlank(dockerImageTag)) {
+				String imageOpenmrsVersion = distroProperties.getParam(DOCKER_IMAGE_OPENMRS_VERSION, null);
+				if (imageOpenmrsVersion == null) {
+					// No explicit version — probe the registry for the best available tag for the war.
+					// SNAPSHOT versions and versions without a dedicated Docker image automatically
+					// fall back to the .x rolling tag or the .x-nightly tag, whichever exists first.
+					dockerImageTag = resolveDockerImageTag(namespace, repository, distroProperties.getPlatformVersion());
 				} else {
-					copyBuildDistroResource("Dockerfile-jre11", new File(targetDirectory, "Dockerfile"));
+					dockerImageTag = imageOpenmrsVersion;
+				}
+				String javaVersion = distroProperties.getParam(DOCKER_IMAGE_JAVA_VERSION, null);
+				if (StringUtils.isNotBlank(javaVersion)) {
+					dockerImageTag += "-" + javaVersion;
 				}
 			}
-			else {
-				if (bundled) {
-					copyBuildDistroResource("Dockerfile-jre8-bundled", new File(targetDirectory, "Dockerfile"));
-				} else {
-					copyBuildDistroResource("Dockerfile-jre8", new File(targetDirectory, "Dockerfile"));
+			File dockerFile = new File(targetDirectory, "Dockerfile");
+			List<String> lines = new ArrayList<>();
+			lines.add("# Docker configuration automatically generated by openmrs SDK");
+			lines.add("");
+			lines.add("FROM " + namespace + "/" + repository + ":" + dockerImageTag);
+			lines.add("");
+			lines.add("COPY openmrs_core/openmrs.war /openmrs/distribution/openmrs_core/");
+			lines.add("COPY openmrs-distro.properties /openmrs/distribution/");
+			if (!bundled) {
+				lines.add("COPY openmrs_modules /openmrs/distribution/openmrs_modules");
+				lines.add("COPY openmrs_owas /openmrs/distribution/openmrs_owas");
+				lines.add("COPY openmrs_config /openmrs/distribution/openmrs_config");
+				lines.add("COPY openmrs_spa /openmrs/distribution/openmrs_spa");
+			}
+			lines.add("");
+			for (String extraProperty : distroProperties.getPropertiesNames()) {
+				String propertyValue = distroProperties.getPropertyValue(extraProperty);
+				if (StringUtils.isBlank(propertyValue)) {
+					propertyValue = distroProperties.getPropertyDefault(extraProperty);
 				}
+				if (StringUtils.isNotBlank(propertyValue)) {
+					lines.add("ENV OMRS_EXTRA_" + extraProperty.replace(".", "_") + "=\"" + propertyValue + "\"");
+				}
+			}
+			try {
+				FileUtils.writeLines(dockerFile, "UTF-8", lines);
+			}
+			catch (IOException e) {
+				throw new MojoExecutionException("Failed to write Dockerfile: " + e.getMessage(), e);
 			}
 		}
 	}
 
-	private boolean isPlatform2point5AndAbove(Version platformVersion) {
-		 return isAbovePlatformVersion(platformVersion, 2, 5);
+	/**
+	 * Resolves the best available Docker image tag for the given platform version.
+	 * Candidates are evaluated in preference order — each candidate is checked
+	 * everywhere (local daemon first, then Docker Hub) before the next is considered:
+	 * <ol>
+	 *   <li>Exact release version (e.g. {@code 2.6.16}) — local, then Hub</li>
+	 *   <li>Minor-version rolling tag (e.g. {@code 2.6.x}) — local, then Hub</li>
+	 *   <li>Nightly rolling tag (e.g. {@code 2.6.x-nightly}) — local, then Hub</li>
+	 * </ol>
+	 * Throws if none of the candidates are found anywhere, with a message directing the
+	 * user to set {@link #DOCKER_IMAGE_TAG} or {@link #DOCKER_IMAGE_OPENMRS_VERSION} explicitly.
+	 */
+	String resolveDockerImageTag(String namespace, String repository, String platformVersion) throws MojoExecutionException {
+		// SNAPSHOT versions never have a dedicated Docker image — strip the suffix and resolve
+		// against the release version so we fall through to the .x or .x-nightly rolling tag.
+		String releaseVersion = StringUtils.removeEnd(platformVersion, "-SNAPSHOT");
+		Version version = new Version(releaseVersion);
+		String rollingTag = version.getMajorVersion() + "." + version.getMinorVersion() + ".x";
+		String[] candidates = { releaseVersion, rollingTag, rollingTag + "-nightly" };
+
+		for (String candidate : candidates) {
+			String image = namespace + "/" + repository + ":" + candidate;
+			if (dockerImageExistsLocally(namespace, repository, candidate)) {
+				log.info("Using local Docker image {}", image);
+				return candidate;
+			}
+			if (dockerImageExistsOnHub(namespace, repository, candidate)) {
+				log.info("Using Docker Hub image {}", image);
+				return candidate;
+			}
+		}
+
+		throw new MojoExecutionException(
+				"Could not find a Docker image for " + namespace + "/" + repository
+						+ " matching platform version " + platformVersion
+						+ ". Checked tags: " + String.join(", ", candidates)
+						+ ". Set the " + DOCKER_IMAGE_TAG + " or " + DOCKER_IMAGE_OPENMRS_VERSION
+						+ " property in your distro properties to specify a tag explicitly.");
 	}
 
-	private boolean isAbovePlatformVersion(Version platformVersion, int majorVersion, int minorVersion) {
+	/**
+	 * Returns {@code true} if the given image tag is already present in the local Docker daemon.
+	 * Uses the docker-java API directly rather than shelling out to the {@code docker} CLI.
+	 * Protected to allow overriding in tests.
+	 */
+	protected boolean dockerImageExistsLocally(String namespace, String repository, String tag) {
+		DefaultDockerClientConfig config = DefaultDockerClientConfig.createDefaultConfigBuilder().build();
+		try (DockerClient client = DockerClientBuilder.getInstance(config)
+				.withDockerHttpClient(new ApacheDockerHttpClient.Builder()
+						.dockerHost(config.getDockerHost())
+						.sslConfig(config.getSSLConfig())
+						.build())
+				.build()) {
+			client.inspectImageCmd(namespace + "/" + repository + ":" + tag).exec();
+			return true;
+		}
+		catch (NotFoundException e) {
+			return false;
+		}
+		catch (Exception e) {
+			log.debug("Could not check local Docker daemon for image {}/{}:{} — {}", namespace, repository, tag, e.getMessage());
+			return false;
+		}
+	}
+
+	/**
+	 * Returns {@code true} if the given image tag exists in the Docker Hub registry.
+	 * Protected to allow overriding in tests without making real network calls.
+	 */
+	protected boolean dockerImageExistsOnHub(String namespace, String repository, String tag) {
+		try {
+			URL url = new URL("https://hub.docker.com/v2/repositories/" + namespace + "/" + repository + "/tags/" + tag + "/");
+			HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+			conn.setConnectTimeout(5_000);
+			conn.setReadTimeout(5_000);
+			conn.setRequestMethod("GET");
+			try {
+				return conn.getResponseCode() == 200;
+			} finally {
+				conn.disconnect();
+			}
+		}
+		catch (Exception e) {
+			log.warn("Could not check Docker Hub for {}/{}:{} — {}", namespace, repository, tag, e.getMessage());
+			return false;
+		}
+	}
+
+	private static void appendToEnvFile(File envFile, String key, String value) throws MojoExecutionException {
+		try {
+			Files.write(envFile.toPath(), ("\n" + key + "=" + value + "\n").getBytes(StandardCharsets.UTF_8), APPEND);
+		}
+		catch (IOException e) {
+			throw new MojoExecutionException("Failed to write " + key + " to " + envFile + ": " + e.getMessage(), e);
+		}
+	}
+
+	private boolean isPlatform2point5AndAbove(Version platformVersion) {
+		return isAtOrAbovePlatformVersion(platformVersion, 2, 5);
+	}
+
+	private boolean isAtOrAbovePlatformVersion(Version platformVersion, int majorVersion, int minorVersion) {
 		return platformVersion.getMajorVersion() > majorVersion
 				|| (platformVersion.getMajorVersion() == majorVersion && platformVersion.getMinorVersion() >= minorVersion);
 	}
-
 
 	/**
 	 * name of sql dump file is unknown, so wipe all files with 'sql' extension
@@ -414,17 +619,42 @@ public class BuildDistro extends AbstractTask {
 		}
 	}
 
-	private void writeDockerCompose(File targetDirectory, String version) throws MojoExecutionException {
-		writeTemplatedFile(targetDirectory, version, DOCKER_COMPOSE_PATH, DOCKER_COMPOSE_YML);
-		writeTemplatedFile(targetDirectory, version, DOCKER_COMPOSE_OVERRIDE_PATH, DOCKER_COMPOSE_OVERRIDE_YML);
-		writeTemplatedFile(targetDirectory, version, DOCKER_COMPOSE_PROD_PATH, DOCKER_COMPOSE_PROD_YML);
+	private void writeDockerCompose(File targetDirectory) throws MojoExecutionException {
+		writeTemplatedFile(targetDirectory, DOCKER_COMPOSE_PATH, DOCKER_COMPOSE_YML);
+		writeTemplatedFile(targetDirectory, DOCKER_COMPOSE_OVERRIDE_PATH, DOCKER_COMPOSE_OVERRIDE_YML);
+		writeTemplatedFile(targetDirectory, DOCKER_COMPOSE_PROD_PATH, DOCKER_COMPOSE_PROD_YML);
 	}
 
-	private void writeReadme(File targetDirectory, String version) throws MojoExecutionException {
-		writeTemplatedFile(targetDirectory, version, README_PATH, "README.md");
+	/**
+	 * Writes README.md to the target directory.  Always includes a baseline section describing
+	 * the distribution artifact layout.  Additional sections are included only when the
+	 * corresponding files were generated so the README reflects what is actually present.
+	 */
+	private void writeReadme(File targetDirectory, boolean includeDockerfile, boolean includeDockerCompose) throws MojoExecutionException {
+		File readme = new File(targetDirectory, "README.md");
+		readme.delete();
+		appendReadmeResource(readme, "README.md");
+		if (includeDockerfile) {
+			appendReadmeResource(readme, "README-dockerfile.md");
+		}
+		if (includeDockerCompose) {
+			appendReadmeResource(readme, "README-compose.md");
+		}
 	}
 
-	private void writeTemplatedFile(File targetDirectory, String version, String path, String filename) throws MojoExecutionException {
+	private void appendReadmeResource(File target, String resource) throws MojoExecutionException {
+		try (InputStream in = getClass().getClassLoader().getResourceAsStream("build-distro/" + resource)) {
+			if (in == null) {
+				throw new MojoExecutionException("Classpath resource not found: build-distro/" + resource);
+			}
+			Files.write(target.toPath(), IOUtils.toByteArray(in), CREATE, APPEND);
+		}
+		catch (IOException e) {
+			throw new MojoExecutionException("Failed to write README.md: " + e.getMessage(), e);
+		}
+	}
+
+	private void writeTemplatedFile(File targetDirectory, String path, String filename) throws MojoExecutionException {
 		URL composeUrl = getClass().getClassLoader().getResource(path);
 		if (composeUrl == null) {
 			throw new MojoExecutionException("Failed to find file '" + path + "' in classpath");
@@ -433,7 +663,6 @@ public class BuildDistro extends AbstractTask {
 		if (!compose.exists()) {
 			try (InputStream inputStream = composeUrl.openStream(); FileWriter composeWriter = new FileWriter(compose)) {
 				String content = IOUtils.toString(inputStream, StandardCharsets.UTF_8);
-				content = content.replaceAll("\\$\\{TAG:-nightly}", version);
 				composeWriter.write(content);
 			}
 			catch (IOException e) {
