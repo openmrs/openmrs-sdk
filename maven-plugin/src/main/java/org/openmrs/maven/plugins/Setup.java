@@ -154,6 +154,9 @@ public class Setup extends AbstractServerTask {
 	@Parameter(property = "reuseNodeCache")
 	public Boolean overrideReuseNodeCache;
 
+	@Parameter(defaultValue = "true", property = "verifySignatures")
+	private boolean verifySignatures;
+
 	private ServerHelper serverHelper;
 
 	public Setup() {
@@ -620,6 +623,8 @@ public class Setup extends AbstractServerTask {
 	}
 
 	public void executeTask() throws MojoExecutionException, MojoFailureException {
+		getMavenEnvironment().setVerifySignatures(verifySignatures);
+
 		wizard.showMessage(SETTING_UP_A_NEW_SERVER);
 
 		Server.ServerBuilder serverBuilder;

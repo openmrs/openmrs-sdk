@@ -18,3 +18,8 @@ To regenerate this distribution:
 mvn openmrs-sdk:build-distro -Ddistro=openmrs-distro.properties
 ```
 Add `-Dreset` to overwrite any files you have customised.
+
+Downloaded artifacts are verified against the pinned OpenMRS GPG signing key. Releases
+that are not yet signed are logged and skipped; an artifact whose signature is present
+but invalid fails the build. Add `-DverifySignatures=false` to disable verification (for
+example when building against a private mirror that strips `.asc` files).
