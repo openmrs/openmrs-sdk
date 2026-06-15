@@ -14,10 +14,15 @@ import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentVerifierBuilderProv
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.nio.file.Files;
 import java.security.Security;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.Spliterator;
 import java.util.Spliterators;
@@ -35,7 +40,9 @@ public class SignatureVerifier {
 		}
 	}
 
-	private static final String KEY_RESOURCE = "openmrs-signing-key.asc";
+	private static final List<String> KEYSERVER_URL_TEMPLATES = Collections.unmodifiableList(Arrays.asList(
+			"https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x%s",
+			"https://keys.openpgp.org/vks/v1/by-fingerprint/%s"));
 
 	private static final Set<String> TRUSTED_FINGERPRINTS;
 	static {
@@ -94,29 +101,55 @@ public class SignatureVerifier {
 	}
 
 	private static PGPPublicKey loadAndPin() throws IOException, PGPException {
-		try (InputStream in = SignatureVerifier.class.getClassLoader().getResourceAsStream(KEY_RESOURCE)) {
-			if (in == null) {
-				throw new IllegalStateException("Missing bundled signing key resource: " + KEY_RESOURCE);
+		List<String> errors = new ArrayList<>();
+		for (String fingerprint : TRUSTED_FINGERPRINTS) {
+			for (String template : KEYSERVER_URL_TEMPLATES) {
+				String url = String.format(template, fingerprint);
+				try (InputStream in = openUrl(url)) {
+					if (in != null) {
+						return parseAndPin(in, url);
+					}
+					errors.add(url + " -> non-200 response");
+				}
+				catch (Exception e) {
+					errors.add(url + " -> " + e.getMessage());
+				}
 			}
-			PGPPublicKeyRingCollection rings = new JcaPGPPublicKeyRingCollection(PGPUtil.getDecoderStream(in));
-
-			PGPPublicKey master = StreamSupport
-					.stream(Spliterators.spliteratorUnknownSize(rings.getKeyRings(), Spliterator.ORDERED), false)
-					.flatMap(ring -> StreamSupport.stream(
-							Spliterators.spliteratorUnknownSize(ring.getPublicKeys(), Spliterator.ORDERED), false))
-					.filter(PGPPublicKey::isMasterKey)
-					.findFirst()
-					.orElseThrow(() -> new IllegalStateException("No master public key found in " + KEY_RESOURCE));
-
-			String fp = IntStream.range(0, master.getFingerprint().length)
-					.mapToObj(i -> String.format("%02X", master.getFingerprint()[i]))
-					.collect(Collectors.joining());
-
-			if (!TRUSTED_FINGERPRINTS.contains(fp)) {
-				throw new SecurityException(
-						"Bundled signing key fingerprint " + fp + " is not in the pinned trust set. Refusing to load.");
-			}
-			return master;
 		}
+		throw new IOException("Could not retrieve the OpenMRS signing key from any keyserver: " + String.join("; ", errors));
+	}
+
+	private static InputStream openUrl(String url) throws IOException {
+		HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
+		conn.setConnectTimeout(10_000);
+		conn.setReadTimeout(30_000);
+		conn.setInstanceFollowRedirects(true);
+		if (conn.getResponseCode() != 200) {
+			conn.disconnect();
+			return null;
+		}
+		return conn.getInputStream();
+	}
+
+	private static PGPPublicKey parseAndPin(InputStream in, String source) throws IOException, PGPException {
+		PGPPublicKeyRingCollection rings = new JcaPGPPublicKeyRingCollection(PGPUtil.getDecoderStream(in));
+
+		PGPPublicKey master = StreamSupport
+				.stream(Spliterators.spliteratorUnknownSize(rings.getKeyRings(), Spliterator.ORDERED), false)
+				.flatMap(ring -> StreamSupport.stream(
+						Spliterators.spliteratorUnknownSize(ring.getPublicKeys(), Spliterator.ORDERED), false))
+				.filter(PGPPublicKey::isMasterKey)
+				.findFirst()
+				.orElseThrow(() -> new IllegalStateException("No master public key found in " + source));
+
+		String fp = IntStream.range(0, master.getFingerprint().length)
+				.mapToObj(i -> String.format("%02X", master.getFingerprint()[i]))
+				.collect(Collectors.joining());
+
+		if (!TRUSTED_FINGERPRINTS.contains(fp)) {
+			throw new SecurityException(
+					"Signing key fingerprint " + fp + " from " + source + " is not in the pinned trust set. Refusing to load.");
+		}
+		return master;
 	}
 }
