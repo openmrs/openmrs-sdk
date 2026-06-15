@@ -178,13 +178,8 @@ public class BuildDistro extends AbstractTask {
 	@Parameter(defaultValue = "false", property = "skipDockerfile")
 	private boolean skipDockerfile;
 
-	@Parameter(defaultValue = "true", property = "verifySignatures")
-	private boolean verifySignatures;
-
 	@Override
 	public void executeTask() throws MojoExecutionException, MojoFailureException {
-		getMavenEnvironment().setVerifySignatures(verifySignatures);
-
 		File buildDirectory = getBuildDirectory();
 
 		File userDir = new File(System.getProperty("user.dir"));

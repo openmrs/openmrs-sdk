@@ -68,7 +68,7 @@ public class ArtifactHelper {
 					)
 			);
 
-			if (!unpack && mavenEnvironment.isVerifySignatures() && isOpenmrsArtifact(artifact)) {
+			if (!unpack && isOpenmrsArtifact(artifact)) {
 				File artifactFile = new File(directory, artifact.getDestFileName());
 				verifyAlreadyDownloaded(artifact, artifactFile, directory);
 			}

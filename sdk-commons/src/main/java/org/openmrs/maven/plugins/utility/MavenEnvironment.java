@@ -22,8 +22,6 @@ public class MavenEnvironment {
 	private BuildPluginManager pluginManager;
 	private Wizard wizard;
 
-	private boolean verifySignatures = true;
-
 	public ArtifactHelper getArtifactHelper() {
 		return new ArtifactHelper(this);
 	}
