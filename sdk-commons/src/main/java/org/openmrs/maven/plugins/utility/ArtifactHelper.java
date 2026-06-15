@@ -68,7 +68,7 @@ public class ArtifactHelper {
 					)
 			);
 
-			if (!unpack && mavenEnvironment.isVerifySignatures()) {
+			if (!unpack && mavenEnvironment.isVerifySignatures() && isOpenmrsArtifact(artifact)) {
 				File artifactFile = new File(directory, artifact.getDestFileName());
 				verifyAlreadyDownloaded(artifact, artifactFile, directory);
 			}
@@ -82,7 +82,7 @@ public class ArtifactHelper {
 		boolean signatureFetched = tryFetchSignature(ascArtifact, directory);
 
 		if (!signatureFetched || !ascFile.exists()) {
-			log.warn("Artifact {} is not signed (pre-backfill release). Skipping verification.", artifact);
+			log.warn("No signature found for {}. Skipping verification.", artifact);
 			return;
 		}
 
@@ -129,6 +129,12 @@ public class ArtifactHelper {
 		catch (Exception e) {
 			return false;
 		}
+	}
+
+	private static boolean isOpenmrsArtifact(Artifact artifact) {
+		String groupId = artifact.getGroupId();
+		return groupId != null
+				&& (groupId.equals(Artifact.GROUP_OPENMRS) || groupId.startsWith(Artifact.GROUP_OPENMRS + "."));
 	}
 
 	private static Artifact makeAscArtifact(Artifact artifact) {
