@@ -165,5 +165,9 @@ public class ModuleInstaller {
                         mavenEnvironment.getPluginManager()
                 )
         );
+
+        if (GOAL_COPY.equals(goal)) {
+            mavenEnvironment.getArtifactHelper().verifySignatures(Arrays.asList(artifacts), new File(outputDir));
+        }
     }
 }

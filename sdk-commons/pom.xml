@@ -87,14 +87,6 @@
                     <groupId>com.github.docker-java</groupId>
                     <artifactId>docker-java-transport-netty</artifactId>
                 </exclusion>
-                <exclusion>
-                    <groupId>org.bouncycastle</groupId>
-                    <artifactId>bcpkix-jdk15on</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.bouncycastle</groupId>
-                    <artifactId>bcprov-jdk15on</artifactId>
-                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
@@ -102,18 +94,6 @@
             <artifactId>docker-java-transport-httpclient5</artifactId>
             <version>${docker-java.version}</version>
         </dependency>
-
-        <dependency>
-            <groupId>org.bouncycastle</groupId>
-            <artifactId>bcpg-jdk18on</artifactId>
-            <version>1.80</version>
-        </dependency>
-        <dependency>
-            <groupId>org.bouncycastle</groupId>
-            <artifactId>bcpkix-jdk18on</artifactId>
-            <version>1.80</version>
-        </dependency>
-
 
         <!--Testing-->
         <dependency>
