@@ -297,49 +297,6 @@ public class ServerUpgrader {
 		server.saveAndSynchronizeDistro();
     }
 
-	public void upgradeConfigOnly(Server server, DistroProperties distroProperties) throws MojoExecutionException {
-		List<Artifact> newConfigArtifacts = distroProperties.getConfigArtifacts();
-		List<Artifact> newContentArtifacts = distroProperties.getContentPackageArtifacts();
-
-		if (newConfigArtifacts.isEmpty() && newContentArtifacts.isEmpty()) {
-			parentTask.getLog().warn("No config or content packages found in the distribution; nothing to deploy");
-			return;
-		}
-
-		File configDir = new File(server.getServerDirectory(), SDKConstants.OPENMRS_SERVER_CONFIGURATION);
-		if (configDir.exists()) {
-			parentTask.wizard.showMessage("Removing existing configuration and content packages");
-			try {
-				FileUtils.deleteDirectory(configDir);
-			} catch (IOException e) {
-				throw new MojoExecutionException("Unable to delete existing configuration directory", e);
-			}
-		}
-
-		if (!newConfigArtifacts.isEmpty()) {
-			for (Artifact artifact : server.getConfigArtifacts()) {
-				server.removePropertiesForArtifact(BaseSdkProperties.TYPE_CONFIG, artifact);
-			}
-			parentTask.configurationInstaller.installToServer(server, distroProperties);
-			for (Artifact artifact : newConfigArtifacts) {
-				server.addPropertiesForArtifact(BaseSdkProperties.TYPE_CONFIG, artifact);
-			}
-		}
-
-		if (!newContentArtifacts.isEmpty()) {
-			for (Artifact artifact : server.getContentPackageArtifacts()) {
-				server.removePropertiesForArtifact(BaseSdkProperties.TYPE_CONTENT, artifact);
-			}
-			parentTask.contentHelper.installBackendConfig(distroProperties, configDir);
-			for (Artifact artifact : newContentArtifacts) {
-				server.addPropertiesForArtifact(BaseSdkProperties.TYPE_CONTENT, artifact);
-			}
-		}
-
-		server.saveAndSynchronizeDistro();
-		parentTask.getLog().info("Configuration deployed successfully");
-	}
-
 	public void validateServerMetadata(Path serverPath) throws MojoExecutionException {
 		File serverProperties = serverPath.resolve(SDKConstants.OPENMRS_SERVER_PROPERTIES).toFile();
 		File installationProperties = serverPath.resolve("installation.properties").toFile();

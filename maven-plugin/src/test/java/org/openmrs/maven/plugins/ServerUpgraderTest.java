@@ -247,7 +247,7 @@ public class ServerUpgraderTest {
 	}
 	
 	@Test
-	public void upgradeConfigOnly_shouldInstallConfigAndContentAndUpdateServerTracking() throws Exception {
+	public void updateConfigAndContent_shouldInstallConfigAndContentWhenDifferentialShowsChanges() throws Exception {
 		Properties serverProps = properties(
 				"config.old", "1.0.0",
 				"content.old", "1.0.0"
@@ -261,8 +261,9 @@ public class ServerUpgraderTest {
 				"content.hiv.groupId", "org.openmrs.content"
 		);
 		DistroProperties distroProperties = new DistroProperties(distroProps);
+		UpgradeDifferential diff = upgraderWithMocks.calculateUpdateDifferential(server, distribution(distroProps));
 
-		upgraderWithMocks.upgradeConfigOnly(server, distroProperties);
+		upgraderWithMocks.updateConfigAndContent(server, distroProperties, diff);
 
 		verify(mockConfigInstaller).installToServer(eq(server), eq(distroProperties));
 		verify(mockContentHelper).installBackendConfig(eq(distroProperties), any(File.class));
@@ -271,11 +272,18 @@ public class ServerUpgraderTest {
 	}
 
 	@Test
-	public void upgradeConfigOnly_shouldSkipInstallWhenDistroHasNoConfigOrContent() throws Exception {
-		Server server = serverWithDir(new Properties());
-		DistroProperties distroProperties = new DistroProperties(properties("war.openmrs", "2.5.9"));
+	public void updateConfigAndContent_shouldSkipInstallWhenDifferentialShowsNoChanges() throws Exception {
+		Properties sameProps = properties(
+				"config.referenceapplication", "3.0.0",
+				"config.referenceapplication.groupId", "org.openmrs.distro",
+				"content.hiv", "1.0.0",
+				"content.hiv.groupId", "org.openmrs.content"
+		);
+		Server server = server(sameProps);
+		DistroProperties distroProperties = new DistroProperties(sameProps);
+		UpgradeDifferential diff = upgraderWithMocks.calculateUpdateDifferential(server, distribution(sameProps));
 
-		upgraderWithMocks.upgradeConfigOnly(server, distroProperties);
+		upgraderWithMocks.updateConfigAndContent(server, distroProperties, diff);
 
 		verifyNoInteractions(mockConfigInstaller);
 		verifyNoInteractions(mockContentHelper);
