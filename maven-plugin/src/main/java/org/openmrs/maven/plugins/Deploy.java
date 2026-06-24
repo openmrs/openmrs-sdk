@@ -1,6 +1,5 @@
 package org.openmrs.maven.plugins;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.BuildPluginManager;
@@ -10,7 +9,6 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.openmrs.maven.plugins.model.Artifact;
-import org.openmrs.maven.plugins.model.BaseSdkProperties;
 import org.openmrs.maven.plugins.model.Distribution;
 import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.Project;
@@ -20,7 +18,6 @@ import org.openmrs.maven.plugins.utility.DistributionBuilder;
 import org.openmrs.maven.plugins.utility.SDKConstants;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -125,14 +122,6 @@ public class Deploy extends AbstractServerTask {
 	}
 
 	public void executeTask() throws MojoExecutionException, MojoFailureException {
-		if (configOnly) {
-			if (platform != null || owa != null || artifactId != null) {
-				throw new MojoExecutionException("configOnly cannot be combined with platform, owa, or module artifact parameters");
-			}
-			deployConfigOnly(getServer());
-			return;
-		}
-
 		Server server = getServer();
 		/*
 		 * workflow:
@@ -151,7 +140,7 @@ public class Deploy extends AbstractServerTask {
 			if (artifact != null) {
 				deployOpenmrsFromDir(server, artifact);
 			} else if (distribution != null) {
-				serverUpgrader.upgradeToDistro(server, distribution, ignorePeerDependencies, overrideReuseNodeCache);
+				serverUpgrader.upgradeToDistro(server, distribution, ignorePeerDependencies, overrideReuseNodeCache, configOnly);
 			} else if (checkCurrentDirForModuleProject()) {
 				deployModule(groupId, artifactId, version, server);
 			} else {
@@ -159,7 +148,7 @@ public class Deploy extends AbstractServerTask {
 			}
 		} else if (distro != null) {
 			Distribution distribution = distroHelper.resolveDistributionForStringSpecifier(distro, versionsHelper);
-			serverUpgrader.upgradeToDistro(server, distribution, ignorePeerDependencies, overrideReuseNodeCache);
+			serverUpgrader.upgradeToDistro(server, distribution, ignorePeerDependencies, overrideReuseNodeCache, configOnly);
 		} else if (platform != null) {
 			deployOpenmrs(server, platform);
 		} else if (owa != null) {
@@ -573,64 +562,6 @@ public class Deploy extends AbstractServerTask {
 		}
 		return hasProject;
 	}
-
-    void deployConfigOnly(Server server) throws MojoExecutionException {
-        Distribution distribution;
-        if (distro != null) {
-            distribution = distroHelper.resolveDistributionForStringSpecifier(distro, versionsHelper);
-        } else {
-            File distroPropertiesFile = distroHelper.getDistroPropertiesFileFromDir();
-            if (distroPropertiesFile == null) {
-                throw new MojoExecutionException(
-                        "No distribution specified. Use -Ddistro=... or run from a directory containing a distro.properties file");
-            }
-            DistributionBuilder builder = new DistributionBuilder(getMavenEnvironment());
-            distribution = builder.buildFromFile(distroPropertiesFile);
-        }
-
-        DistroProperties distroProperties = distribution.getEffectiveProperties();
-
-        List<Artifact> newConfigArtifacts = distroProperties.getConfigArtifacts();
-        List<Artifact> newContentArtifacts = distroProperties.getContentPackageArtifacts();
-
-        if (newConfigArtifacts.isEmpty() && newContentArtifacts.isEmpty()) {
-            getLog().warn("No config or content packages found in the distribution; nothing to deploy");
-            return;
-        }
-
-        File configDir = new File(server.getServerDirectory(), SDKConstants.OPENMRS_SERVER_CONFIGURATION);
-        if (configDir.exists()) {
-            wizard.showMessage("Removing existing configuration and content packages");
-            try {
-                FileUtils.deleteDirectory(configDir);
-            } catch (IOException e) {
-                throw new MojoExecutionException("Unable to delete existing configuration directory", e);
-            }
-        }
-
-        if (!newConfigArtifacts.isEmpty()) {
-            for (Artifact artifact : server.getConfigArtifacts()) {
-                server.removePropertiesForArtifact(BaseSdkProperties.TYPE_CONFIG, artifact);
-            }
-            configurationInstaller.installToServer(server, distroProperties);
-            for (Artifact artifact : newConfigArtifacts) {
-                server.addPropertiesForArtifact(BaseSdkProperties.TYPE_CONFIG, artifact);
-            }
-        }
-
-        if (!newContentArtifacts.isEmpty()) {
-            for (Artifact artifact : server.getContentPackageArtifacts()) {
-                server.removePropertiesForArtifact(BaseSdkProperties.TYPE_CONTENT, artifact);
-            }
-            contentHelper.installBackendConfig(distroProperties, configDir);
-            for (Artifact artifact : newContentArtifacts) {
-                server.addPropertiesForArtifact(BaseSdkProperties.TYPE_CONTENT, artifact);
-            }
-        }
-
-        server.saveAndSynchronizeDistro();
-        getLog().info("Configuration deployed successfully");
-    }
 
     @Override
     protected Server loadServer() throws MojoExecutionException {
