@@ -1,24 +1,55 @@
 package org.openmrs.maven.plugins;
 
+import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.openmrs.maven.plugins.model.Artifact;
 import org.openmrs.maven.plugins.model.Distribution;
 import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.model.UpgradeDifferential;
+import org.openmrs.maven.plugins.utility.ConfigurationInstaller;
+import org.openmrs.maven.plugins.utility.ContentHelper;
+import org.openmrs.maven.plugins.utility.Wizard;
 
+import java.io.File;
 import java.util.Properties;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 public class ServerUpgraderTest {
-	
+
+	@Rule
+	public TemporaryFolder tempFolder = new TemporaryFolder();
+
 	ServerUpgrader upgrader = new ServerUpgrader(mock(AbstractServerTask.class));
 	UpgradeDifferential differential = null;
+
+	ServerUpgrader upgraderWithMocks;
+	ConfigurationInstaller mockConfigInstaller;
+	ContentHelper mockContentHelper;
+	Wizard mockWizard;
+
+	@Before
+	public void setUpMockUpgrader() {
+		Deploy parentTask = new Deploy();
+		mockConfigInstaller = mock(ConfigurationInstaller.class);
+		mockContentHelper = mock(ContentHelper.class);
+		mockWizard = mock(Wizard.class);
+		parentTask.configurationInstaller = mockConfigInstaller;
+		parentTask.contentHelper = mockContentHelper;
+		parentTask.wizard = mockWizard;
+		upgraderWithMocks = new ServerUpgrader(parentTask);
+	}
 
 	@Test
 	public void calculateUpdateDifferential_shouldCalculateArtifactsToAdd() {
@@ -215,6 +246,55 @@ public class ServerUpgraderTest {
 		assertThat(differential.getModuleChanges().getDowngradedArtifacts().values(), hasItem(new Artifact(moduleId + "-omod", toVersion)));
 	}
 	
+	@Test
+	public void updateConfigAndContent_shouldInstallConfigAndContentWhenDifferentialShowsChanges() throws Exception {
+		Properties serverProps = properties(
+				"config.old", "1.0.0",
+				"content.old", "1.0.0"
+		);
+		Server server = serverWithDir(serverProps);
+
+		Properties distroProps = properties(
+				"config.referenceapplication", "3.0.0",
+				"config.referenceapplication.groupId", "org.openmrs.distro",
+				"content.hiv", "1.0.0",
+				"content.hiv.groupId", "org.openmrs.content"
+		);
+		DistroProperties distroProperties = new DistroProperties(distroProps);
+		UpgradeDifferential diff = upgraderWithMocks.calculateUpdateDifferential(server, distribution(distroProps));
+
+		upgraderWithMocks.updateConfigAndContent(server, distroProperties, diff);
+
+		verify(mockConfigInstaller).installToServer(eq(server), eq(distroProperties));
+		verify(mockContentHelper).installBackendConfig(eq(distroProperties), any(File.class));
+		assertThat(server.getConfigArtifacts(), hasSize(1));
+		assertThat(server.getContentPackageArtifacts(), hasSize(1));
+	}
+
+	@Test
+	public void updateConfigAndContent_shouldSkipInstallWhenDifferentialShowsNoChanges() throws Exception {
+		Properties sameProps = properties(
+				"config.referenceapplication", "3.0.0",
+				"config.referenceapplication.groupId", "org.openmrs.distro",
+				"content.hiv", "1.0.0",
+				"content.hiv.groupId", "org.openmrs.content"
+		);
+		Server server = server(sameProps);
+		DistroProperties distroProperties = new DistroProperties(sameProps);
+		UpgradeDifferential diff = upgraderWithMocks.calculateUpdateDifferential(server, distribution(sameProps));
+
+		upgraderWithMocks.updateConfigAndContent(server, distroProperties, diff);
+
+		verifyNoInteractions(mockConfigInstaller);
+		verifyNoInteractions(mockContentHelper);
+	}
+
+	Server serverWithDir(Properties properties) throws Exception {
+		File dir = tempFolder.newFolder();
+		new File(dir, DistroProperties.DISTRO_FILE_NAME).createNewFile();
+		return new Server(dir, properties);
+	}
+
 	Distribution distribution(Properties properties) {
 		Distribution distribution = new Distribution();
 		distribution.setEffectiveProperties(new DistroProperties(properties));

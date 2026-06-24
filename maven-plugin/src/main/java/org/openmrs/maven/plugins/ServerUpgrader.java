@@ -42,9 +42,22 @@ public class ServerUpgrader {
     }
 
 	public void upgradeToDistro(Server server, Distribution distribution, boolean ignorePeerDependencies, Boolean overrideReuseNodeCache) throws MojoExecutionException {
+		upgradeToDistro(server, distribution, ignorePeerDependencies, overrideReuseNodeCache, false);
+	}
+
+	public void upgradeToDistro(Server server, Distribution distribution, boolean ignorePeerDependencies, Boolean overrideReuseNodeCache, boolean configOnly) throws MojoExecutionException {
 		boolean serverExists = server.getPropertiesFile().exists();
 		UpgradeDifferential upgradeDifferential = calculateUpdateDifferential(server, distribution);
 		DistroProperties distroProperties = distribution.getEffectiveProperties();
+		if (configOnly) {
+			if (serverExists) {
+				updateConfigAndContent(server, distroProperties, upgradeDifferential);
+			}
+			else {
+				parentTask.wizard.showMessage("Server does not exist, cannot update configuration only");
+			}
+			return;
+		}
 		if (serverExists) {
 			boolean confirmed = parentTask.wizard.promptForConfirmDistroUpgrade(upgradeDifferential);
 			if (!confirmed) {
@@ -124,6 +137,33 @@ public class ServerUpgrader {
 		}
 
 		// Upgrade config and content
+		updateConfigAndContent(server, distroProperties, upgradeDifferential);
+
+		// Upgrade spa if any of the spa artifacts, build properties, or content packages have changes
+		UpgradeDifferential.ArtifactChanges spaArtifactChanges = upgradeDifferential.getSpaArtifactChanges();
+		UpgradeDifferential.PropertyChanges spaBuildChanges = upgradeDifferential.getSpaBuildChanges();
+		boolean updateSpa = spaArtifactChanges.hasChanges() || spaBuildChanges.hasChanges() || upgradeDifferential.getContentChanges().hasChanges();
+		if (updateSpa) {
+			parentTask.spaInstaller.installFromDistroProperties(server.getServerDirectory(), distroProperties, ignorePeerDependencies, overrideReuseNodeCache);
+			server.replaceSpaProperties(distroProperties.getSpaProperties());
+		}
+
+		server.setVersion(distroProperties.getVersion());
+		server.setName(distroProperties.getName());
+		if (server.getDistroPropertiesFile().delete()) {
+			parentTask.wizard.showMessage("Removed old distro properties file, and saving new one");
+		}
+		distroProperties.saveTo(server.getServerDirectory());
+		server.deleteBackupProperties();
+		deleteDependencyPluginMarker();
+		server.saveAndSynchronizeDistro();
+		parentTask.getLog().info("Server upgraded successfully");
+	}
+
+	/**
+	 * Applies config and content changes defined in the distro properties to a given server
+	 */
+	public void updateConfigAndContent(Server server, DistroProperties distroProperties, UpgradeDifferential upgradeDifferential) throws MojoExecutionException {
 		UpgradeDifferential.ArtifactChanges configChanges = upgradeDifferential.getConfigChanges();
 		UpgradeDifferential.ArtifactChanges contentChanges = upgradeDifferential.getContentChanges();
 
@@ -160,26 +200,6 @@ public class ServerUpgrader {
 				}
 			}
 		}
-
-		// Upgrade spa if any of the spa artifacts, build properties, or content packages have changes
-		UpgradeDifferential.ArtifactChanges spaArtifactChanges = upgradeDifferential.getSpaArtifactChanges();
-		UpgradeDifferential.PropertyChanges spaBuildChanges = upgradeDifferential.getSpaBuildChanges();
-		boolean updateSpa = spaArtifactChanges.hasChanges() || spaBuildChanges.hasChanges() || contentChanges.hasChanges();
-		if (updateSpa) {
-			parentTask.spaInstaller.installFromDistroProperties(server.getServerDirectory(), distroProperties, ignorePeerDependencies, overrideReuseNodeCache);
-			server.replaceSpaProperties(distroProperties.getSpaProperties());
-		}
-
-		server.setVersion(distroProperties.getVersion());
-		server.setName(distroProperties.getName());
-		if (server.getDistroPropertiesFile().delete()) {
-			parentTask.wizard.showMessage("Removed old distro properties file, and saving new one");
-		}
-		distroProperties.saveTo(server.getServerDirectory());
-		server.deleteBackupProperties();
-		deleteDependencyPluginMarker();
-		server.saveAndSynchronizeDistro();
-		parentTask.getLog().info("Server upgraded successfully");
 	}
 
 	/**

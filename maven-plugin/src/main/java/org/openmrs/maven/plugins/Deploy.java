@@ -102,6 +102,12 @@ public class Deploy extends AbstractServerTask {
 	@Parameter(property = "reuseNodeCache")
 	public Boolean overrideReuseNodeCache;
 
+	/**
+	 * If true, skips WAR/module/OWA/SPA updates and force-reinstalls only config and content package artifacts.
+	 */
+	@Parameter(property = "configOnly")
+	private boolean configOnly;
+
 	public Deploy() {
 	}
 
@@ -134,7 +140,7 @@ public class Deploy extends AbstractServerTask {
 			if (artifact != null) {
 				deployOpenmrsFromDir(server, artifact);
 			} else if (distribution != null) {
-				serverUpgrader.upgradeToDistro(server, distribution, ignorePeerDependencies, overrideReuseNodeCache);
+				serverUpgrader.upgradeToDistro(server, distribution, ignorePeerDependencies, overrideReuseNodeCache, configOnly);
 			} else if (checkCurrentDirForModuleProject()) {
 				deployModule(groupId, artifactId, version, server);
 			} else {
@@ -142,7 +148,7 @@ public class Deploy extends AbstractServerTask {
 			}
 		} else if (distro != null) {
 			Distribution distribution = distroHelper.resolveDistributionForStringSpecifier(distro, versionsHelper);
-			serverUpgrader.upgradeToDistro(server, distribution, ignorePeerDependencies, overrideReuseNodeCache);
+			serverUpgrader.upgradeToDistro(server, distribution, ignorePeerDependencies, overrideReuseNodeCache, configOnly);
 		} else if (platform != null) {
 			deployOpenmrs(server, platform);
 		} else if (owa != null) {
