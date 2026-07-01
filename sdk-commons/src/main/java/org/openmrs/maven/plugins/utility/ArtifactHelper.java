@@ -63,6 +63,78 @@ public class ArtifactHelper {
 							mavenEnvironment.getPluginManager()
 					)
 			);
+
+			if (!unpack) {
+				verifySignatures(java.util.Collections.singletonList(artifact), directory);
+			}
 		}
+	}
+
+	/**
+	 * Verifies the GPG signatures of the given already-downloaded artifacts by delegating to the
+	 * openmrs-pgpverify-maven-plugin. The plugin owns the trust check: it only verifies artifacts in
+	 * its whitelisted groups (org.openmrs by default), resolves each .asc, and fails the build on an
+	 * invalid signature. Missing signatures and non-whitelisted artifacts are tolerated.
+	 *
+	 * @param artifacts the artifacts to verify
+	 * @param directory the directory the artifacts were downloaded into
+	 */
+	public void verifySignatures(List<Artifact> artifacts, File directory) throws MojoExecutionException {
+		if (artifacts == null) {
+			return;
+		}
+		List<Artifact> openmrsArtifacts = new ArrayList<>();
+		for (Artifact artifact : artifacts) {
+			if (isOpenmrsArtifact(artifact)) {
+				openmrsArtifacts.add(artifact);
+			}
+		}
+		if (openmrsArtifacts.isEmpty()) {
+			return;
+		}
+		executeMojo(
+				plugin(
+						groupId(SDKConstants.PGPVERIFY_PLUGIN_GROUP_ID),
+						artifactId(SDKConstants.PGPVERIFY_PLUGIN_ARTIFACT_ID),
+						version(SDKConstants.PGPVERIFY_PLUGIN_VERSION)
+				),
+				goal("verify-files"),
+				configuration(
+						verifyFilesArtifacts(openmrsArtifacts, directory),
+						element("failOnMissingSignature", "false")
+				),
+				executionEnvironment(
+						mavenEnvironment.getMavenProject(),
+						mavenEnvironment.getMavenSession(),
+						mavenEnvironment.getPluginManager()
+				)
+		);
+	}
+
+	static boolean isOpenmrsArtifact(Artifact artifact) {
+		String groupId = artifact.getGroupId();
+		return groupId != null
+				&& (groupId.equals(Artifact.GROUP_OPENMRS) || groupId.startsWith(Artifact.GROUP_OPENMRS + "."));
+	}
+
+	static MojoExecutor.Element verifyFilesArtifacts(List<Artifact> artifacts, File directory) {
+		List<MojoExecutor.Element> items = new ArrayList<>();
+		for (Artifact artifact : artifacts) {
+			items.add(artifactItem(artifact, new File(directory, artifact.getDestFileName())));
+		}
+		return element("artifacts", items.toArray(new MojoExecutor.Element[0]));
+	}
+
+	static MojoExecutor.Element artifactItem(Artifact artifact, File artifactFile) {
+		List<MojoExecutor.Element> item = new ArrayList<>();
+		item.add(element("file", artifactFile.getAbsolutePath()));
+		item.add(element("groupId", artifact.getGroupId()));
+		item.add(element("artifactId", artifact.getArtifactId()));
+		item.add(element("version", artifact.getVersion()));
+		item.add(element("type", artifact.getType()));
+		if (artifact.getClassifier() != null) {
+			item.add(element("classifier", artifact.getClassifier()));
+		}
+		return element("artifact", item.toArray(new MojoExecutor.Element[0]));
 	}
 }
