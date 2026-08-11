@@ -922,8 +922,10 @@ public class DefaultWizard implements Wizard {
 
 		String containerId = promptForMissingValueWithOptions("Select the docker container: ", null, null,
 				containerNames, customMessage, "");
-		String username = prompt("Please specify DB username");
-		String password = promptForPassword("Please specify DB password");
+		String username = promptForValueIfMissingWithDefault(
+				"Please specify DB username (-D%s)", server.getDbUser(), "dbUser", "");
+		String password = promptForPasswordIfMissingWithDefault(
+				"Please specify DB password (-D%s)", server.getDbPassword(), "dbPassword", "");
 
 		String defaultDbUri = getDefaultDbUri(server, dockerHelper);
 
