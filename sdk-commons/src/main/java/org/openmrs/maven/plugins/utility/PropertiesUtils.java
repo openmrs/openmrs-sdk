@@ -27,6 +27,9 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.Reader;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.CharsetDecoder;
+import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Enumeration;
@@ -67,6 +70,8 @@ public class PropertiesUtils {
 
 		try (InputStream in = Files.newInputStream(file.toPath())) {
 			loadPropertiesFromInputStream(in, properties);
+		} catch (MojoExecutionException e) {
+			throw new MojoExecutionException(file.getAbsolutePath() + ": " + e.getMessage(), e);
 		} catch (IOException e) {
 			throw new MojoExecutionException(e.getMessage(), e);
 		}
@@ -103,6 +108,8 @@ public class PropertiesUtils {
 			}
 
 			loadPropertiesFromInputStream(in, properties);
+		} catch (MojoExecutionException e) {
+			throw new MojoExecutionException("\"" + resource + "\": " + e.getMessage(), e);
 		} catch (IOException e) {
 			throw new MojoExecutionException(e.getMessage(), e);
 		}
@@ -123,7 +130,9 @@ public class PropertiesUtils {
 
 	/**
 	 * Loads properties from an input stream into a Properties object
-	 * Reads the stream as UTF-8 for compatibility
+	 * Reads the stream as UTF-8 for compatibility. Malformed or non-UTF-8 byte sequences are
+	 * reported as an error rather than silently replaced, so a mis-encoded file fails the build
+	 * instead of producing corrupted property values.
 	 * @param in the input stream to load properties from
 	 * @param properties the properties object to load the properties into
 	 * @throws MojoExecutionException if an exception occurs reading or parsing the input stream
@@ -137,8 +146,14 @@ public class PropertiesUtils {
 			throw new MojoExecutionException("The properties object to load the properties into must not be null");
 		}
 
-		try (Reader reader = new InputStreamReader(in, StandardCharsets.UTF_8)) {
+		CharsetDecoder strictUtf8Decoder = StandardCharsets.UTF_8.newDecoder()
+				.onMalformedInput(CodingErrorAction.REPORT)
+				.onUnmappableCharacter(CodingErrorAction.REPORT);
+
+		try (Reader reader = new InputStreamReader(in, strictUtf8Decoder)) {
 			properties.load(reader);
+		} catch (CharacterCodingException e) {
+			throw new MojoExecutionException("The properties file is not valid UTF-8 - please re-save it with UTF-8 encoding", e);
 		} catch (IOException e) {
 			throw new MojoExecutionException(e.getMessage(), e);
 		}
@@ -242,9 +257,7 @@ public class PropertiesUtils {
 			while (entries.hasMoreElements()) {
 				ZipEntry zipEntry = entries.nextElement();
 				if ("distro.properties".equals(zipEntry.getName())) {
-					try (Reader reader = new InputStreamReader(zipFile.getInputStream(zipEntry), StandardCharsets.UTF_8)) {
-						properties.load(reader);
-					}
+					loadPropertiesFromInputStream(zipFile.getInputStream(zipEntry), properties);
 				}
 			}
 		}

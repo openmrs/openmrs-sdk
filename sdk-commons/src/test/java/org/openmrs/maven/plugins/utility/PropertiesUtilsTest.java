@@ -10,8 +10,10 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Properties;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.fail;
 
 public class PropertiesUtilsTest {
 
@@ -42,5 +44,22 @@ public class PropertiesUtilsTest {
 
         assertThat(properties.getProperty("var.escaped"), equalTo("café"));
         assertThat(properties.getProperty("var.oncologyLocation"), equalTo("Butaro Hospital"));
+    }
+
+    @Test
+    public void loadPropertiesFromFile_shouldFailLoudlyRatherThanSilentlyReplaceInvalidUtf8() throws Exception {
+        File file = tempFolder.newFile("content.properties");
+        // "café" saved by an editor using ISO-8859-1/cp1252, not UTF-8: the raw byte 0xE9 for
+        // "é" is not a valid UTF-8 byte sequence on its own. Loading this must raise a clear
+        // error rather than silently substituting the U+FFFD replacement character.
+        byte[] invalidUtf8 = {'v', 'a', 'r', '.', 'x', '=', 'c', 'a', 'f', (byte) 0xE9, '\n'};
+        Files.write(file.toPath(), invalidUtf8);
+
+        try {
+            PropertiesUtils.loadPropertiesFromFile(file);
+            fail("Expected a MojoExecutionException for invalid UTF-8 content");
+        } catch (MojoExecutionException e) {
+            assertThat(e.getMessage(), containsString(file.getAbsolutePath()));
+        }
     }
 }
