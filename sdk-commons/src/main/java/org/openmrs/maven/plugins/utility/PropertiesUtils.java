@@ -24,7 +24,9 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Enumeration;
@@ -121,6 +123,13 @@ public class PropertiesUtils {
 
 	/**
 	 * Loads properties from an input stream into a Properties object
+	 * <p>
+	 * Reads the stream as UTF-8 rather than relying on {@link Properties#load(InputStream)}'s
+	 * ISO-8859-1 default, so that non-ASCII characters (e.g. accented text in translated
+	 * constants) written directly into a properties file are read back correctly. Files that
+	 * already use the classic Java Properties {@code \\uXXXX} escape convention for non-ASCII
+	 * text continue to work exactly as before, since escape processing is independent of the
+	 * stream's charset.
 	 *
 	 * @param in the input stream to load properties from
 	 * @param properties the properties object to load the properties into
@@ -135,8 +144,8 @@ public class PropertiesUtils {
 			throw new MojoExecutionException("The properties object to load the properties into must not be null");
 		}
 
-		try {
-			properties.load(in);
+		try (Reader reader = new InputStreamReader(in, StandardCharsets.UTF_8)) {
+			properties.load(reader);
 		} catch (IOException e) {
 			throw new MojoExecutionException(e.getMessage(), e);
 		}
@@ -240,7 +249,9 @@ public class PropertiesUtils {
 			while (entries.hasMoreElements()) {
 				ZipEntry zipEntry = entries.nextElement();
 				if ("distro.properties".equals(zipEntry.getName())) {
-					properties.load(zipFile.getInputStream(zipEntry));
+					try (Reader reader = new InputStreamReader(zipFile.getInputStream(zipEntry), StandardCharsets.UTF_8)) {
+						properties.load(reader);
+					}
 				}
 			}
 		}
