@@ -156,7 +156,8 @@ public class PropertiesUtils {
 		// UTF-8 (so the strict decoder above wouldn't reject it) but Properties.load() has no
 		// concept of it, and would otherwise fold the U+FEFF character into the first key.
 		try (InputStream bomStripped = BOMInputStream.builder().setInputStream(in).get();
-				Reader reader = new InputStreamReader(bomStripped, strictUtf8Decoder)) {
+			 Reader reader = new InputStreamReader(bomStripped, strictUtf8Decoder)
+		) {
 			properties.load(reader);
 		} catch (CharacterCodingException e) {
 			throw new MojoExecutionException("The properties file is not valid UTF-8 - please re-save it with UTF-8 encoding", e);
