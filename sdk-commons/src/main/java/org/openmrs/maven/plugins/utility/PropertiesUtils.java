@@ -3,6 +3,7 @@ package org.openmrs.maven.plugins.utility;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.input.BOMInputStream;
 import org.apache.commons.lang.text.StrSubstitutor;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -73,7 +74,7 @@ public class PropertiesUtils {
 		} catch (MojoExecutionException e) {
 			throw new MojoExecutionException(file.getAbsolutePath() + ": " + e.getMessage(), e);
 		} catch (IOException e) {
-			throw new MojoExecutionException(e.getMessage(), e);
+			throw new MojoExecutionException(file.getAbsolutePath() + ": " + e.getMessage(), e);
 		}
 	}
 
@@ -102,16 +103,17 @@ public class PropertiesUtils {
 			throw new MojoExecutionException("The resource to load the properties from must be supplied");
 		}
 
-		try (InputStream in = PropertiesUtils.class.getClassLoader().getResourceAsStream(resource)) {
-			if (in == null) {
-				throw new MojoExecutionException("Could not load \"" + resource + "\" from the classpath");
-			}
+		InputStream resourceStream = PropertiesUtils.class.getClassLoader().getResourceAsStream(resource);
+		if (resourceStream == null) {
+			throw new MojoExecutionException("Could not load \"" + resource + "\" from the classpath");
+		}
 
+		try (InputStream in = resourceStream) {
 			loadPropertiesFromInputStream(in, properties);
 		} catch (MojoExecutionException e) {
 			throw new MojoExecutionException("\"" + resource + "\": " + e.getMessage(), e);
 		} catch (IOException e) {
-			throw new MojoExecutionException(e.getMessage(), e);
+			throw new MojoExecutionException("\"" + resource + "\": " + e.getMessage(), e);
 		}
 	}
 
@@ -150,7 +152,11 @@ public class PropertiesUtils {
 				.onMalformedInput(CodingErrorAction.REPORT)
 				.onUnmappableCharacter(CodingErrorAction.REPORT);
 
-		try (Reader reader = new InputStreamReader(in, strictUtf8Decoder)) {
+		// Strips a leading UTF-8 byte-order mark, if present, before decoding. A BOM is valid
+		// UTF-8 (so the strict decoder above wouldn't reject it) but Properties.load() has no
+		// concept of it, and would otherwise fold the U+FEFF character into the first key.
+		try (InputStream bomStripped = BOMInputStream.builder().setInputStream(in).get();
+				Reader reader = new InputStreamReader(bomStripped, strictUtf8Decoder)) {
 			properties.load(reader);
 		} catch (CharacterCodingException e) {
 			throw new MojoExecutionException("The properties file is not valid UTF-8 - please re-save it with UTF-8 encoding", e);
