@@ -133,6 +133,33 @@ public class SetupIT extends AbstractSdkIT {
     }
 
     @Test
+    public void setup_shouldSkipFrontendIfSkipFrontendFlagIsSet() throws Exception{
+        String serverId = UUID.randomUUID().toString();
+
+        addTaskParam("distro", "referenceapplication:3.0.0");
+        addTaskParam("skipFrontend", "true");
+        addMockDbSettings();
+        addAnswer(serverId);
+        addAnswer("8080");
+        addAnswer("1044");
+        addAnswer(System.getProperty("java.home"));
+
+        executeTask("setup");
+
+        assertSuccess();
+        assertServerInstalled(serverId);
+        assertFilePresent(serverId, "openmrs-2.6.7.war");
+        assertFilePresent(serverId, "modules");
+        assertFileNotPresent(serverId, "frontend");
+
+        assertFilePresent(serverId, "configuration");
+
+        Server.setServersPath(testDirectory.getAbsolutePath());
+        Server server = Server.loadServer(serverId);
+        assertThat(server.getSpaProperties().isEmpty(), is(true));
+    }
+
+    @Test
     public void setup_shouldInstallPlatform1_11_5() throws Exception{
         String serverId = UUID.randomUUID().toString();
 

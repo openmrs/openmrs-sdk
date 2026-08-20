@@ -370,6 +370,10 @@ public abstract class BaseSdkProperties {
         properties.putAll(spaProperties);
     }
 
+    public void removeSpaProperties() {
+        properties.keySet().removeIf(key -> key.toString().startsWith(TYPE_SPA + "."));
+    }
+
     /**
      * Removes `-omod` or `-webapp` suffix from artifact ID.
      *

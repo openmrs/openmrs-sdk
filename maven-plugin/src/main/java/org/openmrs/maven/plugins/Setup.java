@@ -154,6 +154,12 @@ public class Setup extends AbstractServerTask {
 	@Parameter(property = "reuseNodeCache")
 	public Boolean overrideReuseNodeCache;
 
+	/**
+	 * Option to skip installing the frontend (SPA)
+	 */
+	@Parameter(defaultValue = "false", property = "skipFrontend")
+	private boolean skipFrontend;
+
 	private ServerHelper serverHelper;
 
 	public Setup() {
@@ -289,7 +295,9 @@ public class Setup extends AbstractServerTask {
 			File configurationDir = new File(server.getServerDirectory(), SDKConstants.OPENMRS_SERVER_CONFIGURATION);
 			contentHelper.installBackendConfig(distroProperties, configurationDir);
 
-			if (spaInstaller != null) {
+			if (skipFrontend) {
+				wizard.showMessage("Skipping frontend installation...");
+			} else if (spaInstaller != null) {
 				spaInstaller.installFromDistroProperties(server.getServerDirectory(), distroProperties, ignorePeerDependencies, overrideReuseNodeCache);
 			}
 
@@ -316,6 +324,9 @@ public class Setup extends AbstractServerTask {
 		setJdk(server);
 
 		server.setValuesFromDistroProperties(distroProperties);
+		if (skipFrontend) {
+			server.removeSpaProperties();
+		}
 		server.setUnspecifiedToDefault();
 		server.save();
 	}
