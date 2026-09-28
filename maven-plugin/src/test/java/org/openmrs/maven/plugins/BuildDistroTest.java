@@ -66,12 +66,13 @@ public class BuildDistroTest {
     }
 
     /**
-     * Asserts that the generated Dockerfile builds from the given image, with the tag supplied as the
-     * default value of the base image tag build arg.
+     * Asserts that the generated Dockerfile builds from the given image, with the version and variant
+     * components of the tag supplied as the default values of the base image build args.
      */
-    private void assertBaseImage(List<String> lines, String image, String defaultTag) {
-        assertThat(lines, hasItem("ARG BASE_IMAGE_TAG=" + defaultTag));
-        assertThat(lines, hasItem("FROM " + image + ":${BASE_IMAGE_TAG}"));
+    private void assertBaseImage(List<String> lines, String image, String defaultVersion, String defaultVariant) {
+        assertThat(lines, hasItem("ARG BASE_IMAGE_VERSION=" + defaultVersion));
+        assertThat(lines, hasItem("ARG BASE_IMAGE_VARIANT=" + defaultVariant));
+        assertThat(lines, hasItem("FROM " + image + ":${BASE_IMAGE_VERSION}${BASE_IMAGE_VARIANT:+-${BASE_IMAGE_VARIANT}}"));
     }
 
     // -----------------------------------------------------------------------
@@ -81,25 +82,25 @@ public class BuildDistroTest {
     @Test
     public void copyDockerfile_platform25_shouldResolveToNightlyTag() throws Exception {
         List<String> lines = generateDockerfile("2.5.0", new Properties(), false);
-        assertBaseImage(lines, "openmrs/openmrs-core", "2.5.x-nightly");
+        assertBaseImage(lines, "openmrs/openmrs-core", "2.5.x-nightly", "");
     }
 
     @Test
     public void copyDockerfile_platform26_shouldResolveToNightlyTag() throws Exception {
         List<String> lines = generateDockerfile("2.6.0", new Properties(), false);
-        assertBaseImage(lines, "openmrs/openmrs-core", "2.6.x-nightly");
+        assertBaseImage(lines, "openmrs/openmrs-core", "2.6.x-nightly", "");
     }
 
     @Test
     public void copyDockerfile_platform27_shouldResolveToRollingTag() throws Exception {
         List<String> lines = generateDockerfile("2.7.0", new Properties(), false);
-        assertBaseImage(lines, "openmrs/openmrs-core", "2.7.x");
+        assertBaseImage(lines, "openmrs/openmrs-core", "2.7.x", "");
     }
 
     @Test
     public void copyDockerfile_platform3x_shouldResolveToRollingTag() throws Exception {
         List<String> lines = generateDockerfile("3.0.0", new Properties(), false);
-        assertBaseImage(lines, "openmrs/openmrs-core", "3.0.x");
+        assertBaseImage(lines, "openmrs/openmrs-core", "3.0.x", "");
     }
 
     // -----------------------------------------------------------------------
@@ -137,7 +138,7 @@ public class BuildDistroTest {
         Properties props = new Properties();
         props.setProperty(BuildDistro.DOCKER_IMAGE_NAMESPACE, "myorg");
         List<String> lines = generateDockerfile("2.4.0", props, false);
-        assertBaseImage(lines, "myorg/openmrs-core", "2.4.x");
+        assertBaseImage(lines, "myorg/openmrs-core", "2.4.x", "");
     }
 
     // -----------------------------------------------------------------------
@@ -149,7 +150,7 @@ public class BuildDistroTest {
         Properties props = new Properties();
         props.setProperty(BuildDistro.DOCKER_IMAGE_TAG, "2.7.0-amazoncorretto-11");
         List<String> lines = generateDockerfile("2.7.0", props, false);
-        assertBaseImage(lines, "openmrs/openmrs-core", "2.7.0-amazoncorretto-11");
+        assertBaseImage(lines, "openmrs/openmrs-core", "2.7.0-amazoncorretto-11", "");
     }
 
     @Test
@@ -157,7 +158,7 @@ public class BuildDistroTest {
         Properties props = new Properties();
         props.setProperty(BuildDistro.DOCKER_IMAGE_OPENMRS_VERSION, "2.7.0");
         List<String> lines = generateDockerfile("2.7.0", props, false);
-        assertBaseImage(lines, "openmrs/openmrs-core", "2.7.0");
+        assertBaseImage(lines, "openmrs/openmrs-core", "2.7.0", "");
     }
 
     @Test
@@ -166,7 +167,7 @@ public class BuildDistroTest {
         props.setProperty(BuildDistro.DOCKER_IMAGE_OPENMRS_VERSION, "2.7.0");
         props.setProperty(BuildDistro.DOCKER_IMAGE_JAVA_VERSION, "amazoncorretto-11");
         List<String> lines = generateDockerfile("2.7.0", props, false);
-        assertBaseImage(lines, "openmrs/openmrs-core", "2.7.0-amazoncorretto-11");
+        assertBaseImage(lines, "openmrs/openmrs-core", "2.7.0", "amazoncorretto-11");
     }
 
     @Test
@@ -174,7 +175,7 @@ public class BuildDistroTest {
         Properties props = new Properties();
         props.setProperty(BuildDistro.DOCKER_IMAGE_OPENMRS_VERSION, "2.7.0-SNAPSHOT");
         List<String> lines = generateDockerfile("2.7.0", props, false);
-        assertBaseImage(lines, "openmrs/openmrs-core", "2.7.0-SNAPSHOT");
+        assertBaseImage(lines, "openmrs/openmrs-core", "2.7.0-SNAPSHOT", "");
     }
 
     @Test
@@ -183,7 +184,7 @@ public class BuildDistroTest {
         props.setProperty(BuildDistro.DOCKER_IMAGE_NAMESPACE, "myorg");
         props.setProperty(BuildDistro.DOCKER_IMAGE_OPENMRS_VERSION, "2.7.0-SNAPSHOT");
         List<String> lines = generateDockerfile("2.7.0", props, false);
-        assertBaseImage(lines, "myorg/openmrs-core", "2.7.0-SNAPSHOT");
+        assertBaseImage(lines, "myorg/openmrs-core", "2.7.0-SNAPSHOT", "");
     }
 
     @Test
@@ -193,7 +194,7 @@ public class BuildDistroTest {
         props.setProperty(BuildDistro.DOCKER_IMAGE_REPOSITORY, "myimage");
         props.setProperty(BuildDistro.DOCKER_IMAGE_TAG, "latest");
         List<String> lines = generateDockerfile("2.7.0", props, false);
-        assertBaseImage(lines, "myorg/myimage", "latest");
+        assertBaseImage(lines, "myorg/myimage", "latest", "");
     }
 
     @Test
@@ -201,16 +202,35 @@ public class BuildDistroTest {
         // SNAPSHOT versions never have a dedicated Docker image, so the lookup must fall through
         // to the .x rolling tag (2.8.x in this case) rather than producing an unusable FROM line.
         List<String> lines = generateDockerfile("2.8.7-SNAPSHOT", new Properties(), false);
-        assertBaseImage(lines, "openmrs/openmrs-core", "2.8.x");
+        assertBaseImage(lines, "openmrs/openmrs-core", "2.8.x", "");
     }
 
     @Test
-    public void copyDockerfile_shouldDeclareBaseImageTagArgBeforeFrom() throws Exception {
+    public void copyDockerfile_withDockerImageTagAndJavaVersion_shouldIgnoreJavaVersion() throws Exception {
+        Properties props = new Properties();
+        props.setProperty(BuildDistro.DOCKER_IMAGE_TAG, "2.7.0-amazoncorretto-11");
+        props.setProperty(BuildDistro.DOCKER_IMAGE_JAVA_VERSION, "amazoncorretto-17");
+        List<String> lines = generateDockerfile("2.7.0", props, false);
+        assertBaseImage(lines, "openmrs/openmrs-core", "2.7.0-amazoncorretto-11", "");
+    }
+
+    @Test
+    public void copyDockerfile_withResolvedVersionAndJavaVersion_shouldUseJavaVersionAsVariant() throws Exception {
+        Properties props = new Properties();
+        props.setProperty(BuildDistro.DOCKER_IMAGE_JAVA_VERSION, "amazoncorretto-8");
+        List<String> lines = generateDockerfile("2.7.0", props, false);
+        assertBaseImage(lines, "openmrs/openmrs-core", "2.7.x", "amazoncorretto-8");
+    }
+
+    @Test
+    public void copyDockerfile_shouldDeclareBaseImageArgsBeforeFrom() throws Exception {
         // An ARG used in FROM must be declared before the first FROM instruction
         List<String> lines = generateDockerfile("2.7.0", new Properties(), false);
-        int argIndex = lines.indexOf("ARG BASE_IMAGE_TAG=2.7.x");
-        int fromIndex = lines.indexOf("FROM openmrs/openmrs-core:${BASE_IMAGE_TAG}");
-        assertThat(argIndex >= 0 && argIndex < fromIndex, is(true));
+        int versionArgIndex = lines.indexOf("ARG BASE_IMAGE_VERSION=2.7.x");
+        int variantArgIndex = lines.indexOf("ARG BASE_IMAGE_VARIANT=");
+        int fromIndex = lines.indexOf("FROM openmrs/openmrs-core:${BASE_IMAGE_VERSION}${BASE_IMAGE_VARIANT:+-${BASE_IMAGE_VARIANT}}");
+        assertThat(versionArgIndex >= 0 && variantArgIndex >= 0, is(true));
+        assertThat(versionArgIndex < fromIndex && variantArgIndex < fromIndex, is(true));
     }
 
     // -----------------------------------------------------------------------
