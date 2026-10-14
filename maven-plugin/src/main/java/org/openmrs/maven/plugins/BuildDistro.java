@@ -504,7 +504,11 @@ public class BuildDistro extends AbstractTask {
 					propertyValue = distroProperties.getPropertyDefault(extraProperty);
 				}
 				if (StringUtils.isNotBlank(propertyValue)) {
-					lines.add("ENV OMRS_EXTRA_" + extraProperty.replace(".", "_") + "=\"" + propertyValue + "\"");
+					// Encoded as openmrs-core's startup-init.sh decodes it: '__' for '_', then '_' for '.'
+					String name = extraProperty.replace("_", "__").replace(".", "_");
+					// Escaped for a double-quoted ENV value, which Docker otherwise interprets
+					String value = propertyValue.replace("\\", "\\\\").replace("\"", "\\\"").replace("$", "\\$");
+					lines.add("ENV OMRS_EXTRA_" + name + "=\"" + value + "\"");
 				}
 			}
 			try {
