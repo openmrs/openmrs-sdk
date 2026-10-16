@@ -254,4 +254,32 @@ public class BuildDistroTest {
         assertThat(lines, not(hasItem("COPY openmrs_config /openmrs/distribution/openmrs_config")));
         assertThat(lines, not(hasItem("COPY openmrs_spa /openmrs/distribution/openmrs_spa")));
     }
+
+    // -----------------------------------------------------------------------
+    // OMRS_EXTRA_ ENV lines for distro properties
+    // -----------------------------------------------------------------------
+
+    @Test
+    public void copyDockerfile_withProperty_shouldReplaceDotsWithUnderscores() throws Exception {
+        Properties props = new Properties();
+        props.setProperty("property.initializer.startup.load", "fail_on_error");
+        List<String> lines = generateDockerfile("2.7.0", props, false);
+        assertThat(lines, hasItem("ENV OMRS_EXTRA_initializer_startup_load=\"fail_on_error\""));
+    }
+
+    @Test
+    public void copyDockerfile_withUnderscoreInPropertyName_shouldEncodeItAsDoubleUnderscore() throws Exception {
+        Properties props = new Properties();
+        props.setProperty("property.foo_bar.baz", "x");
+        List<String> lines = generateDockerfile("2.7.0", props, false);
+        assertThat(lines, hasItem("ENV OMRS_EXTRA_foo__bar_baz=\"x\""));
+    }
+
+    @Test
+    public void copyDockerfile_withSpecialCharactersInPropertyValue_shouldEscapeThem() throws Exception {
+        Properties props = new Properties();
+        props.setProperty("property.test.value", "a\"b\\c$d");
+        List<String> lines = generateDockerfile("2.7.0", props, false);
+        assertThat(lines, hasItem("ENV OMRS_EXTRA_test_value=\"a\\\"b\\\\c\\$d\""));
+    }
 }
