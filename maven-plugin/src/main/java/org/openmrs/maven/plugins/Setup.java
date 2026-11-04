@@ -95,6 +95,12 @@ public class Setup extends AbstractServerTask {
 	private String dbSql;
 
 	/**
+	 * Admin password for the new OpenMRS instance
+	 */
+	@Parameter(property = "adminPassword")
+	private String adminPassword;
+
+	/**
 	 * Docker host address
 	 */
 	@Parameter(property = "dockerHost")
@@ -327,8 +333,25 @@ public class Setup extends AbstractServerTask {
 		if (skipFrontend) {
 			server.removeSpaProperties();
 		}
+		setAdminPassword(server);
 		server.setUnspecifiedToDefault();
 		server.save();
+	}
+
+	private void setAdminPassword(Server server) throws MojoExecutionException {
+		adminPassword = server.getParam(Server.PROPERTY_ADMIN_USER_PASSWORD, adminPassword);
+		while (true) {
+			if (StringUtils.isBlank(adminPassword)) {
+				adminPassword = wizard.promptForPasswordIfMissing(
+						adminPassword, "an admin password for the new OpenMRS instance (-DadminPassword)");
+			}
+			if (StringUtils.isNotBlank(adminPassword)) {
+				break;
+			}
+			wizard.showMessage("The admin password must not be blank.");
+			adminPassword = null;
+		}
+		server.setParam(Server.PROPERTY_ADMIN_USER_PASSWORD, adminPassword);
 	}
 
 	private void setJdk(Server server) throws MojoExecutionException {

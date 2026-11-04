@@ -43,6 +43,7 @@ public class SetupIT extends AbstractSdkIT {
         addAnswer("1044");
         addAnswer(System.getProperty("java.home"));
 
+        addAnswer("SdkTestAdm1n!23");
         executeTask("setup");
 
         assertSuccess();
@@ -73,6 +74,7 @@ public class SetupIT extends AbstractSdkIT {
         addAnswer("1044");
         addAnswer(System.getProperty("java.home"));
 
+        addAnswer("SdkTestAdm1n!23");
         executeTask("setup");
 
         assertSuccess();
@@ -109,6 +111,7 @@ public class SetupIT extends AbstractSdkIT {
         addAnswer("1044");
         addAnswer(System.getProperty("java.home"));
 
+        addAnswer("SdkTestAdm1n!23");
         executeTask("setup");
 
         assertSuccess();
@@ -144,6 +147,7 @@ public class SetupIT extends AbstractSdkIT {
         addAnswer("1044");
         addAnswer(System.getProperty("java.home"));
 
+        addAnswer("SdkTestAdm1n!23");
         executeTask("setup");
 
         assertSuccess();
@@ -171,6 +175,7 @@ public class SetupIT extends AbstractSdkIT {
         addAnswer("1044");
         addAnswer(System.getProperty("java.home"));
 
+        addAnswer("SdkTestAdm1n!23");
         executeTask("setup");
 
         assertSuccess();
@@ -199,6 +204,7 @@ public class SetupIT extends AbstractSdkIT {
         addAnswer("1044");
         addAnswer(System.getProperty("java.home"));
 
+        addAnswer("SdkTestAdm1n!23");
         executeTask("setup");
 
         assertSuccess();
@@ -229,6 +235,7 @@ public class SetupIT extends AbstractSdkIT {
         addAnswer(System.getProperty("java.home"));
         addAnswer("8080");
 
+        addAnswer("SdkTestAdm1n!23");
         executeTask("setup");
 
         assertSuccess();
@@ -260,6 +267,7 @@ public class SetupIT extends AbstractSdkIT {
         addAnswer(System.getProperty("java.home"));
         addAnswer("8080");
 
+        addAnswer("SdkTestAdm1n!23");
         executeTask("setup");
 
         assertSuccess();
@@ -290,6 +298,7 @@ public class SetupIT extends AbstractSdkIT {
         addAnswer(System.getProperty("java.home"));
         addAnswer("8080");
 
+        addAnswer("SdkTestAdm1n!23");
         executeTask("setup");
         assertSuccess();
         assertServerInstalled(serverId);
@@ -314,6 +323,7 @@ public class SetupIT extends AbstractSdkIT {
         addAnswer(System.getProperty("java.home"));
         addAnswer("8080");
 
+        addAnswer("SdkTestAdm1n!23");
         executeTask("setup");
         assertSuccess();
         assertServerInstalled(serverId);
@@ -344,6 +354,7 @@ public class SetupIT extends AbstractSdkIT {
         addAnswer(System.getProperty("java.home"));
         addAnswer("8080");
 
+        addAnswer("SdkTestAdm1n!23");
         executeTask("setup");
         assertSuccess();
         assertServerInstalled(serverId);
@@ -372,6 +383,7 @@ public class SetupIT extends AbstractSdkIT {
         addAnswer(System.getProperty("java.home"));
         addAnswer("8080");
 
+        addAnswer("SdkTestAdm1n!23");
         executeTask("setup");
         assertSuccess();
         assertServerInstalled(serverId);
@@ -402,6 +414,7 @@ public class SetupIT extends AbstractSdkIT {
         addAnswer(System.getProperty("java.home"));
         addAnswer("8080");
 
+        addAnswer("SdkTestAdm1n!23");
         executeTask("setup");
         assertSuccess();
         assertServerInstalled(serverId);
@@ -434,6 +447,7 @@ public class SetupIT extends AbstractSdkIT {
 
         addMockDbSettings();
 
+        addAnswer("SdkTestAdm1n!23");
         executeTask("setup");
         assertSuccess();
         assertServerInstalled(serverId);
@@ -465,6 +479,7 @@ public class SetupIT extends AbstractSdkIT {
         addAnswer("1044");
         addAnswer("8080");
 
+        addAnswer("SdkTestAdm1n!23");
         executeTask("setup");
 
         assertFilePresent( serverId, "openmrs-2.0.5.war");
@@ -483,6 +498,7 @@ public class SetupIT extends AbstractSdkIT {
         addAnswer("1044");
         addAnswer("8080");
 
+        addAnswer("SdkTestAdm1n!23");
         executeTask("setup");
 
         assertFilePresent( serverId, "openmrs-1.11.5.war");
@@ -510,6 +526,7 @@ public class SetupIT extends AbstractSdkIT {
         addAnswer("1044");
         addAnswer("8080");
 
+        addAnswer("SdkTestAdm1n!23");
         executeTask("setup");
 
         assertFilePresent( serverId, "openmrs-2.6.9.war");
@@ -530,6 +547,7 @@ public class SetupIT extends AbstractSdkIT {
         addAnswer("1044");
         addAnswer("8080");
 
+        addAnswer("SdkTestAdm1n!23");
         executeTask("setup");
 
         assertFilePresent( serverId, "openmrs-2.6.9.war");
@@ -549,6 +567,7 @@ public class SetupIT extends AbstractSdkIT {
         addAnswer("1044");
         addAnswer("8080");
 
+        addAnswer("SdkTestAdm1n!23");
         executeTask("setup");
 
         assertFilePresent( serverId, "openmrs-2.6.9.war");
