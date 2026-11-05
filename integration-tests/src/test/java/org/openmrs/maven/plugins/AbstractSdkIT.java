@@ -163,6 +163,7 @@ public abstract class AbstractSdkIT {
             addTaskParam(setupServer, "openMRSPath", testDirectory.getAbsolutePath());
             addTaskParam(setupServer, "distro", distro);
             addTaskParam(setupServer, "debug", "1044");
+            addTaskParam(setupServer, "adminPassword", "SdkTestAdm1n!23");
             addMockDbSettings(setupServer);
 
             addAnswer(serverId);

@@ -69,6 +69,7 @@ public class Reset extends AbstractServerTask {
                     .setContainerId(server.getContainerId())
                     .build();
             newServer.setServerDirectory(getServersPath().resolve(serverId).toFile());
+            newServer.setParam(Server.PROPERTY_ADMIN_USER_PASSWORD, server.getParam(Server.PROPERTY_ADMIN_USER_PASSWORD));
 
             Setup setup = new Setup(this);
             DistroProperties distroProperties = server.getDistroProperties();
