@@ -6,6 +6,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
 import org.openmrs.maven.plugins.model.DistroProperties;
 import org.openmrs.maven.plugins.model.Server;
 import org.openmrs.maven.plugins.utility.DBConnector;
@@ -22,6 +23,12 @@ import java.sql.SQLException;
 public class Reset extends AbstractServerTask {
 
     private static final String TEMPLATE_SUCCESS_FULL = "Server '%s' has been reset";
+
+    /**
+     * Admin password for the reset server, used when it has none to carry over
+     */
+    @Parameter(property = "adminPassword")
+    private String adminPassword;
 
     public void executeTask() throws MojoExecutionException {
         Server server = getServer();
@@ -69,7 +76,7 @@ public class Reset extends AbstractServerTask {
                     .setContainerId(server.getContainerId())
                     .build();
             newServer.setServerDirectory(getServersPath().resolve(serverId).toFile());
-            newServer.setParam(Server.PROPERTY_ADMIN_USER_PASSWORD, server.getParam(Server.PROPERTY_ADMIN_USER_PASSWORD));
+            newServer.setParam(Server.PROPERTY_ADMIN_USER_PASSWORD, server.getParam(Server.PROPERTY_ADMIN_USER_PASSWORD, adminPassword));
 
             Setup setup = new Setup(this);
             DistroProperties distroProperties = server.getDistroProperties();

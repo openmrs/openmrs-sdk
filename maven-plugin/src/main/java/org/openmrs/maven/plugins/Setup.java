@@ -345,7 +345,7 @@ public class Setup extends AbstractServerTask {
 	private void setAdminPassword(Server server) throws MojoExecutionException {
 		adminPassword = server.getParam(Server.PROPERTY_ADMIN_USER_PASSWORD, adminPassword);
 		while (true) {
-			if (StringUtils.isBlank(adminPassword) || !meetsDefaultPasswordPolicy(adminPassword)) {
+			if (StringUtils.isBlank(adminPassword)) {
 				adminPassword = wizard.promptForPasswordIfMissing(
 						null, "an admin password for the new OpenMRS instance (-DadminPassword)");
 			}
