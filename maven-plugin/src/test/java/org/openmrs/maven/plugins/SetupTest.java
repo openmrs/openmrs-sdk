@@ -23,6 +23,13 @@ public class SetupTest {
 	}
 
 	@Test
+	public void determineDbName_shouldReturnDefaultNameForH2Uri() throws MojoExecutionException {
+		Setup setupPlatform = new Setup();
+		assertThat(setupPlatform.determineDbName("jdbc:h2:mem:test", "my_server"), equalTo("openmrs-my_server"));
+		assertThat(setupPlatform.determineDbName("jdbc:h2:/tmp/data/db;DB_CLOSE_DELAY=-1", "my_server"), equalTo("openmrs-my_server"));
+	}
+
+	@Test
 	public void determineDbName_shouldReturnNameFromUriWithParams() throws MojoExecutionException {
 		Setup setupPlatform = new Setup();
 		String dbName = setupPlatform.determineDbName("jdbc:mysql://localhost:3016/open?someParam=value", "my_server");

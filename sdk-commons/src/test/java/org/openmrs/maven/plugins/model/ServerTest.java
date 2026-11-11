@@ -58,6 +58,20 @@ public class ServerTest {
     }
 
     @Test
+    public void isH2Db_shouldDetectH2ByDriverOrUri() {
+        assertThat(server.isH2Db(), is(false));
+
+        server.setDbDriver(SDKConstants.DRIVER_H2);
+        assertThat(server.isH2Db(), is(true));
+
+        server.setDbDriver(SDKConstants.DRIVER_MYSQL_OLD);
+        assertThat(server.isH2Db(), is(false));
+
+        server.setDbUri(SDKConstants.URI_H2);
+        assertThat(server.isH2Db(), is(true));
+    }
+
+    @Test
     public void testMergeArtifactList() {
         Artifact owa14 = new Artifact("owa", "1.4");
         Artifact appui15 = new Artifact("appui", "1.5");

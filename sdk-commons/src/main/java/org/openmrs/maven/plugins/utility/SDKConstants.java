@@ -75,8 +75,6 @@ public class SDKConstants {
     public static final String DRIVER_MYSQL = " com.mysql.cj.jdbc.Driver";
     public static final String DRIVER_POSTGRESQL = "org.postgresql.Driver";
     public static final String DRIVER_H2 = "org.h2.Driver";
-    //db Artifact data
-    public static final Artifact H2_ARTIFACT = new Artifact("h2", "1.4.190", Artifact.GROUP_H2, Artifact.TYPE_JAR);
     // default settings path
     public static final String MAVEN_SETTINGS = "settings.xml";
     public static final String DB_NAME_TEMPLATE = "openmrs-%s";

@@ -114,6 +114,7 @@ public class DefaultWizard implements Wizard {
 	public static final Map<String, String> DB_OPTIONS_MAP = new HashMap<String, String>() {{
 		put("mysql", DB_OPTION_MYSQL);
 		put("h2", DB_OPTION_H2);
+		put(SDKConstants.DRIVER_H2, DB_OPTION_H2);
 		put("docker", DB_OPTION_SDK_DOCKER_MYSQL);
 	}};
 

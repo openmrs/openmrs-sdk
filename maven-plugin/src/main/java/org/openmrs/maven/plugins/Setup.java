@@ -426,7 +426,8 @@ public class Setup extends AbstractServerTask {
 	}
 
 	private void setupDatabase(Server server, DistroProperties distroProperties) throws MojoExecutionException {
-		if (server.getDbDriver() == null) {
+		// An H2 server without a uri (e.g. only -DdbDriver=h2) also needs the defaults from the prompt
+		if (server.getDbDriver() == null || (server.isH2Db() && server.getDbUri() == null)) {
 			boolean isH2Supported = true;
 			if (distroProperties != null) {
 				isH2Supported = distroProperties.isH2Supported();
@@ -504,7 +505,6 @@ public class Setup extends AbstractServerTask {
 					importDb(server, dbSql);
 					resetSearchIndex(server);
 				} else if (!server.isMySqlDb() && !server.isPostgreSqlDb()) {
-					moduleInstaller.installModule(SDKConstants.H2_ARTIFACT, server.getServerDirectory().getPath());
 					wizard.showMessage("The specified database " + server.getDbName()
 							+ " does not exist and it will be created when OpenMRS starts.");
 				}
@@ -512,7 +512,6 @@ public class Setup extends AbstractServerTask {
 				resetSearchIndex(server);
 			}
 		} else {
-			moduleInstaller.installModule(SDKConstants.H2_ARTIFACT, server.getServerDirectory().getPath());
 			wizard.showMessage(
 					"The specified database " + server.getDbName() + " does not exist and it will be created for you.");
 		}
@@ -597,7 +596,8 @@ public class Setup extends AbstractServerTask {
 	public String determineDbName(String uri, String serverId) throws MojoExecutionException {
 		String dbName = String.format(SDKConstants.DB_NAME_TEMPLATE, serverId);
 
-		if (!uri.contains("@DBNAME@")) {
+		// H2 URIs (e.g. jdbc:h2:mem:test or jdbc:h2:~/data/db) do not follow the host/dbname layout
+		if (!uri.startsWith("jdbc:h2") && !uri.contains("@DBNAME@")) {
 			//determine db name from uri
 			try {
 				URI parsedUri;
@@ -638,6 +638,11 @@ public class Setup extends AbstractServerTask {
 			serverBuilder = new Server.ServerBuilder(Server.loadServer(Paths.get(file)));
 		} else {
 			serverBuilder = new Server.ServerBuilder();
+		}
+
+		// accept the short 'h2' alias used by the prompt options, but store the driver class
+		if ("h2".equalsIgnoreCase(dbDriver)) {
+			dbDriver = SDKConstants.DRIVER_H2;
 		}
 
 		Server server = serverBuilder

@@ -176,7 +176,7 @@ public class SetupIT extends AbstractSdkIT {
         assertSuccess();
         assertServerInstalled(serverId);
         assertFilePresent(serverId, "openmrs-1.11.5.war");
-        assertFilePresent(serverId,  "h2-1.4.190.jar");
+        assertFileNotPresent(serverId, "h2-1.4.190.jar");
         assertFileNotPresent(serverId, "modules");
 
         Server.setServersPath(testDirectory.getAbsolutePath());

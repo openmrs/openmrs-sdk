@@ -19,6 +19,14 @@
             <version>${project.version}</version>
         </dependency>
 
+        <!-- H2 driver, so that webapps deployed in the embedded container (whose classloader is
+             this plugin's) can set up H2 databases -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
         <!-- Cargo core API -->
         <dependency>
             <groupId>org.codehaus.cargo</groupId>

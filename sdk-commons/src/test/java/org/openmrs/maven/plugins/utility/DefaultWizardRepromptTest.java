@@ -73,4 +73,26 @@ public class DefaultWizardRepromptTest {
 		org.junit.Assert.assertEquals("newuser", server.getDbUser());
 		org.junit.Assert.assertEquals("newpass", server.getDbPassword());
 	}
+
+	@Test
+	public void promptForDb_shouldSetH2DefaultsWhenDriverClassIsGivenWithoutUri() throws MojoExecutionException {
+		Server h2Server = new Server.ServerBuilder().setDbDriver(SDKConstants.DRIVER_H2).build();
+		h2Server.setPlatformVersion("2.8.0");
+
+		wizard.promptForDb(h2Server, null, true, SDKConstants.DRIVER_H2, null);
+
+		org.junit.Assert.assertEquals(SDKConstants.DRIVER_H2, h2Server.getDbDriver());
+		org.junit.Assert.assertEquals(SDKConstants.URI_H2, h2Server.getDbUri());
+	}
+
+	@Test
+	public void promptForDb_shouldKeepGivenH2Uri() throws MojoExecutionException {
+		Server h2Server = new Server.ServerBuilder().setDbDriver("h2").setDbUri("jdbc:h2:mem:test").build();
+		h2Server.setPlatformVersion("2.8.0");
+
+		wizard.promptForDb(h2Server, null, true, "h2", null);
+
+		org.junit.Assert.assertEquals(SDKConstants.DRIVER_H2, h2Server.getDbDriver());
+		org.junit.Assert.assertEquals("jdbc:h2:mem:test", h2Server.getDbUri());
+	}
 }

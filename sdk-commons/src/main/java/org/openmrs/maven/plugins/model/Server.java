@@ -722,6 +722,16 @@ public class Server extends BaseSdkProperties {
                 SDKConstants.DRIVER_MYSQL_OLD));
     }
     
+    public boolean isH2Db() {
+        String dbUri = getDbUri();
+        if (dbUri != null && dbUri.startsWith("jdbc:h2")) {
+            return true;
+        }
+
+        String dbDriver = getDbDriver();
+        return dbDriver != null && dbDriver.equals(SDKConstants.DRIVER_H2);
+    }
+
     public boolean isPostgreSqlDb() {
         String dbUri = getDbUri();
         if (dbUri != null && dbUri.startsWith("jdbc:postgresql")) {
