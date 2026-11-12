@@ -59,6 +59,27 @@ public class ArtifactHelperTest {
 		assertThat(ArtifactHelper.isOpenmrsArtifact(new Artifact("evil", "1.0", "org.openmrsfoo")), equalTo(false));
 	}
 
+	@Test
+	public void bundledTrustedKeysTrustOpenmrsBotAndTasksReleaseKey() throws Exception {
+		String keys;
+		try (java.io.InputStream in = ArtifactHelper.class.getClassLoader()
+				.getResourceAsStream(ArtifactHelper.TRUSTED_KEYS_RESOURCE)) {
+			assertThat(in == null, equalTo(false));
+			keys = org.apache.commons.io.IOUtils.toString(in, java.nio.charset.StandardCharsets.UTF_8);
+		}
+		String openmrsLine = null;
+		for (String line : keys.split("\\R")) {
+			if (line.trim().startsWith("org.openmrs ")) {
+				openmrsLine = line;
+			}
+		}
+		assertThat(openmrsLine == null, equalTo(false));
+		// OpenMRS Bot CI key
+		assertThat(openmrsLine.contains("0xCA12619FDE8CD6A93FAFE458A6F9608DCC73473F"), equalTo(true));
+		// key that signed tasks-omod 2.0.0 and 2.1.0
+		assertThat(openmrsLine.contains("0xFE16CB18B8C0DD2638FC2353DCF1CCC2FFFC445F"), equalTo(true));
+	}
+
 	private Xpp3Dom artifactItem(Artifact artifact, File file) {
 		return ArtifactHelper.artifactItem(artifact, file).toDom();
 	}

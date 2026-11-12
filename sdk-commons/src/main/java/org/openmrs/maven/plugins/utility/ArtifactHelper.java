@@ -11,6 +11,8 @@ import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static org.twdata.maven.mojoexecutor.MojoExecutor.artifactId;
 import static org.twdata.maven.mojoexecutor.MojoExecutor.configuration;
@@ -73,8 +75,8 @@ public class ArtifactHelper {
 	/**
 	 * Verifies the GPG signatures of the given already-downloaded artifacts by delegating to the
 	 * openmrs-pgpverify-maven-plugin. The plugin owns the trust check: it only verifies artifacts in
-	 * its whitelisted groups (org.openmrs by default), resolves each .asc, and fails the build on an
-	 * invalid signature. Missing signatures and non-whitelisted artifacts are tolerated.
+	 * the org.openmrs group, resolves each .asc, and fails the build on an invalid signature or one made
+	 * by a key not listed in the bundled trusted-keys file. Missing signatures and non-whitelisted artifacts are tolerated.
 	 *
 	 * @param artifacts the artifacts to verify
 	 * @param directory the directory the artifacts were downloaded into
@@ -104,7 +106,8 @@ public class ArtifactHelper {
 						element("failOnMissingSignature", "false"),
 						element("signatureRepository", SDKConstants.OPENMRS_SIGNATURE_REPOSITORY),
 						element("keyServer", "https://keyserver.ubuntu.com"),
-						element("keyRings", element("keyRing", signingKeyRing().getAbsolutePath()))
+						element("keyRings", element("keyRing", signingKeyRing().getAbsolutePath())),
+						element("keysFile", trustedKeysFile())
 				),
 				executionEnvironment(
 						mavenEnvironment.getMavenProject(),
@@ -114,38 +117,63 @@ public class ArtifactHelper {
 		);
 	}
 
-	private static final String SIGNING_KEY_RESOURCE = "openmrs-signing-key.asc";
+	static final String SIGNING_KEY_RESOURCE = "openmrs-signing-key.asc";
 
-	private static volatile File signingKeyRingFile;
+	static final String TRUSTED_KEYS_RESOURCE = "openmrs-trusted-keys.txt";
+
+	/** User property that points the plugin at a different trusted-keys file, overriding the bundled one. */
+	static final String KEYS_FILE_PROPERTY = "openmrs.pgpverify.keysFile";
+
+	private static final Map<String, File> extractedResources = new ConcurrentHashMap<>();
 
 	/**
-	 * Extracts the bundled OpenMRS public key to a temp file so it can be passed as a keyRing. The
+	 * Extracts the bundled OpenMRS public keys to a temp file so they can be passed as a keyRing. The
 	 * plugin checks the ring before contacting the key server, so the common path verifies offline
 	 * and only a rotated key not in the ring falls back to the (explicitly configured) key server.
 	 */
 	private static File signingKeyRing() throws MojoExecutionException {
-		File file = signingKeyRingFile;
-		if (file == null || !file.exists()) {
-			synchronized (ArtifactHelper.class) {
-				file = signingKeyRingFile;
-				if (file == null || !file.exists()) {
-					try (InputStream in = ArtifactHelper.class.getClassLoader().getResourceAsStream(SIGNING_KEY_RESOURCE)) {
-						if (in == null) {
-							throw new MojoExecutionException("Missing bundled signing key resource: " + SIGNING_KEY_RESOURCE);
-						}
-						File tmp = File.createTempFile("openmrs-signing-key", ".asc");
-						tmp.deleteOnExit();
-						Files.copy(in, tmp.toPath(), StandardCopyOption.REPLACE_EXISTING);
-						signingKeyRingFile = tmp;
-						file = tmp;
-					}
-					catch (IOException e) {
-						throw new MojoExecutionException("Failed to extract bundled signing key", e);
-					}
+		return extractResource(SIGNING_KEY_RESOURCE);
+	}
+
+	/**
+	 * The keys file mapping org.openmrs to the fingerprints allowed to sign its artifacts. Defaults to
+	 * the bundled list; -Dopenmrs.pgpverify.keysFile=... replaces it (it must then list every key to trust).
+	 */
+	private String trustedKeysFile() throws MojoExecutionException {
+		String override = null;
+		if (mavenEnvironment.getMavenSession() != null) {
+			override = mavenEnvironment.getMavenSession().getUserProperties().getProperty(KEYS_FILE_PROPERTY);
+		}
+		if (override != null && !override.trim().isEmpty()) {
+			return override.trim();
+		}
+		return extractResource(TRUSTED_KEYS_RESOURCE).getAbsolutePath();
+	}
+
+	private static File extractResource(String resource) throws MojoExecutionException {
+		File file = extractedResources.get(resource);
+		if (file != null && file.exists()) {
+			return file;
+		}
+		synchronized (ArtifactHelper.class) {
+			file = extractedResources.get(resource);
+			if (file != null && file.exists()) {
+				return file;
+			}
+			try (InputStream in = ArtifactHelper.class.getClassLoader().getResourceAsStream(resource)) {
+				if (in == null) {
+					throw new MojoExecutionException("Missing bundled resource: " + resource);
 				}
+				File tmp = File.createTempFile("openmrs-sdk-", "-" + resource);
+				tmp.deleteOnExit();
+				Files.copy(in, tmp.toPath(), StandardCopyOption.REPLACE_EXISTING);
+				extractedResources.put(resource, tmp);
+				return tmp;
+			}
+			catch (IOException e) {
+				throw new MojoExecutionException("Failed to extract bundled resource " + resource, e);
 			}
 		}
-		return file;
 	}
 
 	static boolean isOpenmrsArtifact(Artifact artifact) {

@@ -1,0 +1,7 @@
+# PGP keys the SDK trusts to sign downloaded OpenMRS artifacts, in the
+# openmrs-pgpverify-maven-plugin keysFile format: groupId = 0xFINGERPRINT[, 0xFINGERPRINT...]
+# Every key listed here must also be present in openmrs-signing-key.asc so verification stays offline.
+#
+#   0xCA12619FDE8CD6A93FAFE458A6F9608DCC73473F  OpenMRS Bot (CI code-signing key)
+#   0xFE16CB18B8C0DD2638FC2353DCF1CCC2FFFC445F  Ian Bacher <ibacher@openmrs.org> (e.g. tasks 2.0.0, 2.1.0)
+org.openmrs = 0xCA12619FDE8CD6A93FAFE458A6F9608DCC73473F, 0xFE16CB18B8C0DD2638FC2353DCF1CCC2FFFC445F
