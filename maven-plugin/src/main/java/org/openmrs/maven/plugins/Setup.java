@@ -426,8 +426,7 @@ public class Setup extends AbstractServerTask {
 	}
 
 	private void setupDatabase(Server server, DistroProperties distroProperties) throws MojoExecutionException {
-		// An H2 server without a uri (e.g. only -DdbDriver=h2) also needs the defaults from the prompt
-		if (server.getDbDriver() == null || (server.isH2Db() && server.getDbUri() == null)) {
+		if (needsDbPrompt(server)) {
 			boolean isH2Supported = true;
 			if (distroProperties != null) {
 				isH2Supported = distroProperties.isH2Supported();
@@ -439,6 +438,20 @@ public class Setup extends AbstractServerTask {
 		if (server.getDbDriver() != null) {
 			setupDatabaseForServer(server);
 		}
+	}
+
+	/**
+	 * An H2 server without a uri (e.g. only -DdbDriver=h2) also needs the defaults from the prompt
+	 */
+	static boolean needsDbPrompt(Server server) {
+		return server.getDbDriver() == null || (server.isH2Db() && server.getDbUri() == null);
+	}
+
+	/**
+	 * Accepts the short 'h2' alias used by the prompt options, but returns the driver class name
+	 */
+	static String normalizeDbDriver(String driver) {
+		return "h2".equalsIgnoreCase(driver) ? SDKConstants.DRIVER_H2 : driver;
 	}
 
 	private void setupDatabaseForServer(Server server) throws MojoExecutionException {
@@ -640,10 +653,7 @@ public class Setup extends AbstractServerTask {
 			serverBuilder = new Server.ServerBuilder();
 		}
 
-		// accept the short 'h2' alias used by the prompt options, but store the driver class
-		if ("h2".equalsIgnoreCase(dbDriver)) {
-			dbDriver = SDKConstants.DRIVER_H2;
-		}
+		dbDriver = normalizeDbDriver(dbDriver);
 
 		Server server = serverBuilder
 				.setServerId(serverId)
