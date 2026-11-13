@@ -125,5 +125,6 @@ public class ServerTest {
         server.setPlatformVersion("3.0.0-SNAPSHOT");
         assertThat(server.getDefaultH2Uri(), is(SDKConstants.URI_H2_V2));
         assertThat(server.getDefaultH2Uri().contains("NON_KEYWORDS=VALUE"), is(true));
+        assertThat(server.getDefaultH2Uri().contains("MODE=MySQL"), is(true));
     }
 }
