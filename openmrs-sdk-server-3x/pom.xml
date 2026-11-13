@@ -17,6 +17,7 @@
     <properties>
         <tomcat.version>11.0.18</tomcat.version>
         <jetty.version>11.0.24</jetty.version>
+        <h2.version>2.5.252</h2.version>
     </properties>
 
     <dependencies>
@@ -39,6 +40,15 @@
             <groupId>${project.parent.groupId}</groupId>
             <artifactId>cargo-container-commons</artifactId>
             <version>${project.version}</version>
+        </dependency>
+
+        <!-- Platform 3.x (core master) uses H2 2.x (see h2Version in openmrs-core's bom/pom.xml), which has a different
+             SQL dialect and file format from the 1.4.x line that cargo-container-commons brings in for 2.x platforms -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <version>${h2.version}</version>
+            <scope>runtime</scope>
         </dependency>
 
         <!-- Tomcat 11 embed (needed at runtime for Cargo's tomcat11x embedded container) -->

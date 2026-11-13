@@ -93,11 +93,10 @@
             <artifactId>jetty-util</artifactId>
             <version>${jetty.version}</version>
         </dependency>
-        <dependency>
-            <groupId>org.eclipse.jetty</groupId>
-            <artifactId>apache-jsp</artifactId>
-            <version>${jetty.version}</version>
-        </dependency>
+        <!-- Do not add org.eclipse.jetty:apache-jsp here: it pulls in Jasper 8.5, whose TldScanner needs Tomcat 8+ APIs
+             (JarScanner.scan(JarScanType, ...), TldParser's IS_SECURITY_ENABLED). Next to the Tomcat 7 jars above it breaks
+             both containers: Tomcat 7 fails with NoSuchMethodError, and Jetty's OpenMRS webapp goes UNAVAILABLE with
+             NoSuchFieldError. Without it Jetty starts the webapp but has no JSP support. -->
     </dependencies>
 
     <build>

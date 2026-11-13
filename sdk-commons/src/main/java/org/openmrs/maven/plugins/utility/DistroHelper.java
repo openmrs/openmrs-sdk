@@ -87,7 +87,7 @@ public class DistroHelper {
 	 */
 	public DistroProperties createDistroForPlatform(Server server) {
 		DistroProperties distroProperties = new DistroProperties(server.getServerId(), server.getPlatformVersion());
-		if (server.getDbDriver().equals(SDKConstants.DRIVER_H2)) {
+		if (server.isH2Db()) {
 			distroProperties.setH2Support(true);
 		}
 		return distroProperties;

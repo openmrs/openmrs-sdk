@@ -114,6 +114,7 @@ public class DefaultWizard implements Wizard {
 	public static final Map<String, String> DB_OPTIONS_MAP = new HashMap<String, String>() {{
 		put("mysql", DB_OPTION_MYSQL);
 		put("h2", DB_OPTION_H2);
+		put(SDKConstants.DRIVER_H2, DB_OPTION_H2);
 		put("docker", DB_OPTION_SDK_DOCKER_MYSQL);
 	}};
 
@@ -727,11 +728,16 @@ public class DefaultWizard implements Wizard {
 			case DB_OPTION_H2:
 				server.setDbDriver(SDKConstants.DRIVER_H2);
 				if (server.getDbUri() == null) {
-					server.setDbUri(SDKConstants.URI_H2);
+					server.setDbUri(server.getDefaultH2Uri());
 				}
 
-				server.setDbUser("root");
-				server.setDbPassword("root");
+				// keep credentials given on the command line (-DdbUser, -DdbPassword)
+				if (server.getDbUser() == null) {
+					server.setDbUser("root");
+				}
+				if (server.getDbPassword() == null) {
+					server.setDbPassword("root");
+				}
 				break;
 			case DB_OPTION_MYSQL:
 				promptForDbUri(server, SDKConstants.DRIVER_MYSQL_OLD);

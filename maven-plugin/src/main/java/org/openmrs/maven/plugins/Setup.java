@@ -426,7 +426,7 @@ public class Setup extends AbstractServerTask {
 	}
 
 	private void setupDatabase(Server server, DistroProperties distroProperties) throws MojoExecutionException {
-		if (server.getDbDriver() == null) {
+		if (needsDbPrompt(server)) {
 			boolean isH2Supported = true;
 			if (distroProperties != null) {
 				isH2Supported = distroProperties.isH2Supported();
@@ -438,6 +438,20 @@ public class Setup extends AbstractServerTask {
 		if (server.getDbDriver() != null) {
 			setupDatabaseForServer(server);
 		}
+	}
+
+	/**
+	 * An H2 server without a uri (e.g. only -DdbDriver=h2) also needs the defaults from the prompt
+	 */
+	static boolean needsDbPrompt(Server server) {
+		return server.getDbDriver() == null || (server.isH2Db() && server.getDbUri() == null);
+	}
+
+	/**
+	 * Accepts the short 'h2' alias used by the prompt options, but returns the driver class name
+	 */
+	static String normalizeDbDriver(String driver) {
+		return "h2".equalsIgnoreCase(driver) ? SDKConstants.DRIVER_H2 : driver;
 	}
 
 	private void setupDatabaseForServer(Server server) throws MojoExecutionException {
@@ -504,7 +518,6 @@ public class Setup extends AbstractServerTask {
 					importDb(server, dbSql);
 					resetSearchIndex(server);
 				} else if (!server.isMySqlDb() && !server.isPostgreSqlDb()) {
-					moduleInstaller.installModule(SDKConstants.H2_ARTIFACT, server.getServerDirectory().getPath());
 					wizard.showMessage("The specified database " + server.getDbName()
 							+ " does not exist and it will be created when OpenMRS starts.");
 				}
@@ -512,7 +525,6 @@ public class Setup extends AbstractServerTask {
 				resetSearchIndex(server);
 			}
 		} else {
-			moduleInstaller.installModule(SDKConstants.H2_ARTIFACT, server.getServerDirectory().getPath());
 			wizard.showMessage(
 					"The specified database " + server.getDbName() + " does not exist and it will be created for you.");
 		}
@@ -597,7 +609,8 @@ public class Setup extends AbstractServerTask {
 	public String determineDbName(String uri, String serverId) throws MojoExecutionException {
 		String dbName = String.format(SDKConstants.DB_NAME_TEMPLATE, serverId);
 
-		if (!uri.contains("@DBNAME@")) {
+		// H2 URIs (e.g. jdbc:h2:mem:test or jdbc:h2:~/data/db) do not follow the host/dbname layout
+		if (!uri.startsWith("jdbc:h2") && !uri.contains("@DBNAME@")) {
 			//determine db name from uri
 			try {
 				URI parsedUri;
@@ -639,6 +652,8 @@ public class Setup extends AbstractServerTask {
 		} else {
 			serverBuilder = new Server.ServerBuilder();
 		}
+
+		dbDriver = normalizeDbDriver(dbDriver);
 
 		Server server = serverBuilder
 				.setServerId(serverId)

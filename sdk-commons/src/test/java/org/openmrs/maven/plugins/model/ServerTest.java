@@ -58,6 +58,20 @@ public class ServerTest {
     }
 
     @Test
+    public void isH2Db_shouldDetectH2ByDriverOrUri() {
+        assertThat(server.isH2Db(), is(false));
+
+        server.setDbDriver(SDKConstants.DRIVER_H2);
+        assertThat(server.isH2Db(), is(true));
+
+        server.setDbDriver(SDKConstants.DRIVER_MYSQL_OLD);
+        assertThat(server.isH2Db(), is(false));
+
+        server.setDbUri(SDKConstants.URI_H2);
+        assertThat(server.isH2Db(), is(true));
+    }
+
+    @Test
     public void testMergeArtifactList() {
         Artifact owa14 = new Artifact("owa", "1.4");
         Artifact appui15 = new Artifact("appui", "1.5");
@@ -99,5 +113,18 @@ public class ServerTest {
         server.setDbUri(SDKConstants.URI_MYSQL.replace("localhost", "144.244.242.55.666"));
         String result2 = server.getMySqlPort();
         assertThat(result2, is(equalTo("3306")));
+    }
+
+    @Test
+    public void getDefaultH2Uri_shouldAddH2v2SettingsOnlyForPlatform3x() {
+        assertThat(server.getDefaultH2Uri(), is(SDKConstants.URI_H2));
+
+        server.setPlatformVersion("2.8.0");
+        assertThat(server.getDefaultH2Uri(), is(SDKConstants.URI_H2));
+
+        server.setPlatformVersion("3.0.0-SNAPSHOT");
+        assertThat(server.getDefaultH2Uri(), is(SDKConstants.URI_H2_V2));
+        assertThat(server.getDefaultH2Uri().contains("NON_KEYWORDS=VALUE"), is(true));
+        assertThat(server.getDefaultH2Uri().contains("MODE=MySQL"), is(true));
     }
 }

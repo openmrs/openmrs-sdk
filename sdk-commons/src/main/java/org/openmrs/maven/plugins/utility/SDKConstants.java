@@ -70,13 +70,13 @@ public class SDKConstants {
     public static final String URI_MYSQL_DOCKER = "jdbc:mysql://%s:3306/@DBNAME@";
     public static final String URI_POSTGRESQL = "jdbc:postgresql://localhost:5432/@DBNAME@";
     public static final String URI_H2 = "jdbc:h2:@APPLICATIONDATADIR@/database/@DBNAME@;AUTO_RECONNECT=TRUE;DB_CLOSE_DELAY=-1";
+    // H2 2.x (platform 3.x) needs these settings, MySQL mode (OpenMRS targets MySQL; it also trims CHAR(38) uuids) plus NON_KEYWORDS for the "value" column
+    public static final String URI_H2_V2 = URI_H2 + ";MODE=MySQL;NON_KEYWORDS=VALUE";
     // dbDriver class for different db
     public static final String DRIVER_MYSQL_OLD = "com.mysql.jdbc.Driver";
     public static final String DRIVER_MYSQL = " com.mysql.cj.jdbc.Driver";
     public static final String DRIVER_POSTGRESQL = "org.postgresql.Driver";
     public static final String DRIVER_H2 = "org.h2.Driver";
-    //db Artifact data
-    public static final Artifact H2_ARTIFACT = new Artifact("h2", "1.4.190", Artifact.GROUP_H2, Artifact.TYPE_JAR);
     // default settings path
     public static final String MAVEN_SETTINGS = "settings.xml";
     public static final String DB_NAME_TEMPLATE = "openmrs-%s";
