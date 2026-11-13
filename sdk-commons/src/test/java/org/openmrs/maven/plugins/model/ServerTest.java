@@ -114,4 +114,16 @@ public class ServerTest {
         String result2 = server.getMySqlPort();
         assertThat(result2, is(equalTo("3306")));
     }
+
+    @Test
+    public void getDefaultH2Uri_shouldAddH2v2SettingsOnlyForPlatform3x() {
+        assertThat(server.getDefaultH2Uri(), is(SDKConstants.URI_H2));
+
+        server.setPlatformVersion("2.8.0");
+        assertThat(server.getDefaultH2Uri(), is(SDKConstants.URI_H2));
+
+        server.setPlatformVersion("3.0.0-SNAPSHOT");
+        assertThat(server.getDefaultH2Uri(), is(SDKConstants.URI_H2_V2));
+        assertThat(server.getDefaultH2Uri().contains("NON_KEYWORDS=VALUE"), is(true));
+    }
 }

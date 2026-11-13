@@ -278,11 +278,11 @@ public class Server extends BaseSdkProperties {
 
     public void setUnspecifiedToDefault() {
         if(getDbDriver()!=null){
-            setPropertyIfNotSpecified("connection.url",
-                    "jdbc:h2:@APPLICATIONDATADIR@/database/@DBNAME@;AUTO_RECONNECT=TRUE;DB_CLOSE_DELAY=-1");
-            setPropertyIfNotSpecified("connection.driver_class", "org.h2.Driver");
-            setPropertyIfNotSpecified("connection.username", "sa");
-            setPropertyIfNotSpecified("connection.password", "sa");
+            setPropertyIfNotSpecified("connection.url", getDefaultH2Uri());
+            setPropertyIfNotSpecified("connection.driver_class", SDKConstants.DRIVER_H2);
+            // same credentials as DefaultWizard.promptForDb uses for H2
+            setPropertyIfNotSpecified("connection.username", "root");
+            setPropertyIfNotSpecified("connection.password", "root");
             setPropertyIfNotSpecified("database_name", "openmrs");
             setPropertyIfNotSpecified("has_current_openmrs_database", "true");
             setPropertyIfNotSpecified("create_database_user", "false");
@@ -722,6 +722,18 @@ public class Server extends BaseSdkProperties {
                 SDKConstants.DRIVER_MYSQL_OLD));
     }
     
+    /**
+     * @return the default H2 uri for this server's platform: platform 3.x runs on H2 2.x, which needs extra settings
+     */
+    public String getDefaultH2Uri() {
+        String platformVersion = getPlatformVersion();
+        if (platformVersion != null && !platformVersion.trim().isEmpty()
+                && new Version(platformVersion).getMajorVersion() >= 3) {
+            return SDKConstants.URI_H2_V2;
+        }
+        return SDKConstants.URI_H2;
+    }
+
     public boolean isH2Db() {
         String dbUri = getDbUri();
         if (dbUri != null && dbUri.startsWith("jdbc:h2")) {

@@ -95,4 +95,36 @@ public class DefaultWizardRepromptTest {
 		org.junit.Assert.assertEquals(SDKConstants.DRIVER_H2, h2Server.getDbDriver());
 		org.junit.Assert.assertEquals("jdbc:h2:mem:test", h2Server.getDbUri());
 	}
+
+	@Test
+	public void promptForDb_shouldKeepGivenH2Credentials() throws MojoExecutionException {
+		Server h2Server = new Server.ServerBuilder().setDbDriver(SDKConstants.DRIVER_H2).setDbUser("me").setDbPassword("secret").build();
+		h2Server.setPlatformVersion("2.8.0");
+
+		wizard.promptForDb(h2Server, null, true, SDKConstants.DRIVER_H2, null);
+
+		org.junit.Assert.assertEquals("me", h2Server.getDbUser());
+		org.junit.Assert.assertEquals("secret", h2Server.getDbPassword());
+	}
+
+	@Test
+	public void promptForDb_shouldDefaultH2CredentialsToRoot() throws MojoExecutionException {
+		Server h2Server = new Server.ServerBuilder().setDbDriver(SDKConstants.DRIVER_H2).build();
+		h2Server.setPlatformVersion("2.8.0");
+
+		wizard.promptForDb(h2Server, null, true, SDKConstants.DRIVER_H2, null);
+
+		org.junit.Assert.assertEquals("root", h2Server.getDbUser());
+		org.junit.Assert.assertEquals("root", h2Server.getDbPassword());
+	}
+
+	@Test
+	public void promptForDb_shouldUseH2v2UriForPlatform3x() throws MojoExecutionException {
+		Server h2Server = new Server.ServerBuilder().setDbDriver(SDKConstants.DRIVER_H2).build();
+		h2Server.setPlatformVersion("3.0.0-SNAPSHOT");
+
+		wizard.promptForDb(h2Server, null, true, SDKConstants.DRIVER_H2, null);
+
+		org.junit.Assert.assertEquals(SDKConstants.URI_H2_V2, h2Server.getDbUri());
+	}
 }

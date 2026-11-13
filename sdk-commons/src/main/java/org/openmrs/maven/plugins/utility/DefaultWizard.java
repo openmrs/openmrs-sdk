@@ -728,11 +728,16 @@ public class DefaultWizard implements Wizard {
 			case DB_OPTION_H2:
 				server.setDbDriver(SDKConstants.DRIVER_H2);
 				if (server.getDbUri() == null) {
-					server.setDbUri(SDKConstants.URI_H2);
+					server.setDbUri(server.getDefaultH2Uri());
 				}
 
-				server.setDbUser("root");
-				server.setDbPassword("root");
+				// keep credentials given on the command line (-DdbUser, -DdbPassword)
+				if (server.getDbUser() == null) {
+					server.setDbUser("root");
+				}
+				if (server.getDbPassword() == null) {
+					server.setDbPassword("root");
+				}
 				break;
 			case DB_OPTION_MYSQL:
 				promptForDbUri(server, SDKConstants.DRIVER_MYSQL_OLD);

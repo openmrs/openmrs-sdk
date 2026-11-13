@@ -70,6 +70,8 @@ public class SDKConstants {
     public static final String URI_MYSQL_DOCKER = "jdbc:mysql://%s:3306/@DBNAME@";
     public static final String URI_POSTGRESQL = "jdbc:postgresql://localhost:5432/@DBNAME@";
     public static final String URI_H2 = "jdbc:h2:@APPLICATIONDATADIR@/database/@DBNAME@;AUTO_RECONNECT=TRUE;DB_CLOSE_DELAY=-1";
+    // H2 2.x (platform 3.x) needs these settings, as in openmrs-core's installation.h2.properties
+    public static final String URI_H2_V2 = URI_H2 + ";MODE=LEGACY;NON_KEYWORDS=VALUE";
     // dbDriver class for different db
     public static final String DRIVER_MYSQL_OLD = "com.mysql.jdbc.Driver";
     public static final String DRIVER_MYSQL = " com.mysql.cj.jdbc.Driver";
