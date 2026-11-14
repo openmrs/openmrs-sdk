@@ -95,6 +95,12 @@ public class Setup extends AbstractServerTask {
 	private String dbSql;
 
 	/**
+	 * Admin password for the new OpenMRS instance
+	 */
+	@Parameter(property = "adminPassword")
+	private String adminPassword;
+
+	/**
 	 * Docker host address
 	 */
 	@Parameter(property = "dockerHost")
@@ -327,8 +333,39 @@ public class Setup extends AbstractServerTask {
 		if (skipFrontend) {
 			server.removeSpaProperties();
 		}
+		if ("false".equals(server.getParam("create_tables"))) {
+			wizard.showMessage("Keeping the admin password that is already in the existing database.");
+		} else {
+			setAdminPassword(server);
+		}
 		server.setUnspecifiedToDefault();
 		server.save();
+	}
+
+	private void setAdminPassword(Server server) throws MojoExecutionException {
+		adminPassword = server.getParam(Server.PROPERTY_ADMIN_USER_PASSWORD, adminPassword);
+		while (true) {
+			if (StringUtils.isBlank(adminPassword)) {
+				adminPassword = wizard.promptForPasswordIfMissing(
+						null, "an admin password for the new OpenMRS instance (-DadminPassword)");
+			}
+			if (StringUtils.isNotBlank(adminPassword) && meetsDefaultPasswordPolicy(adminPassword)) {
+				break;
+			}
+			wizard.showMessage("The admin password needs at least 8 characters, including upper and lower case letters "
+					+ "and a digit (the default OpenMRS password policy).");
+			adminPassword = null;
+		}
+		server.setParam(Server.PROPERTY_ADMIN_USER_PASSWORD, adminPassword);
+	}
+
+	/**
+	 * Mirrors the default rules of openmrs-core's OpenmrsUtil.validatePassword, which the installer of
+	 * platform 2.0 and later applies to this password on first start.
+	 */
+	private static boolean meetsDefaultPasswordPolicy(String password) {
+		return password.length() >= 8 && password.matches(".*[A-Z].*") && password.matches(".*[a-z].*")
+				&& password.chars().anyMatch(Character::isDigit);
 	}
 
 	private void setJdk(Server server) throws MojoExecutionException {

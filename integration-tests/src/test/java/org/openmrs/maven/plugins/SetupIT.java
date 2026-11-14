@@ -41,8 +41,8 @@ public class SetupIT extends AbstractSdkIT {
         addAnswer(serverId);
         addAnswer("8080");
         addAnswer("1044");
-        addAnswer(System.getProperty("java.home"));
 
+        addAnswer("SdkTestAdm1n!23");
         executeTask("setup");
 
         assertSuccess();
@@ -60,6 +60,7 @@ public class SetupIT extends AbstractSdkIT {
         Server server = Server.loadServer(serverId);
         assertThat(server, serverHasVersion("2.3.1"));
         assertThat(server, serverHasDebugPort("1044"));
+        assertThat(server.getParam(Server.PROPERTY_ADMIN_USER_PASSWORD), equalTo("SdkTestAdm1n!23"));
     }
 
     @Test
@@ -71,8 +72,8 @@ public class SetupIT extends AbstractSdkIT {
         addAnswer(serverId);
         addAnswer("8080");
         addAnswer("1044");
-        addAnswer(System.getProperty("java.home"));
 
+        addAnswer("SdkTestAdm1n!23");
         executeTask("setup");
 
         assertSuccess();
@@ -96,6 +97,7 @@ public class SetupIT extends AbstractSdkIT {
         Server server = Server.loadServer(serverId);
         assertThat(server, serverHasVersion("2.13.0"));
         assertThat(server, serverHasDebugPort("1044"));
+        assertThat(server.getParam(Server.PROPERTY_ADMIN_USER_PASSWORD), equalTo("SdkTestAdm1n!23"));
     }
 
     @Test
@@ -107,8 +109,8 @@ public class SetupIT extends AbstractSdkIT {
         addAnswer(serverId);
         addAnswer("8080");
         addAnswer("1044");
-        addAnswer(System.getProperty("java.home"));
 
+        addAnswer("SdkTestAdm1n!23");
         executeTask("setup");
 
         assertSuccess();
@@ -130,6 +132,7 @@ public class SetupIT extends AbstractSdkIT {
         Server server = Server.loadServer(serverId);
         assertThat(server, serverHasVersion("3.0.0"));
         assertThat(server, serverHasDebugPort("1044"));
+        assertThat(server.getParam(Server.PROPERTY_ADMIN_USER_PASSWORD), equalTo("SdkTestAdm1n!23"));
     }
 
     @Test
@@ -142,8 +145,8 @@ public class SetupIT extends AbstractSdkIT {
         addAnswer(serverId);
         addAnswer("8080");
         addAnswer("1044");
-        addAnswer(System.getProperty("java.home"));
 
+        addAnswer("SdkTestAdm1n!23");
         executeTask("setup");
 
         assertSuccess();
@@ -157,6 +160,7 @@ public class SetupIT extends AbstractSdkIT {
         Server.setServersPath(testDirectory.getAbsolutePath());
         Server server = Server.loadServer(serverId);
         assertThat(server.getSpaProperties().isEmpty(), is(true));
+        assertThat(server.getParam(Server.PROPERTY_ADMIN_USER_PASSWORD), equalTo("SdkTestAdm1n!23"));
     }
 
     @Test
@@ -169,8 +173,8 @@ public class SetupIT extends AbstractSdkIT {
         addAnswer(serverId);
         addAnswer("8080");
         addAnswer("1044");
-        addAnswer(System.getProperty("java.home"));
 
+        addAnswer("SdkTestAdm1n!23");
         executeTask("setup");
 
         assertSuccess();
@@ -185,6 +189,7 @@ public class SetupIT extends AbstractSdkIT {
         assertFilePresent(serverId, DistroProperties.DISTRO_FILE_NAME);
         assertThat(server, serverHasName(serverId));
         assertThat(server, serverHasDebugPort("1044"));
+        assertThat(server.getParam(Server.PROPERTY_ADMIN_USER_PASSWORD), equalTo("SdkTestAdm1n!23"));
     }
 
     @Test
@@ -197,8 +202,8 @@ public class SetupIT extends AbstractSdkIT {
         addAnswer(serverId);
         addAnswer("8080");
         addAnswer("1044");
-        addAnswer(System.getProperty("java.home"));
 
+        addAnswer("SdkTestAdm1n!23");
         executeTask("setup");
 
         assertSuccess();
@@ -212,6 +217,7 @@ public class SetupIT extends AbstractSdkIT {
         assertFilePresent(serverId, DistroProperties.DISTRO_FILE_NAME);
         assertThat(server, serverHasDebugPort("1044"));
         assertThat(server, hasModuleVersion("webservices.rest", "2.16"));
+        assertThat(server.getParam(Server.PROPERTY_ADMIN_USER_PASSWORD), equalTo("SdkTestAdm1n!23"));
     }
 
     @Test
@@ -226,9 +232,9 @@ public class SetupIT extends AbstractSdkIT {
 
         addAnswer(serverId);
         addAnswer("nameValue");
-        addAnswer(System.getProperty("java.home"));
         addAnswer("8080");
 
+        addAnswer("SdkTestAdm1n!23");
         executeTask("setup");
 
         assertSuccess();
@@ -243,6 +249,7 @@ public class SetupIT extends AbstractSdkIT {
         assertThat(server, hasPropertyEqualTo("test", "testValue"));
         assertThat(server, hasPropertyEqualTo("pih.default.config", "nameValue"));
         assertThat(server, serverHasDebugPort("1044"));
+        assertThat(server.getParam(Server.PROPERTY_ADMIN_USER_PASSWORD), equalTo("SdkTestAdm1n!23"));
     }
 
     @Test
@@ -257,9 +264,9 @@ public class SetupIT extends AbstractSdkIT {
 
         addAnswer("OpenMRS Concepts OWA server 1.0 from current directory");
         addAnswer("nameValue");
-        addAnswer(System.getProperty("java.home"));
         addAnswer("8080");
 
+        addAnswer("SdkTestAdm1n!23");
         executeTask("setup");
 
         assertSuccess();
@@ -274,6 +281,7 @@ public class SetupIT extends AbstractSdkIT {
         assertThat(server, hasPropertyEqualTo("test", "testValue"));
         assertThat(server, hasPropertyEqualTo("pih.default.config", "nameValue"));
         assertThat(server, serverHasDebugPort("1044"));
+        assertThat(server.getParam(Server.PROPERTY_ADMIN_USER_PASSWORD), equalTo("SdkTestAdm1n!23"));
     }
 
     @Test
@@ -287,9 +295,9 @@ public class SetupIT extends AbstractSdkIT {
         addAnswer(serverId);
         addAnswer("Platform");
         addAnswer("2.6.1");
-        addAnswer(System.getProperty("java.home"));
         addAnswer("8080");
 
+        addAnswer("SdkTestAdm1n!23");
         executeTask("setup");
         assertSuccess();
         assertServerInstalled(serverId);
@@ -299,6 +307,10 @@ public class SetupIT extends AbstractSdkIT {
         File serverPropertiesFile = getTestFile(serverId, SDKConstants.OPENMRS_SERVER_PROPERTIES);
         String javaHomeServerProperty = readValueFromPropertyKey(serverPropertiesFile, "javaHome");
         assertThat(javaHomeServerProperty, is(nullValue()));
+
+        Server.setServersPath(testDirectory.getAbsolutePath());
+        Server server = Server.loadServer(serverId);
+        assertThat(server.getParam(Server.PROPERTY_ADMIN_USER_PASSWORD), equalTo("SdkTestAdm1n!23"));
 	}
 
     @Test
@@ -311,9 +323,9 @@ public class SetupIT extends AbstractSdkIT {
         addMockDbSettings();
 
         addAnswer(serverId);
-        addAnswer(System.getProperty("java.home"));
         addAnswer("8080");
 
+        addAnswer("SdkTestAdm1n!23");
         executeTask("setup");
         assertSuccess();
         assertServerInstalled(serverId);
@@ -323,6 +335,7 @@ public class SetupIT extends AbstractSdkIT {
 
         assertFilePresent(serverId, SDKConstants.OPENMRS_SERVER_PROPERTIES);
         assertThat(server, hasPropertyThatContains("version", "SNAPSHOT"));
+        assertThat(server.getParam(Server.PROPERTY_ADMIN_USER_PASSWORD), equalTo("SdkTestAdm1n!23"));
 
         File serverPropertiesFile = getTestFile(serverId, SDKConstants.OPENMRS_SERVER_PROPERTIES);
         String javaHomeServerProperty = readValueFromPropertyKey(serverPropertiesFile, "javaHome");
@@ -341,9 +354,9 @@ public class SetupIT extends AbstractSdkIT {
         addAnswer(serverId);
         addAnswer("Platform");
         addAnswer(keyword);
-        addAnswer(System.getProperty("java.home"));
         addAnswer("8080");
 
+        addAnswer("SdkTestAdm1n!23");
         executeTask("setup");
         assertSuccess();
         assertServerInstalled(serverId);
@@ -353,6 +366,7 @@ public class SetupIT extends AbstractSdkIT {
 
         assertFilePresent(serverId, SDKConstants.OPENMRS_SERVER_PROPERTIES);
         assertThat(server, hasPropertyThatContains("version", "SNAPSHOT"));
+        assertThat(server.getParam(Server.PROPERTY_ADMIN_USER_PASSWORD), equalTo("SdkTestAdm1n!23"));
 
         File serverPropertiesFile = getTestFile(serverId, SDKConstants.OPENMRS_SERVER_PROPERTIES);
         String javaHomeServerProperty = readValueFromPropertyKey(serverPropertiesFile, "javaHome");
@@ -369,9 +383,9 @@ public class SetupIT extends AbstractSdkIT {
         addMockDbSettings();
 
         addAnswer(serverId);
-        addAnswer(System.getProperty("java.home"));
         addAnswer("8080");
 
+        addAnswer("SdkTestAdm1n!23");
         executeTask("setup");
         assertSuccess();
         assertServerInstalled(serverId);
@@ -381,6 +395,7 @@ public class SetupIT extends AbstractSdkIT {
 
         assertFilePresent(serverId, SDKConstants.OPENMRS_SERVER_PROPERTIES);
         assertThat(server, hasPropertyThatNotContains("version", "SNAPSHOT"));
+        assertThat(server.getParam(Server.PROPERTY_ADMIN_USER_PASSWORD), equalTo("SdkTestAdm1n!23"));
 
         File serverPropertiesFile = getTestFile(serverId, SDKConstants.OPENMRS_SERVER_PROPERTIES);
         String javaHomeServerProperty = readValueFromPropertyKey(serverPropertiesFile, "javaHome");
@@ -399,9 +414,9 @@ public class SetupIT extends AbstractSdkIT {
         addAnswer(serverId);
         addAnswer("Platform");
         addAnswer(keyword);
-        addAnswer(System.getProperty("java.home"));
         addAnswer("8080");
 
+        addAnswer("SdkTestAdm1n!23");
         executeTask("setup");
         assertSuccess();
         assertServerInstalled(serverId);
@@ -411,6 +426,7 @@ public class SetupIT extends AbstractSdkIT {
 
         assertFilePresent(serverId, SDKConstants.OPENMRS_SERVER_PROPERTIES);
         assertThat(server, hasPropertyThatNotContains("version", "SNAPSHOT"));
+        assertThat(server.getParam(Server.PROPERTY_ADMIN_USER_PASSWORD), equalTo("SdkTestAdm1n!23"));
 
         File serverPropertiesFile = getTestFile(serverId, SDKConstants.OPENMRS_SERVER_PROPERTIES);
         String javaHomeServerProperty = readValueFromPropertyKey(serverPropertiesFile, "javaHome");
@@ -434,6 +450,7 @@ public class SetupIT extends AbstractSdkIT {
 
         addMockDbSettings();
 
+        addAnswer("SdkTestAdm1n!23");
         executeTask("setup");
         assertSuccess();
         assertServerInstalled(serverId);
@@ -465,6 +482,7 @@ public class SetupIT extends AbstractSdkIT {
         addAnswer("1044");
         addAnswer("8080");
 
+        addAnswer("SdkTestAdm1n!23");
         executeTask("setup");
 
         assertFilePresent( serverId, "openmrs-2.0.5.war");
@@ -483,6 +501,7 @@ public class SetupIT extends AbstractSdkIT {
         addAnswer("1044");
         addAnswer("8080");
 
+        addAnswer("SdkTestAdm1n!23");
         executeTask("setup");
 
         assertFilePresent( serverId, "openmrs-1.11.5.war");
@@ -510,6 +529,7 @@ public class SetupIT extends AbstractSdkIT {
         addAnswer("1044");
         addAnswer("8080");
 
+        addAnswer("SdkTestAdm1n!23");
         executeTask("setup");
 
         assertFilePresent( serverId, "openmrs-2.6.9.war");
@@ -530,6 +550,7 @@ public class SetupIT extends AbstractSdkIT {
         addAnswer("1044");
         addAnswer("8080");
 
+        addAnswer("SdkTestAdm1n!23");
         executeTask("setup");
 
         assertFilePresent( serverId, "openmrs-2.6.9.war");
@@ -549,6 +570,7 @@ public class SetupIT extends AbstractSdkIT {
         addAnswer("1044");
         addAnswer("8080");
 
+        addAnswer("SdkTestAdm1n!23");
         executeTask("setup");
 
         assertFilePresent( serverId, "openmrs-2.6.9.war");

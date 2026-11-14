@@ -50,6 +50,7 @@ public class Server extends BaseSdkProperties {
     public static final String PROPERTY_USER_MODULES = "user_modules";
     public static final String PROPERTY_USER_OWAS = "user_owas";
     public static final String PROPERTY_DEMO_DATA = "add_demo_data";
+    public static final String PROPERTY_ADMIN_USER_PASSWORD = "admin_user_password";
     private static final String OLD_PROPERTIES_FILENAME = "backup.properties";
     public static final String OWA_DIRECTORY = "owa";
 
@@ -292,7 +293,6 @@ public class Server extends BaseSdkProperties {
         }
         setPropertyIfNotSpecified("module_web_admin", "true");
         setPropertyIfNotSpecified("install_method", "auto");
-        setPropertyIfNotSpecified("admin_user_password", "Admin123");
         setPropertyIfNotSpecified("version", "");
     }
 
