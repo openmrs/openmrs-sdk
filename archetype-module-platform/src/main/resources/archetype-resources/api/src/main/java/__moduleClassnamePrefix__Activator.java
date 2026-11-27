@@ -17,24 +17,26 @@ import org.apache.commons.logging.LogFactory;
 import org.openmrs.module.BaseModuleActivator;
 
 /**
- * This class contains the logic that is run every time this module is either started or shutdown
+ * This class contains the logic that is run every time this module is either started or stopped
  */
 public class ${moduleClassnamePrefix}Activator extends BaseModuleActivator {
 	
 	private Log log = LogFactory.getLog(this.getClass());
 	
 	/**
-	 * @see #started()
+	 * @see BaseModuleActivator#started()
 	 */
+	@Override
 	public void started() {
 		log.info("Started ${moduleName}");
 	}
 	
 	/**
-	 * @see #shutdown()
+	 * @see BaseModuleActivator#stopped()
 	 */
-	public void shutdown() {
-		log.info("Shutdown ${moduleName}");
+	@Override
+	public void stopped() {
+		log.info("Stopped ${moduleName}");
 	}
 	
 }
